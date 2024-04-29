@@ -58,7 +58,7 @@ impl EvmDatabase {
         )
         .unwrap();
         let root = *zktrie_state.root();
-        log::debug!("building partial statedb done, root {:x?}", root);
+        log::debug!("building partial statedb done, root {}", hex::encode(root));
 
         let mem_db = zktrie_state.into_inner();
         let zktrie = mem_db.new_trie(&root).unwrap();

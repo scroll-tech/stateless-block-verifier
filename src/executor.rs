@@ -22,6 +22,7 @@ impl EvmExecutor {
 
     /// Handle a block.
     pub fn handle_block(&mut self, l2_trace: &BlockTrace) -> H256 {
+        log::debug!("handle block {:?}", l2_trace.header.number.unwrap());
         let mut env = Box::<Env>::default();
         env.cfg.chain_id = l2_trace.chain_id;
         env.block = BlockEnv::from(l2_trace);
@@ -43,7 +44,7 @@ impl EvmExecutor {
             let tx_type = TxType::get_tx_type(&eth_tx);
             env.tx.scroll.is_l1_msg = tx_type.is_l1_msg();
             env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
-            log::debug!("{env:#?}");
+            log::trace!("{env:#?}");
             {
                 let mut revm = revm::Evm::builder()
                     .with_db(&mut self.db)
@@ -52,6 +53,7 @@ impl EvmExecutor {
                 let result = revm.transact_commit().unwrap(); // TODO: handle error
                 log::trace!("{result:#?}");
             }
+            log::debug!("handle {idx}th tx done");
 
             self.post_check(exec);
         }

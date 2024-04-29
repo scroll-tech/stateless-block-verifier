@@ -1,8 +1,8 @@
-use std::path::PathBuf;
 use clap::Parser;
 use eth_types::l2_types::BlockTrace;
 use eth_types::ToWord;
 use stateless_block_verifier::EvmExecutor;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(version, about = "Stateless Block Verifier")]
@@ -11,8 +11,8 @@ struct Cli {
 }
 
 fn main() -> anyhow::Result<()> {
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("error"))
+        .format_timestamp_millis()
         .init();
     let cli = Cli::parse();
 

@@ -2440,6 +2440,7 @@ dependencies = [
  "clap",
  "env_logger 0.9.3",
  "eth-types",
+ "hex",
  "log",
  "mpt-zktrie",
  "revm",

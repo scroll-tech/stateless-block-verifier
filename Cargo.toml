@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 log = "0.4"
+hex = "0.4"
 eth-types = { git = "https://github.com/scroll-tech/zkevm-circuits", features = ["scroll"], rev = "157f3f0f8" }
 mpt-zktrie = { git = "https://github.com/scroll-tech/zkevm-circuits", rev = "157f3f0f8" }
 revm = { git = "https://github.com/scroll-tech/revm", features = ["scroll-default-handler"], rev = "9ecb479" } # v35
