@@ -4,5 +4,5 @@ This project provides tools for stateless verification of blocks with mpt state 
 
 # Example
 ```
-cargo run --bin trace-verifier --features bin-deps -- testdata/5223277.json 
+cargo run --bin trace-verifier --features bin-deps -- testdata/mainnet_blocks/5224657.json 
 ```
