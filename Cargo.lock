@@ -870,7 +870,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=refactor/mpt-witness#6d1bc595db2c98ab74208980596896c5be4701a9"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#ba844f749119a771a12f75ad94f494fa3cb22f52"
 dependencies = [
  "base64 0.13.1",
  "ethers-core",
@@ -1344,7 +1344,7 @@ checksum = "6c8640c5d730cb13ebd907d8d04b52f55ac9a2eec55b440c8892f40d56c76c1d"
 [[package]]
 name = "mpt-zktrie"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=refactor/mpt-witness#6d1bc595db2c98ab74208980596896c5be4701a9"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#ba844f749119a771a12f75ad94f494fa3cb22f52"
 dependencies = [
  "eth-types",
  "halo2curves",
