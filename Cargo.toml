@@ -6,10 +6,10 @@ edition = "2021"
 [dependencies]
 log = "0.4"
 hex = "0.4"
-eth-types = { git = "https://github.com/scroll-tech/zkevm-circuits", features = ["scroll"], rev = "900b0f6" }
-mpt-zktrie = { git = "https://github.com/scroll-tech/zkevm-circuits", rev = "900b0f6" }
-revm = { git = "https://github.com/scroll-tech/revm", features = ["scroll-default-handler"], rev = "9ecb479" } # v35
-zktrie = { git = "https://github.com/scroll-tech/zktrie.git", tag = "v0.8.0", features= ["rs_zktrie"] }
+eth-types = { git = "https://github.com/scroll-tech/zkevm-circuits", features = ["scroll"], branch = "refactor/mpt-witness" }
+mpt-zktrie = { git = "https://github.com/scroll-tech/zkevm-circuits", branch = "refactor/mpt-witness" }
+revm = { git = "https://github.com/scroll-tech/revm", default-features=false, features = ["scroll-default-handler", "std"], rev = "e1e8f7a" } # v35
+zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "main", features= ["rs_zktrie"] }
 
 # binary dependencies
 anyhow = { version = "1.0", optional = true }
@@ -29,11 +29,6 @@ bin-deps = ["anyhow", "clap", "env_logger", "serde_json", "serde"]
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "v2.0.7" }
 ethers-signers  = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "v2.0.7" }
 halo2curves = { git = "https://github.com/scroll-tech/halo2curves", branch = "v0.1.0" }
-
-[patch."https://github.com/privacy-scaling-explorations/halo2.git"]
-halo2_proofs = { git = "https://github.com/scroll-tech/halo2.git", branch = "v1.1" }
-[patch."https://github.com/privacy-scaling-explorations/poseidon.git"]
-poseidon = { git = "https://github.com/scroll-tech/poseidon.git", branch = "main" }
 
 [patch."https://github.com/privacy-scaling-explorations/bls12_381"]
 bls12_381 = { git = "https://github.com/scroll-tech/bls12_381", branch = "feat/impl_scalar_field" }
