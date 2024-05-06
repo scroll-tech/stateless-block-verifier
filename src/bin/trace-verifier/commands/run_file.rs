@@ -11,7 +11,7 @@ pub struct RunFileCommand {
 }
 
 impl RunFileCommand {
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub async fn run(self, disable_checks: bool) -> anyhow::Result<()> {
         for path in self.path {
             info!("Reading trace from {:?}", path);
             let trace = tokio::fs::read_to_string(&path).await?;
@@ -24,7 +24,7 @@ impl RunFileCommand {
                     .unwrap()
                     .result
             });
-            tokio::task::spawn_blocking(move || utils::verify(l2_trace)).await?;
+            tokio::task::spawn_blocking(move || utils::verify(l2_trace, disable_checks)).await?;
         }
         Ok(())
     }

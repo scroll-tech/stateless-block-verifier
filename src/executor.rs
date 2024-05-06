@@ -16,11 +16,12 @@ use zktrie::ZkTrie;
 pub struct EvmExecutor {
     db: CacheDB<ReadOnlyDB>,
     zktrie: ZkTrie,
+    disable_checks: bool,
 }
 
 impl EvmExecutor {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn new(l2_trace: &BlockTrace) -> Self {
+    pub fn new(l2_trace: &BlockTrace, disable_checks: bool) -> Self {
         let db = CacheDB::new(ReadOnlyDB::new(l2_trace));
 
         let old_root = l2_trace.storage_trace.root_before;
@@ -41,7 +42,7 @@ impl EvmExecutor {
         let mem_db = zktrie_state.into_inner();
         let zktrie = mem_db.new_trie(&root).unwrap();
 
-        Self { db, zktrie }
+        Self { db, zktrie, disable_checks }
     }
 
     /// Handle a block.
@@ -79,7 +80,9 @@ impl EvmExecutor {
             }
             debug!("handle {idx}th tx done");
 
-            self.post_check(exec);
+            if !self.disable_checks {
+                self.post_check(exec);
+            }
         }
         self.commit_changes();
         H256::from(self.zktrie.root())
