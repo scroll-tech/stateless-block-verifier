@@ -1,9 +1,7 @@
 use crate::utils;
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
-use ethers_core::types::BlockNumber;
 use ethers_providers::{Http, Middleware, Provider};
-use stateless_block_verifier::EvmExecutor;
 use std::str::FromStr;
 use url::Url;
 
@@ -28,7 +26,7 @@ pub enum StartBlockSpec {
 
 impl RunRpcCommand {
     pub async fn run(self) -> anyhow::Result<()> {
-        log::info!("Running RPC command with url: {}", self.url);
+        info!("Running RPC command with url: {}", self.url);
         let provider = Provider::new(Http::new(self.url));
 
         let start_block = match self.start_block {
@@ -52,7 +50,7 @@ impl RunRpcCommand {
                 )
                 .await?;
 
-            log::info!(
+            info!(
                 "load trace for block #{current_block}({:?})",
                 l2_trace.header.hash.unwrap()
             );
@@ -64,7 +62,7 @@ impl RunRpcCommand {
             let mut exponential_backoff = 1;
             while provider.get_block_number().await?.as_u64() < current_block {
                 if exponential_backoff == 1 {
-                    log::info!("waiting for block #{}", current_block);
+                    info!("waiting for block #{}", current_block);
                 }
                 tokio::time::sleep(tokio::time::Duration::from_secs(exponential_backoff)).await;
                 exponential_backoff *= 2;

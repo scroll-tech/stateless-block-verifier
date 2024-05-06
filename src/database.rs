@@ -4,7 +4,7 @@ use eth_types::{
     state_db::{self, CodeDB, StateDB},
     ToBigEndian, ToWord, Word, H160, H256,
 };
-use log::{trace, Level};
+use log::Level;
 use mpt_zktrie::state::{AccountData, ZktrieState};
 use revm::{
     db::DatabaseRef,
@@ -58,7 +58,7 @@ impl EvmDatabase {
         )
         .unwrap();
         let root = *zktrie_state.root();
-        log::debug!("building partial statedb done, root {}", hex::encode(root));
+        debug!("building partial statedb done, root {}", hex::encode(root));
 
         let mem_db = zktrie_state.into_inner();
         let zktrie = mem_db.new_trie(&root).unwrap();
@@ -83,7 +83,7 @@ impl DatabaseRef for EvmDatabase {
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         let (exist, acc) = self.sdb.get_account(&H160::from(**address));
-        log::trace!("loaded account: {address:?}, exist: {exist}, acc: {acc:?}");
+        trace!("loaded account: {address:?}, exist: {exist}, acc: {acc:?}");
         if exist {
             let mut acc = AccountInfo {
                 balance: U256::from_be_bytes(acc.balance.to_be_bytes()),
@@ -158,7 +158,7 @@ impl DatabaseCommit for EvmDatabase {
                 continue;
             }
 
-            if log::log_enabled!(Level::Trace) {
+            if log_enabled!(Level::Trace) {
                 let mut incoming = incoming.clone();
                 incoming.info.code = None;
                 trace!(

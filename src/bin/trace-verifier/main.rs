@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+
 use clap::Parser;
 
 mod commands;
