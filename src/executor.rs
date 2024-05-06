@@ -2,9 +2,10 @@ use crate::database::EvmDatabase;
 use eth_types::{
     geth_types::TxType,
     l2_types::{BlockTrace, ExecutionResult},
-    H256,
+    H256, U256,
 };
 use revm::primitives::{BlockEnv, Env, TxEnv};
+use revm::DatabaseRef;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
@@ -57,16 +58,18 @@ impl EvmExecutor {
 
             self.post_check(exec);
         }
+        self.db.commit_cache();
         self.db.root()
     }
 
     fn post_check(&mut self, exec: &ExecutionResult) {
         for account_post_state in exec.account_after.iter() {
             if let Some(address) = account_post_state.address {
-                let local_acc = self.db.sdb.get_account(&address).1;
+                let local_acc = self.db.basic_ref(address.0.into()).unwrap().unwrap();
                 trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
-                if local_acc.balance != account_post_state.balance.unwrap() {
-                    let local = local_acc.balance;
+                let local_balance = U256::from_little_endian(local_acc.balance.as_le_slice());
+                if local_balance != account_post_state.balance.unwrap() {
+                    let local = local_balance;
                     let post = account_post_state.balance.unwrap();
                     error!(
                         "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
@@ -81,7 +84,7 @@ impl EvmExecutor {
                         }
                     )
                 }
-                if local_acc.nonce != account_post_state.nonce.unwrap().into() {
+                if local_acc.nonce != account_post_state.nonce.unwrap() {
                     error!("incorrect nonce")
                 }
                 let p_hash = account_post_state.poseidon_code_hash.unwrap();
@@ -89,7 +92,7 @@ impl EvmExecutor {
                     if !local_acc.is_empty() {
                         error!("incorrect poseidon_code_hash")
                     }
-                } else if local_acc.code_hash != p_hash {
+                } else if local_acc.code_hash.0 != p_hash.0 {
                     error!("incorrect poseidon_code_hash")
                 }
                 let k_hash = account_post_state.keccak_code_hash.unwrap();
@@ -97,7 +100,7 @@ impl EvmExecutor {
                     if !local_acc.is_empty() {
                         error!("incorrect keccak_code_hash")
                     }
-                } else if local_acc.keccak_code_hash != k_hash {
+                } else if local_acc.keccak_code_hash.0 != k_hash.0 {
                     error!("incorrect keccak_code_hash")
                 }
                 if let Some(storage) = account_post_state.storage.clone() {

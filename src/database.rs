@@ -11,16 +11,19 @@ use revm::{
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
     DatabaseCommit,
 };
+use rustc_hash::FxHashMap;
+use std::collections::HashMap;
+use std::convert::Infallible;
 use std::fmt::{Debug, Formatter};
-use std::{collections::HashMap, convert::Infallible};
 use zktrie::ZkTrie;
 
 /// EVM database that stores account and storage information.
 pub struct EvmDatabase {
-    tx_id: usize,
+    //tx_id: usize,
     code_db: CodeDB,
     pub(crate) sdb: StateDB,
     zktrie: ZkTrie,
+    cache: FxHashMap<Address, revm::primitives::Account>,
 }
 
 impl EvmDatabase {
@@ -64,10 +67,10 @@ impl EvmDatabase {
         let zktrie = mem_db.new_trie(&root).unwrap();
 
         EvmDatabase {
-            tx_id: 1,
             code_db,
             sdb,
             zktrie,
+            cache: FxHashMap::with_capacity_and_hasher(128, Default::default()),
         }
     }
 
@@ -75,82 +78,10 @@ impl EvmDatabase {
     pub fn root(&self) -> H256 {
         H256::from(self.zktrie.root())
     }
-}
 
-impl DatabaseRef for EvmDatabase {
-    type Error = Infallible;
-
-    /// Get basic account information.
-    fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let (exist, acc) = self.sdb.get_account(&H160::from(**address));
-        trace!("loaded account: {address:?}, exist: {exist}, acc: {acc:?}");
-        if exist {
-            let mut acc = AccountInfo {
-                balance: U256::from_be_bytes(acc.balance.to_be_bytes()),
-                nonce: acc.nonce.as_u64(),
-                code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
-                keccak_code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
-                // if None, code_by_hash will be used to fetch it if code needs to be loaded from
-                // inside revm.
-                code: None,
-            };
-            let code = self
-                .code_db
-                .0
-                .get(&H256(*acc.code_hash))
-                .cloned()
-                .unwrap_or_default();
-            let bytecode = Bytecode::new_raw(revm::primitives::Bytes::from(code.to_vec()));
-            acc.code = Some(bytecode);
-            Ok(Some(acc))
-        } else {
-            Ok(None)
-        }
-    }
-
-    /// Get account code by its hash.
-    fn code_by_hash_ref(&self, _: B256) -> Result<Bytecode, Self::Error> {
-        panic!("Should not be called. Code is already loaded");
-    }
-
-    /// Get storage value of address at index.
-    fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let (_, val) = self.sdb.get_storage(
-            &H160::from(**address),
-            &eth_types::U256::from_little_endian(index.as_le_slice()),
-        );
-        Ok(U256::from_be_bytes(val.to_be_bytes()))
-    }
-
-    /// Get block hash by block number.
-    fn block_hash_ref(&self, _: U256) -> Result<B256, Self::Error> {
-        unimplemented!("BLOCKHASH is disabled")
-    }
-}
-
-impl revm::Database for EvmDatabase {
-    type Error = Infallible;
-
-    fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        DatabaseRef::basic_ref(self, address)
-    }
-
-    fn code_by_hash(&mut self, _code_hash: B256) -> Result<Bytecode, Self::Error> {
-        panic!("Should not be called. Code is already loaded");
-    }
-
-    fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        DatabaseRef::storage_ref(self, address, index)
-    }
-
-    fn block_hash(&mut self, _: U256) -> Result<B256, Self::Error> {
-        unimplemented!("BLOCKHASH is disabled")
-    }
-}
-
-impl DatabaseCommit for EvmDatabase {
-    fn commit(&mut self, changes: HashMap<Address, revm::primitives::Account>) {
-        for (addr, incoming) in changes {
+    /// Drain the cache and commit the changes to the zkTrie.
+    pub fn commit_cache(&mut self) {
+        for (addr, incoming) in self.cache.drain() {
             let addr = H160::from(**addr);
             let (_, acc) = self.sdb.get_account_mut(&addr);
             let is_empty = acc.is_empty();
@@ -245,15 +176,105 @@ impl DatabaseCommit for EvmDatabase {
                 .update_account(addr.as_bytes(), &acc_data.into())
                 .expect("failed to update account");
         }
+    }
+}
 
-        self.tx_id += 1;
+impl DatabaseRef for EvmDatabase {
+    type Error = Infallible;
+
+    /// Get basic account information.
+    fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+        if let Some(acc) = self.cache.get(&address) {
+            trace!("loaded account from cache: {address:?}, acc: {acc:?}");
+            return Ok(Some(acc.info.clone()));
+        }
+        let (exist, acc) = self.sdb.get_account(&H160::from(**address));
+        trace!("loaded account: {address:?}, exist: {exist}, acc: {acc:?}");
+        if exist {
+            let mut acc = AccountInfo {
+                balance: U256::from_be_bytes(acc.balance.to_be_bytes()),
+                nonce: acc.nonce.as_u64(),
+                code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
+                keccak_code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
+                // if None, code_by_hash will be used to fetch it if code needs to be loaded from
+                // inside revm.
+                code: None,
+            };
+            let code = self
+                .code_db
+                .0
+                .get(&H256(*acc.code_hash))
+                .cloned()
+                .unwrap_or_default();
+            let bytecode = Bytecode::new_raw(revm::primitives::Bytes::from(code.to_vec()));
+            acc.code = Some(bytecode);
+            Ok(Some(acc))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Get account code by its hash.
+    fn code_by_hash_ref(&self, _: B256) -> Result<Bytecode, Self::Error> {
+        panic!("Should not be called. Code is already loaded");
+    }
+
+    /// Get storage value of address at index.
+    fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
+        if let Some(acc) = self.cache.get(&address) {
+            if let Some(slot) = acc.storage.get(&index) {
+                return Ok(slot.present_value);
+            }
+        }
+        let (_, val) = self.sdb.get_storage(
+            &H160::from(**address),
+            &eth_types::U256::from_little_endian(index.as_le_slice()),
+        );
+        Ok(U256::from_be_bytes(val.to_be_bytes()))
+    }
+
+    /// Get block hash by block number.
+    fn block_hash_ref(&self, _: U256) -> Result<B256, Self::Error> {
+        unimplemented!("BLOCKHASH is disabled")
+    }
+}
+
+impl revm::Database for EvmDatabase {
+    type Error = Infallible;
+
+    fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+        DatabaseRef::basic_ref(self, address)
+    }
+
+    fn code_by_hash(&mut self, _code_hash: B256) -> Result<Bytecode, Self::Error> {
+        panic!("Should not be called. Code is already loaded");
+    }
+
+    fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
+        DatabaseRef::storage_ref(self, address, index)
+    }
+
+    fn block_hash(&mut self, _: U256) -> Result<B256, Self::Error> {
+        unimplemented!("BLOCKHASH is disabled")
+    }
+}
+
+impl DatabaseCommit for EvmDatabase {
+    fn commit(&mut self, changes: HashMap<Address, revm::primitives::Account>) {
+        for (addr, incoming) in changes.into_iter() {
+            let acc = self.cache.entry(addr).or_insert_with(|| incoming.clone());
+            acc.info = incoming.info;
+            acc.storage.extend(incoming.storage);
+            acc.status = incoming.status;
+        }
+        log::debug!("cache size: {}", self.cache.len());
     }
 }
 
 impl Debug for EvmDatabase {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EvmDatabase")
-            .field("tx_id", &self.tx_id)
+            //.field("tx_id", &self.tx_id)
             .field("code_db", &self.code_db)
             .field("sdb", &self.sdb)
             .field("zktrie", &self.zktrie.root())
