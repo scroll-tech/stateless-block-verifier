@@ -11,14 +11,15 @@ use revm::DatabaseRef;
 #[derive(Debug)]
 pub struct EvmExecutor {
     db: EvmDatabase,
+    disable_checks: bool,
 }
 
 impl EvmExecutor {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn new(l2_trace: &BlockTrace) -> Self {
+    pub fn new(l2_trace: &BlockTrace, disable_checks: bool) -> Self {
         let db = EvmDatabase::new(l2_trace);
 
-        Self { db }
+        Self { db, disable_checks }
     }
 
     /// Handle a block.
@@ -56,7 +57,9 @@ impl EvmExecutor {
             }
             debug!("handle {idx}th tx done");
 
-            self.post_check(exec);
+            if !self.disable_checks {
+                self.post_check(exec);
+            }
         }
         self.db.commit_cache();
         self.db.root()

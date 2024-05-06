@@ -19,7 +19,6 @@ use zktrie::ZkTrie;
 
 /// EVM database that stores account and storage information.
 pub struct EvmDatabase {
-    //tx_id: usize,
     code_db: CodeDB,
     pub(crate) sdb: StateDB,
     zktrie: ZkTrie,
