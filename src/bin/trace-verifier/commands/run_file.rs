@@ -26,19 +26,7 @@ impl RunFileCommand {
                     .unwrap()
                     .result
             });
-
-            let root_after = l2_trace.storage_trace.root_after.to_word();
-            log::info!("Root after in trace: {:x}", root_after);
-
-            let mut executor = EvmExecutor::new(&l2_trace);
-            let revm_root_after = executor.handle_block(&l2_trace).to_word();
-            log::info!("Root after in revm: {:x}", revm_root_after);
-
-            if root_after != revm_root_after {
-                log::error!("Root mismatch");
-                std::process::exit(1);
-            }
-            log::info!("Root matches");
+            tokio::task::spawn_blocking(move || utils::verify(l2_trace)).await?;
         }
         Ok(())
     }

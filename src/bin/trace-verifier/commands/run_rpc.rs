@@ -1,3 +1,4 @@
+use crate::utils;
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use ethers_core::types::BlockNumber;
@@ -35,7 +36,6 @@ impl RunRpcCommand {
             StartBlockSpec::Number(n) => n,
         };
 
-        let mut evm_executor: Option<EvmExecutor> = None;
         let mut current_block = start_block;
         loop {
             // exit when we reach the end block, or infinitely if no end block is specified
@@ -45,7 +45,7 @@ impl RunRpcCommand {
                 }
             }
 
-            let trace: BlockTrace = provider
+            let l2_trace: BlockTrace = provider
                 .request(
                     "scroll_getBlockTraceByNumberOrHash",
                     [format!("0x{:x}", current_block)],
@@ -53,27 +53,21 @@ impl RunRpcCommand {
                 .await?;
 
             log::info!(
-                "load trace for block #{current_block}({}), root after: {:?}",
-                trace.header.hash.unwrap(),
-                trace.storage_trace.root_after,
+                "load trace for block #{current_block}({:?})",
+                l2_trace.header.hash.unwrap()
             );
 
-            if evm_executor.is_none() {
-                log::info!("Initializing EVM executor for the first time");
-                evm_executor = Some(EvmExecutor::new(&trace));
-                log::info!("EVM executor initialized");
-            }
+            tokio::task::spawn_blocking(move || utils::verify(l2_trace)).await?;
 
-            match evm_executor {
-                Some(ref mut executor) => {
-                    let revm_root_after = executor.handle_block(&trace);
-                    log::info!("Root after calculated by revm: {:x}", revm_root_after);
-                    if revm_root_after != trace.storage_trace.root_after {
-                        log::error!("Root mismatch");
-                        std::process::exit(1);
-                    }
+            current_block += 1;
+
+            let mut exponential_backoff = 1;
+            while provider.get_block_number().await?.as_u64() < current_block {
+                if exponential_backoff == 1 {
+                    log::info!("waiting for block #{}", current_block);
                 }
-                _ => unreachable!(),
+                tokio::time::sleep(tokio::time::Duration::from_secs(exponential_backoff)).await;
+                exponential_backoff *= 2;
             }
         }
 
