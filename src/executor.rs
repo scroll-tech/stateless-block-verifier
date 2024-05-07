@@ -61,6 +61,9 @@ impl EvmExecutor {
         {
             let mut env = env.clone();
             env.tx = TxEnv::from(tx);
+            if tx.type_ == 0 {
+                env.tx.chain_id = Some(l2_trace.chain_id);
+            }
             let eth_tx = tx.to_eth_tx(
                 l2_trace.header.hash,
                 l2_trace.header.number,
