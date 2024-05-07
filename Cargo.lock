@@ -2994,6 +2994,7 @@ dependencies = [
  "eth-types",
  "ethers-core",
  "ethers-providers",
+ "futures",
  "hex",
  "log",
  "mpt-zktrie",

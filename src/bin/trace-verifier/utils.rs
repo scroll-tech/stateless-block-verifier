@@ -2,7 +2,7 @@ use eth_types::l2_types::BlockTrace;
 use eth_types::ToWord;
 use stateless_block_verifier::EvmExecutor;
 
-pub fn verify(l2_trace: BlockTrace, disable_checks: bool) {
+pub fn verify(l2_trace: BlockTrace, disable_checks: bool, log_error: bool) -> bool {
     trace!("{:#?}", l2_trace);
     let root_after = l2_trace.storage_trace.root_after.to_word();
     info!("Root after in trace: {:x}", root_after);
@@ -39,7 +39,11 @@ pub fn verify(l2_trace: BlockTrace, disable_checks: bool) {
 
     if root_after != revm_root_after {
         error!("Root mismatch");
-        std::process::exit(1);
+        if !log_error {
+            std::process::exit(1);
+        }
+        return false;
     }
     info!("Root matches in: {} ms", elapsed.as_millis());
+    true
 }

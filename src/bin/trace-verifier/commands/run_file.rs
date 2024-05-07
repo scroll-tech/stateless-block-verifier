@@ -24,7 +24,8 @@ impl RunFileCommand {
                     .unwrap()
                     .result
             });
-            tokio::task::spawn_blocking(move || utils::verify(l2_trace, disable_checks)).await?;
+            tokio::task::spawn_blocking(move || utils::verify(l2_trace, disable_checks, false))
+                .await?;
         }
         Ok(())
     }
