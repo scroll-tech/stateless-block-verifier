@@ -16,9 +16,6 @@ pub struct RunRpcCommand {
     /// End block number
     #[arg(short, long)]
     end_block: Option<u64>,
-    /// parallel worker count
-    #[arg(short = 'j', long, default_value = "1")]
-    parallel: usize,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -38,40 +35,6 @@ impl RunRpcCommand {
         };
 
         let mut current_block = start_block;
-
-        let (tx, rx) = async_channel::bounded(self.parallel);
-        let handles = {
-            let mut handles = Vec::with_capacity(self.parallel);
-            for idx in 0..self.parallel {
-                let _provider = provider.clone();
-                let disable_checks = disable_checks;
-                let rx = rx.clone();
-                let handle = tokio::spawn(async move {
-                    while let Ok(block_number) = rx.recv().await {
-                        let l2_trace: BlockTrace = _provider
-                            .request(
-                                "scroll_getBlockTraceByNumberOrHash",
-                                [format!("0x{:x}", block_number)],
-                            )
-                            .await?;
-
-                        info!(
-                            "worker#{idx}: load trace for block #{current_block}({:?})",
-                            l2_trace.header.hash.unwrap()
-                        );
-
-                        tokio::task::spawn_blocking(move || {
-                            utils::verify(l2_trace, disable_checks)
-                        })
-                        .await?;
-                    }
-                    Ok::<_, anyhow::Error>(())
-                });
-                handles.push(handle);
-            }
-            handles
-        };
-
         loop {
             // exit when we reach the end block, or infinitely if no end block is specified
             if let Some(end_block) = self.end_block {
@@ -83,7 +46,20 @@ impl RunRpcCommand {
                 log::info!("distance to latest block: {}", latest_block - current_block);
             }
 
-            tx.send(current_block).await?;
+            let l2_trace: BlockTrace = provider
+                .request(
+                    "scroll_getBlockTraceByNumberOrHash",
+                    [format!("0x{:x}", current_block)],
+                )
+                .await?;
+
+            info!(
+                "load trace for block #{current_block}({:?})",
+                l2_trace.header.hash.unwrap()
+            );
+
+            tokio::task::spawn_blocking(move || utils::verify(l2_trace, disable_checks)).await?;
+
             current_block += 1;
 
             let mut exponential_backoff = 1;
@@ -94,11 +70,6 @@ impl RunRpcCommand {
                 tokio::time::sleep(tokio::time::Duration::from_secs(exponential_backoff)).await;
                 exponential_backoff *= 2;
             }
-        }
-
-        drop(tx);
-        for handle in handles {
-            handle.await??;
         }
 
         Ok(())
