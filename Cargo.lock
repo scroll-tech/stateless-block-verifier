@@ -991,7 +991,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#ba844f749119a771a12f75ad94f494fa3cb22f52"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#69b9a3ecf3b81adaef18e2dc68c95242e2617d50"
 dependencies = [
  "base64 0.13.1",
  "ethers-core",
@@ -1840,7 +1840,7 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#ba844f749119a771a12f75ad94f494fa3cb22f52"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#69b9a3ecf3b81adaef18e2dc68c95242e2617d50"
 dependencies = [
  "eth-types",
  "halo2curves",
@@ -2200,7 +2200,7 @@ dependencies = [
 [[package]]
 name = "poseidon-base"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/poseidon-circuit.git?branch=main#01770178500b7d88d628ee058a0420cbc2f349d2"
+source = "git+https://github.com/scroll-tech/poseidon-circuit.git?branch=main#7b96835c6201afdbfaf3d13d641efbaaf5db2d20"
 dependencies = [
  "bitvec",
  "halo2curves",
@@ -2488,15 +2488,12 @@ dependencies = [
  "auto_impl",
  "bitflags 2.5.0",
  "bitvec",
- "c-kzg",
  "cfg-if",
- "derive_more",
  "dyn-clone",
  "enumn",
  "halo2curves",
  "hashbrown",
  "hex",
- "once_cell",
  "poseidon-base",
  "serde",
 ]
