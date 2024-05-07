@@ -41,6 +41,9 @@ impl RunRpcCommand {
                 if current_block > end_block {
                     break;
                 }
+            } else if current_block % 10 == 0 {
+                let latest_block = provider.get_block_number().await?.as_u64();
+                log::info!("distance to latest block: {}", latest_block - current_block);
             }
 
             let l2_trace: BlockTrace = provider
