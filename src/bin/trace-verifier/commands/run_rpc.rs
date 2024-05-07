@@ -2,7 +2,12 @@ use crate::utils;
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use ethers_providers::{Http, Middleware, Provider};
+use futures::future::OptionFuture;
+use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
+use tokio::io::AsyncWriteExt;
+use tokio::sync::Mutex;
 use url::Url;
 
 #[derive(Args)]
@@ -19,6 +24,9 @@ pub struct RunRpcCommand {
     /// parallel worker count
     #[arg(short = 'j', long, default_value = "1")]
     parallel: usize,
+    /// Do not exit on verification failure, log the error and continue
+    #[arg(short, long)]
+    log_error: Option<PathBuf>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -40,12 +48,23 @@ impl RunRpcCommand {
         let mut current_block = start_block;
 
         let (tx, rx) = async_channel::bounded(self.parallel);
+
+        let error_log = OptionFuture::from(
+            self.log_error
+                .as_ref()
+                .map(|path| tokio::fs::File::create(path)),
+        )
+        .await
+        .transpose()?
+        .map(|f| Arc::new(Mutex::new(f)));
+
         let handles = {
             let mut handles = Vec::with_capacity(self.parallel);
             for idx in 0..self.parallel {
                 let _provider = provider.clone();
-                let disable_checks = disable_checks;
                 let rx = rx.clone();
+                let is_log_error = error_log.is_some();
+                let error_log = error_log.clone();
                 let handle = tokio::spawn(async move {
                     while let Ok(block_number) = rx.recv().await {
                         let l2_trace: BlockTrace = _provider
@@ -60,10 +79,17 @@ impl RunRpcCommand {
                             l2_trace.header.hash.unwrap()
                         );
 
-                        tokio::task::spawn_blocking(move || {
-                            utils::verify(l2_trace, disable_checks)
+                        let success = tokio::task::spawn_blocking(move || {
+                            utils::verify(l2_trace, disable_checks, is_log_error)
                         })
                         .await?;
+
+                        if !success {
+                            let mut guard = error_log.as_ref().unwrap().lock().await;
+                            guard
+                                .write_all(format!("{block_number}\n").as_bytes())
+                                .await?;
+                        }
                     }
                     Ok::<_, anyhow::Error>(())
                 });
