@@ -56,7 +56,7 @@ impl RunRpcCommand {
                             .await?;
 
                         info!(
-                            "worker#{idx}: load trace for block #{current_block}({:?})",
+                            "worker#{idx}: load trace for block #{block_number}({:?})",
                             l2_trace.header.hash.unwrap()
                         );
 
