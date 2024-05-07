@@ -62,6 +62,7 @@ impl EvmExecutor {
             debug!("handle {idx}th tx done");
 
             if !self.disable_checks {
+                debug!("post check {idx}th tx");
                 self.post_check(exec);
             }
         }
