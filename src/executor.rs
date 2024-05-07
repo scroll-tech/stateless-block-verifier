@@ -8,6 +8,7 @@ use eth_types::{
 use mpt_zktrie::{AccountData, ZktrieState};
 use revm::db::{AccountState, CacheDB};
 use revm::primitives::{AccountInfo, BlockEnv, Env, TxEnv};
+use log::Level;
 use revm::DatabaseRef;
 use std::fmt::Debug;
 use zktrie::ZkTrie;
@@ -143,7 +144,11 @@ impl EvmExecutor {
         for account_post_state in exec.account_after.iter() {
             if let Some(address) = account_post_state.address {
                 let local_acc = self.db.basic_ref(address.0.into()).unwrap().unwrap();
-                trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
+                if log_enabled!(Level::Trace) {
+                    let mut local_acc = local_acc.clone();
+                    local_acc.code = None;
+                    trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
+                }
                 let local_balance = U256(*local_acc.balance.as_limbs());
                 if local_balance != account_post_state.balance.unwrap() {
                     let post = account_post_state.balance.unwrap();
