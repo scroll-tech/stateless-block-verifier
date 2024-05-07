@@ -4,6 +4,7 @@ use eth_types::{
     l2_types::{BlockTrace, ExecutionResult},
     H256, U256,
 };
+use log::Level;
 use revm::primitives::{BlockEnv, Env, TxEnv};
 use revm::DatabaseRef;
 
@@ -69,7 +70,11 @@ impl EvmExecutor {
         for account_post_state in exec.account_after.iter() {
             if let Some(address) = account_post_state.address {
                 let local_acc = self.db.basic_ref(address.0.into()).unwrap().unwrap();
-                trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
+                if log_enabled!(Level::Trace) {
+                    let mut local_acc = local_acc.clone();
+                    local_acc.code = None;
+                    trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
+                }
                 let local_balance = U256::from_little_endian(local_acc.balance.as_le_slice());
                 if local_balance != account_post_state.balance.unwrap() {
                     let local = local_balance;

@@ -184,7 +184,11 @@ impl DatabaseRef for EvmDatabase {
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         if let Some(acc) = self.cache.get(&address) {
-            trace!("loaded account from cache: {address:?}, acc: {acc:?}");
+            if log_enabled!(Level::Trace) {
+                let mut acc = acc.clone();
+                acc.info.code = None;
+                trace!("loaded account from cache: {address:?}, acc: {acc:?}");
+            }
             return Ok(Some(acc.info.clone()));
         }
         let (exist, acc) = self.sdb.get_account(&H160::from(**address));

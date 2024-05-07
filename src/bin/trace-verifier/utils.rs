@@ -3,6 +3,7 @@ use eth_types::ToWord;
 use stateless_block_verifier::EvmExecutor;
 
 pub fn verify(l2_trace: BlockTrace, disable_checks: bool) {
+    trace!("{:#?}", l2_trace);
     let root_after = l2_trace.storage_trace.root_after.to_word();
     info!("Root after in trace: {:x}", root_after);
 
