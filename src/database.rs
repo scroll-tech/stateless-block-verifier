@@ -20,9 +20,11 @@ use zktrie::ZkTrie;
 /// EVM database that stores account and storage information.
 pub struct EvmDatabase {
     code_db: CodeDB,
-    pub(crate) sdb: StateDB,
+    /// ...
+    pub sdb: StateDB,
     zktrie: ZkTrie,
-    cache: FxHashMap<Address, revm::primitives::Account>,
+    /// ...
+    pub cache: FxHashMap<Address, revm::primitives::Account>,
 }
 
 impl EvmDatabase {
@@ -80,7 +82,7 @@ impl EvmDatabase {
 
     /// Drain the cache and commit the changes to the zkTrie.
     pub fn commit_cache(&mut self) {
-        for (addr, incoming) in self.cache.drain() {
+        for (addr, incoming) in self.cache.clone().drain() {
             let addr = H160::from(**addr);
             let (_, acc) = self.sdb.get_account_mut(&addr);
             let is_empty = acc.is_empty();

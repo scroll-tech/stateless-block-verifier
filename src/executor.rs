@@ -11,7 +11,8 @@ use revm::DatabaseRef;
 /// EVM executor that handles the block.
 #[derive(Debug)]
 pub struct EvmExecutor {
-    db: EvmDatabase,
+    /// ...
+    pub db: EvmDatabase,
     disable_checks: bool,
 }
 

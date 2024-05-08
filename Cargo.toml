@@ -6,8 +6,11 @@ edition = "2021"
 [dependencies]
 log = "0.4"
 hex = "0.4"
-eth-types = { git = "https://github.com/scroll-tech/zkevm-circuits", features = ["scroll"], branch = "develop" }
-mpt-zktrie = { git = "https://github.com/scroll-tech/zkevm-circuits", branch = "develop" }
+eth-types = { path = "../zkevm-circuits/eth-types", features = ["scroll"] }
+mpt-zktrie = { path = "../zkevm-circuits/zktrie" }
+bus-mapping = { path = "../zkevm-circuits/bus-mapping", features = ["scroll"] }
+zkevm-circuits = { path = "../zkevm-circuits/zkevm-circuits", features = ["scroll"] }
+halo2_proofs = { git = "https://github.com/scroll-tech/halo2.git", branch = "v1.1" }
 revm = { git = "https://github.com/scroll-tech/revm", default-features = false, features = ["scroll-default-handler", "std"], rev = "e1e8f7a" } # v35
 rustc-hash = "1.1"
 zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "main", features= ["rs_zktrie"] }
@@ -58,8 +61,16 @@ profiling = ["pprof"]
 [patch.crates-io]
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "v2.0.7" }
 ethers-providers = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "v2.0.7" }
+ethers = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "v2.0.7" }
+ethers-etherscan = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "v2.0.7" }
 ethers-signers  = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "v2.0.7" }
+gobuild = { git = "https://github.com/scroll-tech/gobuild.git" }
 halo2curves = { git = "https://github.com/scroll-tech/halo2curves", branch = "v0.1.0" }
+
+[patch."https://github.com/privacy-scaling-explorations/halo2.git"]
+halo2_proofs = { git = "https://github.com/scroll-tech/halo2.git", branch = "v1.1" }
+[patch."https://github.com/privacy-scaling-explorations/poseidon.git"]
+poseidon = { git = "https://github.com/scroll-tech/poseidon.git", branch = "main" }
 
 [patch."https://github.com/privacy-scaling-explorations/bls12_381"]
 bls12_381 = { git = "https://github.com/scroll-tech/bls12_381", branch = "feat/impl_scalar_field" }
