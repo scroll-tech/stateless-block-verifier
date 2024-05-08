@@ -23,7 +23,7 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 tokio = { version = "1", default-features = false, optional = true}
 
 [[bin]]
-name = "sbv"
+name = "stateless-block-verifier"
 path = "src/bin/trace-verifier/main.rs"
 required-features = ["bin-deps"]
 

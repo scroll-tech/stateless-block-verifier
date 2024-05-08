@@ -2,28 +2,24 @@ use crate::utils::{collect_account_proofs, collect_storage_proofs};
 use eth_types::{
     l2_types::BlockTrace,
     state_db::{self, CodeDB, StateDB},
-    ToBigEndian, ToWord, Word, H160, H256,
+    H160, H256,
 };
-use log::Level;
-use mpt_zktrie::state::{AccountData, ZktrieState};
+use mpt_zktrie::state::ZktrieState;
 use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
-    DatabaseCommit,
 };
-use std::fmt::{Debug, Formatter};
-use std::{collections::HashMap, convert::Infallible};
-use zktrie::ZkTrie;
+use std::convert::Infallible;
+use std::fmt::Debug;
 
 /// EVM database that stores account and storage information.
-pub struct EvmDatabase {
-    tx_id: usize,
+#[derive(Debug)]
+pub struct ReadOnlyDB {
     code_db: CodeDB,
     pub(crate) sdb: StateDB,
-    zktrie: ZkTrie,
 }
 
-impl EvmDatabase {
+impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
     pub fn new(l2_trace: &BlockTrace) -> Self {
         let mut sdb = StateDB::new();
@@ -45,39 +41,11 @@ impl EvmDatabase {
         let mut code_db = CodeDB::new();
         code_db.update_codedb(&sdb, l2_trace).unwrap();
 
-        let old_root = l2_trace.storage_trace.root_before;
-        let zktrie_state = ZktrieState::from_trace_with_additional(
-            old_root,
-            collect_account_proofs(&l2_trace.storage_trace),
-            collect_storage_proofs(&l2_trace.storage_trace),
-            l2_trace
-                .storage_trace
-                .deletion_proofs
-                .iter()
-                .map(|s| s.as_ref()),
-        )
-        .unwrap();
-        let root = *zktrie_state.root();
-        debug!("building partial statedb done, root {}", hex::encode(root));
-
-        let mem_db = zktrie_state.into_inner();
-        let zktrie = mem_db.new_trie(&root).unwrap();
-
-        EvmDatabase {
-            tx_id: 1,
-            code_db,
-            sdb,
-            zktrie,
-        }
-    }
-
-    /// Get the root hash of the zkTrie.
-    pub fn root(&self) -> H256 {
-        H256::from(self.zktrie.root())
+        ReadOnlyDB { code_db, sdb }
     }
 }
 
-impl DatabaseRef for EvmDatabase {
+impl DatabaseRef for ReadOnlyDB {
     type Error = Infallible;
 
     /// Get basic account information.
@@ -86,7 +54,7 @@ impl DatabaseRef for EvmDatabase {
         trace!("loaded account: {address:?}, exist: {exist}, acc: {acc:?}");
         if exist {
             let mut acc = AccountInfo {
-                balance: U256::from_be_bytes(acc.balance.to_be_bytes()),
+                balance: U256::from_limbs(acc.balance.0),
                 nonce: acc.nonce.as_u64(),
                 code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
                 keccak_code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
@@ -115,11 +83,10 @@ impl DatabaseRef for EvmDatabase {
 
     /// Get storage value of address at index.
     fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let (_, val) = self.sdb.get_storage(
-            &H160::from(**address),
-            &eth_types::U256::from_little_endian(index.as_le_slice()),
-        );
-        Ok(U256::from_be_bytes(val.to_be_bytes()))
+        let (_, val) = self
+            .sdb
+            .get_storage(&H160::from(**address), &eth_types::U256(*index.as_limbs()));
+        Ok(U256::from_limbs(val.0))
     }
 
     /// Get block hash by block number.
@@ -128,7 +95,7 @@ impl DatabaseRef for EvmDatabase {
     }
 }
 
-impl revm::Database for EvmDatabase {
+impl revm::Database for ReadOnlyDB {
     type Error = Infallible;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
@@ -145,118 +112,5 @@ impl revm::Database for EvmDatabase {
 
     fn block_hash(&mut self, _: U256) -> Result<B256, Self::Error> {
         unimplemented!("BLOCKHASH is disabled")
-    }
-}
-
-impl DatabaseCommit for EvmDatabase {
-    fn commit(&mut self, changes: HashMap<Address, revm::primitives::Account>) {
-        for (addr, incoming) in changes {
-            let addr = H160::from(**addr);
-            let (_, acc) = self.sdb.get_account_mut(&addr);
-            let is_empty = acc.is_empty();
-            if is_empty && incoming.is_empty() {
-                continue;
-            }
-
-            if log_enabled!(Level::Trace) {
-                let mut incoming = incoming.clone();
-                incoming.info.code = None;
-                trace!(
-                    "commit: addr: {:?}, acc: {:?}, old: {:?}",
-                    addr,
-                    incoming,
-                    acc
-                );
-            }
-
-            let mut acc_data = self
-                .zktrie
-                .get_account(addr.as_bytes())
-                .map(AccountData::from)
-                .unwrap_or_default();
-
-            if !incoming.storage.is_empty() {
-                // get current storage root
-                let storage_root_before = acc_data.storage_root;
-                // get storage tire
-                let mut storage_tire = self
-                    .zktrie
-                    .get_db()
-                    .new_trie(storage_root_before.as_fixed_bytes())
-                    .expect("unable to get storage trie");
-
-                for (storage_key, slot) in incoming.storage.iter() {
-                    if !slot.present_value().is_zero() {
-                        acc.storage.insert(
-                            eth_types::U256::from_little_endian(storage_key.as_le_slice()),
-                            eth_types::U256::from_little_endian(slot.present_value().as_le_slice()),
-                        );
-
-                        storage_tire
-                            .update_store(
-                                &storage_key.to_be_bytes::<32>(),
-                                &slot.present_value().to_be_bytes(),
-                            )
-                            .expect("failed to update storage");
-                    } else if !slot.original_value().is_zero() {
-                        acc.storage.remove(&eth_types::U256::from_little_endian(
-                            storage_key.as_le_slice(),
-                        ));
-                        storage_tire.delete(&storage_key.to_be_bytes::<32>());
-                    }
-                }
-
-                acc_data.storage_root = H256::from(storage_tire.root());
-            }
-
-            let new_balance = Word::from_little_endian(incoming.info.balance.as_le_slice());
-            if acc.balance != new_balance {
-                acc.balance = new_balance;
-                acc_data.balance = new_balance;
-            }
-
-            if acc.nonce.as_u64() != incoming.info.nonce {
-                acc.nonce = incoming.info.nonce.to_word();
-                acc_data.nonce = incoming.info.nonce;
-            }
-
-            if (is_empty && !incoming.is_empty())
-                || acc.code_hash != H256::from(*incoming.info.code_hash)
-            {
-                let poseidon_code_hash = H256::from(incoming.info.code_hash.0);
-                let keccak_code_hash = H256::from(incoming.info.keccak_code_hash.0);
-                let code_size = incoming
-                    .info
-                    .code
-                    .as_ref()
-                    .map(|c| c.len())
-                    .unwrap_or_default();
-
-                acc.code_hash = poseidon_code_hash;
-                acc.keccak_code_hash = keccak_code_hash;
-                acc.code_size = code_size.to_word();
-
-                acc_data.poseidon_code_hash = poseidon_code_hash;
-                acc_data.keccak_code_hash = keccak_code_hash;
-                acc_data.code_size = code_size as u64;
-            }
-
-            self.zktrie
-                .update_account(addr.as_bytes(), &acc_data.into())
-                .expect("failed to update account");
-        }
-
-        self.tx_id += 1;
-    }
-}
-
-impl Debug for EvmDatabase {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("EvmDatabase")
-            .field("tx_id", &self.tx_id)
-            .field("code_db", &self.code_db)
-            .field("sdb", &self.sdb)
-            .field("zktrie", &self.zktrie.root())
-            .finish()
     }
 }

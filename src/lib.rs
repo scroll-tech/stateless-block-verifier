@@ -9,5 +9,5 @@ mod database;
 mod executor;
 mod utils;
 
-pub use database::EvmDatabase;
+pub use database::ReadOnlyDB;
 pub use executor::EvmExecutor;
