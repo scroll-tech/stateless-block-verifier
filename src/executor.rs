@@ -1,5 +1,7 @@
-use crate::database::ReadOnlyDB;
-use crate::utils::{collect_account_proofs, collect_storage_proofs};
+use crate::{
+    database::ReadOnlyDB,
+    utils::{collect_account_proofs, collect_storage_proofs},
+};
 use eth_types::{
     geth_types::TxType,
     l2_types::{BlockTrace, ExecutionResult},
@@ -7,9 +9,11 @@ use eth_types::{
 };
 use log::Level;
 use mpt_zktrie::{AccountData, ZktrieState};
-use revm::db::{AccountState, CacheDB, DbAccount};
-use revm::primitives::{AccountInfo, BlockEnv, Env, TxEnv};
-use revm::DatabaseRef;
+use revm::{
+    db::CacheDB,
+    primitives::{AccountInfo, BlockEnv, Env, TxEnv},
+    DatabaseRef,
+};
 use std::fmt::Debug;
 use zktrie::ZkTrie;
 
