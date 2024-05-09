@@ -138,6 +138,7 @@ impl RunRpcCommand {
             }
         }
 
+        tx.close();
         drop(tx);
         for handle in handles {
             handle.await??;
