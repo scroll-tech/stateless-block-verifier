@@ -137,7 +137,7 @@ impl EvmExecutor {
                 }
                 acc_data.storage_root = H256::from(storage_tire.root());
             }
-            if sdb.get_account(&addr.into_array().into()).1.is_empty() && !info.is_empty() {
+            if (acc.is_empty() && !info.is_empty()) || acc.code_hash.0 != info.code_hash.0 {
                 acc_data.poseidon_code_hash = H256::from(info.code_hash.0);
                 acc_data.keccak_code_hash = H256::from(info.keccak_code_hash.0);
                 acc_data.code_size = self
