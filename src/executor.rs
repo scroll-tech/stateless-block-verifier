@@ -1,26 +1,56 @@
-use crate::database::EvmDatabase;
+use crate::{
+    database::ReadOnlyDB,
+    utils::{collect_account_proofs, collect_storage_proofs},
+};
 use eth_types::{
     geth_types::TxType,
     l2_types::{BlockTrace, ExecutionResult},
-    H256, U256,
+    H160, H256, U256,
 };
 use log::Level;
-use revm::primitives::{BlockEnv, Env, TxEnv};
-use revm::DatabaseRef;
+use mpt_zktrie::{AccountData, ZktrieState};
+use revm::{
+    db::CacheDB,
+    primitives::{AccountInfo, BlockEnv, Env, TxEnv},
+    DatabaseRef,
+};
+use std::fmt::Debug;
+use zktrie::ZkTrie;
 
 /// EVM executor that handles the block.
-#[derive(Debug)]
 pub struct EvmExecutor {
-    db: EvmDatabase,
+    db: CacheDB<ReadOnlyDB>,
+    zktrie: ZkTrie,
     disable_checks: bool,
 }
-
 impl EvmExecutor {
     /// Initialize an EVM executor from a block trace as the initial state.
     pub fn new(l2_trace: &BlockTrace, disable_checks: bool) -> Self {
-        let db = EvmDatabase::new(l2_trace);
+        let db = CacheDB::new(ReadOnlyDB::new(l2_trace));
 
-        Self { db, disable_checks }
+        let old_root = l2_trace.storage_trace.root_before;
+        let zktrie_state = ZktrieState::from_trace_with_additional(
+            old_root,
+            collect_account_proofs(&l2_trace.storage_trace),
+            collect_storage_proofs(&l2_trace.storage_trace),
+            l2_trace
+                .storage_trace
+                .deletion_proofs
+                .iter()
+                .map(|s| s.as_ref()),
+        )
+        .unwrap();
+        let root = *zktrie_state.root();
+        debug!("building partial statedb done, root {}", hex::encode(root));
+
+        let mem_db = zktrie_state.into_inner();
+        let zktrie = mem_db.new_trie(&root).unwrap();
+
+        Self {
+            db,
+            zktrie,
+            disable_checks,
+        }
     }
 
     /// Handle a block.
@@ -66,8 +96,61 @@ impl EvmExecutor {
                 self.post_check(exec);
             }
         }
-        self.db.commit_cache();
-        self.db.root()
+        self.commit_changes();
+        H256::from(self.zktrie.root())
+    }
+
+    fn commit_changes(&mut self) {
+        // let changes = self.db.accounts;
+        let sdb = &self.db.db.sdb;
+        for (addr, db_acc) in self.db.accounts.iter() {
+            let info: AccountInfo = db_acc.info().expect("there's no self-destruct");
+            let (_, acc) = sdb.get_account(&H160::from(*addr.0));
+            if acc.is_empty() && info.is_empty() {
+                continue;
+            }
+            trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
+            let mut acc_data = self
+                .zktrie
+                .get_account(addr.as_slice())
+                .map(AccountData::from)
+                .unwrap_or_default();
+            acc_data.nonce = info.nonce;
+            acc_data.balance = U256(*info.balance.as_limbs());
+            if !db_acc.storage.is_empty() {
+                // get current storage root
+                let storage_root_before = acc_data.storage_root;
+                // get storage tire
+                let mut storage_tire = self
+                    .zktrie
+                    .get_db()
+                    .new_trie(storage_root_before.as_fixed_bytes())
+                    .expect("unable to get storage trie");
+                for (key, value) in db_acc.storage.iter() {
+                    if !value.is_zero() {
+                        storage_tire
+                            .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
+                            .expect("failed to update storage");
+                    } else {
+                        storage_tire.delete(&key.to_be_bytes::<32>());
+                    }
+                }
+                acc_data.storage_root = H256::from(storage_tire.root());
+            }
+            if (acc.is_empty() && !info.is_empty()) || acc.code_hash.0 != info.code_hash.0 {
+                acc_data.poseidon_code_hash = H256::from(info.code_hash.0);
+                acc_data.keccak_code_hash = H256::from(info.keccak_code_hash.0);
+                acc_data.code_size = self
+                    .db
+                    .contracts
+                    .get(&db_acc.info.code_hash)
+                    .map(|c| c.len())
+                    .unwrap_or_default() as u64;
+            }
+            self.zktrie
+                .update_account(addr.as_slice(), &acc_data.into())
+                .expect("failed to update account");
+        }
     }
 
     fn post_check(&mut self, exec: &ExecutionResult) {
@@ -79,20 +162,19 @@ impl EvmExecutor {
                     local_acc.code = None;
                     trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
                 }
-                let local_balance = U256::from_little_endian(local_acc.balance.as_le_slice());
+                let local_balance = U256(*local_acc.balance.as_limbs());
                 if local_balance != account_post_state.balance.unwrap() {
-                    let local = local_balance;
                     let post = account_post_state.balance.unwrap();
                     error!(
                         "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
-                        local,
-                        if local < post { "<" } else { ">" },
+                        local_balance,
+                        if local_balance < post { "<" } else { ">" },
                         post,
-                        if local < post { "-" } else { "+" },
-                        if local < post {
-                            post - local
+                        if local_balance < post { "-" } else { "+" },
+                        if local_balance < post {
+                            post - local_balance
                         } else {
-                            local - post
+                            local_balance - post
                         }
                     )
                 }
@@ -117,12 +199,21 @@ impl EvmExecutor {
                 }
                 if let Some(storage) = account_post_state.storage.clone() {
                     let k = storage.key.unwrap();
-                    let local_v = self.db.sdb.get_storage(&address, &k).1;
+                    let local_v = self.db.db.sdb.get_storage(&address, &k).1;
                     if *local_v != storage.value.unwrap() {
                         error!("incorrect storage for k = {k}")
                     }
                 }
             }
         }
+    }
+}
+
+impl Debug for EvmExecutor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EvmExecutor")
+            .field("db", &self.db)
+            .field("zktrie", &self.zktrie.root())
+            .finish()
     }
 }

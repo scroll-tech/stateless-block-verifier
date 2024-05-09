@@ -27,6 +27,14 @@ pub struct RunRpcCommand {
     /// Do not exit on verification failure, log the error and continue
     #[arg(short, long)]
     log_error: Option<PathBuf>,
+    /// Path to a file containing a list of blocks separated by newlines to verify
+    #[arg(
+        short,
+        long,
+        conflicts_with = "start_block",
+        conflicts_with = "end_block"
+    )]
+    block_list: Option<PathBuf>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -98,30 +106,39 @@ impl RunRpcCommand {
             handles
         };
 
-        loop {
-            // exit when we reach the end block, or infinitely if no end block is specified
-            if let Some(end_block) = self.end_block {
-                if current_block > end_block {
-                    break;
-                }
-            } else if current_block % 10 == 0 {
-                let latest_block = provider.get_block_number().await?.as_u64();
-                log::info!("distance to latest block: {}", latest_block - current_block);
+        if let Some(block_list) = self.block_list {
+            let block_list = tokio::fs::read_to_string(block_list).await?;
+            for line in block_list.lines() {
+                let block_number = line.trim().parse()?;
+                tx.send(block_number).await?;
             }
-
-            tx.send(current_block).await?;
-            current_block += 1;
-
-            let mut exponential_backoff = 1;
-            while provider.get_block_number().await?.as_u64() < current_block {
-                if exponential_backoff == 1 {
-                    info!("waiting for block #{}", current_block);
+        } else {
+            loop {
+                // exit when we reach the end block, or infinitely if no end block is specified
+                if let Some(end_block) = self.end_block {
+                    if current_block > end_block {
+                        break;
+                    }
+                } else if current_block % 10 == 0 {
+                    let latest_block = provider.get_block_number().await?.as_u64();
+                    log::info!("distance to latest block: {}", latest_block - current_block);
                 }
-                tokio::time::sleep(tokio::time::Duration::from_secs(exponential_backoff)).await;
-                exponential_backoff *= 2;
+
+                tx.send(current_block).await?;
+                current_block += 1;
+
+                let mut exponential_backoff = 1;
+                while provider.get_block_number().await?.as_u64() < current_block {
+                    if exponential_backoff == 1 {
+                        info!("waiting for block #{}", current_block);
+                    }
+                    tokio::time::sleep(tokio::time::Duration::from_secs(exponential_backoff)).await;
+                    exponential_backoff *= 2;
+                }
             }
         }
 
+        tx.close();
         drop(tx);
         for handle in handles {
             handle.await??;
