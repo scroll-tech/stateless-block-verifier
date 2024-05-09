@@ -3,12 +3,12 @@ use crate::utils::{collect_account_proofs, collect_storage_proofs};
 use eth_types::{
     geth_types::TxType,
     l2_types::{BlockTrace, ExecutionResult},
-    H256, U256,
+    H160, H256, U256,
 };
-use mpt_zktrie::{AccountData, ZktrieState};
-use revm::db::{AccountState, CacheDB};
-use revm::primitives::{AccountInfo, BlockEnv, Env, TxEnv};
 use log::Level;
+use mpt_zktrie::{AccountData, ZktrieState};
+use revm::db::{AccountState, CacheDB, DbAccount};
+use revm::primitives::{AccountInfo, BlockEnv, Env, TxEnv};
 use revm::DatabaseRef;
 use std::fmt::Debug;
 use zktrie::ZkTrie;
@@ -19,7 +19,6 @@ pub struct EvmExecutor {
     zktrie: ZkTrie,
     disable_checks: bool,
 }
-
 impl EvmExecutor {
     /// Initialize an EVM executor from a block trace as the initial state.
     pub fn new(l2_trace: &BlockTrace, disable_checks: bool) -> Self {
@@ -43,7 +42,11 @@ impl EvmExecutor {
         let mem_db = zktrie_state.into_inner();
         let zktrie = mem_db.new_trie(&root).unwrap();
 
-        Self { db, zktrie, disable_checks }
+        Self {
+            db,
+            zktrie,
+            disable_checks,
+        }
     }
 
     /// Handle a block.
@@ -97,10 +100,12 @@ impl EvmExecutor {
         // let changes = self.db.accounts;
         let sdb = &self.db.db.sdb;
         for (addr, db_acc) in self.db.accounts.iter() {
-            if matches!(db_acc.account_state, AccountState::None) {
+            let info: AccountInfo = db_acc.info().expect("there's no self-destruct");
+            let (_, acc) = sdb.get_account(&H160::from(*addr.0));
+            if acc.is_empty() && info.is_empty() {
                 continue;
             }
-            let info: AccountInfo = db_acc.info().unwrap(); // there's no self-destruct
+            trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
             let mut acc_data = self
                 .zktrie
                 .get_account(addr.as_slice())
