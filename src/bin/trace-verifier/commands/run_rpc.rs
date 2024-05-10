@@ -113,6 +113,8 @@ impl RunRpcCommand {
                 tx.send(block_number).await?;
             }
         } else {
+            let mut processed_blocks = 0;
+            let mut last_time = std::time::Instant::now();
             loop {
                 // exit when we reach the end block, or infinitely if no end block is specified
                 if let Some(end_block) = self.end_block {
@@ -120,12 +122,21 @@ impl RunRpcCommand {
                         break;
                     }
                 } else if current_block % 10 == 0 {
+                    let elapsed = last_time.elapsed();
+                    let block_per_second = processed_blocks as f64 / elapsed.as_secs_f64();
                     let latest_block = provider.get_block_number().await?.as_u64();
-                    log::info!("distance to latest block: {}", latest_block - current_block);
+                    let distance = latest_block - current_block;
+                    log::info!(
+                        "distance to latest block: {distance}; block/s: {block_per_second:.2}",
+                    );
+
+                    processed_blocks = 0;
+                    last_time = std::time::Instant::now();
                 }
 
                 tx.send(current_block).await?;
                 current_block += 1;
+                processed_blocks += 1;
 
                 let mut exponential_backoff = 1;
                 while provider.get_block_number().await?.as_u64() < current_block {
