@@ -460,7 +460,7 @@ name = "bls12_381"
 version = "0.8.0"
 source = "git+https://github.com/scroll-tech/bls12_381?branch=feat/impl_scalar_field#2c515f73a2462fef8681c8e884edf1710f52b22a"
 dependencies = [
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "group",
  "pairing",
  "pasta_curves",
@@ -917,7 +917,7 @@ dependencies = [
  "base16ct",
  "crypto-bigint",
  "digest 0.10.7",
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "generic-array",
  "group",
  "pkcs8",
@@ -1019,12 +1019,12 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#69b9a3ecf3b81adaef18e2dc68c95242e2617d50"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/sp1#ead2c80116b866f85131ee528be9454e284b0d2b"
 dependencies = [
  "base64 0.13.1",
  "ethers-core",
  "ethers-signers",
- "halo2curves",
+ "halo2curves 0.3.3",
  "hex",
  "itertools 0.11.0",
  "log",
@@ -1213,6 +1213,16 @@ name = "ff"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ded41244b729663b1e574f1b4fb731469f69f79c17667b5d776b16cda0479449"
+dependencies = [
+ "bitvec",
+ "rand_core",
+ "subtle",
+]
+
+[[package]]
+name = "ff"
+version = "0.13.0"
+source = "git+https://github.com/scroll-tech/ff?branch=feat/sp1#7e94aa6726837138b1b8346ec55b6ce6b593dc96"
 dependencies = [
  "bitvec",
  "rand_core",
@@ -1432,7 +1442,7 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0f9ef7462f7c099f518d754361858f86d8a07af53ba9af0fe635bbccb151a63"
 dependencies = [
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core",
  "subtle",
 ]
@@ -1463,7 +1473,7 @@ source = "git+https://github.com/scroll-tech/halo2curves?branch=v0.1.0#112f5b9bf
 dependencies = [
  "blake2b_simd",
  "bls12_381",
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "group",
  "lazy_static",
  "maybe-rayon",
@@ -1475,6 +1485,24 @@ dependencies = [
  "rand_core",
  "serde",
  "serde_arrays",
+ "static_assertions",
+ "subtle",
+]
+
+[[package]]
+name = "halo2curves"
+version = "0.3.3"
+source = "git+https://github.com/scroll-tech/halo2curves.git?branch=feat/sp1#055e9b7810d1525d66efe26e5ba3fb9586d423f5"
+dependencies = [
+ "ff 0.13.0 (git+https://github.com/scroll-tech/ff?branch=feat/sp1)",
+ "group",
+ "lazy_static",
+ "num-bigint",
+ "num-traits",
+ "pasta_curves",
+ "paste",
+ "rand",
+ "rand_core",
  "static_assertions",
  "subtle",
 ]
@@ -1889,10 +1917,10 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#69b9a3ecf3b81adaef18e2dc68c95242e2617d50"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/sp1#ead2c80116b866f85131ee528be9454e284b0d2b"
 dependencies = [
  "eth-types",
- "halo2curves",
+ "halo2curves 0.3.3",
  "hex",
  "log",
  "num-bigint",
@@ -2150,7 +2178,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3e57598f73cc7e1b2ac63c79c517b31a0877cd7c402cdcaa311b5208de7a095"
 dependencies = [
  "blake2b_simd",
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "group",
  "lazy_static",
  "rand",
@@ -2258,7 +2286,7 @@ version = "0.1.0"
 source = "git+https://github.com/scroll-tech/poseidon-circuit.git?branch=main#7b96835c6201afdbfaf3d13d641efbaaf5db2d20"
 dependencies = [
  "bitvec",
- "halo2curves",
+ "halo2curves 0.1.0",
  "lazy_static",
 ]
 
@@ -2546,7 +2574,7 @@ dependencies = [
  "cfg-if",
  "dyn-clone",
  "enumn",
- "halo2curves",
+ "halo2curves 0.1.0",
  "hashbrown",
  "hex",
  "poseidon-base",
@@ -2638,12 +2666,6 @@ name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d626bb9dae77e28219937af045c257c28bfd3f69333c512553507f5f9798cb76"
-
-[[package]]
-name = "rustc-hash"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustc-hex"
@@ -3006,7 +3028,6 @@ dependencies = [
  "mpt-zktrie",
  "pprof",
  "revm",
- "rustc-hash",
  "serde",
  "serde_json",
  "tokio",
