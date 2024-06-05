@@ -69,3 +69,6 @@ halo2curves = { git = "https://github.com/scroll-tech/halo2curves", branch = "v0
 
 [patch."https://github.com/privacy-scaling-explorations/bls12_381"]
 bls12_381 = { git = "https://github.com/scroll-tech/bls12_381", branch = "feat/impl_scalar_field" }
+
+[profile.release]
+debug-assertions = true
