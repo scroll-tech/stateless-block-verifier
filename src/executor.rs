@@ -103,6 +103,13 @@ impl EvmExecutor {
     fn commit_changes(&mut self) {
         // let changes = self.db.accounts;
         let sdb = &self.db.db.sdb;
+
+        #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
+        std::fs::create_dir_all("/tmp/sbv-debug").expect("failed to create debug dir");
+
+        #[cfg(feature = "debug-account")]
+        let mut debug_account = std::collections::BTreeMap::new();
+
         for (addr, db_acc) in self.db.accounts.iter() {
             let info: AccountInfo = db_acc.info().expect("there's no self-destruct");
             let (_, acc) = sdb.get_account(&H160::from(*addr.0));
@@ -118,6 +125,17 @@ impl EvmExecutor {
             acc_data.nonce = info.nonce;
             acc_data.balance = U256(*info.balance.as_limbs());
             if !db_acc.storage.is_empty() {
+                #[cfg(feature = "debug-storage")]
+                let mut debug_storage = std::collections::BTreeMap::new();
+
+                #[cfg(feature = "debug-storage")]
+                #[derive(serde::Serialize)]
+                struct StorageOps {
+                    kind: &'static str,
+                    key: revm::primitives::U256,
+                    value: Option<revm::primitives::U256>,
+                }
+
                 // get current storage root
                 let storage_root_before = acc_data.storage_root;
                 // get storage tire
@@ -131,11 +149,44 @@ impl EvmExecutor {
                         storage_tire
                             .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
                             .expect("failed to update storage");
+
+                        #[cfg(feature = "debug-storage")]
+                        debug_storage.insert(
+                            *key,
+                            StorageOps {
+                                kind: "update",
+                                key: *key,
+                                value: Some(*value),
+                            },
+                        );
                     } else {
                         storage_tire.delete(&key.to_be_bytes::<32>());
+
+                        #[cfg(feature = "debug-storage")]
+                        debug_storage.insert(
+                            *key,
+                            StorageOps {
+                                kind: "delete",
+                                key: *key,
+                                value: None,
+                            },
+                        );
                     }
                 }
                 acc_data.storage_root = H256::from(storage_tire.root());
+
+                #[cfg(feature = "debug-storage")]
+                {
+                    let output = std::fs::File::create(format!(
+                        "/tmp/sbv-debug/storage_{:?}_{:?}.csv",
+                        addr, acc_data.storage_root
+                    ))
+                    .expect("failed to create debug file");
+                    let mut wtr = csv::Writer::from_writer(output);
+                    for ops in debug_storage.into_values() {
+                        wtr.serialize(ops).expect("failed to write record");
+                    }
+                }
             }
             if (acc.is_empty() && !info.is_empty()) || acc.code_hash.0 != info.code_hash.0 {
                 acc_data.poseidon_code_hash = H256::from(info.code_hash.0);
@@ -147,9 +198,47 @@ impl EvmExecutor {
                     .map(|c| c.len())
                     .unwrap_or_default() as u64;
             }
+
+            #[cfg(feature = "debug-account")]
+            debug_account.insert(*addr, acc_data.clone());
+
             self.zktrie
                 .update_account(addr.as_slice(), &acc_data.into())
                 .expect("failed to update account");
+        }
+
+        #[cfg(feature = "debug-account")]
+        {
+            let output = std::fs::File::create(format!(
+                "/tmp/sbv-debug/account_0x{}.csv",
+                hex::encode(self.zktrie.root())
+            ))
+            .expect("failed to create debug file");
+            let mut wtr = csv::Writer::from_writer(output);
+
+            #[derive(serde::Serialize)]
+            pub struct AccountData {
+                addr: revm::primitives::Address,
+                nonce: u64,
+                balance: U256,
+                keccak_code_hash: H256,
+                poseidon_code_hash: H256,
+                code_size: u64,
+                storage_root: H256,
+            }
+
+            for (addr, acc) in debug_account.into_iter() {
+                wtr.serialize(AccountData {
+                    addr,
+                    nonce: acc.nonce,
+                    balance: acc.balance,
+                    keccak_code_hash: acc.keccak_code_hash,
+                    poseidon_code_hash: acc.poseidon_code_hash,
+                    code_size: acc.code_size,
+                    storage_root: acc.storage_root,
+                })
+                .expect("failed to write record");
+            }
         }
     }
 
