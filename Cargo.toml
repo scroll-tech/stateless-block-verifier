@@ -8,7 +8,7 @@ log = "0.4"
 hex = "0.4"
 eth-types = { git = "https://github.com/scroll-tech/zkevm-circuits", features = ["scroll"], branch = "develop" }
 mpt-zktrie = { git = "https://github.com/scroll-tech/zkevm-circuits", branch = "develop" }
-revm = { git = "https://github.com/scroll-tech/revm", default-features = false, features = ["scroll-default-handler", "std"], rev = "e1e8f7a" } # v35
+revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v36" , default-features = false, features = ["scroll-default-handler", "std"] } # v36
 zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "main", features= ["rs_zktrie"] }
 
 # for local development
@@ -32,6 +32,13 @@ tokio = { version = "1", default-features = false, optional = true }
 # optional
 csv = { version = "1.3", optional = true }
 pprof = { version = "0.13", features = ["flamegraph"], optional = true }
+
+# for local development
+# [patch."https://github.com/scroll-tech/zkevm-circuits"]
+# eth-types = { path = "../zkevm-circuits/eth-types" }
+# mpt-zktrie = { path = "../zkevm-circuits/zktrie" }
+# [patch."https://github.com/scroll-tech/revm"]
+# revm = { path = "../revm/crates/revm" }
 
 [[bin]]
 name = "stateless-block-verifier"
@@ -70,3 +77,6 @@ halo2curves = { git = "https://github.com/scroll-tech/halo2curves", branch = "v0
 
 [patch."https://github.com/privacy-scaling-explorations/bls12_381"]
 bls12_381 = { git = "https://github.com/scroll-tech/bls12_381", branch = "feat/impl_scalar_field" }
+
+[profile.release]
+debug-assertions = true
