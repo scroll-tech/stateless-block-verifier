@@ -1,4 +1,4 @@
-use eth_types::l2_types::BlockTrace;
+use eth_types::l2_types::{BlockTrace, BlockTraceV2};
 use eth_types::ToWord;
 use stateless_block_verifier::EvmExecutor;
 
@@ -16,6 +16,7 @@ pub fn verify(l2_trace: BlockTrace, disable_checks: bool, log_error: bool) -> bo
         .build()
         .unwrap();
 
+    let l2_trace = BlockTraceV2::from(l2_trace.clone());
     let mut executor = EvmExecutor::new(&l2_trace, disable_checks);
     let revm_root_after = executor.handle_block(&l2_trace).to_word();
 

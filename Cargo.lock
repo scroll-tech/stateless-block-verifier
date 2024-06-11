@@ -1044,7 +1044,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#8cd233b2237297c4876e1cd6c6f6f63c944744b8"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=refactor/codehash#b16663b42487d8cd918d0115030f07acbab25e5f"
 dependencies = [
  "base64 0.13.1",
  "ethers-core",
@@ -1918,7 +1918,7 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#8cd233b2237297c4876e1cd6c6f6f63c944744b8"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=refactor/codehash#b16663b42487d8cd918d0115030f07acbab25e5f"
 dependencies = [
  "eth-types",
  "halo2curves",
@@ -3858,7 +3858,7 @@ dependencies = [
 [[package]]
 name = "zktrie"
 version = "0.3.0"
-source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#c2868f759e4770e0bda9cefaaf18659fa179e8bf"
+source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#23181f209e94137f74337b150179aeb80c72e7c8"
 dependencies = [
  "gobuild",
  "zktrie_rust",
@@ -3867,7 +3867,7 @@ dependencies = [
 [[package]]
 name = "zktrie_rust"
 version = "0.3.0"
-source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#c2868f759e4770e0bda9cefaaf18659fa179e8bf"
+source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#23181f209e94137f74337b150179aeb80c72e7c8"
 dependencies = [
  "hex",
  "lazy_static",

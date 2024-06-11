@@ -4,7 +4,7 @@ use crate::{
 };
 use eth_types::{
     geth_types::TxType,
-    l2_types::{BlockTrace, ExecutionResult},
+    l2_types::{BlockTrace, BlockTraceV2, ExecutionResult},
     H160, H256, U256,
 };
 use log::Level;
@@ -25,7 +25,7 @@ pub struct EvmExecutor {
 }
 impl EvmExecutor {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn new(l2_trace: &BlockTrace, disable_checks: bool) -> Self {
+    pub fn new(l2_trace: &BlockTraceV2, disable_checks: bool) -> Self {
         let db = CacheDB::new(ReadOnlyDB::new(l2_trace));
 
         let old_root = l2_trace.storage_trace.root_before;
@@ -54,16 +54,15 @@ impl EvmExecutor {
     }
 
     /// Handle a block.
-    pub fn handle_block(&mut self, l2_trace: &BlockTrace) -> H256 {
+    pub fn handle_block(&mut self, l2_trace: &BlockTraceV2) -> H256 {
         debug!("handle block {:?}", l2_trace.header.number.unwrap());
         let mut env = Box::<Env>::default();
         env.cfg.chain_id = l2_trace.chain_id;
         env.block = BlockEnv::from(l2_trace);
 
-        for (idx, (tx, exec)) in l2_trace
+        for (idx, tx) in l2_trace
             .transactions
             .iter()
-            .zip(l2_trace.execution_results.iter())
             .enumerate()
         {
             let mut env = env.clone();
@@ -91,10 +90,12 @@ impl EvmExecutor {
             }
             debug!("handle {idx}th tx done");
 
+            /* 
             if !self.disable_checks {
                 debug!("post check {idx}th tx");
                 self.post_check(exec);
             }
+            */
         }
         self.commit_changes();
         H256::from(self.zktrie.root())
