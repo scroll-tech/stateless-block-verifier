@@ -1,4 +1,4 @@
-use eth_types::{l2_types::StorageTrace, Address, Word};
+use eth_types::{l2_types::StorageTrace, Address, H256};
 
 pub(crate) fn collect_account_proofs(
     storage_trace: &StorageTrace,
@@ -12,7 +12,7 @@ pub(crate) fn collect_account_proofs(
 
 pub(crate) fn collect_storage_proofs(
     storage_trace: &StorageTrace,
-) -> impl Iterator<Item = (&Address, &Word, impl IntoIterator<Item = &[u8]>)> + Clone {
+) -> impl Iterator<Item = (&Address, &H256, impl IntoIterator<Item = &[u8]>)> + Clone {
     storage_trace.storage_proofs.iter().flat_map(|(k, kv_map)| {
         kv_map
             .iter()

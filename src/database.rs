@@ -1,6 +1,6 @@
 use crate::utils::{collect_account_proofs, collect_storage_proofs};
 use eth_types::{
-    l2_types::BlockTrace,
+    l2_types::{trace::collect_codes, BlockTrace},
     state_db::{self, CodeDB, StateDB},
     ToBigEndian, ToWord, Word, H160, H256,
 };
@@ -41,11 +41,14 @@ impl EvmDatabase {
             ZktrieState::parse_storage_from_proofs(collect_storage_proofs(&l2_trace.storage_trace))
         {
             let ((addr, key), val) = parsed.unwrap();
+            let key = key.to_word();
             *sdb.get_storage_mut(&addr, &key).1 = val.into();
         }
 
         let mut code_db = CodeDB::new();
-        code_db.update_codedb(&sdb, l2_trace).unwrap();
+        for (hash, code) in collect_codes(l2_trace, Some(&sdb)).unwrap() {
+            code_db.insert_with_hash(hash, code);
+        }
 
         let old_root = l2_trace.storage_trace.root_before;
         let zktrie_state = ZktrieState::from_trace_with_additional(
@@ -195,6 +198,7 @@ impl DatabaseRef for EvmDatabase {
                 nonce: acc.nonce.as_u64(),
                 code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
                 keccak_code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
+                code_size: acc.code_size.as_usize(),
                 // if None, code_by_hash will be used to fetch it if code needs to be loaded from
                 // inside revm.
                 code: None,
