@@ -62,6 +62,7 @@ impl DatabaseRef for ReadOnlyDB {
                 code_size: acc.code_size.as_usize(),
                 code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
                 keccak_code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
+                // if None, means CodeDB did not include the code, could cause by: EXTCODESIZE
                 code: self
                     .code_db
                     .0
