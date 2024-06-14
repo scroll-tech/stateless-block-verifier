@@ -2,7 +2,7 @@ use crate::utils::{collect_account_proofs, collect_storage_proofs};
 use eth_types::{
     l2_types::{trace::collect_codes, BlockTrace},
     state_db::{self, CodeDB, StateDB},
-    H160,
+    ToWord, H160,
 };
 use mpt_zktrie::state::ZktrieState;
 use revm::{
