@@ -3,6 +3,7 @@ use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use ethers_providers::{Http, Middleware, Provider};
 use futures::future::OptionFuture;
+use stateless_block_verifier::HardforkConfig;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -44,9 +45,16 @@ pub enum StartBlockSpec {
 }
 
 impl RunRpcCommand {
-    pub async fn run(self, curie_block: Option<u64>, disable_checks: bool) -> anyhow::Result<()> {
+    pub async fn run(
+        self,
+        fork_config: impl Fn(u64) -> HardforkConfig,
+        disable_checks: bool,
+    ) -> anyhow::Result<()> {
         info!("Running RPC command with url: {}", self.url);
         let provider = Provider::new(Http::new(self.url));
+
+        let chain_id = provider.get_chainid().await?.as_u64();
+        let fork_config = fork_config(chain_id);
 
         let start_block = match self.start_block {
             StartBlockSpec::Latest => provider.get_block_number().await?.as_u64(),
@@ -88,7 +96,7 @@ impl RunRpcCommand {
                         );
 
                         let success = tokio::task::spawn_blocking(move || {
-                            utils::verify(l2_trace, curie_block, disable_checks, is_log_error)
+                            utils::verify(l2_trace, &fork_config, disable_checks, is_log_error)
                         })
                         .await?;
 

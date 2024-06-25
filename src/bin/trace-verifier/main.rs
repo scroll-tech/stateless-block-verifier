@@ -1,8 +1,10 @@
 #![feature(lazy_cell)]
+#![feature(slice_group_by)]
 #[macro_use]
 extern crate log;
 
 use clap::Parser;
+use stateless_block_verifier::HardforkConfig;
 
 mod commands;
 mod utils;
@@ -26,8 +28,17 @@ async fn main() -> anyhow::Result<()> {
         .format_timestamp_millis()
         .init();
     let cmd = Cli::parse();
+
+    let get_fork_config = |chain_id: u64| {
+        let mut config = HardforkConfig::default_from_chain_id(chain_id);
+        if let Some(curie_block) = cmd.curie_block {
+            config.set_curie_block(curie_block);
+        }
+        config
+    };
+
     cmd.commands
-        .run(cmd.curie_block, cmd.disable_checks)
+        .run(get_fork_config, cmd.disable_checks)
         .await?;
     Ok(())
 }

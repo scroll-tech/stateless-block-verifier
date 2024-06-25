@@ -1,6 +1,7 @@
 use crate::{
     database::ReadOnlyDB,
     utils::{collect_account_proofs, collect_storage_proofs},
+    HardforkConfig,
 };
 use eth_types::{
     geth_types::TxType,
@@ -27,8 +28,14 @@ pub struct EvmExecutor {
 }
 impl EvmExecutor {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn new(l2_trace: &BlockTrace, spec_id: SpecId, disable_checks: bool) -> Self {
-        let db = CacheDB::new(ReadOnlyDB::new(l2_trace));
+    pub fn new(l2_trace: &BlockTrace, fork_config: &HardforkConfig, disable_checks: bool) -> Self {
+        let block_number = l2_trace.header.number.unwrap().as_u64();
+        let spec_id = fork_config.get_spec_id(block_number);
+
+        let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
+        fork_config
+            .migrate(block_number, &mut db)
+            .expect("failed to migrate");
 
         let old_root = l2_trace.storage_trace.root_before;
         let zktrie_state = ZktrieState::from_trace_with_additional(
