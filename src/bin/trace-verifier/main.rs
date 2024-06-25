@@ -11,6 +11,9 @@ mod utils;
 struct Cli {
     #[command(subcommand)]
     commands: commands::Commands,
+    /// Curie block number, defaults to be Scroll Mainnet Curie fork block
+    #[arg(short, long, default_value = "7096836")]
+    curie_block: u64,
     /// Disable additional checks
     #[arg(short = 'k', long)]
     disable_checks: bool,
@@ -22,6 +25,8 @@ async fn main() -> anyhow::Result<()> {
         .format_timestamp_millis()
         .init();
     let cmd = Cli::parse();
-    cmd.commands.run(cmd.disable_checks).await?;
+    cmd.commands
+        .run(cmd.curie_block, cmd.disable_checks)
+        .await?;
     Ok(())
 }

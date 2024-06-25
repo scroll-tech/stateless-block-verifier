@@ -1,8 +1,14 @@
 use eth_types::l2_types::BlockTrace;
 use eth_types::ToWord;
+use revm::primitives::SpecId;
 use stateless_block_verifier::EvmExecutor;
 
-pub fn verify(l2_trace: BlockTrace, disable_checks: bool, log_error: bool) -> bool {
+pub fn verify(
+    l2_trace: BlockTrace,
+    curie_block: u64,
+    disable_checks: bool,
+    log_error: bool,
+) -> bool {
     trace!("{:#?}", l2_trace);
     let root_after = l2_trace.storage_trace.root_after.to_word();
     info!("Root after in trace: {:x}", root_after);
@@ -16,7 +22,15 @@ pub fn verify(l2_trace: BlockTrace, disable_checks: bool, log_error: bool) -> bo
         .build()
         .unwrap();
 
-    let mut executor = EvmExecutor::new(&l2_trace, disable_checks);
+    let block_number = l2_trace.header.number.unwrap().as_u64();
+
+    let spec_id = if block_number < curie_block {
+        SpecId::BERNOULLI
+    } else {
+        SpecId::CURIE
+    };
+
+    let mut executor = EvmExecutor::new(&l2_trace, spec_id, disable_checks);
     let revm_root_after = executor.handle_block(&l2_trace).to_word();
 
     #[cfg(feature = "profiling")]

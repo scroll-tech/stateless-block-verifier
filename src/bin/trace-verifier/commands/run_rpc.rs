@@ -44,7 +44,7 @@ pub enum StartBlockSpec {
 }
 
 impl RunRpcCommand {
-    pub async fn run(self, disable_checks: bool) -> anyhow::Result<()> {
+    pub async fn run(self, curie_block: u64, disable_checks: bool) -> anyhow::Result<()> {
         info!("Running RPC command with url: {}", self.url);
         let provider = Provider::new(Http::new(self.url));
 
@@ -88,7 +88,7 @@ impl RunRpcCommand {
                         );
 
                         let success = tokio::task::spawn_blocking(move || {
-                            utils::verify(l2_trace, disable_checks, is_log_error)
+                            utils::verify(l2_trace, curie_block, disable_checks, is_log_error)
                         })
                         .await?;
 
