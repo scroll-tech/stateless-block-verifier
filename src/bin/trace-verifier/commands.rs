@@ -14,7 +14,7 @@ pub enum Commands {
 }
 
 impl Commands {
-    pub async fn run(self, curie_block: u64, disable_checks: bool) -> anyhow::Result<()> {
+    pub async fn run(self, curie_block: Option<u64>, disable_checks: bool) -> anyhow::Result<()> {
         match self {
             Commands::RunFile(cmd) => cmd.run(curie_block, disable_checks).await,
             Commands::RunRpc(cmd) => cmd.run(curie_block, disable_checks).await,

@@ -1,3 +1,4 @@
+#![feature(lazy_cell)]
 #[macro_use]
 extern crate log;
 
@@ -11,9 +12,9 @@ mod utils;
 struct Cli {
     #[command(subcommand)]
     commands: commands::Commands,
-    /// Curie block number, defaults to be Scroll Mainnet Curie fork block
-    #[arg(short, long, default_value = "7096836")]
-    curie_block: u64,
+    /// Curie block number, defaults to be determined by chain id
+    #[arg(short, long)]
+    curie_block: Option<u64>,
     /// Disable additional checks
     #[arg(short = 'k', long)]
     disable_checks: bool,

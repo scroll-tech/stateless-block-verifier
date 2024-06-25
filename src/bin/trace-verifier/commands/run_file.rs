@@ -11,7 +11,7 @@ pub struct RunFileCommand {
 }
 
 impl RunFileCommand {
-    pub async fn run(self, curie_block: u64, disable_checks: bool) -> anyhow::Result<()> {
+    pub async fn run(self, curie_block: Option<u64>, disable_checks: bool) -> anyhow::Result<()> {
         for path in self.path {
             info!("Reading trace from {:?}", path);
             let trace = tokio::fs::read_to_string(&path).await?;

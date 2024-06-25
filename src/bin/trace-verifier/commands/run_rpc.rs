@@ -44,7 +44,7 @@ pub enum StartBlockSpec {
 }
 
 impl RunRpcCommand {
-    pub async fn run(self, curie_block: u64, disable_checks: bool) -> anyhow::Result<()> {
+    pub async fn run(self, curie_block: Option<u64>, disable_checks: bool) -> anyhow::Result<()> {
         info!("Running RPC command with url: {}", self.url);
         let provider = Provider::new(Http::new(self.url));
 
