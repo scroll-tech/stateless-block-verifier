@@ -1,16 +1,15 @@
 use crate::utils::{collect_account_proofs, collect_storage_proofs};
 use eth_types::{
-    l2_types::BlockTrace,
+    l2_types::{trace::collect_codes, BlockTrace},
     state_db::{self, CodeDB, StateDB},
-    H160, H256,
+    ToWord, H160,
 };
 use mpt_zktrie::state::ZktrieState;
 use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
 };
-use std::convert::Infallible;
-use std::fmt::Debug;
+use std::{convert::Infallible, fmt::Debug};
 
 /// EVM database that stores account and storage information.
 #[derive(Debug)]
@@ -35,11 +34,14 @@ impl ReadOnlyDB {
             ZktrieState::parse_storage_from_proofs(collect_storage_proofs(&l2_trace.storage_trace))
         {
             let ((addr, key), val) = parsed.unwrap();
+            let key = key.to_word();
             *sdb.get_storage_mut(&addr, &key).1 = val.into();
         }
 
         let mut code_db = CodeDB::new();
-        code_db.update_codedb(&sdb, l2_trace).unwrap();
+        for (hash, code) in collect_codes(l2_trace, Some(&sdb)).unwrap() {
+            code_db.insert_with_hash(hash, code);
+        }
 
         ReadOnlyDB { code_db, sdb }
     }
@@ -53,23 +55,19 @@ impl DatabaseRef for ReadOnlyDB {
         let (exist, acc) = self.sdb.get_account(&H160::from(**address));
         trace!("loaded account: {address:?}, exist: {exist}, acc: {acc:?}");
         if exist {
-            let mut acc = AccountInfo {
+            let acc = AccountInfo {
                 balance: U256::from_limbs(acc.balance.0),
                 nonce: acc.nonce.as_u64(),
+                code_size: acc.code_size.as_usize(),
                 code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
                 keccak_code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
-                // if None, code_by_hash will be used to fetch it if code needs to be loaded from
-                // inside revm.
-                code: None,
+                // if None, means CodeDB did not include the code, could cause by: EXTCODESIZE
+                code: self
+                    .code_db
+                    .0
+                    .get(&acc.code_hash)
+                    .map(|vec| Bytecode::new_raw(revm::primitives::Bytes::from(vec.clone()))),
             };
-            let code = self
-                .code_db
-                .0
-                .get(&H256(*acc.code_hash))
-                .cloned()
-                .unwrap_or_default();
-            let bytecode = Bytecode::new_raw(revm::primitives::Bytes::from(code.to_vec()));
-            acc.code = Some(bytecode);
             Ok(Some(acc))
         } else {
             Ok(None)
@@ -78,7 +76,7 @@ impl DatabaseRef for ReadOnlyDB {
 
     /// Get account code by its hash.
     fn code_by_hash_ref(&self, _: B256) -> Result<Bytecode, Self::Error> {
-        panic!("Should not be called. Code is already loaded");
+        panic!("Should not be called. Code is either loaded or not needed (like EXTCODESIZE)");
     }
 
     /// Get storage value of address at index.

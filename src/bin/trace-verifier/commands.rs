@@ -1,4 +1,5 @@
 use clap::Subcommand;
+use stateless_block_verifier::HardforkConfig;
 
 mod run_file;
 mod run_rpc;
@@ -14,10 +15,14 @@ pub enum Commands {
 }
 
 impl Commands {
-    pub async fn run(self, disable_checks: bool) -> anyhow::Result<()> {
+    pub async fn run(
+        self,
+        fork_config: impl Fn(u64) -> HardforkConfig,
+        disable_checks: bool,
+    ) -> anyhow::Result<()> {
         match self {
-            Commands::RunFile(cmd) => cmd.run(disable_checks).await,
-            Commands::RunRpc(cmd) => cmd.run(disable_checks).await,
+            Commands::RunFile(cmd) => cmd.run(fork_config, disable_checks).await,
+            Commands::RunRpc(cmd) => cmd.run(fork_config, disable_checks).await,
         }
     }
 }

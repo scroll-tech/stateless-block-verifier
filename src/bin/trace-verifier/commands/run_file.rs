@@ -1,6 +1,7 @@
 use crate::utils;
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
+use stateless_block_verifier::HardforkConfig;
 use std::path::PathBuf;
 
 #[derive(Args)]
@@ -11,7 +12,11 @@ pub struct RunFileCommand {
 }
 
 impl RunFileCommand {
-    pub async fn run(self, disable_checks: bool) -> anyhow::Result<()> {
+    pub async fn run(
+        self,
+        fork_config: impl Fn(u64) -> HardforkConfig,
+        disable_checks: bool,
+    ) -> anyhow::Result<()> {
         for path in self.path {
             info!("Reading trace from {:?}", path);
             let trace = tokio::fs::read_to_string(&path).await?;
@@ -24,8 +29,11 @@ impl RunFileCommand {
                     .unwrap()
                     .result
             });
-            tokio::task::spawn_blocking(move || utils::verify(l2_trace, disable_checks, false))
-                .await?;
+            let fork_config = fork_config(l2_trace.chain_id);
+            tokio::task::spawn_blocking(move || {
+                utils::verify(l2_trace, &fork_config, disable_checks, false)
+            })
+            .await?;
         }
         Ok(())
     }

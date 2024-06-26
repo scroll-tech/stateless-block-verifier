@@ -1,6 +1,7 @@
 use crate::{
     database::ReadOnlyDB,
     utils::{collect_account_proofs, collect_storage_proofs},
+    HardforkConfig,
 };
 use eth_types::{
     geth_types::TxType,
@@ -11,7 +12,7 @@ use log::Level;
 use mpt_zktrie::{AccountData, ZktrieState};
 use revm::{
     db::CacheDB,
-    primitives::{AccountInfo, BlockEnv, Env, TxEnv},
+    primitives::{AccountInfo, BlockEnv, Env, SpecId, TxEnv},
     DatabaseRef,
 };
 use std::fmt::Debug;
@@ -21,12 +22,19 @@ use zktrie::ZkTrie;
 pub struct EvmExecutor {
     db: CacheDB<ReadOnlyDB>,
     zktrie: ZkTrie,
+    spec_id: SpecId,
     disable_checks: bool,
 }
 impl EvmExecutor {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn new(l2_trace: &BlockTrace, disable_checks: bool) -> Self {
-        let db = CacheDB::new(ReadOnlyDB::new(l2_trace));
+    pub fn new(l2_trace: &BlockTrace, fork_config: &HardforkConfig, disable_checks: bool) -> Self {
+        let block_number = l2_trace.header.number.unwrap().as_u64();
+        let spec_id = fork_config.get_spec_id(block_number);
+
+        let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
+        fork_config
+            .migrate(block_number, &mut db)
+            .expect("failed to migrate");
 
         let old_root = l2_trace.storage_trace.root_before;
         let zktrie_state = ZktrieState::from_trace_with_additional(
@@ -49,6 +57,7 @@ impl EvmExecutor {
         Self {
             db,
             zktrie,
+            spec_id,
             disable_checks,
         }
     }
@@ -84,6 +93,7 @@ impl EvmExecutor {
             {
                 let mut revm = revm::Evm::builder()
                     .with_db(&mut self.db)
+                    .with_spec_id(self.spec_id)
                     .with_env(env)
                     .build();
                 let result = revm.transact_commit().unwrap(); // TODO: handle error
@@ -103,6 +113,13 @@ impl EvmExecutor {
     fn commit_changes(&mut self) {
         // let changes = self.db.accounts;
         let sdb = &self.db.db.sdb;
+
+        #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
+        std::fs::create_dir_all("/tmp/sbv-debug").expect("failed to create debug dir");
+
+        #[cfg(feature = "debug-account")]
+        let mut debug_account = std::collections::BTreeMap::new();
+
         for (addr, db_acc) in self.db.accounts.iter() {
             let info: AccountInfo = db_acc.info().expect("there's no self-destruct");
             let (_, acc) = sdb.get_account(&H160::from(*addr.0));
@@ -118,6 +135,17 @@ impl EvmExecutor {
             acc_data.nonce = info.nonce;
             acc_data.balance = U256(*info.balance.as_limbs());
             if !db_acc.storage.is_empty() {
+                #[cfg(feature = "debug-storage")]
+                let mut debug_storage = std::collections::BTreeMap::new();
+
+                #[cfg(feature = "debug-storage")]
+                #[derive(serde::Serialize)]
+                struct StorageOps {
+                    kind: &'static str,
+                    key: revm::primitives::U256,
+                    value: Option<revm::primitives::U256>,
+                }
+
                 // get current storage root
                 let storage_root_before = acc_data.storage_root;
                 // get storage tire
@@ -131,11 +159,44 @@ impl EvmExecutor {
                         storage_tire
                             .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
                             .expect("failed to update storage");
+
+                        #[cfg(feature = "debug-storage")]
+                        debug_storage.insert(
+                            *key,
+                            StorageOps {
+                                kind: "update",
+                                key: *key,
+                                value: Some(*value),
+                            },
+                        );
                     } else {
                         storage_tire.delete(&key.to_be_bytes::<32>());
+
+                        #[cfg(feature = "debug-storage")]
+                        debug_storage.insert(
+                            *key,
+                            StorageOps {
+                                kind: "delete",
+                                key: *key,
+                                value: None,
+                            },
+                        );
                     }
                 }
                 acc_data.storage_root = H256::from(storage_tire.root());
+
+                #[cfg(feature = "debug-storage")]
+                {
+                    let output = std::fs::File::create(format!(
+                        "/tmp/sbv-debug/storage_{:?}_{:?}.csv",
+                        addr, acc_data.storage_root
+                    ))
+                    .expect("failed to create debug file");
+                    let mut wtr = csv::Writer::from_writer(output);
+                    for ops in debug_storage.into_values() {
+                        wtr.serialize(ops).expect("failed to write record");
+                    }
+                }
             }
             if (acc.is_empty() && !info.is_empty()) || acc.code_hash.0 != info.code_hash.0 {
                 acc_data.poseidon_code_hash = H256::from(info.code_hash.0);
@@ -147,63 +208,96 @@ impl EvmExecutor {
                     .map(|c| c.len())
                     .unwrap_or_default() as u64;
             }
+
+            #[cfg(feature = "debug-account")]
+            debug_account.insert(*addr, acc_data.clone());
+
             self.zktrie
                 .update_account(addr.as_slice(), &acc_data.into())
                 .expect("failed to update account");
+        }
+
+        #[cfg(feature = "debug-account")]
+        {
+            let output = std::fs::File::create(format!(
+                "/tmp/sbv-debug/account_0x{}.csv",
+                hex::encode(self.zktrie.root())
+            ))
+            .expect("failed to create debug file");
+            let mut wtr = csv::Writer::from_writer(output);
+
+            #[derive(serde::Serialize)]
+            pub struct AccountData {
+                addr: revm::primitives::Address,
+                nonce: u64,
+                balance: U256,
+                keccak_code_hash: H256,
+                poseidon_code_hash: H256,
+                code_size: u64,
+                storage_root: H256,
+            }
+
+            for (addr, acc) in debug_account.into_iter() {
+                wtr.serialize(AccountData {
+                    addr,
+                    nonce: acc.nonce,
+                    balance: acc.balance,
+                    keccak_code_hash: acc.keccak_code_hash,
+                    poseidon_code_hash: acc.poseidon_code_hash,
+                    code_size: acc.code_size,
+                    storage_root: acc.storage_root,
+                })
+                .expect("failed to write record");
+            }
         }
     }
 
     fn post_check(&mut self, exec: &ExecutionResult) {
         for account_post_state in exec.account_after.iter() {
-            if let Some(address) = account_post_state.address {
-                let local_acc = self.db.basic_ref(address.0.into()).unwrap().unwrap();
-                if log_enabled!(Level::Trace) {
-                    let mut local_acc = local_acc.clone();
-                    local_acc.code = None;
-                    trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
-                }
-                let local_balance = U256(*local_acc.balance.as_limbs());
-                if local_balance != account_post_state.balance.unwrap() {
-                    let post = account_post_state.balance.unwrap();
-                    error!(
-                        "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
-                        local_balance,
-                        if local_balance < post { "<" } else { ">" },
-                        post,
-                        if local_balance < post { "-" } else { "+" },
-                        if local_balance < post {
-                            post - local_balance
-                        } else {
-                            local_balance - post
-                        }
-                    )
-                }
-                if local_acc.nonce != account_post_state.nonce.unwrap() {
-                    error!("incorrect nonce")
-                }
-                let p_hash = account_post_state.poseidon_code_hash.unwrap();
-                if p_hash.is_zero() {
-                    if !local_acc.is_empty() {
-                        error!("incorrect poseidon_code_hash")
+            let local_acc = self
+                .db
+                .basic_ref(account_post_state.address.0.into())
+                .unwrap()
+                .unwrap();
+            if log_enabled!(Level::Trace) {
+                let mut local_acc = local_acc.clone();
+                local_acc.code = None;
+                trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
+            }
+            let local_balance = U256(*local_acc.balance.as_limbs());
+            if local_balance != account_post_state.balance {
+                let post = account_post_state.balance;
+                error!(
+                    "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
+                    local_balance,
+                    if local_balance < post { "<" } else { ">" },
+                    post,
+                    if local_balance < post { "-" } else { "+" },
+                    if local_balance < post {
+                        post - local_balance
+                    } else {
+                        local_balance - post
                     }
-                } else if local_acc.code_hash.0 != p_hash.0 {
+                )
+            }
+            if local_acc.nonce != account_post_state.nonce {
+                error!("incorrect nonce")
+            }
+            let p_hash = account_post_state.poseidon_code_hash;
+            if p_hash.is_zero() {
+                if !local_acc.is_empty() {
                     error!("incorrect poseidon_code_hash")
                 }
-                let k_hash = account_post_state.keccak_code_hash.unwrap();
-                if k_hash.is_zero() {
-                    if !local_acc.is_empty() {
-                        error!("incorrect keccak_code_hash")
-                    }
-                } else if local_acc.keccak_code_hash.0 != k_hash.0 {
+            } else if local_acc.code_hash.0 != p_hash.0 {
+                error!("incorrect poseidon_code_hash")
+            }
+            let k_hash = account_post_state.keccak_code_hash;
+            if k_hash.is_zero() {
+                if !local_acc.is_empty() {
                     error!("incorrect keccak_code_hash")
                 }
-                if let Some(storage) = account_post_state.storage.clone() {
-                    let k = storage.key.unwrap();
-                    let local_v = self.db.db.sdb.get_storage(&address, &k).1;
-                    if *local_v != storage.value.unwrap() {
-                        error!("incorrect storage for k = {k}")
-                    }
-                }
+            } else if local_acc.keccak_code_hash.0 != k_hash.0 {
+                error!("incorrect keccak_code_hash")
             }
         }
     }
