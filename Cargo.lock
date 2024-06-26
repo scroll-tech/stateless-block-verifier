@@ -460,19 +460,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bls12_381"
-version = "0.8.0"
-source = "git+https://github.com/scroll-tech/bls12_381?branch=feat/impl_scalar_field#2c515f73a2462fef8681c8e884edf1710f52b22a"
-dependencies = [
- "ff",
- "group",
- "pairing",
- "pasta_curves",
- "rand_core",
- "subtle",
-]
-
-[[package]]
 name = "blst"
 version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1044,24 +1031,23 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#5b580858c9b3e8840d6c9c54e5738d018f75ac12"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/sp1#d5512bde940eb4a1191e108dc2f951a7805fc5b7"
 dependencies = [
  "base64 0.13.1",
  "ethers-core",
  "ethers-signers",
- "halo2curves",
+ "halo2curves 0.3.3",
  "hex",
  "itertools 0.11.0",
  "log",
  "num",
  "num-bigint",
- "poseidon-base",
+ "poseidon-base 0.1.0 (git+https://github.com/scroll-tech/poseidon-circuit.git?branch=feat/sp1)",
  "regex",
  "revm-precompile",
  "revm-primitives",
  "serde",
  "serde_json",
- "serde_stacker",
  "serde_with",
  "sha3",
  "strum 0.25.0",
@@ -1237,8 +1223,7 @@ dependencies = [
 [[package]]
 name = "ff"
 version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ded41244b729663b1e574f1b4fb731469f69f79c17667b5d776b16cda0479449"
+source = "git+https://github.com/scroll-tech/ff?branch=feat/sp1#244b1098f6be1d19c5fd3f0ec60117ac2940e6ca"
 dependencies = [
  "bitvec",
  "rand_core",
@@ -1485,14 +1470,13 @@ dependencies = [
 [[package]]
 name = "halo2curves"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/halo2curves?branch=v0.1.0#112f5b9bf27f6b1708ba7d1c2fc14cb3c6e55604"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6b1142bd1059aacde1b477e0c80c142910f1ceae67fc619311d6a17428007ab"
 dependencies = [
  "blake2b_simd",
- "bls12_381",
  "ff",
  "group",
  "lazy_static",
- "maybe-rayon",
  "num-bigint",
  "num-traits",
  "pasta_curves",
@@ -1501,6 +1485,24 @@ dependencies = [
  "rand_core",
  "serde",
  "serde_arrays",
+ "static_assertions",
+ "subtle",
+]
+
+[[package]]
+name = "halo2curves"
+version = "0.3.3"
+source = "git+https://github.com/scroll-tech/halo2curves?branch=feat/sp1#acae565b82093989f112557ab0f59f3d53a4d83a"
+dependencies = [
+ "ff",
+ "group",
+ "lazy_static",
+ "num-bigint",
+ "num-traits",
+ "pasta_curves",
+ "paste",
+ "rand",
+ "rand_core",
  "static_assertions",
  "subtle",
 ]
@@ -1867,15 +1869,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
 
 [[package]]
-name = "maybe-rayon"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ea1f30cedd69f0a2954655f7188c6a834246d2bcf1e315e2ac40c4b24dc9519"
-dependencies = [
- "cfg-if",
-]
-
-[[package]]
 name = "memchr"
 version = "2.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1919,14 +1912,14 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#5b580858c9b3e8840d6c9c54e5738d018f75ac12"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/sp1#d5512bde940eb4a1191e108dc2f951a7805fc5b7"
 dependencies = [
  "eth-types",
- "halo2curves",
+ "halo2curves 0.3.3",
  "hex",
  "log",
  "num-bigint",
- "poseidon-base",
+ "poseidon-base 0.1.0 (git+https://github.com/scroll-tech/poseidon-circuit.git?branch=feat/sp1)",
  "zktrie",
 ]
 
@@ -2110,15 +2103,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pairing"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81fec4625e73cf41ef4bb6846cafa6d44736525f442ba45e407c4a000a13996f"
-dependencies = [
- "group",
-]
-
-[[package]]
 name = "parity-scale-codec"
 version = "3.6.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2285,10 +2269,21 @@ dependencies = [
 [[package]]
 name = "poseidon-base"
 version = "0.1.0"
+source = "git+https://github.com/scroll-tech/poseidon-circuit.git?branch=feat/sp1#cb43e4bb400e9e0b30776abd02b04fce9e12a2fb"
+dependencies = [
+ "bitvec",
+ "halo2curves 0.3.3",
+ "lazy_static",
+ "subtle",
+]
+
+[[package]]
+name = "poseidon-base"
+version = "0.1.0"
 source = "git+https://github.com/scroll-tech/poseidon-circuit.git?branch=main#7b96835c6201afdbfaf3d13d641efbaaf5db2d20"
 dependencies = [
  "bitvec",
- "halo2curves",
+ "halo2curves 0.1.0",
  "lazy_static",
 ]
 
@@ -2380,15 +2375,6 @@ dependencies = [
  "rusty-fork",
  "tempfile",
  "unarray",
-]
-
-[[package]]
-name = "psm"
-version = "0.1.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5787f7cda34e3033a72192c018bc5883100330f362ef279a8cbccfce8bb4e874"
-dependencies = [
- "cc",
 ]
 
 [[package]]
@@ -2537,7 +2523,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "9.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#30613ed430505b7c11f335d265dc561e485c94bf"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v36/sp1#efd8ed1616aaf04c0f7a3c8d569f40ae9cd2f83e"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2551,7 +2537,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "5.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#30613ed430505b7c11f335d265dc561e485c94bf"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v36/sp1#efd8ed1616aaf04c0f7a3c8d569f40ae9cd2f83e"
 dependencies = [
  "cfg-if",
  "revm-primitives",
@@ -2561,7 +2547,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "7.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#30613ed430505b7c11f335d265dc561e485c94bf"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v36/sp1#efd8ed1616aaf04c0f7a3c8d569f40ae9cd2f83e"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2577,7 +2563,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "4.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#30613ed430505b7c11f335d265dc561e485c94bf"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v36/sp1#efd8ed1616aaf04c0f7a3c8d569f40ae9cd2f83e"
 dependencies = [
  "alloy-primitives",
  "auto_impl",
@@ -2587,10 +2573,10 @@ dependencies = [
  "cfg-if",
  "dyn-clone",
  "enumn",
- "halo2curves",
+ "halo2curves 0.3.3",
  "hashbrown",
  "hex",
- "poseidon-base",
+ "poseidon-base 0.1.0 (git+https://github.com/scroll-tech/poseidon-circuit.git?branch=main)",
  "serde",
 ]
 
@@ -2903,16 +2889,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_stacker"
-version = "0.1.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "babfccff5773ff80657f0ecf553c7c516bdc2eb16389c0918b36b73e7015276e"
-dependencies = [
- "serde",
- "stacker",
-]
-
-[[package]]
 name = "serde_urlencoded"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3033,19 +3009,6 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
-
-[[package]]
-name = "stacker"
-version = "0.1.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c886bd4480155fd3ef527d45e9ac8dd7118a898a46530b7b94c3e21866259fce"
-dependencies = [
- "cc",
- "cfg-if",
- "libc",
- "psm",
- "winapi",
-]
 
 [[package]]
 name = "stateless-block-verifier"
