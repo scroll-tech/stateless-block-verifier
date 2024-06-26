@@ -9,8 +9,7 @@ use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
 };
-use std::convert::Infallible;
-use std::fmt::Debug;
+use std::{convert::Infallible, fmt::Debug};
 
 /// EVM database that stores account and storage information.
 #[derive(Debug)]

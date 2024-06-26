@@ -10,10 +10,9 @@ use eth_types::{
 };
 use log::Level;
 use mpt_zktrie::{AccountData, ZktrieState};
-use revm::primitives::SpecId;
 use revm::{
     db::CacheDB,
-    primitives::{AccountInfo, BlockEnv, Env, TxEnv},
+    primitives::{AccountInfo, BlockEnv, Env, SpecId, TxEnv},
     DatabaseRef,
 };
 use std::fmt::Debug;
