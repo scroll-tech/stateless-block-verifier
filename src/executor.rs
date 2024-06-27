@@ -86,6 +86,7 @@ impl EvmExecutor {
             let tx_type = TxType::get_tx_type(&eth_tx);
             if tx_type.is_l1_msg() {
                 env.tx.nonce = None; // clear nonce for l1 msg
+                env.cfg.disable_base_fee = true; // disable base fee for l1 msg
             }
             env.tx.scroll.is_l1_msg = tx_type.is_l1_msg();
             env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
