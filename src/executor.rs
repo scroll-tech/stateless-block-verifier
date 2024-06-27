@@ -69,12 +69,7 @@ impl EvmExecutor {
         env.cfg.chain_id = l2_trace.chain_id;
         env.block = BlockEnv::from(l2_trace);
 
-        for (idx, (tx, exec)) in l2_trace
-            .transactions
-            .iter()
-            .zip(l2_trace.execution_results.iter())
-            .enumerate()
-        {
+        for (idx, tx) in l2_trace.transactions.iter().enumerate() {
             trace!("handle {idx}th tx");
             trace!("{tx:#?}");
             let mut env = env.clone();
@@ -107,8 +102,10 @@ impl EvmExecutor {
             debug!("handle {idx}th tx done");
 
             if !self.disable_checks {
-                debug!("post check {idx}th tx");
-                self.post_check(exec);
+                if let Some(exec) = l2_trace.execution_results.get(idx) {
+                    debug!("post check {idx}th tx");
+                    self.post_check(exec);
+                }
             }
         }
         self.commit_changes();
