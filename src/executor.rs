@@ -75,6 +75,8 @@ impl EvmExecutor {
             .zip(l2_trace.execution_results.iter())
             .enumerate()
         {
+            trace!("handle {idx}th tx");
+            trace!("{tx:#?}");
             let mut env = env.clone();
             env.tx = TxEnv::from(tx);
             if tx.type_ == 0 {
@@ -87,6 +89,9 @@ impl EvmExecutor {
                 l2_trace.header.base_fee_per_gas,
             );
             let tx_type = TxType::get_tx_type(&eth_tx);
+            if tx_type.is_l1_msg() {
+                env.tx.nonce = None; // clear nonce for l1 msg
+            }
             env.tx.scroll.is_l1_msg = tx_type.is_l1_msg();
             env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
             trace!("{env:#?}");
