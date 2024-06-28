@@ -1044,7 +1044,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#5b580858c9b3e8840d6c9c54e5738d018f75ac12"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#b1d78bff8259eaf310b4587696e00df4ee4fc615"
 dependencies = [
  "base64 0.13.1",
  "ethers-core",
@@ -1061,7 +1061,6 @@ dependencies = [
  "revm-primitives",
  "serde",
  "serde_json",
- "serde_stacker",
  "serde_with",
  "sha3",
  "strum 0.25.0",
@@ -1919,7 +1918,7 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#5b580858c9b3e8840d6c9c54e5738d018f75ac12"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#b1d78bff8259eaf310b4587696e00df4ee4fc615"
 dependencies = [
  "eth-types",
  "halo2curves",
@@ -2380,15 +2379,6 @@ dependencies = [
  "rusty-fork",
  "tempfile",
  "unarray",
-]
-
-[[package]]
-name = "psm"
-version = "0.1.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5787f7cda34e3033a72192c018bc5883100330f362ef279a8cbccfce8bb4e874"
-dependencies = [
- "cc",
 ]
 
 [[package]]
@@ -2903,16 +2893,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_stacker"
-version = "0.1.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "babfccff5773ff80657f0ecf553c7c516bdc2eb16389c0918b36b73e7015276e"
-dependencies = [
- "serde",
- "stacker",
-]
-
-[[package]]
 name = "serde_urlencoded"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3033,19 +3013,6 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
-
-[[package]]
-name = "stacker"
-version = "0.1.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c886bd4480155fd3ef527d45e9ac8dd7118a898a46530b7b94c3e21866259fce"
-dependencies = [
- "cc",
- "cfg-if",
- "libc",
- "psm",
- "winapi",
-]
 
 [[package]]
 name = "stateless-block-verifier"
