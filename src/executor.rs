@@ -124,7 +124,9 @@ impl EvmExecutor {
         let mut debug_account = std::collections::BTreeMap::new();
 
         for (addr, db_acc) in self.db.accounts.iter() {
-            let info: AccountInfo = db_acc.info().expect("there's no self-destruct");
+            let Some(info): Option<AccountInfo> = db_acc.info() else {
+                continue;
+            };
             let (_, acc) = sdb.get_account(&H160::from(*addr.0));
             if acc.is_empty() && info.is_empty() {
                 continue;
