@@ -58,9 +58,9 @@ checksum = "5c6cb57a04249c6480766f7f7cef5467412af1490f8d1e243141daddada3264f"
 
 [[package]]
 name = "alloy-primitives"
-version = "0.7.5"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5277af0cbcc483ee6ad2c1e818090b5928d27f04fd6580680f31c1cf8068bcc2"
+checksum = "f783611babedbbe90db3478c120fb5f5daacceffc210b39adc0af4fe0da70bad"
 dependencies = [
  "alloy-rlp",
  "bytes",
@@ -1044,7 +1044,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#8cd233b2237297c4876e1cd6c6f6f63c944744b8"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#b1d78bff8259eaf310b4587696e00df4ee4fc615"
 dependencies = [
  "base64 0.13.1",
  "ethers-core",
@@ -1918,7 +1918,7 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#8cd233b2237297c4876e1cd6c6f6f63c944744b8"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#b1d78bff8259eaf310b4587696e00df4ee4fc615"
 dependencies = [
  "eth-types",
  "halo2curves",
@@ -2527,7 +2527,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "9.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#074cba27d614f9506a0e10bec5ac7e5644b129a0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#30613ed430505b7c11f335d265dc561e485c94bf"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2541,8 +2541,9 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "5.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#074cba27d614f9506a0e10bec5ac7e5644b129a0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#30613ed430505b7c11f335d265dc561e485c94bf"
 dependencies = [
+ "cfg-if",
  "revm-primitives",
  "serde",
 ]
@@ -2550,7 +2551,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "7.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#074cba27d614f9506a0e10bec5ac7e5644b129a0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#30613ed430505b7c11f335d265dc561e485c94bf"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2566,7 +2567,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "4.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#074cba27d614f9506a0e10bec5ac7e5644b129a0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#30613ed430505b7c11f335d265dc561e485c94bf"
 dependencies = [
  "alloy-primitives",
  "auto_impl",
@@ -3858,7 +3859,7 @@ dependencies = [
 [[package]]
 name = "zktrie"
 version = "0.3.0"
-source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#c2868f759e4770e0bda9cefaaf18659fa179e8bf"
+source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#23181f209e94137f74337b150179aeb80c72e7c8"
 dependencies = [
  "gobuild",
  "zktrie_rust",
@@ -3867,7 +3868,7 @@ dependencies = [
 [[package]]
 name = "zktrie_rust"
 version = "0.3.0"
-source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#c2868f759e4770e0bda9cefaaf18659fa179e8bf"
+source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#23181f209e94137f74337b150179aeb80c72e7c8"
 dependencies = [
  "hex",
  "lazy_static",

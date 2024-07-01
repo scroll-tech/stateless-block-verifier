@@ -1,6 +1,7 @@
 use crate::{
     database::ReadOnlyDB,
     utils::{collect_account_proofs, collect_storage_proofs},
+    HardforkConfig,
 };
 use eth_types::{
     geth_types::TxType,
@@ -11,7 +12,7 @@ use log::Level;
 use mpt_zktrie::{AccountData, ZktrieState};
 use revm::{
     db::CacheDB,
-    primitives::{AccountInfo, BlockEnv, Env, TxEnv},
+    primitives::{AccountInfo, BlockEnv, Env, SpecId, TxEnv},
     DatabaseRef,
 };
 use std::fmt::Debug;
@@ -21,12 +22,19 @@ use zktrie::ZkTrie;
 pub struct EvmExecutor {
     db: CacheDB<ReadOnlyDB>,
     zktrie: ZkTrie,
+    spec_id: SpecId,
     disable_checks: bool,
 }
 impl EvmExecutor {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn new(l2_trace: &BlockTrace, disable_checks: bool) -> Self {
-        let db = CacheDB::new(ReadOnlyDB::new(l2_trace));
+    pub fn new(l2_trace: &BlockTrace, fork_config: &HardforkConfig, disable_checks: bool) -> Self {
+        let block_number = l2_trace.header.number.unwrap().as_u64();
+        let spec_id = fork_config.get_spec_id(block_number);
+
+        let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
+        fork_config
+            .migrate(block_number, &mut db)
+            .expect("failed to migrate");
 
         let old_root = l2_trace.storage_trace.root_before;
         let zktrie_state = ZktrieState::from_trace_with_additional(
@@ -49,6 +57,7 @@ impl EvmExecutor {
         Self {
             db,
             zktrie,
+            spec_id,
             disable_checks,
         }
     }
@@ -60,12 +69,7 @@ impl EvmExecutor {
         env.cfg.chain_id = l2_trace.chain_id;
         env.block = BlockEnv::from(l2_trace);
 
-        for (idx, (tx, exec)) in l2_trace
-            .transactions
-            .iter()
-            .zip(l2_trace.execution_results.iter())
-            .enumerate()
-        {
+        for (idx, tx) in l2_trace.transactions.iter().enumerate() {
             trace!("handle {idx}th tx");
             trace!("{tx:#?}");
             let mut env = env.clone();
@@ -82,6 +86,7 @@ impl EvmExecutor {
             let tx_type = TxType::get_tx_type(&eth_tx);
             if tx_type.is_l1_msg() {
                 env.tx.nonce = None; // clear nonce for l1 msg
+                env.cfg.disable_base_fee = true; // disable base fee for l1 msg
             }
             env.tx.scroll.is_l1_msg = tx_type.is_l1_msg();
             env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
@@ -89,6 +94,7 @@ impl EvmExecutor {
             {
                 let mut revm = revm::Evm::builder()
                     .with_db(&mut self.db)
+                    .with_spec_id(self.spec_id)
                     .with_env(env)
                     .build();
                 let result = revm.transact_commit().unwrap(); // TODO: handle error
@@ -97,8 +103,10 @@ impl EvmExecutor {
             debug!("handle {idx}th tx done");
 
             if !self.disable_checks {
-                debug!("post check {idx}th tx");
-                self.post_check(exec);
+                if let Some(exec) = l2_trace.execution_results.get(idx) {
+                    debug!("post check {idx}th tx");
+                    self.post_check(exec);
+                }
             }
         }
         self.commit_changes();
@@ -116,7 +124,9 @@ impl EvmExecutor {
         let mut debug_account = std::collections::BTreeMap::new();
 
         for (addr, db_acc) in self.db.accounts.iter() {
-            let info: AccountInfo = db_acc.info().expect("there's no self-destruct");
+            let Some(info): Option<AccountInfo> = db_acc.info() else {
+                continue;
+            };
             let (_, acc) = sdb.get_account(&H160::from(*addr.0));
             if acc.is_empty() && info.is_empty() {
                 continue;
@@ -249,55 +259,50 @@ impl EvmExecutor {
 
     fn post_check(&mut self, exec: &ExecutionResult) {
         for account_post_state in exec.account_after.iter() {
-            if let Some(address) = account_post_state.address {
-                let local_acc = self.db.basic_ref(address.0.into()).unwrap().unwrap();
-                if log_enabled!(Level::Trace) {
-                    let mut local_acc = local_acc.clone();
-                    local_acc.code = None;
-                    trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
-                }
-                let local_balance = U256(*local_acc.balance.as_limbs());
-                if local_balance != account_post_state.balance.unwrap() {
-                    let post = account_post_state.balance.unwrap();
-                    error!(
-                        "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
-                        local_balance,
-                        if local_balance < post { "<" } else { ">" },
-                        post,
-                        if local_balance < post { "-" } else { "+" },
-                        if local_balance < post {
-                            post - local_balance
-                        } else {
-                            local_balance - post
-                        }
-                    )
-                }
-                if local_acc.nonce != account_post_state.nonce.unwrap() {
-                    error!("incorrect nonce")
-                }
-                let p_hash = account_post_state.poseidon_code_hash.unwrap();
-                if p_hash.is_zero() {
-                    if !local_acc.is_empty() {
-                        error!("incorrect poseidon_code_hash")
+            let local_acc = self
+                .db
+                .basic_ref(account_post_state.address.0.into())
+                .unwrap()
+                .unwrap();
+            if log_enabled!(Level::Trace) {
+                let mut local_acc = local_acc.clone();
+                local_acc.code = None;
+                trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
+            }
+            let local_balance = U256(*local_acc.balance.as_limbs());
+            if local_balance != account_post_state.balance {
+                let post = account_post_state.balance;
+                error!(
+                    "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
+                    local_balance,
+                    if local_balance < post { "<" } else { ">" },
+                    post,
+                    if local_balance < post { "-" } else { "+" },
+                    if local_balance < post {
+                        post - local_balance
+                    } else {
+                        local_balance - post
                     }
-                } else if local_acc.code_hash.0 != p_hash.0 {
+                )
+            }
+            if local_acc.nonce != account_post_state.nonce {
+                error!("incorrect nonce")
+            }
+            let p_hash = account_post_state.poseidon_code_hash;
+            if p_hash.is_zero() {
+                if !local_acc.is_empty() {
                     error!("incorrect poseidon_code_hash")
                 }
-                let k_hash = account_post_state.keccak_code_hash.unwrap();
-                if k_hash.is_zero() {
-                    if !local_acc.is_empty() {
-                        error!("incorrect keccak_code_hash")
-                    }
-                } else if local_acc.keccak_code_hash.0 != k_hash.0 {
+            } else if local_acc.code_hash.0 != p_hash.0 {
+                error!("incorrect poseidon_code_hash")
+            }
+            let k_hash = account_post_state.keccak_code_hash;
+            if k_hash.is_zero() {
+                if !local_acc.is_empty() {
                     error!("incorrect keccak_code_hash")
                 }
-                if let Some(storage) = account_post_state.storage.clone() {
-                    let k = storage.key.unwrap();
-                    let local_v = self.db.db.sdb.get_storage(&address, &k).1;
-                    if *local_v != storage.value.unwrap() {
-                        error!("incorrect storage for k = {k}")
-                    }
-                }
+            } else if local_acc.keccak_code_hash.0 != k_hash.0 {
+                error!("incorrect keccak_code_hash")
             }
         }
     }
