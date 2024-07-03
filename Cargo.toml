@@ -14,7 +14,7 @@ zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "main", f
 # for local development
 #eth-types = { path = "../zkevm-circuits/eth-types", features = ["scroll"] }
 #mpt-zktrie = { path = "../zkevm-circuits/zktrie" }
-#revm = {path = "../revm/crates/revm", default-features = false, features = ["scroll-default-handler", "std"] } # v36
+#revm = {path = "../revm/crates/revm", default-features = false, features = ["scroll-default-handler", "std", "optional_no_base_fee"] } # v36
 
 # binary dependencies
 anyhow = { version = "1.0", optional = true }
