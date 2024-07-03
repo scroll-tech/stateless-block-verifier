@@ -30,11 +30,10 @@ impl EvmExecutor {
     pub fn new(l2_trace: &BlockTrace, fork_config: &HardforkConfig, disable_checks: bool) -> Self {
         let block_number = l2_trace.header.number.unwrap().as_u64();
         let spec_id = fork_config.get_spec_id(block_number);
+        trace!("use spec id {:?}", spec_id);
 
         let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
-        fork_config
-            .migrate(block_number, &mut db)
-            .expect("failed to migrate");
+        fork_config.migrate(block_number, &mut db).unwrap();
 
         let old_root = l2_trace.storage_trace.root_before;
         let zktrie_state = ZktrieState::from_trace_with_additional(
@@ -92,11 +91,14 @@ impl EvmExecutor {
             env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
             trace!("{env:#?}");
             {
+                info!("self.spec_id: {:?}", self.spec_id);
+
                 let mut revm = revm::Evm::builder()
-                    .with_db(&mut self.db)
                     .with_spec_id(self.spec_id)
+                    .with_db(&mut self.db)
                     .with_env(env)
                     .build();
+                info!("handler cfg: {:?}", revm.handler.cfg);
                 let result = revm.transact_commit().unwrap(); // TODO: handle error
                 trace!("{result:#?}");
             }
