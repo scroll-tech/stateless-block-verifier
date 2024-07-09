@@ -16,7 +16,6 @@ pub fn verify(
 
     trace!("{:#?}", l2_trace);
     let root_after = l2_trace.storage_trace.root_after.to_word();
-    info!("Root after in trace: {:x}", root_after);
 
     let now = Instant::now();
 
@@ -45,10 +44,11 @@ pub fn verify(
         info!("Profiling report saved to: {:?}", path);
     }
 
-    info!("Root after in revm: {:x}", revm_root_after);
     let elapsed = now.elapsed();
 
     if root_after != revm_root_after {
+        error!("Root after in trace: {:x}", root_after);
+        error!("Root after in revm: {:x}", revm_root_after);
         error!("Root mismatch");
         if !log_error {
             std::process::exit(1);
@@ -63,7 +63,7 @@ pub fn verify(
         let blocks = BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst);
         let elapsed = last_time.elapsed().as_secs_f64();
         let bps = blocks as f64 / elapsed;
-        info!("Blocks per second: {:.2}", bps);
+        info!("in per second: {:.2}", bps);
         *last_time = Instant::now();
     }
 
