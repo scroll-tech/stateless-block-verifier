@@ -63,7 +63,7 @@ pub fn verify(
         let blocks = BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst);
         let elapsed = last_time.elapsed().as_secs_f64();
         let bps = blocks as f64 / elapsed;
-        info!("in per second: {:.2}", bps);
+        warn!("Verifying avg speed: {:.2} bps", bps);
         *last_time = Instant::now();
     }
 
