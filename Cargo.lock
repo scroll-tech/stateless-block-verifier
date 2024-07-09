@@ -1044,7 +1044,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#84b9bb5618f7041f0ff364a89d305ded2c0ab865"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/revm-v37#a18489b9aa164c9739f9cd272906c0422f63b263"
 dependencies = [
  "base64 0.13.1",
  "ethers-core",
@@ -1924,7 +1924,7 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.11.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=develop#84b9bb5618f7041f0ff364a89d305ded2c0ab865"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/revm-v37#a18489b9aa164c9739f9cd272906c0422f63b263"
 dependencies = [
  "eth-types",
  "halo2curves",
@@ -2529,8 +2529,8 @@ dependencies = [
 
 [[package]]
 name = "revm"
-version = "9.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#36c304d9e9ba4e4b2d5468d91a6bd27210133b6a"
+version = "10.0.0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v37#7d5e8554ce3dbb17b5f0fa780ee9585b2a08cce5"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2543,8 +2543,8 @@ dependencies = [
 
 [[package]]
 name = "revm-interpreter"
-version = "5.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#36c304d9e9ba4e4b2d5468d91a6bd27210133b6a"
+version = "6.0.0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v37#7d5e8554ce3dbb17b5f0fa780ee9585b2a08cce5"
 dependencies = [
  "cfg-if",
  "revm-primitives",
@@ -2553,8 +2553,8 @@ dependencies = [
 
 [[package]]
 name = "revm-precompile"
-version = "7.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#36c304d9e9ba4e4b2d5468d91a6bd27210133b6a"
+version = "8.0.0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v37#7d5e8554ce3dbb17b5f0fa780ee9585b2a08cce5"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2569,8 +2569,8 @@ dependencies = [
 
 [[package]]
 name = "revm-primitives"
-version = "4.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v36#36c304d9e9ba4e4b2d5468d91a6bd27210133b6a"
+version = "5.0.0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v37#7d5e8554ce3dbb17b5f0fa780ee9585b2a08cce5"
 dependencies = [
  "alloy-primitives",
  "auto_impl",
