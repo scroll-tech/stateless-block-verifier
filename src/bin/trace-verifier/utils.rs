@@ -1,6 +1,8 @@
 use eth_types::l2_types::BlockTrace;
 use eth_types::ToWord;
 use stateless_block_verifier::{EvmExecutor, HardforkConfig};
+use std::sync::atomic::AtomicUsize;
+use std::sync::{LazyLock, Mutex};
 use std::time::Instant;
 
 pub fn verify(
@@ -9,8 +11,8 @@ pub fn verify(
     disable_checks: bool,
     log_error: bool,
 ) -> bool {
-    static BLOCK_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-    static LAST_TIME: std::sync::Mutex<Instant> = std::sync::Mutex::new(Instant::now());
+    static BLOCK_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    static LAST_TIME: LazyLock<Mutex<Instant>> = LazyLock::new(|| Mutex::new(Instant::now()));
 
     trace!("{:#?}", l2_trace);
     let root_after = l2_trace.storage_trace.root_after.to_word();
