@@ -1,5 +1,3 @@
-#![feature(lazy_cell)]
-#![feature(slice_group_by)]
 #[macro_use]
 extern crate log;
 
