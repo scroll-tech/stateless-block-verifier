@@ -88,7 +88,7 @@ impl DatabaseRef for ReadOnlyDB {
     }
 
     /// Get block hash by block number.
-    fn block_hash_ref(&self, _: U256) -> Result<B256, Self::Error> {
+    fn block_hash_ref(&self, _: u64) -> Result<B256, Self::Error> {
         unimplemented!("BLOCKHASH is disabled")
     }
 }
@@ -108,7 +108,7 @@ impl revm::Database for ReadOnlyDB {
         DatabaseRef::storage_ref(self, address, index)
     }
 
-    fn block_hash(&mut self, _: U256) -> Result<B256, Self::Error> {
+    fn block_hash(&mut self, _: u64) -> Result<B256, Self::Error> {
         unimplemented!("BLOCKHASH is disabled")
     }
 }

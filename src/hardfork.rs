@@ -13,7 +13,7 @@ static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock
     let mut heights = hardfork_heights();
     heights.sort_by_key(|a| a.1);
     let heights = heights
-        .group_by(|a, b| a.1 == b.1)
+        .chunk_by(|a, b| a.1 == b.1)
         .map(|slice| {
             let chain_id = slice[0].1;
             (
