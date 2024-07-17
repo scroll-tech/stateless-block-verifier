@@ -1,6 +1,6 @@
-use eth_types::l2_types::BlockTrace;
+use eth_types::l2_types::{BlockTrace, BlockTraceV2};
 use eth_types::ToWord;
-use stateless_block_verifier::{EvmExecutor, HardforkConfig};
+use stateless_block_verifier::{utils, EvmExecutorBuilder, HardforkConfig};
 use std::sync::atomic::AtomicUsize;
 use std::sync::{LazyLock, Mutex};
 use std::time::Instant;
@@ -17,6 +17,8 @@ pub fn verify(
     trace!("{:#?}", l2_trace);
     let root_after = l2_trace.storage_trace.root_after.to_word();
 
+    let v2_trace = BlockTraceV2::from(l2_trace.clone());
+
     let now = Instant::now();
 
     #[cfg(feature = "profiling")]
@@ -26,8 +28,17 @@ pub fn verify(
         .build()
         .unwrap();
 
-    let mut executor = EvmExecutor::new(&l2_trace, &fork_config, disable_checks);
-    let revm_root_after = executor.handle_block(&l2_trace).to_word();
+    let mut executor = EvmExecutorBuilder::new()
+        .hardfork_config(*fork_config)
+        .with_execute_hooks(|hooks| {
+            if !disable_checks {
+                hooks.add_post_tx_execution_handler(move |executor, tx_id| {
+                    utils::post_check(executor.db(), &l2_trace.execution_results[tx_id]);
+                })
+            }
+        })
+        .build(&v2_trace);
+    let revm_root_after = executor.handle_block(&v2_trace).to_word();
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

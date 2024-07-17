@@ -1,68 +1,33 @@
-use crate::{
-    database::ReadOnlyDB,
-    utils::{collect_account_proofs, collect_storage_proofs},
-    HardforkConfig,
-};
-use eth_types::{
-    geth_types::TxType,
-    l2_types::{BlockTrace, ExecutionResult},
-    H160, H256, U256,
-};
-use log::Level;
-use mpt_zktrie::{AccountData, ZktrieState};
+use crate::database::ReadOnlyDB;
+use eth_types::{geth_types::TxType, l2_types::BlockTraceV2, H160, H256, U256};
+use mpt_zktrie::AccountData;
 use revm::{
     db::CacheDB,
     primitives::{AccountInfo, BlockEnv, Env, SpecId, TxEnv},
-    DatabaseRef,
 };
 use std::fmt::Debug;
 use zktrie::ZkTrie;
+
+mod builder;
+/// Execute hooks
+pub mod hooks;
+pub use builder::EvmExecutorBuilder;
 
 /// EVM executor that handles the block.
 pub struct EvmExecutor {
     db: CacheDB<ReadOnlyDB>,
     zktrie: ZkTrie,
     spec_id: SpecId,
-    disable_checks: bool,
+    hooks: hooks::ExecuteHooks,
 }
 impl EvmExecutor {
-    /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn new(l2_trace: &BlockTrace, fork_config: &HardforkConfig, disable_checks: bool) -> Self {
-        let block_number = l2_trace.header.number.unwrap().as_u64();
-        let spec_id = fork_config.get_spec_id(block_number);
-        trace!("use spec id {:?}", spec_id);
-
-        let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
-        fork_config.migrate(block_number, &mut db).unwrap();
-
-        let old_root = l2_trace.storage_trace.root_before;
-        let zktrie_state = ZktrieState::from_trace_with_additional(
-            old_root,
-            collect_account_proofs(&l2_trace.storage_trace),
-            collect_storage_proofs(&l2_trace.storage_trace),
-            l2_trace
-                .storage_trace
-                .deletion_proofs
-                .iter()
-                .map(|s| s.as_ref()),
-        )
-        .unwrap();
-        let root = *zktrie_state.root();
-        debug!("building partial statedb done, root {}", hex::encode(root));
-
-        let mem_db = zktrie_state.into_inner();
-        let zktrie = mem_db.new_trie(&root).unwrap();
-
-        Self {
-            db,
-            zktrie,
-            spec_id,
-            disable_checks,
-        }
+    /// Get reference to the DB
+    pub fn db(&self) -> &CacheDB<ReadOnlyDB> {
+        &self.db
     }
 
     /// Handle a block.
-    pub fn handle_block(&mut self, l2_trace: &BlockTrace) -> H256 {
+    pub fn handle_block(&mut self, l2_trace: &BlockTraceV2) -> H256 {
         debug!("handle block {:?}", l2_trace.header.number.unwrap());
         let mut env = Box::<Env>::default();
         env.cfg.chain_id = l2_trace.chain_id;
@@ -100,14 +65,8 @@ impl EvmExecutor {
                 let result = revm.transact_commit().unwrap(); // TODO: handle error
                 trace!("{result:#?}");
             }
+            self.hooks.post_tx_execution(self, idx);
             debug!("handle {idx}th tx done");
-
-            if !self.disable_checks {
-                if let Some(exec) = l2_trace.execution_results.get(idx) {
-                    debug!("post check {idx}th tx");
-                    self.post_check(exec);
-                }
-            }
         }
         self.commit_changes();
         H256::from(self.zktrie.root())
@@ -253,56 +212,6 @@ impl EvmExecutor {
                     storage_root: acc.storage_root,
                 })
                 .expect("failed to write record");
-            }
-        }
-    }
-
-    fn post_check(&mut self, exec: &ExecutionResult) {
-        for account_post_state in exec.account_after.iter() {
-            let local_acc = self
-                .db
-                .basic_ref(account_post_state.address.0.into())
-                .unwrap()
-                .unwrap();
-            if log_enabled!(Level::Trace) {
-                let mut local_acc = local_acc.clone();
-                local_acc.code = None;
-                trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
-            }
-            let local_balance = U256(*local_acc.balance.as_limbs());
-            if local_balance != account_post_state.balance {
-                let post = account_post_state.balance;
-                error!(
-                    "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
-                    local_balance,
-                    if local_balance < post { "<" } else { ">" },
-                    post,
-                    if local_balance < post { "-" } else { "+" },
-                    if local_balance < post {
-                        post - local_balance
-                    } else {
-                        local_balance - post
-                    }
-                )
-            }
-            if local_acc.nonce != account_post_state.nonce {
-                error!("incorrect nonce")
-            }
-            let p_hash = account_post_state.poseidon_code_hash;
-            if p_hash.is_zero() {
-                if !local_acc.is_empty() {
-                    error!("incorrect poseidon_code_hash")
-                }
-            } else if local_acc.code_hash.0 != p_hash.0 {
-                error!("incorrect poseidon_code_hash")
-            }
-            let k_hash = account_post_state.keccak_code_hash;
-            if k_hash.is_zero() {
-                if !local_acc.is_empty() {
-                    error!("incorrect keccak_code_hash")
-                }
-            } else if local_acc.keccak_code_hash.0 != k_hash.0 {
-                error!("incorrect keccak_code_hash")
             }
         }
     }
