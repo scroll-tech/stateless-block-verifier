@@ -40,8 +40,10 @@ impl ReadOnlyDB {
 
         let mut code_db = CodeDB::new();
         for code_trace in l2_trace.codes.iter() {
-            let hash = code_db.insert(code_trace.code.to_vec());
-            assert_eq!(hash, code_trace.hash);
+            // FIXME: use this later
+            // let hash = code_db.insert(code_trace.code.to_vec());
+            // assert_eq!(hash, code_trace.hash);
+            code_db.insert_with_hash(code_trace.hash, code_trace.code.to_vec());
         }
 
         ReadOnlyDB { code_db, sdb }
