@@ -28,7 +28,7 @@ impl EvmExecutor {
 
     /// Handle a block.
     pub fn handle_block(&mut self, l2_trace: &BlockTraceV2) -> H256 {
-        debug!("handle block {:?}", l2_trace.header.number.unwrap());
+        debug!("handle block {:?}", l2_trace.header.number);
         let mut env = Box::<Env>::default();
         env.cfg.chain_id = l2_trace.chain_id;
         env.block = BlockEnv::from(l2_trace);
@@ -42,8 +42,8 @@ impl EvmExecutor {
                 env.tx.chain_id = Some(l2_trace.chain_id);
             }
             let eth_tx = tx.to_eth_tx(
-                l2_trace.header.hash,
-                l2_trace.header.number,
+                Some(l2_trace.header.hash),
+                Some(l2_trace.header.number),
                 Some(idx.into()),
                 l2_trace.header.base_fee_per_gas,
             );

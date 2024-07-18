@@ -59,8 +59,7 @@ checksum = "5c6cb57a04249c6480766f7f7cef5467412af1490f8d1e243141daddada3264f"
 [[package]]
 name = "alloy-eips"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d32a3e14fa0d152d00bd8daf605eb74ad397efb0f54bd7155585823dddb4401e"
+source = "git+https://github.com/scroll-tech/alloy.git?branch=rustc-1.75#0d6ef27b520d54f4cd075f88bafaef6d82328340"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -118,8 +117,7 @@ dependencies = [
 [[package]]
 name = "alloy-serde"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15c5b9057acc02aee1b8aac2b5a0729cb0f73d080082c111313e5d1f92a96630"
+source = "git+https://github.com/scroll-tech/alloy.git?branch=rustc-1.75#0d6ef27b520d54f4cd075f88bafaef6d82328340"
 dependencies = [
  "alloy-primitives",
  "serde",
@@ -1082,7 +1080,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.12.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/sp1#b6667cef26afc7341ed6e3152a1c25f4165bcaa9"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/sp1#27202e419ac860401a0e690196674ad7fe584b0b"
 dependencies = [
  "base64 0.13.1",
  "ethers-core",
@@ -1962,7 +1960,7 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.12.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/sp1#b6667cef26afc7341ed6e3152a1c25f4165bcaa9"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/sp1#27202e419ac860401a0e690196674ad7fe584b0b"
 dependencies = [
  "eth-types",
  "halo2curves",
@@ -3076,6 +3074,7 @@ dependencies = [
  "ethers-core",
  "ethers-providers",
  "futures",
+ "getrandom",
  "hex",
  "log",
  "mpt-zktrie",

@@ -53,7 +53,7 @@ impl EvmExecutorBuilder<HardforkConfig> {
 
     /// Initialize an EVM executor from a block trace as the initial state.
     pub fn build(self, l2_trace: &BlockTraceV2) -> EvmExecutor {
-        let block_number = l2_trace.header.number.unwrap().as_u64();
+        let block_number = l2_trace.header.number.as_u64();
         let spec_id = self.hardfork_config.get_spec_id(block_number);
         trace!("use spec id {:?}", spec_id);
 
