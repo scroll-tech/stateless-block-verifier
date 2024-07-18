@@ -91,14 +91,12 @@ impl EvmExecutor {
             env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
             trace!("{env:#?}");
             {
-                info!("self.spec_id: {:?}", self.spec_id);
-
                 let mut revm = revm::Evm::builder()
                     .with_spec_id(self.spec_id)
                     .with_db(&mut self.db)
                     .with_env(env)
                     .build();
-                info!("handler cfg: {:?}", revm.handler.cfg);
+                trace!("handler cfg: {:?}", revm.handler.cfg);
                 let result = revm.transact_commit().unwrap(); // TODO: handle error
                 trace!("{result:#?}");
             }

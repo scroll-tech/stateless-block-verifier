@@ -1,5 +1,3 @@
-#![feature(lazy_cell)]
-#![feature(slice_group_by)]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 //! Stateless Block Verifier

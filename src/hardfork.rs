@@ -3,7 +3,7 @@ use eth_types::{
     l2_predeployed::l1_gas_price_oracle,
 };
 use revm::{
-    primitives::{Account, AccountStatus, Address, Bytecode, Bytes, SpecId, StorageSlot, U256},
+    primitives::{Account, AccountStatus, Address, Bytecode, Bytes, EvmStorageSlot, SpecId, U256},
     Database, DatabaseCommit,
 };
 use std::{collections::HashMap, sync::LazyLock};
@@ -13,7 +13,7 @@ static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock
     let mut heights = hardfork_heights();
     heights.sort_by_key(|a| a.1);
     let heights = heights
-        .group_by(|a, b| a.1 == b.1)
+        .chunk_by(|a, b| a.1 == b.1)
         .map(|slice| {
             let chain_id = slice[0].1;
             (
@@ -106,21 +106,23 @@ impl HardforkConfig {
             storage: HashMap::from([
                 (
                     U256::from_limbs(l1_gas_price_oracle::IS_CURIE_SLOT.0),
-                    StorageSlot::new(U256::from(1)),
+                    EvmStorageSlot::new(U256::from(1)),
                 ),
                 (
                     U256::from_limbs(l1_gas_price_oracle::L1_BLOB_BASEFEE_SLOT.0),
-                    StorageSlot::new(U256::from(1)),
+                    EvmStorageSlot::new(U256::from(1)),
                 ),
                 (
                     U256::from_limbs(l1_gas_price_oracle::COMMIT_SCALAR_SLOT.0),
-                    StorageSlot::new(U256::from_limbs(
+                    EvmStorageSlot::new(U256::from_limbs(
                         l1_gas_price_oracle::INITIAL_COMMIT_SCALAR.0,
                     )),
                 ),
                 (
                     U256::from_limbs(l1_gas_price_oracle::BLOB_SCALAR_SLOT.0),
-                    StorageSlot::new(U256::from_limbs(l1_gas_price_oracle::INITIAL_BLOB_SCALAR.0)),
+                    EvmStorageSlot::new(U256::from_limbs(
+                        l1_gas_price_oracle::INITIAL_BLOB_SCALAR.0,
+                    )),
                 ),
             ]),
             status: AccountStatus::Touched,
