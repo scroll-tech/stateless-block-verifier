@@ -9,8 +9,9 @@ extern crate log;
 mod database;
 mod executor;
 mod hardfork;
-mod utils;
+/// Utilities
+pub mod utils;
 
 pub use database::ReadOnlyDB;
-pub use executor::EvmExecutor;
+pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
 pub use hardfork::HardforkConfig;
