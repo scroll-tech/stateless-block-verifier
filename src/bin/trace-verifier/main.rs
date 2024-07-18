@@ -31,6 +31,7 @@ async fn main() -> anyhow::Result<()> {
 
     let get_fork_config = |chain_id: u64| {
         let mut config = HardforkConfig::default_from_chain_id(chain_id);
+        info!("Using hardfork config: {:?}", config);
         if let Some(curie_block) = cmd.curie_block {
             config.set_curie_block(curie_block);
         }

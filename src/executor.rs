@@ -30,11 +30,10 @@ impl EvmExecutor {
     pub fn new(l2_trace: &BlockTrace, fork_config: &HardforkConfig, disable_checks: bool) -> Self {
         let block_number = l2_trace.header.number.unwrap().as_u64();
         let spec_id = fork_config.get_spec_id(block_number);
+        trace!("use spec id {:?}", spec_id);
 
         let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
-        fork_config
-            .migrate(block_number, &mut db)
-            .expect("failed to migrate");
+        fork_config.migrate(block_number, &mut db).unwrap();
 
         let old_root = l2_trace.storage_trace.root_before;
         let zktrie_state = ZktrieState::from_trace_with_additional(
@@ -70,6 +69,8 @@ impl EvmExecutor {
         env.block = BlockEnv::from(l2_trace);
 
         for (idx, tx) in l2_trace.transactions.iter().enumerate() {
+            trace!("handle {idx}th tx");
+            trace!("{tx:#?}");
             let mut env = env.clone();
             env.tx = TxEnv::from(tx);
             if tx.type_ == 0 {
@@ -82,15 +83,21 @@ impl EvmExecutor {
                 l2_trace.header.base_fee_per_gas,
             );
             let tx_type = TxType::get_tx_type(&eth_tx);
+            if tx_type.is_l1_msg() {
+                env.tx.nonce = None; // clear nonce for l1 msg
+                env.cfg.disable_base_fee = true; // disable base fee for l1 msg
+            }
             env.tx.scroll.is_l1_msg = tx_type.is_l1_msg();
             env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
             trace!("{env:#?}");
             {
                 let mut revm = revm::Evm::builder()
+                    .with_spec_id(self.spec_id)
                     .with_db(&mut self.db)
                     .with_spec_id(self.spec_id)
                     .with_env(env)
                     .build();
+                trace!("handler cfg: {:?}", revm.handler.cfg);
                 let result = revm.transact_commit().unwrap(); // TODO: handle error
                 trace!("{result:#?}");
             }
@@ -118,7 +125,9 @@ impl EvmExecutor {
         let mut debug_account = std::collections::BTreeMap::new();
 
         for (addr, db_acc) in self.db.accounts.iter() {
-            let info: AccountInfo = db_acc.info().expect("there's no self-destruct");
+            let Some(info): Option<AccountInfo> = db_acc.info() else {
+                continue;
+            };
             let (_, acc) = sdb.get_account(&H160::from(*addr.0));
             if acc.is_empty() && info.is_empty() {
                 continue;
