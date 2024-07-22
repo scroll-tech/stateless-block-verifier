@@ -1,8 +1,6 @@
 use crate::executor::hooks::ExecuteHooks;
-use crate::utils::{collect_account_proofs, collect_storage_proofs};
+use crate::utils::ext::{BlockRevmDbExt, BlockTraceRevmExt, BlockZktrieExt};
 use crate::{EvmExecutor, HardforkConfig, ReadOnlyDB};
-use eth_types::l2_types::{BlockTrace, BlockTraceV2};
-use mpt_zktrie::ZktrieState;
 use revm::db::CacheDB;
 
 /// Builder for EVM executor.
@@ -45,38 +43,19 @@ impl<H1> EvmExecutorBuilder<H1> {
 }
 
 impl EvmExecutorBuilder<HardforkConfig> {
-    /// Initialize an EVM executor from a legacy block trace as the initial state.
-    pub fn build_legacy(self, l2_trace: &BlockTrace) -> EvmExecutor {
-        let v2_trace = BlockTraceV2::from(l2_trace.clone());
-        self.build(&v2_trace)
-    }
-
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn build(self, l2_trace: &BlockTraceV2) -> EvmExecutor {
-        let block_number = l2_trace.header.number.unwrap().as_u64();
+    pub fn build<T: BlockTraceRevmExt + BlockZktrieExt + BlockRevmDbExt>(
+        self,
+        l2_trace: &T,
+    ) -> EvmExecutor {
+        let block_number = l2_trace.number();
         let spec_id = self.hardfork_config.get_spec_id(block_number);
         trace!("use spec id {:?}", spec_id);
 
         let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
         self.hardfork_config.migrate(block_number, &mut db).unwrap();
 
-        let old_root = l2_trace.storage_trace.root_before;
-        let zktrie_state = ZktrieState::from_trace_with_additional(
-            old_root,
-            collect_account_proofs(&l2_trace.storage_trace),
-            collect_storage_proofs(&l2_trace.storage_trace),
-            l2_trace
-                .storage_trace
-                .deletion_proofs
-                .iter()
-                .map(|s| s.as_ref()),
-        )
-        .unwrap();
-        let root = *zktrie_state.root();
-        debug!("building partial statedb done, root {}", hex::encode(root));
-
-        let mem_db = zktrie_state.into_inner();
-        let zktrie = mem_db.new_trie(&root).unwrap();
+        let zktrie = l2_trace.zktrie();
 
         EvmExecutor {
             db,

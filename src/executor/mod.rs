@@ -1,9 +1,9 @@
 use crate::database::ReadOnlyDB;
-use eth_types::{geth_types::TxType, l2_types::BlockTraceV2, H160, H256, U256};
+use eth_types::{geth_types::TxType, H160, H256, U256};
 use mpt_zktrie::AccountData;
 use revm::{
     db::CacheDB,
-    primitives::{AccountInfo, BlockEnv, Env, SpecId, TxEnv},
+    primitives::{AccountInfo, Env, SpecId},
 };
 use std::fmt::Debug;
 use zktrie::ZkTrie;
@@ -11,6 +11,7 @@ use zktrie::ZkTrie;
 mod builder;
 /// Execute hooks
 pub mod hooks;
+use crate::utils::ext::{BlockTraceRevmExt, TxRevmExt};
 pub use builder::EvmExecutorBuilder;
 
 /// EVM executor that handles the block.
@@ -27,25 +28,25 @@ impl EvmExecutor {
     }
 
     /// Handle a block.
-    pub fn handle_block(&mut self, l2_trace: &BlockTraceV2) -> H256 {
-        debug!("handle block {:?}", l2_trace.header.number.unwrap());
+    pub fn handle_block<T: BlockTraceRevmExt>(&mut self, l2_trace: &T) -> H256 {
+        debug!("handle block {:?}", l2_trace.number());
         let mut env = Box::<Env>::default();
-        env.cfg.chain_id = l2_trace.chain_id;
-        env.block = BlockEnv::from(l2_trace);
+        env.cfg.chain_id = l2_trace.chain_id();
+        env.block = l2_trace.env();
 
-        for (idx, tx) in l2_trace.transactions.iter().enumerate() {
+        for (idx, tx) in l2_trace.transactions().enumerate() {
             trace!("handle {idx}th tx");
             trace!("{tx:#?}");
             let mut env = env.clone();
-            env.tx = TxEnv::from(tx);
-            if tx.type_ == 0 {
-                env.tx.chain_id = Some(l2_trace.chain_id);
+            env.tx = tx.tx_env();
+            if tx.raw_type() == 0 {
+                env.tx.chain_id = Some(l2_trace.chain_id());
             }
             let eth_tx = tx.to_eth_tx(
-                l2_trace.header.hash,
-                l2_trace.header.number,
-                Some(idx.into()),
-                l2_trace.header.base_fee_per_gas,
+                l2_trace.block_hash(),
+                l2_trace.number(),
+                idx,
+                l2_trace.base_fee_per_gas(),
             );
             let tx_type = TxType::get_tx_type(&eth_tx);
             if tx_type.is_l1_msg() {
