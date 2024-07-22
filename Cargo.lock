@@ -1128,7 +1128,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.12.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#ade6eb5f5f3e9665f88d8f103b82a6a75cbfc438"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#3a1b4187a42536b7d65b646526e6b0eea2b915ae"
 dependencies = [
  "base64 0.13.1",
  "ethereum-types",
@@ -1191,7 +1191,7 @@ dependencies = [
 [[package]]
 name = "ethereum-types"
 version = "0.14.1"
-source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#0ad534ef109ffae50754f06c3aae90ffad5abfab"
+source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#3c9294bf598e3580a84c24265ffb45d99eb8fe63"
 dependencies = [
  "ethbloom",
  "fixed-hash",
@@ -1207,7 +1207,7 @@ dependencies = [
 [[package]]
 name = "ethers-core"
 version = "2.0.7"
-source = "git+https://github.com/scroll-tech/ethers-rs.git?branch=feat/rkyv#f8e0e13cdea04661ea06889819ca8082112e4386"
+source = "git+https://github.com/scroll-tech/ethers-rs.git?branch=feat/rkyv#61c82c83a44087dbcf43916dc77845702f9c2b15"
 dependencies = [
  "arrayvec",
  "bytes",
@@ -1270,7 +1270,7 @@ dependencies = [
 [[package]]
 name = "ethers-signers"
 version = "2.0.7"
-source = "git+https://github.com/scroll-tech/ethers-rs.git?branch=feat/rkyv#f8e0e13cdea04661ea06889819ca8082112e4386"
+source = "git+https://github.com/scroll-tech/ethers-rs.git?branch=feat/rkyv#61c82c83a44087dbcf43916dc77845702f9c2b15"
 dependencies = [
  "async-trait",
  "coins-bip32",
@@ -2038,7 +2038,7 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.12.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#ade6eb5f5f3e9665f88d8f103b82a6a75cbfc438"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#3a1b4187a42536b7d65b646526e6b0eea2b915ae"
 dependencies = [
  "eth-types",
  "halo2curves",
@@ -2439,7 +2439,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "primitive-types"
 version = "0.12.2"
-source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#0ad534ef109ffae50754f06c3aae90ffad5abfab"
+source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#3c9294bf598e3580a84c24265ffb45d99eb8fe63"
 dependencies = [
  "fixed-hash",
  "impl-codec",

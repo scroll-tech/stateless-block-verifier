@@ -583,3 +583,32 @@ impl TxRevmExt for ArchivedTransactionTrace {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::array;
+    use std::mem::transmute;
+
+    #[test]
+    fn test_memory_layout() {
+        use eth_types::{ArchivedH160, H160};
+        // H160 and ArchivedH160 should have the same memory layout
+        assert_eq!(size_of::<H160>(), 20);
+        assert_eq!(size_of::<ArchivedH160>(), 20);
+        assert_eq!(size_of::<&[u8; 20]>(), size_of::<usize>());
+        assert_eq!(size_of::<&H160>(), size_of::<usize>());
+        assert_eq!(size_of::<&ArchivedH160>(), size_of::<usize>());
+
+        let h160 = eth_types::H160::from(array::from_fn(|i| i as u8));
+        let serialized = rkyv::to_bytes::<_, 20>(&h160).unwrap();
+        let archived: &ArchivedH160 = unsafe { rkyv::archived_root::<H160>(&serialized[..]) };
+        assert_eq!(archived, &h160);
+        let ptr_to_archived: usize = archived as *const _ as usize;
+        let ptr_to_archived_inner: usize = (&archived.0) as *const _ as usize;
+        assert_eq!(ptr_to_archived, ptr_to_archived_inner);
+        let transmuted: &H160 = unsafe { transmute(archived) };
+        assert_eq!(transmuted, &h160);
+        let transmuted: &H160 = unsafe { transmute(&archived.0) };
+        assert_eq!(transmuted, &h160);
+    }
+}
