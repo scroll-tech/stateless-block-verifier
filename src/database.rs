@@ -1,6 +1,6 @@
 use crate::utils::{collect_account_proofs, collect_storage_proofs};
 use eth_types::{
-    l2_types::{trace::collect_codes, BlockTrace},
+    l2_types::BlockTraceV2,
     state_db::{self, CodeDB, StateDB},
     ToWord, H160,
 };
@@ -20,7 +20,7 @@ pub struct ReadOnlyDB {
 
 impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
-    pub fn new(l2_trace: &BlockTrace) -> Self {
+    pub fn new(l2_trace: &BlockTraceV2) -> Self {
         let mut sdb = StateDB::new();
         for parsed in
             ZktrieState::parse_account_from_proofs(collect_account_proofs(&l2_trace.storage_trace))
@@ -39,8 +39,11 @@ impl ReadOnlyDB {
         }
 
         let mut code_db = CodeDB::new();
-        for (hash, code) in collect_codes(l2_trace, Some(&sdb)).unwrap() {
-            code_db.insert_with_hash(hash, code);
+        for code_trace in l2_trace.codes.iter() {
+            // FIXME: use this later
+            // let hash = code_db.insert(code_trace.code.to_vec());
+            // assert_eq!(hash, code_trace.hash);
+            code_db.insert_with_hash(code_trace.hash, code_trace.code.to_vec());
         }
 
         ReadOnlyDB { code_db, sdb }
