@@ -18,6 +18,8 @@ pub fn verify(
     let root_after = l2_trace.storage_trace.root_after.to_word();
 
     let v2_trace = BlockTraceV2::from(l2_trace.clone());
+    let serialized = rkyv::to_bytes::<BlockTraceV2, 4096>(&v2_trace).unwrap();
+    let archived = unsafe { rkyv::archived_root::<BlockTraceV2>(&serialized[..]) };
 
     let now = Instant::now();
 
@@ -37,8 +39,8 @@ pub fn verify(
                 })
             }
         })
-        .build(&v2_trace);
-    let revm_root_after = executor.handle_block(&v2_trace).to_word();
+        .build(archived);
+    let revm_root_after = executor.handle_block(archived).to_word();
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

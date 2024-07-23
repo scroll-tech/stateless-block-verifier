@@ -1,30 +1,9 @@
-use eth_types::{
-    l2_types::{ExecutionResult, StorageTrace},
-    Address, H256,
-};
+use eth_types::l2_types::ExecutionResult;
 use log::Level;
 use revm::DatabaseRef;
 use std::fmt::Debug;
 
-pub(crate) fn collect_account_proofs(
-    storage_trace: &StorageTrace,
-) -> impl Iterator<Item = (&Address, impl IntoIterator<Item = &[u8]>)> + Clone {
-    storage_trace.proofs.iter().flat_map(|kv_map| {
-        kv_map
-            .iter()
-            .map(|(k, bts)| (k, bts.iter().map(|b| b.as_ref())))
-    })
-}
-
-pub(crate) fn collect_storage_proofs(
-    storage_trace: &StorageTrace,
-) -> impl Iterator<Item = (&Address, &H256, impl IntoIterator<Item = &[u8]>)> + Clone {
-    storage_trace.storage_proofs.iter().flat_map(|(k, kv_map)| {
-        kv_map
-            .iter()
-            .map(move |(sk, bts)| (k, sk, bts.iter().map(|b| b.as_ref())))
-    })
-}
+pub(crate) mod ext;
 
 /// Check the post state of the block with the execution result.
 pub fn post_check<DB: DatabaseRef>(db: DB, exec: &ExecutionResult) -> bool
