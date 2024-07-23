@@ -251,7 +251,6 @@ impl BlockRevmDbExt for BlockTrace {
             self.storage_trace
                 .proofs
                 .iter()
-                .flat_map(|m| m.iter())
                 .map(|(addr, b)| (addr, b.iter().map(|b| b.as_ref()))),
         )
         .map(|parsed| {
@@ -287,7 +286,6 @@ impl BlockRevmDbExt for BlockTraceV2 {
             self.storage_trace
                 .proofs
                 .iter()
-                .flat_map(|m| m.iter())
                 .map(|(addr, b)| (addr, b.iter().map(|b| b.as_ref()))),
         )
         .map(|parsed| {
@@ -319,16 +317,10 @@ impl BlockRevmDbExt for BlockTraceV2 {
 impl BlockRevmDbExt for ArchivedBlockTraceV2 {
     #[inline]
     fn accounts(&self) -> impl Iterator<Item = (Address, state_db::Account)> {
-        ZktrieState::parse_account_from_proofs(
-            self.storage_trace
-                .proofs
-                .iter()
-                .flat_map(|m| m.iter())
-                .map(|(addr, b)| {
-                    let addr: &Address = unsafe { mem::transmute(&addr.0) };
-                    (addr, b.iter().map(|b| b.as_ref()))
-                }),
-        )
+        ZktrieState::parse_account_from_proofs(self.storage_trace.proofs.iter().map(|(addr, b)| {
+            let addr: &Address = unsafe { mem::transmute(&addr.0) };
+            (addr, b.iter().map(|b| b.as_ref()))
+        }))
         .map(|parsed| {
             let (addr, acc) = parsed.unwrap();
             (addr, state_db::Account::from(&acc))
@@ -367,7 +359,6 @@ impl BlockZktrieExt for BlockTraceV2 {
             self.storage_trace
                 .proofs
                 .iter()
-                .flat_map(|m| m.iter())
                 .map(|(addr, b)| (addr, b.iter().map(|b| b.as_ref()))),
             self.storage_trace
                 .storage_proofs
@@ -395,14 +386,10 @@ impl BlockZktrieExt for ArchivedBlockTraceV2 {
         let old_root: H256 = self.storage_trace.root_before.0.into();
         let zktrie_state = ZktrieState::from_trace_with_additional(
             old_root,
-            self.storage_trace
-                .proofs
-                .iter()
-                .flat_map(|m| m.iter())
-                .map(|(addr, b)| {
-                    let addr = unsafe { mem::transmute(&addr.0) };
-                    (addr, b.iter().map(|b| b.as_ref()))
-                }),
+            self.storage_trace.proofs.iter().map(|(addr, b)| {
+                let addr = unsafe { mem::transmute(&addr.0) };
+                (addr, b.iter().map(|b| b.as_ref()))
+            }),
             self.storage_trace
                 .storage_proofs
                 .iter()

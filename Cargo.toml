@@ -11,7 +11,7 @@ mpt-zktrie = { git = "https://github.com/scroll-tech/zkevm-circuits", branch = "
 revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v40/sp1" , default-features = false, features = ["scroll-default-handler", "std", "optional_no_base_fee"] } # v36
 zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "main", features= ["rs_zktrie"] }
 getrandom = { version = "*", features = ["custom"] } # just for disable
-rkyv = "0.7"
+rkyv = { version = "0.7", features = ["validation"] }
 
 # for local development
 #eth-types = { path = "../zkevm-circuits/eth-types", features = ["scroll"] }
@@ -79,6 +79,14 @@ ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
 alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "rustc-1.75" }
 primitive-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
 ethereum-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
+
+#ethers-core = { path = "../ethers-rs/ethers-core" }
+#ethers-providers = { path = "../ethers-rs/ethers-providers" }
+#ethers = { path = "../ethers-rs/ethers" }
+#ethers-etherscan = { path = "../ethers-rs/ethers-etherscan" }
+#ethers-signers  = { path = "../ethers-rs/ethers-signers" }
+#primitive-types = { path = "../parity-common/primitive-types" }
+#ethereum-types = { path = "../parity-common/ethereum-types" }
 
 [patch."https://github.com/privacy-scaling-explorations/bls12_381"]
 bls12_381 = { git = "https://github.com/scroll-tech/bls12_381", branch = "feat/impl_scalar_field" }

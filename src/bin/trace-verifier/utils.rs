@@ -19,7 +19,8 @@ pub fn verify(
 
     let v2_trace = BlockTraceV2::from(l2_trace.clone());
     let serialized = rkyv::to_bytes::<BlockTraceV2, 4096>(&v2_trace).unwrap();
-    let archived = unsafe { rkyv::archived_root::<BlockTraceV2>(&serialized[..]) };
+    // let archived = unsafe { rkyv::archived_root::<BlockTraceV2>(&serialized[..]) };
+    let archived = rkyv::check_archived_root::<BlockTraceV2>(&serialized[..]).unwrap();
 
     let now = Instant::now();
 
