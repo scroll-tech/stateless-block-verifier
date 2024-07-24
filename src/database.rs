@@ -19,25 +19,33 @@ pub struct ReadOnlyDB {
 impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
     pub fn new<T: BlockRevmDbExt>(l2_trace: &T) -> Self {
+        println!("cycle-tracker-start: build ReadOnlyDB");
         let mut sdb = StateDB::new();
+        println!("cycle-tracker-start: insert StateDB account");
         for (addr, account) in l2_trace.accounts() {
             trace!("insert account {:?} {:?}", addr, account);
             sdb.set_account(&addr, account);
         }
+        println!("cycle-tracker-end: insert StateDB account");
 
+        println!("cycle-tracker-start: insert StateDB storage");
         for ((addr, key), val) in l2_trace.storages() {
             trace!("insert storage {:?} {:?} {:?}", addr, key, val);
             let key = key.to_word();
             *sdb.get_storage_mut(&addr, &key).1 = val;
         }
+        println!("cycle-tracker-end: insert StateDB storage");
 
         let mut code_db = CodeDB::new();
+        println!("cycle-tracker-start: insert CodeDB");
         for (hash, code) in l2_trace.codes() {
             // FIXME: use this later
             // let hash = code_db.insert(code_trace.code.to_vec());
             // assert_eq!(hash, code_trace.hash);
             code_db.insert_with_hash(hash, code);
         }
+        println!("cycle-tracker-end: insert CodeDB");
+        println!("cycle-tracker-end: build ReadOnlyDB");
 
         ReadOnlyDB { code_db, sdb }
     }

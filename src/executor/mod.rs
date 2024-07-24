@@ -12,6 +12,7 @@ mod builder;
 /// Execute hooks
 pub mod hooks;
 use crate::utils::ext::{BlockTraceRevmExt, TxRevmExt};
+use crate::{cycle_tracker_end, cycle_tracker_start};
 pub use builder::EvmExecutorBuilder;
 
 /// EVM executor that handles the block.
@@ -32,9 +33,12 @@ impl EvmExecutor {
         debug!("handle block {:?}", l2_trace.number());
         let mut env = Box::<Env>::default();
         env.cfg.chain_id = l2_trace.chain_id();
+        cycle_tracker_start!("create BlockEnv");
         env.block = l2_trace.env();
+        cycle_tracker_end!("create BlockEnv");
 
         for (idx, tx) in l2_trace.transactions().enumerate() {
+            cycle_tracker_start!("handle tx {}", idx);
             trace!("handle {idx}th tx");
             trace!("{tx:#?}");
             let mut env = env.clone();
@@ -57,19 +61,28 @@ impl EvmExecutor {
             env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
             trace!("{env:#?}");
             {
+                cycle_tracker_start!("build Evm");
                 let mut revm = revm::Evm::builder()
                     .with_spec_id(self.spec_id)
                     .with_db(&mut self.db)
                     .with_env(env)
                     .build();
+                cycle_tracker_end!("build Evm");
+
                 trace!("handler cfg: {:?}", revm.handler.cfg);
+
+                cycle_tracker_start!("transact_commit");
                 let result = revm.transact_commit().unwrap(); // TODO: handle error
+                cycle_tracker_end!("transact_commit");
                 trace!("{result:#?}");
             }
             self.hooks.post_tx_execution(self, idx);
             debug!("handle {idx}th tx done");
+            cycle_tracker_end!("handle tx {}", idx);
         }
+        cycle_tracker_start!("commit_changes");
         self.commit_changes();
+        cycle_tracker_end!("commit_changes");
         H256::from(self.zktrie.root())
     }
 
@@ -92,11 +105,16 @@ impl EvmExecutor {
                 continue;
             }
             trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
+            cycle_tracker_start!("commit account {}", addr);
+
+            cycle_tracker_start!("get acc_data");
             let mut acc_data = self
                 .zktrie
                 .get_account(addr.as_slice())
                 .map(AccountData::from)
                 .unwrap_or_default();
+            cycle_tracker_end!("get acc_data");
+
             acc_data.nonce = info.nonce;
             acc_data.balance = U256(*info.balance.as_limbs());
             if !db_acc.storage.is_empty() {
@@ -114,6 +132,7 @@ impl EvmExecutor {
                 // get current storage root
                 let storage_root_before = acc_data.storage_root;
                 // get storage tire
+                cycle_tracker_start!("update storage_tire");
                 let mut storage_tire = self
                     .zktrie
                     .get_db()
@@ -121,9 +140,11 @@ impl EvmExecutor {
                     .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {
                     if !value.is_zero() {
+                        cycle_tracker_start!("Zktrie::update_store");
                         storage_tire
                             .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
                             .expect("failed to update storage");
+                        cycle_tracker_end!("Zktrie::update_store");
 
                         #[cfg(feature = "debug-storage")]
                         debug_storage.insert(
@@ -135,7 +156,9 @@ impl EvmExecutor {
                             },
                         );
                     } else {
+                        cycle_tracker_start!("Zktrie::delete");
                         storage_tire.delete(&key.to_be_bytes::<32>());
+                        cycle_tracker_end!("Zktrie::delete");
 
                         #[cfg(feature = "debug-storage")]
                         debug_storage.insert(
@@ -148,6 +171,7 @@ impl EvmExecutor {
                         );
                     }
                 }
+                cycle_tracker_end!("update storage_tire");
                 acc_data.storage_root = H256::from(storage_tire.root());
 
                 #[cfg(feature = "debug-storage")]
@@ -177,9 +201,13 @@ impl EvmExecutor {
             #[cfg(feature = "debug-account")]
             debug_account.insert(*addr, acc_data.clone());
 
+            cycle_tracker_start!("Zktrie::update_account");
             self.zktrie
                 .update_account(addr.as_slice(), &acc_data.into())
                 .expect("failed to update account");
+            cycle_tracker_end!("Zktrie::update_account");
+
+            cycle_tracker_end!("commit account {}", addr);
         }
 
         #[cfg(feature = "debug-account")]

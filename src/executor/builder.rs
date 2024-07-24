@@ -1,6 +1,6 @@
 use crate::executor::hooks::ExecuteHooks;
 use crate::utils::ext::{BlockRevmDbExt, BlockTraceRevmExt, BlockZktrieExt};
-use crate::{EvmExecutor, HardforkConfig, ReadOnlyDB};
+use crate::{cycle_tracker_end, cycle_tracker_start, EvmExecutor, HardforkConfig, ReadOnlyDB};
 use revm::db::CacheDB;
 
 /// Builder for EVM executor.
@@ -55,7 +55,9 @@ impl EvmExecutorBuilder<HardforkConfig> {
         let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
         self.hardfork_config.migrate(block_number, &mut db).unwrap();
 
+        cycle_tracker_start!("build ZktrieState");
         let zktrie = l2_trace.zktrie();
+        cycle_tracker_end!("build ZktrieState");
 
         EvmExecutor {
             db,
