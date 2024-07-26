@@ -4157,7 +4157,7 @@ dependencies = [
 [[package]]
 name = "zktrie"
 version = "0.3.0"
-source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#23181f209e94137f74337b150179aeb80c72e7c8"
+source = "git+https://github.com/scroll-tech//zktrie.git?branch=next#47cd984687a09ef53a60d9939755fb28c8fbf5e3"
 dependencies = [
  "gobuild",
  "zktrie_rust",
@@ -4166,7 +4166,7 @@ dependencies = [
 [[package]]
 name = "zktrie_rust"
 version = "0.3.0"
-source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#23181f209e94137f74337b150179aeb80c72e7c8"
+source = "git+https://github.com/scroll-tech//zktrie.git?branch=next#47cd984687a09ef53a60d9939755fb28c8fbf5e3"
 dependencies = [
  "hex",
  "lazy_static",
@@ -4178,11 +4178,11 @@ dependencies = [
 ]
 
 [[patch.unused]]
-name = "halo2curves"
-version = "0.1.0"
-source = "git+https://github.com/scroll-tech/halo2curves?branch=v0.1.0#112f5b9bf27f6b1708ba7d1c2fc14cb3c6e55604"
-
-[[patch.unused]]
 name = "bls12_381"
 version = "0.8.0"
 source = "git+https://github.com/scroll-tech/bls12_381?branch=feat/impl_scalar_field#2c515f73a2462fef8681c8e884edf1710f52b22a"
+
+[[patch.unused]]
+name = "halo2curves"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/halo2curves?branch=v0.1.0#112f5b9bf27f6b1708ba7d1c2fc14cb3c6e55604"
