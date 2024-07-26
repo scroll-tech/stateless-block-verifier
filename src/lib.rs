@@ -7,6 +7,7 @@ extern crate log;
 mod database;
 mod executor;
 mod hardfork;
+mod marcos;
 /// Utilities
 pub mod utils;
 
