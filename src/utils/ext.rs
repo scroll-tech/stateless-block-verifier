@@ -351,6 +351,36 @@ impl BlockRevmDbExt for ArchivedBlockTraceV2 {
     }
 }
 
+impl BlockZktrieExt for BlockTrace {
+    fn zktrie(&self) -> ZkTrie {
+        let old_root = self.storage_trace.root_before;
+        let zktrie_state = ZktrieState::from_trace_with_additional(
+            old_root,
+            self.storage_trace
+                .proofs
+                .iter()
+                .map(|(addr, b)| (addr, b.iter().map(|b| b.as_ref()))),
+            self.storage_trace
+                .storage_proofs
+                .iter()
+                .flat_map(|(addr, map)| {
+                    map.iter()
+                        .map(move |(sk, bts)| (addr, sk, bts.iter().map(|b| b.as_ref())))
+                }),
+            self.storage_trace
+                .deletion_proofs
+                .iter()
+                .map(|s| s.as_ref()),
+        )
+        .unwrap();
+        let root = *zktrie_state.root();
+        debug!("building partial statedb done, root {}", hex::encode(root));
+
+        let mem_db = zktrie_state.into_inner();
+        mem_db.new_trie(&root).unwrap()
+    }
+}
+
 impl BlockZktrieExt for BlockTraceV2 {
     fn zktrie(&self) -> ZkTrie {
         let old_root = self.storage_trace.root_before;
@@ -387,16 +417,16 @@ impl BlockZktrieExt for ArchivedBlockTraceV2 {
         let zktrie_state = ZktrieState::from_trace_with_additional(
             old_root,
             self.storage_trace.proofs.iter().map(|(addr, b)| {
-                let addr = unsafe { mem::transmute(&addr.0) };
+                let addr = unsafe { mem::transmute::<&[u8; 20], &Address>(&addr.0) };
                 (addr, b.iter().map(|b| b.as_ref()))
             }),
             self.storage_trace
                 .storage_proofs
                 .iter()
                 .flat_map(|(addr, map)| {
-                    let addr = unsafe { mem::transmute(&addr.0) };
+                    let addr = unsafe { mem::transmute::<&[u8; 20], &Address>(&addr.0) };
                     map.iter().map(move |(sk, bts)| {
-                        let sk = unsafe { mem::transmute(&sk.0) };
+                        let sk = unsafe { mem::transmute::<&[u8; 32], &eth_types::H256>(&sk.0) };
                         (addr, sk, bts.iter().map(|b| b.as_ref()))
                     })
                 }),
@@ -567,6 +597,157 @@ impl TxRevmExt for ArchivedTransactionTrace {
             Some(block_number.into()),
             Some((transaction_index as u64).into()),
             base_fee_per_gas.map(|b| eth_types::U256(*b.as_limbs())),
+        )
+    }
+}
+
+impl<T: BlockTraceRevmExt> BlockTraceRevmExt for &T {
+    type Tx = T::Tx;
+
+    #[inline(always)]
+    fn number(&self) -> u64 {
+        (*self).number()
+    }
+
+    #[inline(always)]
+    fn block_hash(&self) -> B256 {
+        (*self).block_hash()
+    }
+
+    #[inline(always)]
+    fn chain_id(&self) -> u64 {
+        (*self).chain_id()
+    }
+
+    #[inline(always)]
+    fn coinbase(&self) -> revm::precompile::Address {
+        (*self).coinbase()
+    }
+
+    #[inline(always)]
+    fn timestamp(&self) -> U256 {
+        (*self).timestamp()
+    }
+
+    #[inline(always)]
+    fn gas_limit(&self) -> U256 {
+        (*self).gas_limit()
+    }
+
+    #[inline(always)]
+    fn base_fee_per_gas(&self) -> Option<U256> {
+        (*self).base_fee_per_gas()
+    }
+
+    #[inline(always)]
+    fn difficulty(&self) -> U256 {
+        (*self).difficulty()
+    }
+
+    #[inline(always)]
+    fn prevrandao(&self) -> Option<B256> {
+        (*self).prevrandao()
+    }
+
+    #[inline(always)]
+    fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
+        (*self).transactions()
+    }
+}
+
+impl<T: BlockRevmDbExt> BlockRevmDbExt for &T {
+    #[inline(always)]
+    fn accounts(&self) -> impl Iterator<Item = (Address, state_db::Account)> {
+        (*self).accounts()
+    }
+
+    #[inline(always)]
+    fn storages(&self) -> impl Iterator<Item = ((Address, H256), Word)> {
+        (*self).storages()
+    }
+
+    #[inline(always)]
+    fn codes(&self) -> impl Iterator<Item = (H256, Vec<u8>)> {
+        (*self).codes()
+    }
+}
+
+impl<T: BlockZktrieExt> BlockZktrieExt for &T {
+    #[inline(always)]
+    fn zktrie(&self) -> ZkTrie {
+        (*self).zktrie()
+    }
+}
+
+impl<T: TxRevmExt> TxRevmExt for &T {
+    #[inline(always)]
+    fn raw_type(&self) -> u8 {
+        (*self).raw_type()
+    }
+
+    #[inline(always)]
+    fn caller(&self) -> revm::precompile::Address {
+        (*self).caller()
+    }
+
+    #[inline(always)]
+    fn gas_limit(&self) -> u64 {
+        (*self).gas_limit()
+    }
+
+    #[inline(always)]
+    fn gas_price(&self) -> U256 {
+        (*self).gas_price()
+    }
+
+    #[inline(always)]
+    fn transact_to(&self) -> TransactTo {
+        (*self).transact_to()
+    }
+
+    #[inline(always)]
+    fn value(&self) -> U256 {
+        (*self).value()
+    }
+
+    #[inline(always)]
+    fn data(&self) -> revm::precompile::Bytes {
+        (*self).data()
+    }
+
+    #[inline(always)]
+    fn nonce(&self) -> u64 {
+        (*self).nonce()
+    }
+
+    #[inline(always)]
+    fn chain_id(&self) -> u64 {
+        (*self).chain_id()
+    }
+
+    #[inline(always)]
+    fn access_list(&self) -> Vec<AccessListItem> {
+        (*self).access_list()
+    }
+
+    #[inline(always)]
+    fn gas_priority_fee(&self) -> Option<U256> {
+        (*self).gas_priority_fee()
+    }
+
+    #[inline(always)]
+    fn to_eth_tx(
+        &self,
+        block_hash: B256,
+        block_number: u64,
+        transaction_index: usize,
+        base_fee_per_gas: Option<U256>,
+    ) -> Transaction {
+        (*self).to_eth_tx(
+            block_hash,
+            block_number,
+            transaction_index,
+            base_fee_per_gas,
         )
     }
 }
