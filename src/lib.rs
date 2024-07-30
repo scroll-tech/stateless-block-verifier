@@ -14,3 +14,4 @@ pub mod utils;
 pub use database::ReadOnlyDB;
 pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
 pub use hardfork::HardforkConfig;
+pub use utils::BlockTraceExt;
