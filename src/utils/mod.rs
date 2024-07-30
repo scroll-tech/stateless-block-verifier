@@ -5,6 +5,11 @@ use std::fmt::Debug;
 
 pub(crate) mod ext;
 
+pub trait BlockTraceExt:
+    ext::BlockTraceRevmExt + ext::BlockRevmDbExt + ext::BlockZktrieExt
+{
+}
+
 /// Check the post state of the block with the execution result.
 pub fn post_check<DB: DatabaseRef>(db: DB, exec: &ExecutionResult) -> bool
 where
