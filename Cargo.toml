@@ -77,11 +77,11 @@ debug-account = ["csv", "revm/serde"]
 debug-storage = ["csv", "revm/serde"]
 sp1 = []
 cycle-tracker = []
+ordered-db = ["revm/ordered-cache-db"]
 
 [patch.crates-io]
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
 ethers-signers  = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
-halo2curves = { git = "https://github.com/scroll-tech/halo2curves", branch = "v0.1.0" }
 ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
 alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "rustc-1.75" }
 primitive-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
@@ -94,9 +94,6 @@ ethereum-types = { git = "https://github.com/scroll-tech/parity-common.git", bra
 #ethers-signers  = { path = "../ethers-rs/ethers-signers" }
 #primitive-types = { path = "../parity-common/primitive-types" }
 #ethereum-types = { path = "../parity-common/ethereum-types" }
-
-[patch."https://github.com/privacy-scaling-explorations/bls12_381"]
-bls12_381 = { git = "https://github.com/scroll-tech/bls12_381", branch = "feat/impl_scalar_field" }
 
 [profile.release]
 debug-assertions = true

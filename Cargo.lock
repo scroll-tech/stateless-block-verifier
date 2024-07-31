@@ -1802,6 +1802,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "impl-rkyv"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#95a446563c608e3cc391945c4d09fce0d48119e3"
+dependencies = [
+ "paste",
+]
+
+[[package]]
 name = "impl-rlp"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2493,10 +2501,11 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "primitive-types"
 version = "0.12.2"
-source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#1fb41c018fe0a3525951fb9d5e1a50b3c17ca855"
+source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#95a446563c608e3cc391945c4d09fce0d48119e3"
 dependencies = [
  "fixed-hash",
  "impl-codec",
+ "impl-rkyv",
  "impl-rlp",
  "impl-serde",
  "rkyv",
@@ -2727,7 +2736,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "12.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#7e136525abf0ed718a4195c10fdf4c0f7218b3a5"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3944e2703a979bb8977cf7f7634fb5146a2d678f"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2741,7 +2750,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "8.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#7e136525abf0ed718a4195c10fdf4c0f7218b3a5"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3944e2703a979bb8977cf7f7634fb5146a2d678f"
 dependencies = [
  "cfg-if",
  "revm-primitives",
@@ -2751,7 +2760,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "9.2.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#7e136525abf0ed718a4195c10fdf4c0f7218b3a5"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3944e2703a979bb8977cf7f7634fb5146a2d678f"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2768,7 +2777,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "7.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#7e136525abf0ed718a4195c10fdf4c0f7218b3a5"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3944e2703a979bb8977cf7f7634fb5146a2d678f"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -4176,13 +4185,3 @@ dependencies = [
  "strum 0.24.1",
  "strum_macros 0.24.3",
 ]
-
-[[patch.unused]]
-name = "bls12_381"
-version = "0.8.0"
-source = "git+https://github.com/scroll-tech/bls12_381?branch=feat/impl_scalar_field#2c515f73a2462fef8681c8e884edf1710f52b22a"
-
-[[patch.unused]]
-name = "halo2curves"
-version = "0.1.0"
-source = "git+https://github.com/scroll-tech/halo2curves?branch=v0.1.0#112f5b9bf27f6b1708ba7d1c2fc14cb3c6e55604"
