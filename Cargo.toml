@@ -76,6 +76,7 @@ debug-account = ["csv", "revm/serde"]
 debug-storage = ["csv", "revm/serde"]
 sp1 = []
 cycle-tracker = []
+ordered-db = ["revm/ordered-cache-db"]
 
 [patch.crates-io]
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }

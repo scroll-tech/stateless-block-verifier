@@ -1822,6 +1822,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "impl-rkyv"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#95a446563c608e3cc391945c4d09fce0d48119e3"
+dependencies = [
+ "paste",
+]
+
+[[package]]
 name = "impl-rlp"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2521,10 +2529,11 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "primitive-types"
 version = "0.12.2"
-source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#1fb41c018fe0a3525951fb9d5e1a50b3c17ca855"
+source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#95a446563c608e3cc391945c4d09fce0d48119e3"
 dependencies = [
  "fixed-hash",
  "impl-codec",
+ "impl-rkyv",
  "impl-rlp",
  "impl-serde",
  "rkyv",
@@ -2755,7 +2764,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "12.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#03b072906faf3f826e4daf38ca0be69a73d90ce3"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#df370659cc57b2df35fbcdbd55c27be583824c43"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2769,7 +2778,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "8.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#03b072906faf3f826e4daf38ca0be69a73d90ce3"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#df370659cc57b2df35fbcdbd55c27be583824c43"
 dependencies = [
  "cfg-if",
  "revm-primitives",
@@ -2779,7 +2788,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "9.2.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#03b072906faf3f826e4daf38ca0be69a73d90ce3"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#df370659cc57b2df35fbcdbd55c27be583824c43"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2796,7 +2805,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "7.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#03b072906faf3f826e4daf38ca0be69a73d90ce3"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#df370659cc57b2df35fbcdbd55c27be583824c43"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
