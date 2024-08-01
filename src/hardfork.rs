@@ -2,6 +2,7 @@ use eth_types::{
     forks::{hardfork_heights, HardforkId},
     l2_predeployed::l1_gas_price_oracle,
 };
+use itertools::Itertools;
 use revm::{
     primitives::{Account, AccountStatus, Address, Bytecode, Bytes, EvmStorageSlot, SpecId, U256},
     Database, DatabaseCommit,
@@ -10,17 +11,10 @@ use std::{collections::HashMap, sync::LazyLock};
 
 /// Hardfork heights for Scroll networks, grouped by chain id.
 static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock::new(|| {
-    let mut heights = hardfork_heights();
-    heights.sort_by_key(|a| a.1);
-
-    #[cfg(not(feature = "msrv-1-75"))]
-    let iter = heights
-        .chunk_by(|a, b| a.1 == b.1)
-        .map(|slice| (slice[0].1, slice.iter()));
-    #[cfg(feature = "msrv-1-75")]
-    let iter = itertools::Itertools::chunk_by(heights.iter(), |(_, chain_id, _)| *chain_id);
-
-    let heights = iter
+    let heights = hardfork_heights()
+        .into_iter()
+        .sorted_by_key(|(_, chain_id, _)| *chain_id)
+        .chunk_by(|(_, chain_id, _)| *chain_id)
         .into_iter()
         .map(|(chain_id, slice)| {
             (
@@ -31,7 +25,7 @@ static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock
                             HardforkId::Bernoulli => SpecId::BERNOULLI,
                             HardforkId::Curie => SpecId::CURIE,
                         };
-                        (fork_id, *height)
+                        (fork_id, height)
                     })
                     .collect::<HashMap<_, _>>(),
             )
