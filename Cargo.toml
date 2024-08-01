@@ -12,6 +12,7 @@ revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-execu
 zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "next", features= ["rs_zktrie"] }
 getrandom = { version = "*", features = ["custom"] } # just for disable
 rkyv = { version = "0.7", features = ["validation"] }
+itertools = { version = "0.13.0", optional = true }
 
 # for local development
 #eth-types = { path = "../zkevm-circuits/eth-types", features = ["scroll"] }
@@ -75,9 +76,14 @@ bin-deps = [
 profiling = ["pprof"]
 debug-account = ["csv", "revm/serde"]
 debug-storage = ["csv", "revm/serde"]
+
+# sp1 related
 sp1 = []
 cycle-tracker = []
 ordered-db = ["revm/ordered-cache-db"]
+
+# compatibility
+msrv-1-75 = ["dep:itertools"]
 
 [patch.crates-io]
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }

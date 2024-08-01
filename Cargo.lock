@@ -1211,11 +1211,12 @@ dependencies = [
 [[package]]
 name = "ethereum-types"
 version = "0.14.1"
-source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#1fb41c018fe0a3525951fb9d5e1a50b3c17ca855"
+source = "git+https://github.com/scroll-tech/parity-common.git?branch=feat/rkyv#95a446563c608e3cc391945c4d09fce0d48119e3"
 dependencies = [
  "ethbloom",
  "fixed-hash",
  "impl-codec",
+ "impl-rkyv",
  "impl-rlp",
  "impl-serde",
  "primitive-types",
@@ -1933,6 +1934,15 @@ name = "itertools"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
 dependencies = [
  "either",
 ]
@@ -3294,6 +3304,7 @@ dependencies = [
  "futures",
  "getrandom",
  "hex",
+ "itertools 0.13.0",
  "log",
  "mpt-zktrie",
  "pprof",
