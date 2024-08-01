@@ -12,14 +12,20 @@ use std::{collections::HashMap, sync::LazyLock};
 static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock::new(|| {
     let mut heights = hardfork_heights();
     heights.sort_by_key(|a| a.1);
-    let heights = heights
+
+    #[cfg(not(feature = "msrv-1-75"))]
+    let iter = heights
         .chunk_by(|a, b| a.1 == b.1)
-        .map(|slice| {
-            let chain_id = slice[0].1;
+        .map(|slice| (slice[0].1, slice.iter()));
+    #[cfg(feature = "msrv-1-75")]
+    let iter = itertools::Itertools::chunk_by(heights.iter(), |(_, chain_id, _)| *chain_id);
+
+    let heights = iter
+        .into_iter()
+        .map(|(chain_id, slice)| {
             (
                 chain_id,
                 slice
-                    .iter()
                     .map(|(fork_id, _chain_id, height)| {
                         let fork_id = match fork_id {
                             HardforkId::Bernoulli => SpecId::BERNOULLI,
