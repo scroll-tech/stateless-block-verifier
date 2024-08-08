@@ -65,6 +65,17 @@ impl EvmExecutor {
                 idx,
                 l2_trace.base_fee_per_gas(),
             );
+
+            let recovered_address = eth_tx.recover_from().unwrap();
+
+            // verify that the transaction is valid
+            if recovered_address != eth_tx.from {
+                panic!(
+                    "Invalid transaction: tx.from = {:?}, recover(tx.from) = {:?}",
+                    eth_tx.from, recovered_address
+                );
+            }
+
             let tx_type = TxType::get_tx_type(&eth_tx);
             if tx_type.is_l1_msg() {
                 env.tx.nonce = None; // clear nonce for l1 msg
