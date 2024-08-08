@@ -188,7 +188,7 @@ impl EvmExecutor {
                     }
                 }
             }
-            if (acc.is_empty() && !info.is_empty()) || acc.code_hash.0 != info.code_hash.0 {
+            if (acc.is_empty() && !info.is_empty()) || acc.keccak_code_hash.0 != info.code_hash.0 {
                 assert_ne!(
                     info.poseidon_code_hash,
                     B256::ZERO,

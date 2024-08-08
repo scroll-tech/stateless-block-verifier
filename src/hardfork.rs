@@ -100,6 +100,7 @@ impl HardforkConfig {
         let code = Bytecode::new_raw(Bytes::copy_from_slice(
             l1_gas_price_oracle::V2_BYTECODE.as_slice(),
         ));
+        l1_gas_price_oracle_info.code_size = code.len();
         l1_gas_price_oracle_info.code_hash = code.hash_slow();
         l1_gas_price_oracle_info.poseidon_code_hash = code.poseidon_hash_slow();
         l1_gas_price_oracle_info.code = Some(code);
