@@ -1,9 +1,17 @@
 use crate::database::ReadOnlyDB;
-use eth_types::{geth_types::TxType, H160, H256, U256};
+use eth_types::{geth_types::TxType, Signature, ToBigEndian, H160, H256, U256};
+use ethers_core::{
+    types::{transaction::eip2718::TypedTransaction, RecoveryMessage},
+    utils::{hash_message, keccak256},
+};
 use mpt_zktrie::AccountData;
 use revm::{
     db::CacheDB,
     primitives::{AccountInfo, Env, SpecId},
+};
+use secp256k1::{
+    ecdsa::{RecoverableSignature, RecoveryId},
+    Message, Secp256k1,
 };
 use std::fmt::Debug;
 use zktrie::ZkTrie;
@@ -46,12 +54,105 @@ impl EvmExecutor {
             if tx.raw_type() == 0 {
                 env.tx.chain_id = Some(l2_trace.chain_id());
             }
-            let eth_tx = tx.to_eth_tx(
+            let eth_tx = &tx.to_eth_tx(
                 l2_trace.block_hash(),
                 l2_trace.number(),
                 idx,
                 l2_trace.base_fee_per_gas(),
             );
+
+            // let recovered_address = eth_tx.recover_from().unwrap();
+
+            // // verify that the transaction is valid
+            // if recovered_address != eth_tx.from {
+            //     panic!(
+            //         "Invalid transaction: tx.from = {:?}, recover(tx.from) = {:?}",
+            //         eth_tx.from, recovered_address
+            //     );
+            // }
+
+            let sig = Signature {
+                r: eth_tx.r,
+                s: eth_tx.s,
+                v: eth_tx.v.as_u64(),
+            };
+
+            // let digest: Transaction
+            let typed_tx: TypedTransaction = eth_tx.into();
+            let typed_tx_hash = typed_tx.sighash();
+            let msg = Message::from_digest(typed_tx_hash.0);
+
+            let mut sig_r_le = sig.r.to_be_bytes();
+            let mut sig_s_le = sig.s.to_be_bytes();
+
+            let mut sig_le_bytes = [0u8; 64];
+            sig_le_bytes[..32].copy_from_slice(&sig_r_le);
+            sig_le_bytes[32..64].copy_from_slice(&sig_s_le);
+
+            let recovery_id = RecoveryId::from_i32(sig.v as i32).unwrap();
+            let signature = RecoverableSignature::from_compact(&sig_le_bytes, recovery_id).unwrap();
+
+            // The recovery ID is the last byte of the signature.
+
+            let secp = Secp256k1::new();
+
+            let result = secp.recover_ecdsa(&msg, &signature);
+
+            let secp = Secp256k1::new();
+            let result = secp.recover_ecdsa(&msg, &signature);
+
+            match result {
+                Ok(public_key) => {
+                    // Convert the public key to an Ethereum address
+                    let public_key_bytes = public_key.serialize_uncompressed();
+                    let hash = keccak256(&public_key_bytes[1..]); // Skip the first byte (0x04) which indicates uncompressed key
+                    let recovered_address = H160::from_slice(&hash[12..]); // Take the last 20 bytes
+
+                    // Compare the recovered address with eth_tx.from
+                    if recovered_address != eth_tx.from {
+                        panic!(
+                            "Invalid transaction: tx.from = {:?}, recovered address = {:?}",
+                            eth_tx.from, recovered_address
+                        );
+                    } else {
+                        println!("Transaction signature verified successfully");
+                    }
+                }
+                Err(e) => {
+                    panic!("Failed to recover public key: {:?}", e);
+                }
+            }
+
+            // Continue with the rest of your transaction processing...
+
+            // let message = typed_tx_hash.into();
+            // let message_hash = match message {
+            //     RecoveryMessage::Data(ref message) => hash_message(message),
+            //     RecoveryMessage::Hash(hash) => hash,
+            // };
+            // // Reverse the first 32 bytes (r) and the second 32 bytes (s) of the signature
+            // // and concatenate them to get the signature in big-endian format.
+
+            // let verifying_key = sp1_ecdsa::VerifyingKey::recover_from_prehash(
+            //     typed_tx_hash.as_bytes(),
+            //     &signature,
+            //     recovery_id,
+            // )
+            // .unwrap();
+            // let verifying_key_bytes = {
+            //     let bytes = verifying_key.to_encoded_point(false).to_bytes();
+            //     let mut array = [0u8; 64];
+            //     array.copy_from_slice(&bytes[1..65]);
+            //     array
+            // };
+
+            // unsafe {
+            //     let k = key::PublicKey(crate::ffi::PublicKey::from_array_unchecked(
+            //         verifying_key_bytes,
+            //     ));
+            //     return Ok(k);
+            // }
+
             let tx_type = TxType::get_tx_type(&eth_tx);
             if tx_type.is_l1_msg() {
                 env.tx.nonce = None; // clear nonce for l1 msg
@@ -254,3 +355,17 @@ impl Debug for EvmExecutor {
             .finish()
     }
 }
+
+// fn recover<C: Verification>(
+//     secp: &Secp256k1<C>,
+//     msg: &[u8],
+//     sig: [u8; 64],
+//     recovery_id: u8,
+// ) -> Result<PublicKey, Error> {
+//     let msg = sha256::Hash::hash(msg);
+//     let msg = Message::from_digest_slice(msg.as_ref())?;
+//     let id = ecdsa::RecoveryId::from_i32(recovery_id as i32)?;
+//     let sig = ecdsa::RecoverableSignature::from_compact(&sig, id)?;
+
+//     secp.recover_ecdsa(&msg, &sig)
+// }
