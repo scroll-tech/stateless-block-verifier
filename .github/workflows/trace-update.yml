@@ -1,0 +1,43 @@
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+
+jobs:
+  trace-update:
+    name: Update Trace
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          cat >>~/.ssh/config <<END
+          Host geth
+            HostName ${{ secrets.HOST }}
+            User ${{ secrets.USER }}
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no
+          END
+      - name: Dump latest trace
+        run: |
+          blk=$(ssh geth "curl -s -X POST -H \"Content-Type: application/json\" --data '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\", \"params\":[], \"id\": 99}' 127.0.0.1:8545 | jq -r .result")
+          ssh geth "curl -s -X POST -H \"Content-Type: application/json\" --data '{\"jsonrpc\":\"2.0\",\"method\":\"scroll_getBlockTraceByNumberOrHash\", \"params\":[\"'$blk'\"], \"id\": 99}' 127.0.0.1:8545" > testdata/mainnet_blocks/${blk}.json
+          sed -i 's/testdata\/mainnet_blocks\/\([0-9]*\).json/testdata\/mainnet_blocks\/'$blk'.json/g' README.md
+      - name: Commit
+        run: |
+          git add .
+          git commit -am "Update trace"
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6.1.0
+        with:
+          labels: chore
+          branch: chore/update-trace
+          base: main
+          title: '[chore] Update trace'
