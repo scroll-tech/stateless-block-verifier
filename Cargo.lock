@@ -1594,7 +1594,7 @@ dependencies = [
 [[package]]
 name = "halo2curves"
 version = "0.3.3"
-source = "git+https://github.com/scroll-tech/halo2curves?branch=feat/sp1#acae565b82093989f112557ab0f59f3d53a4d83a"
+source = "git+https://github.com/scroll-tech/halo2curves?branch=feat/sp1#6c89e7b3658c8d46e962608078e632639b67604b"
 dependencies = [
  "ff",
  "group",
@@ -2467,7 +2467,7 @@ dependencies = [
 [[package]]
 name = "poseidon-base"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/poseidon-circuit.git?branch=feat/sp1#cb43e4bb400e9e0b30776abd02b04fce9e12a2fb"
+source = "git+https://github.com/scroll-tech/poseidon-circuit.git?branch=feat/sp1#4df36d956bb28450ce40f1e82465646281ca8e22"
 dependencies = [
  "bitvec",
  "halo2curves",
@@ -2746,7 +2746,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "12.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3944e2703a979bb8977cf7f7634fb5146a2d678f"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3e1516ba21515a9b8010cb8dfdc1662250ea6e9b"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2760,7 +2760,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "8.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3944e2703a979bb8977cf7f7634fb5146a2d678f"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3e1516ba21515a9b8010cb8dfdc1662250ea6e9b"
 dependencies = [
  "cfg-if",
  "revm-primitives",
@@ -2770,7 +2770,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "9.2.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3944e2703a979bb8977cf7f7634fb5146a2d678f"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3e1516ba21515a9b8010cb8dfdc1662250ea6e9b"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2787,7 +2787,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "7.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3944e2703a979bb8977cf7f7634fb5146a2d678f"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v40/sp1#3e1516ba21515a9b8010cb8dfdc1662250ea6e9b"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -2798,6 +2798,7 @@ dependencies = [
  "cfg-if",
  "dyn-clone",
  "enumn",
+ "getrandom",
  "halo2curves",
  "hashbrown 0.14.5",
  "hex",
