@@ -3,6 +3,7 @@ extern crate log;
 
 use clap::Parser;
 use stateless_block_verifier::HardforkConfig;
+#[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
 
 mod commands;
@@ -30,6 +31,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Install the tracing subscriber that will listen for events and filters. We try to use the
     // `RUST_LOG` environment variable and default to RUST_LOG=info if unset.
+    #[cfg(feature = "dev")]
     tracing_subscriber::fmt()
         .with_env_filter(
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),

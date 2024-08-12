@@ -1163,7 +1163,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.12.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#7a13af642d64829a412d4bded8bc4e97422d2a2b"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#b26363c7c34decf37e8e398890cbe5db364b148c"
 dependencies = [
  "base64 0.13.1",
  "ethereum-types",
@@ -2136,7 +2136,7 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.12.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#7a13af642d64829a412d4bded8bc4e97422d2a2b"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#b26363c7c34decf37e8e398890cbe5db364b148c"
 dependencies = [
  "eth-types",
  "halo2curves",

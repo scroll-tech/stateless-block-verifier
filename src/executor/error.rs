@@ -1,4 +1,4 @@
-use ethers_core::types::{Address, SignatureError, H256};
+use eth_types::{types::SignatureError, Address, H256};
 use revm::primitives::EVMError;
 
 use crate::ReadOnlyDB;
