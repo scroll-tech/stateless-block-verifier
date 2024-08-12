@@ -40,5 +40,5 @@ jobs:
         with:
           labels: chore
           branch: chore/update-trace
-          base: main
+          base: master
           title: '[chore] Update trace'
