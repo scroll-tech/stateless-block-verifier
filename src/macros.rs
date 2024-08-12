@@ -1,4 +1,4 @@
-/// This macro is used to notify sp1 cycle tracker that a new routine is started.
+/// This macro is used to notify sp1 cycle tracker that a new routine has started.
 #[macro_export]
 macro_rules! cycle_tracker_start {
     ($($arg:tt)*) => {
@@ -7,7 +7,7 @@ macro_rules! cycle_tracker_start {
     };
 }
 
-/// This macro is used to notify sp1 cycle tracker that a routine is ended.
+/// This macro is used to notify sp1 cycle tracker that a routine has ended.
 #[macro_export]
 macro_rules! cycle_tracker_end {
     ($($arg:tt)*) => {

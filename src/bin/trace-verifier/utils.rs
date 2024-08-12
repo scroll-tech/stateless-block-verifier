@@ -1,6 +1,6 @@
 use eth_types::l2_types::{BlockTrace, BlockTraceV2};
 use eth_types::ToWord;
-use stateless_block_verifier::{utils, EvmExecutorBuilder, HardforkConfig};
+use stateless_block_verifier::{post_check, EvmExecutorBuilder, HardforkConfig};
 use std::sync::atomic::AtomicUsize;
 use std::sync::{LazyLock, Mutex};
 use std::time::Instant;
@@ -36,7 +36,7 @@ pub fn verify(
         .with_execute_hooks(|hooks| {
             if !disable_checks {
                 hooks.add_post_tx_execution_handler(move |executor, tx_id| {
-                    utils::post_check(executor.db(), &l2_trace.execution_results[tx_id]);
+                    post_check(executor.db(), &l2_trace.execution_results[tx_id]);
                 })
             }
         })

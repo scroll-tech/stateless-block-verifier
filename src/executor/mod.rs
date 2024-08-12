@@ -1,4 +1,3 @@
-use crate::database::ReadOnlyDB;
 use eth_types::{geth_types::TxType, H160, H256, U256};
 use mpt_zktrie::AccountData;
 use revm::{
@@ -8,12 +7,20 @@ use revm::{
 use std::fmt::Debug;
 use zktrie::ZkTrie;
 
+use crate::{
+    cycle_tracker_end, cycle_tracker_start,
+    database::ReadOnlyDB,
+    utils::ext::{BlockTraceRevmExt, TxRevmExt},
+};
+
 mod builder;
+pub use builder::EvmExecutorBuilder;
+
+mod error;
+pub use error::VerificationError;
+
 /// Execute hooks
 pub mod hooks;
-use crate::utils::ext::{BlockTraceRevmExt, TxRevmExt};
-use crate::{cycle_tracker_end, cycle_tracker_start};
-pub use builder::EvmExecutorBuilder;
 
 /// EVM executor that handles the block.
 pub struct EvmExecutor {
@@ -22,6 +29,7 @@ pub struct EvmExecutor {
     spec_id: SpecId,
     hooks: hooks::ExecuteHooks,
 }
+
 impl EvmExecutor {
     /// Get reference to the DB
     pub fn db(&self) -> &CacheDB<ReadOnlyDB> {

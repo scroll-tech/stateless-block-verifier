@@ -1,7 +1,11 @@
-use crate::executor::hooks::ExecuteHooks;
-use crate::utils::ext::{BlockRevmDbExt, BlockTraceRevmExt, BlockZktrieExt};
-use crate::{cycle_tracker_end, cycle_tracker_start, EvmExecutor, HardforkConfig, ReadOnlyDB};
 use revm::db::CacheDB;
+
+use crate::{
+    cycle_tracker_end, cycle_tracker_start,
+    executor::hooks::ExecuteHooks,
+    utils::ext::{BlockRevmDbExt, BlockTraceRevmExt, BlockZktrieExt},
+    EvmExecutor, HardforkConfig, ReadOnlyDB,
+};
 
 /// Builder for EVM executor.
 #[derive(Debug)]
@@ -26,7 +30,7 @@ impl EvmExecutorBuilder<()> {
     }
 }
 
-impl<H1> EvmExecutorBuilder<H1> {
+impl<H> EvmExecutorBuilder<H> {
     /// Set hardfork config.
     pub fn hardfork_config<H2>(self, hardfork_config: H2) -> EvmExecutorBuilder<H2> {
         EvmExecutorBuilder {

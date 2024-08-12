@@ -1,4 +1,3 @@
-use crate::utils;
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use ethers_providers::{Http, Middleware, Provider};
@@ -10,6 +9,8 @@ use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
 use url::Url;
+
+use crate::utils;
 
 #[derive(Args)]
 pub struct RunRpcCommand {

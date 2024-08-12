@@ -1,4 +1,3 @@
-use crate::{cycle_tracker_end, cycle_tracker_start, utils::ext::BlockRevmDbExt};
 use eth_types::{
     state_db::{CodeDB, StateDB},
     ToWord, H160,
@@ -6,13 +5,19 @@ use eth_types::{
 use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
+    Database,
 };
 use std::{convert::Infallible, fmt::Debug};
 
-/// EVM database that stores account and storage information.
+use crate::{cycle_tracker_end, cycle_tracker_start, utils::ext::BlockRevmDbExt};
+
+/// A read-only in-memory database that consists of account and storage information.
 #[derive(Debug)]
 pub struct ReadOnlyDB {
+    /// In-memory map of code hash to bytecode. The code hash is a poseidon hash of the bytecode if
+    /// the "scroll" feature is enabled, otherwise by default it is the keccak256 hash.
     code_db: CodeDB,
+    /// In-memory key-value database representing the state trie.
     pub(crate) sdb: StateDB,
 }
 
@@ -78,9 +83,9 @@ impl DatabaseRef for ReadOnlyDB {
         }
     }
 
-    /// Get account code by its hash.
+    /// Get account code by its code hash.
     fn code_by_hash_ref(&self, _: B256) -> Result<Bytecode, Self::Error> {
-        panic!("Should not be called. Code is either loaded or not needed (like EXTCODESIZE)");
+        unreachable!("Code is either loaded or not needed (like EXTCODESIZE)");
     }
 
     /// Get storage value of address at index.
@@ -93,26 +98,26 @@ impl DatabaseRef for ReadOnlyDB {
 
     /// Get block hash by block number.
     fn block_hash_ref(&self, _: u64) -> Result<B256, Self::Error> {
-        unimplemented!("BLOCKHASH is disabled")
+        unreachable!("BLOCKHASH is disabled")
     }
 }
 
-impl revm::Database for ReadOnlyDB {
+impl Database for ReadOnlyDB {
     type Error = Infallible;
 
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         DatabaseRef::basic_ref(self, address)
     }
 
-    fn code_by_hash(&mut self, _code_hash: B256) -> Result<Bytecode, Self::Error> {
-        panic!("Should not be called. Code is already loaded");
+    fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
+        DatabaseRef::code_by_hash_ref(self, code_hash)
     }
 
     fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
         DatabaseRef::storage_ref(self, address, index)
     }
 
-    fn block_hash(&mut self, _: u64) -> Result<B256, Self::Error> {
-        unimplemented!("BLOCKHASH is disabled")
+    fn block_hash(&mut self, block_number: u64) -> Result<B256, Self::Error> {
+        DatabaseRef::block_hash_ref(self, block_number)
     }
 }
