@@ -1,6 +1,7 @@
 use crate::database::ReadOnlyDB;
 use eth_types::{geth_types::TxType, H160, H256, U256};
 use mpt_zktrie::AccountData;
+use revm::precompile::B256;
 use revm::{
     db::CacheDB,
     primitives::{AccountInfo, Env, SpecId},
@@ -187,9 +188,16 @@ impl EvmExecutor {
                     }
                 }
             }
-            if (acc.is_empty() && !info.is_empty()) || acc.code_hash.0 != info.code_hash.0 {
-                acc_data.poseidon_code_hash = H256::from(info.code_hash.0);
-                acc_data.keccak_code_hash = H256::from(info.keccak_code_hash.0);
+            // When the acc from StateDB is empty and info is not, also the code hash changes,
+            // we need to update the code hash and code size
+            if (acc.is_empty() && !info.is_empty()) || acc.keccak_code_hash.0 != info.code_hash.0 {
+                assert_ne!(
+                    info.poseidon_code_hash,
+                    B256::ZERO,
+                    "revm didn't update poseidon_code_hash, acc from StateDB: {acc:?}, revm: {info:?}",
+                );
+                acc_data.poseidon_code_hash = H256::from(info.poseidon_code_hash.0);
+                acc_data.keccak_code_hash = H256::from(info.code_hash.0);
                 acc_data.code_size = self
                     .db
                     .contracts
