@@ -2830,9 +2830,11 @@ dependencies = [
  "cfg-if",
  "dyn-clone",
  "enumn",
+ "halo2curves",
  "hashbrown 0.14.5",
  "hex",
  "kzg-rs",
+ "poseidon-base",
  "serde",
 ]
 

@@ -61,9 +61,11 @@ impl DatabaseRef for ReadOnlyDB {
                 balance: U256::from_limbs(acc.balance.0),
                 nonce: acc.nonce.as_u64(),
                 code_size: acc.code_size.as_usize(),
+                // revm code hash is keccak256 of bytecode
                 code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
+                // we also need poseidon code hash which is [eth_types::Account::code_hash]
                 poseidon_code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
-                // if None, means CodeDB did not include the code, could cause by: EXTCODESIZE
+                // if None, means CodeDB did not include the code, could cause by: EXTCODESIZE, EXTCODEHASH
                 code: self
                     .code_db
                     .0
