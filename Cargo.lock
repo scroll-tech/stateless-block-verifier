@@ -2778,7 +2778,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "12.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#2a3e0a54801892c649b61c17e719c5391f166811"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#5e215742c4d9d771f73d74fcba39628b1a2e3452"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2792,7 +2792,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "8.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#2a3e0a54801892c649b61c17e719c5391f166811"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#5e215742c4d9d771f73d74fcba39628b1a2e3452"
 dependencies = [
  "cfg-if",
  "revm-primitives",
@@ -2802,7 +2802,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "9.2.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#2a3e0a54801892c649b61c17e719c5391f166811"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#5e215742c4d9d771f73d74fcba39628b1a2e3452"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2819,7 +2819,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "7.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#2a3e0a54801892c649b61c17e719c5391f166811"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#5e215742c4d9d771f73d74fcba39628b1a2e3452"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -2830,11 +2830,9 @@ dependencies = [
  "cfg-if",
  "dyn-clone",
  "enumn",
- "halo2curves",
  "hashbrown 0.14.5",
  "hex",
  "kzg-rs",
- "poseidon-base",
  "serde",
 ]
 
