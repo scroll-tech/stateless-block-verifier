@@ -52,15 +52,23 @@ impl EvmExecutorBuilder<HardforkConfig> {
         let spec_id = self.hardfork_config.get_spec_id(block_number);
         trace!("use spec id {:?}", spec_id);
 
-        let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
+        cycle_tracker_start!("build ZktrieState");
+        let zktrie_state = l2_trace.zktrie_state();
+        cycle_tracker_end!("build ZktrieState");
+
+        let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace, &zktrie_state));
         self.hardfork_config.migrate(block_number, &mut db).unwrap();
 
-        cycle_tracker_start!("build ZktrieState");
-        let zktrie = l2_trace.zktrie();
+        cycle_tracker_start!("build Zktrie");
+        let root = *zktrie_state.root();
+        debug!("building partial statedb done, root {}", hex::encode(root));
+        let zktrie_db = zktrie_state.into_inner();
+        let zktrie = zktrie_db.new_trie(&root).unwrap();
         cycle_tracker_end!("build ZktrieState");
 
         EvmExecutor {
             db,
+            zktrie_db,
             zktrie,
             spec_id,
             hooks: self.execute_hooks,
