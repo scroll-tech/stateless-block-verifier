@@ -1,6 +1,9 @@
 use eth_types::l2_types::{BlockTrace, BlockTraceV2};
 use eth_types::ToWord;
-use stateless_block_verifier::{post_check, EvmExecutorBuilder, HardforkConfig};
+use stateless_block_verifier::error::VerificationError;
+use stateless_block_verifier::{
+    dev_error, dev_info, dev_trace, dev_warn, post_check, EvmExecutorBuilder, HardforkConfig,
+};
 use std::sync::atomic::AtomicUsize;
 use std::sync::{LazyLock, Mutex};
 use std::time::Instant;
@@ -10,11 +13,11 @@ pub fn verify(
     fork_config: &HardforkConfig,
     disable_checks: bool,
     log_error: bool,
-) -> bool {
+) -> Result<bool, VerificationError> {
     static BLOCK_COUNTER: AtomicUsize = AtomicUsize::new(0);
     static LAST_TIME: LazyLock<Mutex<Instant>> = LazyLock::new(|| Mutex::new(Instant::now()));
 
-    trace!("{:#?}", l2_trace);
+    dev_trace!("{:#?}", l2_trace);
     let root_after = l2_trace.storage_trace.root_after.to_word();
 
     let v2_trace = BlockTraceV2::from(l2_trace.clone());
@@ -41,7 +44,7 @@ pub fn verify(
             }
         })
         .build(archived);
-    let revm_root_after = executor.handle_block(archived).to_word();
+    let revm_root_after = executor.handle_block(archived)?.to_word();
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {
@@ -55,21 +58,23 @@ pub fn verify(
         ));
         let file = std::fs::File::create(&path).unwrap();
         report.flamegraph(file).unwrap();
-        info!("Profiling report saved to: {:?}", path);
+        dev_info!("Profiling report saved to: {:?}", path);
     }
 
     let elapsed = now.elapsed();
 
     if root_after != revm_root_after {
-        error!("Root after in trace: {:x}", root_after);
-        error!("Root after in revm: {:x}", revm_root_after);
-        error!("Root mismatch");
+        dev_error!("Root after in trace: {:x}", root_after);
+        dev_error!("Root after in revm: {:x}", revm_root_after);
+        dev_error!("Root mismatch");
+
         if !log_error {
             std::process::exit(1);
         }
-        return false;
+        return Ok(false);
     }
-    info!("Root matches in: {} ms", elapsed.as_millis());
+
+    dev_info!("Root matches in: {} ms", elapsed.as_millis());
 
     let block_counter = BLOCK_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     if block_counter > 50 {
@@ -77,9 +82,10 @@ pub fn verify(
         let blocks = BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst);
         let elapsed = last_time.elapsed().as_secs_f64();
         let bps = blocks as f64 / elapsed;
-        warn!("Verifying avg speed: {:.2} bps", bps);
+
+        dev_warn!("Verifying avg speed: {:.2} bps", bps);
         *last_time = Instant::now();
     }
 
-    true
+    Ok(true)
 }

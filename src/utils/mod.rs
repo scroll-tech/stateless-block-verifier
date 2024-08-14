@@ -1,7 +1,15 @@
+#![allow(unused_imports)]
+#![allow(unused_variables)]
 use eth_types::l2_types::ExecutionResult;
-use log::Level;
+
 use revm::DatabaseRef;
 use std::fmt::Debug;
+
+#[cfg(feature = "dev")]
+use tracing::Level;
+
+use crate::dev_error;
+use crate::dev_trace;
 
 pub(crate) mod ext;
 
@@ -48,15 +56,19 @@ where
             .basic_ref(account_post_state.address.0.into())
             .unwrap()
             .unwrap();
-        if log_enabled!(Level::Trace) {
+
+        #[cfg(feature = "dev")]
+        if enabled!(Level::TRACE) {
             let mut local_acc = local_acc.clone();
             local_acc.code = None;
-            trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
+            dev_trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
         }
         let local_balance = eth_types::U256(*local_acc.balance.as_limbs());
         if local_balance != account_post_state.balance {
             ok = false;
+
             let post = account_post_state.balance;
+            #[cfg(feature = "dev")]
             error!(
                 "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
                 local_balance,
@@ -72,27 +84,32 @@ where
         }
         if local_acc.nonce != account_post_state.nonce {
             ok = false;
-            error!("incorrect nonce")
+
+            dev_error!("incorrect nonce")
         }
         let p_hash = account_post_state.poseidon_code_hash;
         if p_hash.is_zero() {
             if !local_acc.is_empty() {
                 ok = false;
-                error!("incorrect poseidon_code_hash")
+
+                dev_error!("incorrect poseidon_code_hash")
             }
         } else if local_acc.code_hash.0 != p_hash.0 {
             ok = false;
-            error!("incorrect poseidon_code_hash")
+
+            dev_error!("incorrect poseidon_code_hash")
         }
         let k_hash = account_post_state.keccak_code_hash;
         if k_hash.is_zero() {
             if !local_acc.is_empty() {
                 ok = false;
-                error!("incorrect keccak_code_hash")
+
+                dev_error!("incorrect keccak_code_hash")
             }
         } else if local_acc.keccak_code_hash.0 != k_hash.0 {
             ok = false;
-            error!("incorrect keccak_code_hash")
+
+            dev_error!("incorrect keccak_code_hash")
         }
     }
     ok

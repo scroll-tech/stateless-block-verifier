@@ -1,7 +1,7 @@
 use revm::db::CacheDB;
 
 use crate::{
-    cycle_tracker_end, cycle_tracker_start,
+    cycle_tracker_end, cycle_tracker_start, dev_trace,
     executor::hooks::ExecuteHooks,
     utils::ext::{BlockRevmDbExt, BlockTraceRevmExt, BlockZktrieExt},
     EvmExecutor, HardforkConfig, ReadOnlyDB,
@@ -54,7 +54,8 @@ impl EvmExecutorBuilder<HardforkConfig> {
     ) -> EvmExecutor {
         let block_number = l2_trace.number();
         let spec_id = self.hardfork_config.get_spec_id(block_number);
-        trace!("use spec id {:?}", spec_id);
+
+        dev_trace!("use spec id {:?}", spec_id);
 
         let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
         self.hardfork_config.migrate(block_number, &mut db).unwrap();

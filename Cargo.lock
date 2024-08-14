@@ -3395,7 +3395,6 @@ dependencies = [
  "futures",
  "hex",
  "itertools 0.13.0",
- "log",
  "mpt-zktrie",
  "pprof",
  "revm",

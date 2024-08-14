@@ -9,7 +9,7 @@ use revm::{
 };
 use std::{convert::Infallible, fmt::Debug};
 
-use crate::{cycle_tracker_end, cycle_tracker_start, utils::ext::BlockRevmDbExt};
+use crate::{cycle_tracker_end, cycle_tracker_start, dev_trace, utils::ext::BlockRevmDbExt};
 
 /// A read-only in-memory database that consists of account and storage information.
 #[derive(Debug)]
@@ -28,14 +28,14 @@ impl ReadOnlyDB {
         let mut sdb = StateDB::new();
         cycle_tracker_start!("insert StateDB account");
         for (addr, account) in l2_trace.accounts() {
-            trace!("insert account {:?} {:?}", addr, account);
+            dev_trace!("insert account {:?} {:?}", addr, account);
             sdb.set_account(&addr, account);
         }
         cycle_tracker_end!("insert StateDB account");
 
         cycle_tracker_start!("insert StateDB storage");
         for ((addr, key), val) in l2_trace.storages() {
-            trace!("insert storage {:?} {:?} {:?}", addr, key, val);
+            dev_trace!("insert storage {:?} {:?} {:?}", addr, key, val);
             let key = key.to_word();
             *sdb.get_storage_mut(&addr, &key).1 = val;
         }
@@ -62,7 +62,8 @@ impl DatabaseRef for ReadOnlyDB {
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
         let (exist, acc) = self.sdb.get_account(&H160::from(**address));
-        trace!("loaded account: {address:?}, exist: {exist}, acc: {acc:?}");
+
+        dev_trace!("loaded account: {address:?}, exist: {exist}, acc: {acc:?}");
         if exist {
             let acc = AccountInfo {
                 balance: U256::from_limbs(acc.balance.0),

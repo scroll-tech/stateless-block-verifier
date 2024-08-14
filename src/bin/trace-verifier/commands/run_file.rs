@@ -1,6 +1,6 @@
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
-use stateless_block_verifier::HardforkConfig;
+use stateless_block_verifier::{dev_info, HardforkConfig};
 use std::path::PathBuf;
 
 use crate::utils;
@@ -19,7 +19,7 @@ impl RunFileCommand {
         disable_checks: bool,
     ) -> anyhow::Result<()> {
         for path in self.path {
-            info!("Reading trace from {:?}", path);
+            dev_info!("Reading trace from {:?}", path);
 
             let trace: BlockTrace = tokio::fs::read_to_string(&path).await.and_then(|trace| {
                 Ok(
@@ -40,7 +40,7 @@ impl RunFileCommand {
             tokio::task::spawn_blocking(move || {
                 utils::verify(trace, &fork_config, disable_checks, false)
             })
-            .await?;
+            .await??;
         }
         Ok(())
     }

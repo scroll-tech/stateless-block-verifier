@@ -15,3 +15,58 @@ macro_rules! cycle_tracker_end {
         println!("cycle-tracker-end: {}", format!($($arg)*));
     };
 }
+
+/// This macro is for logging level trace
+#[macro_export]
+macro_rules! dev_trace {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "dev")]
+        {
+            trace!($($arg)*);
+        }
+    };
+}
+
+/// This macro is for logging level info
+#[macro_export]
+macro_rules! dev_info {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "dev")]
+        {
+            info!($($arg)*);
+        }
+    };
+}
+
+/// This macro is for logging level error
+#[macro_export]
+macro_rules! dev_error {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "dev")]
+        {
+            error!($($arg)*);
+        }
+    };
+}
+
+/// This macro is for logging level debug
+#[macro_export]
+macro_rules! dev_debug {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "dev")]
+        {
+            debug!($($arg)*);
+        }
+    };
+}
+
+/// This macro is for logging level warn
+#[macro_export]
+macro_rules! dev_warn {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "dev")]
+        {
+            warn!($($arg)*);
+        }
+    };
+}

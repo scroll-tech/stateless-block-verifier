@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 hex = "0.4"
 itertools = "0.13.0" # for compatibility msrv 1.75
-log = "0.4"
+#log = "0.4"
 rkyv = { version = "0.7", features = ["validation"] }
 thiserror = "1.0"
 
@@ -81,6 +81,7 @@ profiling = ["pprof"]
 debug-account = ["csv", "revm/serde"]
 debug-storage = ["csv", "revm/serde"]
 dev = ["tracing", "tracing-subscriber"]
+#dev = []
 
 # sp1 related
 sp1 = []

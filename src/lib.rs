@@ -2,9 +2,12 @@
 
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
+// #![allow(unused_imports)]
+// #![allow(unused_variables)]
 
+#[cfg(feature = "dev")]
 #[macro_use]
-extern crate log;
+extern crate tracing;
 
 mod macros;
 
@@ -12,7 +15,7 @@ mod database;
 pub use database::ReadOnlyDB;
 
 mod executor;
-pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
+pub use executor::{error, hooks, EvmExecutor, EvmExecutorBuilder};
 
 mod hardfork;
 pub use hardfork::HardforkConfig;
