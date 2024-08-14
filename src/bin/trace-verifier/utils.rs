@@ -21,9 +21,12 @@ pub fn verify(
     let root_after = l2_trace.storage_trace.root_after.to_word();
 
     let v2_trace = BlockTraceV2::from(l2_trace.clone());
-    let serialized = rkyv::to_bytes::<BlockTraceV2, 4096>(&v2_trace).unwrap();
+    let serialized = rkyv::to_bytes::<BlockTraceV2, 4096>(&v2_trace)
+        .map_err(|e| VerificationError::RkyvError(format!("Failed to serialize trace: {:?}", e)))?;
     // let archived = unsafe { rkyv::archived_root::<BlockTraceV2>(&serialized[..]) };
-    let archived = rkyv::check_archived_root::<BlockTraceV2>(&serialized[..]).unwrap();
+    let archived = rkyv::check_archived_root::<BlockTraceV2>(&serialized[..]).map_err(|e| {
+        VerificationError::RkyvError(format!("Failed to check archived root: {:?}", e))
+    })?;
 
     let now = Instant::now();
 

@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use eth_types::{types::SignatureError, Address, H256, U256};
 use revm::primitives::EVMError;
 
@@ -41,4 +43,8 @@ pub enum VerificationError {
         /// Root after in revm
         root_revm: U256,
     },
+
+    /// Error encountered from [`rkyv`]
+    #[error("error encountered from rkyv: {0}")]
+    RkyvError(String),
 }
