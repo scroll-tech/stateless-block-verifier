@@ -34,7 +34,6 @@ pub enum VerificationError {
         /// The source error originating in [`revm`].
         source: EVMError<<ReadOnlyDB as revm::Database>::Error>,
     },
-
     /// Root mismatch error
     #[error("root_after in trace doesn't match with root_after in revm: root_trace={root_trace}, root_revm={root_revm}")]
     RootMismatch {
@@ -43,8 +42,4 @@ pub enum VerificationError {
         /// Root after in revm
         root_revm: U256,
     },
-
-    /// Error encountered from [`rkyv`]
-    #[error("error encountered from rkyv: {0}")]
-    RkyvError(String),
 }

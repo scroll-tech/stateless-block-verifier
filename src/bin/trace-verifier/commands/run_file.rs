@@ -1,6 +1,6 @@
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
-use stateless_block_verifier::{dev_error, dev_info, HardforkConfig};
+use stateless_block_verifier::{dev_info, HardforkConfig};
 use std::path::PathBuf;
 
 use crate::utils;
@@ -37,13 +37,10 @@ impl RunFileCommand {
             })?;
 
             let fork_config = fork_config(trace.chain_id);
-            if let Err(err) = tokio::task::spawn_blocking(move || {
+            tokio::task::spawn_blocking(move || {
                 utils::verify(trace, &fork_config, disable_checks, false)
             })
-            .await?
-            {
-                dev_error!("Verification failed: {:?}", err);
-            }
+            .await??
         }
         Ok(())
     }

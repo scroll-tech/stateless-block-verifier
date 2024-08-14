@@ -2,7 +2,7 @@ use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use ethers_providers::{Http, Middleware, Provider};
 use futures::future::OptionFuture;
-use stateless_block_verifier::{dev_error, dev_info, HardforkConfig};
+use stateless_block_verifier::{dev_info, HardforkConfig};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -69,7 +69,7 @@ impl RunRpcCommand {
         let error_log = OptionFuture::from(
             self.log_error
                 .as_ref()
-                .map(|path| tokio::fs::File::create(path)),
+                .map(tokio::fs::File::create),
         )
         .await
         .transpose()?
@@ -105,11 +105,6 @@ impl RunRpcCommand {
                             guard
                                 .write_all(format!("{block_number}\n").as_bytes())
                                 .await?;
-                            dev_error!(
-                                "Verification failed for block #{}: {:?}",
-                                block_number,
-                                err
-                            );
                         }
                     }
                     Ok::<_, anyhow::Error>(())

@@ -14,8 +14,11 @@ mod macros;
 mod database;
 pub use database::ReadOnlyDB;
 
+mod error;
+pub use error::VerificationError;
+
 mod executor;
-pub use executor::{error, hooks, EvmExecutor, EvmExecutorBuilder};
+pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
 
 mod hardfork;
 pub use hardfork::HardforkConfig;

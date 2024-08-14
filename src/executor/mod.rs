@@ -1,4 +1,3 @@
-use error::VerificationError;
 use eth_types::{geth_types::TxType, H160, H256, U256};
 use mpt_zktrie::AccountData;
 use revm::{
@@ -12,14 +11,12 @@ use crate::{
     cycle_tracker_end, cycle_tracker_start,
     database::ReadOnlyDB,
     dev_debug, dev_trace,
+    error::VerificationError,
     utils::ext::{BlockTraceRevmExt, TxRevmExt},
 };
 
 mod builder;
 pub use builder::EvmExecutorBuilder;
-
-/// Error variants
-pub mod error;
 
 /// Execute hooks
 pub mod hooks;
@@ -223,7 +220,7 @@ impl EvmExecutor {
             }
 
             #[cfg(feature = "debug-account")]
-            debug_account.insert(*addr, acc_data.clone());
+            debug_account.insert(*addr, acc_data);
 
             cycle_tracker_start!("Zktrie::update_account");
             self.zktrie
