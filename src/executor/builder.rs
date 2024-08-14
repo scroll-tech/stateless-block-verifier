@@ -64,7 +64,7 @@ impl EvmExecutorBuilder<HardforkConfig> {
         debug!("building partial statedb done, root {}", hex::encode(root));
         let zktrie_db = zktrie_state.into_inner();
         let zktrie = zktrie_db.new_trie(&root).unwrap();
-        cycle_tracker_end!("build ZktrieState");
+        cycle_tracker_end!("build Zktrie");
 
         EvmExecutor {
             db,
