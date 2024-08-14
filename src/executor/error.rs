@@ -1,4 +1,4 @@
-use eth_types::{types::SignatureError, Address, H256};
+use eth_types::{types::SignatureError, Address, H256, U256};
 use revm::primitives::EVMError;
 
 use crate::ReadOnlyDB;
@@ -31,5 +31,14 @@ pub enum VerificationError {
         tx_hash: H256,
         /// The source error originating in [`revm`].
         source: EVMError<<ReadOnlyDB as revm::Database>::Error>,
+    },
+
+    /// Root mismatch error
+    #[error("root_after in trace doesn't match with root_after in revm: root_trace={root_trace}, root_revm={root_revm}")]
+    RootMismatch {
+        /// Root after in trace
+        root_trace: U256,
+        /// Root after in revm
+        root_revm: U256,
     },
 }

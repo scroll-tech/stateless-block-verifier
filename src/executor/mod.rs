@@ -88,7 +88,6 @@ impl EvmExecutor {
                 dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
                 cycle_tracker_start!("transact_commit");
-                #[allow(unused_variables)]
                 let result =
                     revm.transact_commit()
                         .map_err(|e| VerificationError::EvmExecution {

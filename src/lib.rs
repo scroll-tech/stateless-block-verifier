@@ -2,8 +2,8 @@
 
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
-// #![allow(unused_imports)]
-// #![allow(unused_variables)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
 
 #[cfg(feature = "dev")]
 #[macro_use]

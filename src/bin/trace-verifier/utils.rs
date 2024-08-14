@@ -13,7 +13,7 @@ pub fn verify(
     fork_config: &HardforkConfig,
     disable_checks: bool,
     log_error: bool,
-) -> Result<bool, VerificationError> {
+) -> Result<(), VerificationError> {
     static BLOCK_COUNTER: AtomicUsize = AtomicUsize::new(0);
     static LAST_TIME: LazyLock<Mutex<Instant>> = LazyLock::new(|| Mutex::new(Instant::now()));
 
@@ -71,7 +71,10 @@ pub fn verify(
         if !log_error {
             std::process::exit(1);
         }
-        return Ok(false);
+        return Err(VerificationError::RootMismatch {
+            root_trace: root_after,
+            root_revm: revm_root_after,
+        });
     }
 
     dev_info!("Root matches in: {} ms", elapsed.as_millis());
@@ -87,5 +90,5 @@ pub fn verify(
         *last_time = Instant::now();
     }
 
-    Ok(true)
+    Ok(())
 }
