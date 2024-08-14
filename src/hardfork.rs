@@ -100,9 +100,13 @@ impl HardforkConfig {
         let l1_gas_price_oracle_addr = Address::from(l1_gas_price_oracle::ADDRESS.0);
         let mut l1_gas_price_oracle_info = db.basic(l1_gas_price_oracle_addr)?.unwrap_or_default();
         // Set the new code
-        l1_gas_price_oracle_info.set_code_rehash_slow(Some(Bytecode::new_raw(
-            Bytes::copy_from_slice(l1_gas_price_oracle::V2_BYTECODE.as_slice()),
-        )));
+        let code = Bytecode::new_raw(Bytes::copy_from_slice(
+            l1_gas_price_oracle::V2_BYTECODE.as_slice(),
+        ));
+        l1_gas_price_oracle_info.code_size = code.len();
+        l1_gas_price_oracle_info.code_hash = code.hash_slow();
+        l1_gas_price_oracle_info.poseidon_code_hash = code.poseidon_hash_slow();
+        l1_gas_price_oracle_info.code = Some(code);
 
         let l1_gas_price_oracle_acc = Account {
             info: l1_gas_price_oracle_info,

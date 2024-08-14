@@ -94,7 +94,7 @@ where
 
                 dev_error!("incorrect poseidon_code_hash")
             }
-        } else if local_acc.code_hash.0 != p_hash.0 {
+        } else if local_acc.poseidon_code_hash.0 != p_hash.0 {
             ok = false;
 
             dev_error!("incorrect poseidon_code_hash")
@@ -106,7 +106,7 @@ where
 
                 dev_error!("incorrect keccak_code_hash")
             }
-        } else if local_acc.keccak_code_hash.0 != k_hash.0 {
+        } else if local_acc.code_hash.0 != k_hash.0 {
             ok = false;
 
             dev_error!("incorrect keccak_code_hash")

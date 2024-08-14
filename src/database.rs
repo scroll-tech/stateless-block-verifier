@@ -1,6 +1,6 @@
 use eth_types::{
     state_db::{CodeDB, StateDB},
-    ToWord, H160,
+    ToWord, H160, H256,
 };
 use revm::{
     db::DatabaseRef,
@@ -43,11 +43,9 @@ impl ReadOnlyDB {
 
         let mut code_db = CodeDB::new();
         cycle_tracker_start!("insert CodeDB");
-        for (hash, code) in l2_trace.codes() {
-            // FIXME: use this later
-            // let hash = code_db.insert(code_trace.code.to_vec());
-            // assert_eq!(hash, code_trace.hash);
-            code_db.insert_with_hash(hash, code);
+        for (_, code) in l2_trace.codes() {
+            let hash = revm::primitives::keccak256(code.as_slice());
+            code_db.insert_with_hash(H256(hash.0), code);
         }
         cycle_tracker_end!("insert CodeDB");
         cycle_tracker_end!("build ReadOnlyDB");
@@ -69,13 +67,15 @@ impl DatabaseRef for ReadOnlyDB {
                 balance: U256::from_limbs(acc.balance.0),
                 nonce: acc.nonce.as_u64(),
                 code_size: acc.code_size.as_usize(),
-                code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
-                keccak_code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
-                // if None, means CodeDB did not include the code, could cause by: EXTCODESIZE
+                // revm code hash is keccak256 of bytecode
+                code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
+                // we also need poseidon code hash which is [eth_types::Account::code_hash]
+                poseidon_code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
+                // if None, means CodeDB did not include the code, could cause by: EXTCODESIZE, EXTCODEHASH
                 code: self
                     .code_db
                     .0
-                    .get(&acc.code_hash)
+                    .get(&acc.keccak_code_hash)
                     .map(|vec| Bytecode::new_raw(revm::primitives::Bytes::from(vec.clone()))),
             };
             Ok(Some(acc))
