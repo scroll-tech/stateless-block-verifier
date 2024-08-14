@@ -92,7 +92,7 @@ pub trait BlockZktrieExt: BlockTraceExt {
         let old_root = self.root_before();
 
         if let Some(flatten_proofs) = self.flatten_proofs() {
-            log::info!("always init mpt state with flatten proofs");
+            log::debug!("init mpt state with flatten proofs");
             let mut state = ZktrieState::construct(old_root);
             let zk_db = state.expose_db();
             for (k, bytes) in flatten_proofs {
@@ -108,7 +108,7 @@ pub trait BlockZktrieExt: BlockTraceExt {
             );
 
             log::debug!(
-                "building partial ZktrieState done from flatten_proofs, root {}",
+                "building partial ZktrieState done from flatten proofs, root {}",
                 hex::encode(state.root())
             );
 
