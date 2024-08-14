@@ -189,11 +189,13 @@ impl EvmExecutor {
                     }
                 }
             }
+            // When the acc from StateDB is empty and info is not, also the code hash changes,
+            // we need to update the code hash and code size
             if (acc.is_empty() && !info.is_empty()) || acc.keccak_code_hash.0 != info.code_hash.0 {
                 assert_ne!(
                     info.poseidon_code_hash,
                     B256::ZERO,
-                    "poseidon_code_hash didn't update"
+                    "revm didn't update poseidon_code_hash, acc from StateDB: {acc:?}, revm: {info:?}",
                 );
                 acc_data.poseidon_code_hash = H256::from(info.poseidon_code_hash.0);
                 acc_data.keccak_code_hash = H256::from(info.code_hash.0);
