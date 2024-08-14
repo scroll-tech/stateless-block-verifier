@@ -3,6 +3,7 @@ use eth_types::{
     state_db::{CodeDB, StateDB},
     ToWord, H160, H256,
 };
+use mpt_zktrie::ZktrieState;
 use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
@@ -18,18 +19,18 @@ pub struct ReadOnlyDB {
 
 impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
-    pub fn new<T: BlockRevmDbExt>(l2_trace: &T) -> Self {
+    pub fn new<T: BlockRevmDbExt>(l2_trace: &T, zktrie_state: &ZktrieState) -> Self {
         cycle_tracker_start!("build ReadOnlyDB");
         let mut sdb = StateDB::new();
         cycle_tracker_start!("insert StateDB account");
-        for (addr, account) in l2_trace.accounts() {
+        for (addr, account) in l2_trace.accounts(zktrie_state) {
             trace!("insert account {:?} {:?}", addr, account);
             sdb.set_account(&addr, account);
         }
         cycle_tracker_end!("insert StateDB account");
 
         cycle_tracker_start!("insert StateDB storage");
-        for ((addr, key), val) in l2_trace.storages() {
+        for ((addr, key), val) in l2_trace.storages(zktrie_state) {
             trace!("insert storage {:?} {:?} {:?}", addr, key, val);
             let key = key.to_word();
             *sdb.get_storage_mut(&addr, &key).1 = val;
@@ -38,9 +39,9 @@ impl ReadOnlyDB {
 
         let mut code_db = CodeDB::new();
         cycle_tracker_start!("insert CodeDB");
-        for (_, code) in l2_trace.codes() {
-            let hash = revm::primitives::keccak256(code.as_slice());
-            code_db.insert_with_hash(H256(hash.0), code);
+        for code in l2_trace.codes() {
+            let hash = revm::primitives::keccak256(code);
+            code_db.insert_with_hash(H256(hash.0), code.to_vec());
         }
         cycle_tracker_end!("insert CodeDB");
         cycle_tracker_end!("build ReadOnlyDB");
