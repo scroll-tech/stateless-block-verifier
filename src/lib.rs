@@ -4,6 +4,7 @@
 #[macro_use]
 extern crate log;
 
+mod chunk;
 mod database;
 mod executor;
 mod hardfork;

@@ -13,6 +13,10 @@ impl<T: BlockTraceExt> BlockTraceExt for &T {
         (*self).root_after()
     }
     #[inline(always)]
+    fn withdraw_root(&self) -> H256 {
+        (*self).withdraw_root()
+    }
+    #[inline(always)]
     fn account_proofs(&self) -> impl Iterator<Item = (&Address, impl IntoIterator<Item = &[u8]>)> {
         (*self).account_proofs()
     }
@@ -41,6 +45,10 @@ impl<T: BlockTraceExt> BlockTraceExt for &T {
     #[inline(always)]
     fn codes(&self) -> impl Iterator<Item = &[u8]> {
         (*self).codes()
+    }
+    #[inline(always)]
+    fn start_l1_queue_index(&self) -> u64 {
+        (*self).start_l1_queue_index()
     }
 }
 
@@ -123,6 +131,10 @@ impl<T: TxRevmExt> TxRevmExt for &T {
     fn raw_type(&self) -> u8 {
         (*self).raw_type()
     }
+    #[inline(always)]
+    fn tx_hash(&self) -> B256 {
+        (*self).tx_hash()
+    }
 
     #[inline(always)]
     fn caller(&self) -> revm::precompile::Address {
@@ -190,3 +202,5 @@ impl<T: TxRevmExt> TxRevmExt for &T {
         )
     }
 }
+
+impl<T: BlockChunkExt> BlockChunkExt for &T {}

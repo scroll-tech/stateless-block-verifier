@@ -9,6 +9,7 @@ mod imp;
 pub trait BlockTraceExt {
     fn root_before(&self) -> H256;
     fn root_after(&self) -> H256;
+    fn withdraw_root(&self) -> H256;
     fn account_proofs(&self) -> impl Iterator<Item = (&Address, impl IntoIterator<Item = &[u8]>)>;
     fn storage_proofs(
         &self,
@@ -18,6 +19,7 @@ pub trait BlockTraceExt {
     fn address_hashes(&self) -> impl Iterator<Item = (&Address, &H256)>;
     fn store_key_hashes(&self) -> impl Iterator<Item = (&H256, &H256)>;
     fn codes(&self) -> impl Iterator<Item = &[u8]>;
+    fn start_l1_queue_index(&self) -> u64;
 }
 
 /// Revm extension trait for BlockTrace
@@ -47,6 +49,7 @@ pub trait BlockTraceRevmExt {
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx>;
 
     /// creates `revm::primitives::BlockEnv`
+    #[inline]
     fn env(&self) -> revm::primitives::BlockEnv {
         revm::primitives::BlockEnv {
             number: U256::from_limbs([self.number(), 0, 0, 0]),
@@ -125,9 +128,62 @@ pub trait BlockZktrieExt: BlockTraceExt {
     }
 }
 
+pub trait BlockChunkExt: BlockTraceExt + BlockTraceRevmExt {
+    #[inline]
+    fn num_l1_txs(&self) -> u64 {
+        // 0x7e is l1 tx
+        match self
+            .transactions()
+            .filter(|tx| tx.is_l1_tx())
+            // tx.nonce for l1 tx is the l1 queue index, which is a globally index,
+            // not per user as suggested by the name...
+            .map(|tx| tx.nonce())
+            .max()
+        {
+            None => 0, // not l1 tx in this block
+            Some(end_l1_queue_index) => end_l1_queue_index - self.start_l1_queue_index() + 1,
+        }
+    }
+    #[inline]
+    fn num_l2_txs(&self) -> u64 {
+        // 0x7e is l1 tx
+        self.transactions().filter(|tx| !tx.is_l1_tx()).count() as u64
+    }
+
+    #[inline]
+    fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        let num_txs = (self.num_l1_txs() + self.num_l2_txs()) as u16;
+        hasher.update(&self.number().to_be_bytes());
+        hasher.update(&self.timestamp().to::<u64>().to_be_bytes());
+        hasher.update(
+            &self
+                .base_fee_per_gas()
+                .unwrap_or_default()
+                .to_be_bytes::<{ U256::BYTES }>(),
+        );
+        hasher.update(&self.gas_limit().to::<u64>().to_be_bytes());
+        hasher.update(&num_txs.to_be_bytes());
+    }
+
+    #[inline]
+    fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        for tx_hash in self
+            .transactions()
+            .filter(|tx| tx.is_l1_tx())
+            .map(|tx| tx.tx_hash())
+        {
+            hasher.update(tx_hash.as_slice())
+        }
+    }
+}
+
 pub trait TxRevmExt {
     /// get the raw tx type
     fn raw_type(&self) -> u8;
+    fn is_l1_tx(&self) -> bool {
+        self.raw_type() == 0x7e
+    }
+    fn tx_hash(&self) -> B256;
     fn caller(&self) -> revm::primitives::Address;
     fn gas_limit(&self) -> u64;
     fn gas_price(&self) -> U256;
@@ -183,7 +239,7 @@ mod tests {
         let h160 = eth_types::H160::from(array::from_fn(|i| i as u8));
         let serialized = rkyv::to_bytes::<_, 20>(&h160).unwrap();
         let archived: &ArchivedH160 = unsafe { rkyv::archived_root::<H160>(&serialized[..]) };
-        assert_eq!(archived, &h160);
+        assert_eq!(archived.0, h160.0);
         let ptr_to_archived: usize = archived as *const _ as usize;
         let ptr_to_archived_inner: usize = (&archived.0) as *const _ as usize;
         assert_eq!(ptr_to_archived, ptr_to_archived_inner);
