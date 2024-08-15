@@ -2,6 +2,15 @@ use crate::utils::ext::BlockChunkExt;
 use eth_types::H256;
 use tiny_keccak::{Hasher, Keccak};
 
+/// A chunk is a set of continuous blocks.
+/// ChunkInfo is metadata of chunk, with following fields:
+/// - state root before this chunk
+/// - state root after this chunk
+/// - the withdraw root after this chunk
+/// - the data hash of this chunk
+/// - the tx data hash of this chunk
+/// - flattened L2 tx bytes hash
+#[derive(Debug)]
 pub struct ChunkInfo {
     chain_id: u64,
     prev_state_root: H256,
