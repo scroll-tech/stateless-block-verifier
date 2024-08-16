@@ -6,6 +6,7 @@
 #[macro_use]
 extern crate log;
 
+mod chunk;
 mod database;
 mod executor;
 mod hardfork;
@@ -13,6 +14,7 @@ mod marcos;
 /// Utilities
 pub mod utils;
 
+pub use chunk::ChunkInfo;
 pub use database::ReadOnlyDB;
 pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
 pub use hardfork::HardforkConfig;

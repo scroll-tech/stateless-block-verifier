@@ -12,6 +12,7 @@ zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "main", f
 getrandom = { version = "*", features = ["custom"] } # just for disable
 rkyv = { version = "0.7", features = ["validation"] }
 itertools = "0.13.0" # for compatibility msrv 1.75
+tiny-keccak = "2.0"
 
 # for local development
 #eth-types = { path = "../zkevm-circuits/eth-types", features = ["scroll"] }
@@ -54,6 +55,12 @@ features = [
     "std",
     "optional_no_base_fee"
 ]
+
+[dev-dependencies]
+aggregator = { git = "https://github.com/scroll-tech/zkevm-circuits", branch = "feat/rkyv" }
+#aggregator = { path = "../zkevm-circuits/aggregator" }
+serde = { version = "1.0" }
+serde_json = { version = "1.0" }
 
 [[bin]]
 name = "stateless-block-verifier"
@@ -104,6 +111,13 @@ ethereum-types = { git = "https://github.com/scroll-tech/parity-common.git", bra
 #ethers-signers  = { path = "../ethers-rs/ethers-signers" }
 #primitive-types = { path = "../parity-common/primitive-types" }
 #ethereum-types = { path = "../parity-common/ethereum-types" }
+
+[patch."https://github.com/privacy-scaling-explorations/halo2.git"]
+halo2_proofs = { git = "https://github.com/scroll-tech/halo2.git", branch = "v1.1" }
+
+[patch."https://github.com/scroll-tech/poseidon-circuit.git"]
+poseidon-base = { git = "https://github.com/scroll-tech//poseidon-circuit", branch = "feat/sp1" }
+hash-circuit = { package = "poseidon-circuit", git = "https://github.com/scroll-tech//poseidon-circuit", branch = "feat/sp1" }
 
 [profile.release]
 debug-assertions = true

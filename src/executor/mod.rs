@@ -61,7 +61,9 @@ impl EvmExecutor {
                 env.cfg.disable_base_fee = true; // disable base fee for l1 msg
             }
             env.tx.scroll.is_l1_msg = tx_type.is_l1_msg();
-            env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
+            let rlp_bytes = eth_tx.rlp().to_vec();
+            self.hooks.tx_rlp(self, &rlp_bytes);
+            env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(rlp_bytes));
             trace!("{env:#?}");
             {
                 cycle_tracker_start!("build Evm");

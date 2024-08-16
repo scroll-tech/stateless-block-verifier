@@ -14,6 +14,10 @@ impl TxRevmExt for TransactionTrace {
         self.type_
     }
     #[inline]
+    fn tx_hash(&self) -> B256 {
+        B256::new(self.tx_hash.0)
+    }
+    #[inline]
     fn caller(&self) -> revm::precompile::Address {
         self.from.0.into()
     }

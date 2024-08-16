@@ -1,14 +1,18 @@
-use eth_types::l2_types::{BlockTrace, BlockTraceV2};
+use eth_types::l2_types::BlockTrace;
 use eth_types::ToWord;
 use stateless_block_verifier::{utils, EvmExecutorBuilder, HardforkConfig};
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::atomic::AtomicUsize;
 use std::sync::{LazyLock, Mutex};
 use std::time::Instant;
+use tiny_keccak::{Hasher, Keccak};
 
 pub fn verify(
-    l2_trace: BlockTrace,
+    l2_trace: &BlockTrace,
     fork_config: &HardforkConfig,
     disable_checks: bool,
+    tx_bytes_hasher: Option<Rc<RefCell<Keccak>>>,
     log_error: bool,
 ) -> bool {
     static BLOCK_COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -17,10 +21,13 @@ pub fn verify(
     trace!("{:#?}", l2_trace);
     let root_after = l2_trace.storage_trace.root_after.to_word();
 
-    let v2_trace = BlockTraceV2::from(l2_trace.clone());
-    let serialized = rkyv::to_bytes::<BlockTraceV2, 4096>(&v2_trace).unwrap();
+    // or with v2 trace
+    // let v2_trace = BlockTraceV2::from(l2_trace.clone());
+
+    // or with rkyv zero copy
+    // let serialized = rkyv::to_bytes::<BlockTraceV2, 4096>(&v2_trace).unwrap();
     // let archived = unsafe { rkyv::archived_root::<BlockTraceV2>(&serialized[..]) };
-    let archived = rkyv::check_archived_root::<BlockTraceV2>(&serialized[..]).unwrap();
+    // let archived = rkyv::check_archived_root::<BlockTraceV2>(&serialized[..]).unwrap();
 
     let now = Instant::now();
 
@@ -34,14 +41,21 @@ pub fn verify(
     let mut executor = EvmExecutorBuilder::new()
         .hardfork_config(*fork_config)
         .with_execute_hooks(|hooks| {
+            let l2_trace = l2_trace.clone();
             if !disable_checks {
                 hooks.add_post_tx_execution_handler(move |executor, tx_id| {
                     utils::post_check(executor.db(), &l2_trace.execution_results[tx_id]);
                 })
             }
+
+            if let Some(hasher) = tx_bytes_hasher {
+                hooks.add_tx_rlp_handler(move |_, rlp| {
+                    hasher.borrow_mut().update(rlp);
+                });
+            }
         })
-        .build(archived);
-    let revm_root_after = executor.handle_block(archived).to_word();
+        .build(&l2_trace);
+    let revm_root_after = executor.handle_block(&l2_trace).to_word();
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

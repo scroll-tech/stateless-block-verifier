@@ -13,6 +13,10 @@ impl BlockTraceExt for BlockTrace {
         self.storage_trace.root_after
     }
     #[inline(always)]
+    fn withdraw_root(&self) -> H256 {
+        self.withdraw_trie_root
+    }
+    #[inline(always)]
     fn flatten_proofs(&self) -> Option<impl Iterator<Item = (&H256, &[u8])>> {
         if self.storage_trace.flatten_proofs.is_empty() {
             None
@@ -69,6 +73,10 @@ impl BlockTraceExt for BlockTrace {
     fn codes(&self) -> impl Iterator<Item = &[u8]> {
         self.codes.iter().map(|code| code.code.as_ref())
     }
+    #[inline]
+    fn start_l1_queue_index(&self) -> u64 {
+        self.start_l1_queue_index
+    }
 }
 
 impl BlockTraceRevmExt for BlockTrace {
@@ -121,3 +129,5 @@ impl BlockTraceRevmExt for BlockTrace {
 impl BlockRevmDbExt for BlockTrace {}
 
 impl BlockZktrieExt for BlockTrace {}
+
+impl BlockChunkExt for BlockTrace {}

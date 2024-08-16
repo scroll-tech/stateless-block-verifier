@@ -7,7 +7,11 @@ pub(crate) mod ext;
 
 /// Blanket trait for block trace extensions.
 pub trait BlockTraceExt:
-    ext::BlockTraceExt + ext::BlockTraceRevmExt + ext::BlockRevmDbExt + ext::BlockZktrieExt
+    ext::BlockTraceExt
+    + ext::BlockTraceRevmExt
+    + ext::BlockRevmDbExt
+    + ext::BlockZktrieExt
+    + ext::BlockChunkExt
 {
 }
 
