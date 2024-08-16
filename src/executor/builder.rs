@@ -1,7 +1,11 @@
-use crate::executor::hooks::ExecuteHooks;
-use crate::utils::ext::{BlockRevmDbExt, BlockTraceRevmExt, BlockZktrieExt};
-use crate::{cycle_tracker_end, cycle_tracker_start, EvmExecutor, HardforkConfig, ReadOnlyDB};
 use revm::db::CacheDB;
+
+use crate::{
+    cycle_tracker_end, cycle_tracker_start, dev_trace,
+    executor::hooks::ExecuteHooks,
+    utils::ext::{BlockRevmDbExt, BlockTraceRevmExt, BlockZktrieExt},
+    EvmExecutor, HardforkConfig, ReadOnlyDB,
+};
 
 /// Builder for EVM executor.
 #[derive(Debug)]
@@ -26,7 +30,7 @@ impl EvmExecutorBuilder<()> {
     }
 }
 
-impl<H1> EvmExecutorBuilder<H1> {
+impl<H> EvmExecutorBuilder<H> {
     /// Set hardfork config.
     pub fn hardfork_config<H2>(self, hardfork_config: H2) -> EvmExecutorBuilder<H2> {
         EvmExecutorBuilder {
@@ -50,7 +54,8 @@ impl EvmExecutorBuilder<HardforkConfig> {
     ) -> EvmExecutor {
         let block_number = l2_trace.number();
         let spec_id = self.hardfork_config.get_spec_id(block_number);
-        trace!("use spec id {:?}", spec_id);
+
+        dev_trace!("use spec id {:?}", spec_id);
 
         let mut db = CacheDB::new(ReadOnlyDB::new(l2_trace));
         self.hardfork_config.migrate(block_number, &mut db).unwrap();

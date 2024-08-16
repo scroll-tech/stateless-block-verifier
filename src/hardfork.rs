@@ -9,6 +9,8 @@ use revm::{
 };
 use std::{collections::HashMap, sync::LazyLock};
 
+use crate::{dev_info, dev_warn};
+
 /// Hardfork heights for Scroll networks, grouped by chain id.
 static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock::new(|| {
     let heights = hardfork_heights()
@@ -31,7 +33,8 @@ static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock
             )
         })
         .collect();
-    info!("Hardfork heights: {:#?}", heights);
+
+    dev_info!("Hardfork heights: {:#?}", heights);
     heights
 });
 
@@ -51,7 +54,7 @@ impl HardforkConfig {
                 curie_block: heights.get(&SpecId::CURIE).copied().unwrap_or(0),
             }
         } else {
-            warn!(
+            dev_warn!(
                 "Chain id {} not found in hardfork heights, all forks are enabled by default",
                 chain_id
             );
@@ -87,7 +90,7 @@ impl HardforkConfig {
         db: &mut DB,
     ) -> Result<(), DB::Error> {
         if block_number == self.curie_block {
-            info!("Apply curie migrate at height #{}", block_number);
+            dev_info!("Apply curie migrate at height #{}", block_number);
             self.curie_migrate(db)?;
         };
         Ok(())

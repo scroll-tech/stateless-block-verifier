@@ -9,6 +9,8 @@ use std::fmt::Debug;
 use std::mem;
 use zktrie::ZkTrie;
 
+use crate::dev_debug;
+
 /// Revm extension trait for BlockTrace
 pub trait BlockTraceRevmExt {
     type Tx: TxRevmExt + Debug;
@@ -374,7 +376,8 @@ impl BlockZktrieExt for BlockTrace {
         )
         .unwrap();
         let root = *zktrie_state.root();
-        debug!("building partial statedb done, root {}", hex::encode(root));
+
+        dev_debug!("building partial statedb done, root {}", hex::encode(root));
 
         let mem_db = zktrie_state.into_inner();
         mem_db.new_trie(&root).unwrap()
@@ -404,7 +407,8 @@ impl BlockZktrieExt for BlockTraceV2 {
         )
         .unwrap();
         let root = *zktrie_state.root();
-        debug!("building partial statedb done, root {}", hex::encode(root));
+
+        dev_debug!("building partial statedb done, root {}", hex::encode(root));
 
         let mem_db = zktrie_state.into_inner();
         mem_db.new_trie(&root).unwrap()
@@ -437,7 +441,8 @@ impl BlockZktrieExt for ArchivedBlockTraceV2 {
         )
         .unwrap();
         let root = *zktrie_state.root();
-        debug!("building partial statedb done, root {}", hex::encode(root));
+
+        dev_debug!("building partial statedb done, root {}", hex::encode(root));
 
         let mem_db = zktrie_state.into_inner();
         mem_db.new_trie(&root).unwrap()

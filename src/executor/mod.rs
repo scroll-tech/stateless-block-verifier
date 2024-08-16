@@ -1,4 +1,3 @@
-use crate::database::ReadOnlyDB;
 use eth_types::{geth_types::TxType, H160, H256, U256};
 use mpt_zktrie::AccountData;
 use revm::precompile::B256;
@@ -9,12 +8,19 @@ use revm::{
 use std::fmt::Debug;
 use zktrie::ZkTrie;
 
+use crate::{
+    cycle_tracker_end, cycle_tracker_start,
+    database::ReadOnlyDB,
+    dev_debug, dev_trace,
+    error::VerificationError,
+    utils::ext::{BlockTraceRevmExt, TxRevmExt},
+};
+
 mod builder;
+pub use builder::EvmExecutorBuilder;
+
 /// Execute hooks
 pub mod hooks;
-use crate::utils::ext::{BlockTraceRevmExt, TxRevmExt};
-use crate::{cycle_tracker_end, cycle_tracker_start};
-pub use builder::EvmExecutorBuilder;
 
 /// EVM executor that handles the block.
 pub struct EvmExecutor {
@@ -23,6 +29,7 @@ pub struct EvmExecutor {
     spec_id: SpecId,
     hooks: hooks::ExecuteHooks,
 }
+
 impl EvmExecutor {
     /// Get reference to the DB
     pub fn db(&self) -> &CacheDB<ReadOnlyDB> {
@@ -30,8 +37,11 @@ impl EvmExecutor {
     }
 
     /// Handle a block.
-    pub fn handle_block<T: BlockTraceRevmExt>(&mut self, l2_trace: &T) -> H256 {
-        debug!("handle block {:?}", l2_trace.number());
+    pub fn handle_block<T: BlockTraceRevmExt>(
+        &mut self,
+        l2_trace: &T,
+    ) -> Result<H256, VerificationError> {
+        dev_debug!("handle block {:?}", l2_trace.number());
         let mut env = Box::<Env>::default();
         env.cfg.chain_id = l2_trace.chain_id();
         cycle_tracker_start!("create BlockEnv");
@@ -40,8 +50,10 @@ impl EvmExecutor {
 
         for (idx, tx) in l2_trace.transactions().enumerate() {
             cycle_tracker_start!("handle tx {}", idx);
-            trace!("handle {idx}th tx");
-            trace!("{tx:#?}");
+
+            dev_trace!("handle {idx}th tx");
+
+            dev_trace!("{tx:#?}");
             let mut env = env.clone();
             env.tx = tx.tx_env();
             if tx.raw_type() == 0 {
@@ -60,7 +72,8 @@ impl EvmExecutor {
             }
             env.tx.scroll.is_l1_msg = tx_type.is_l1_msg();
             env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(eth_tx.rlp().to_vec()));
-            trace!("{env:#?}");
+
+            dev_trace!("{env:#?}");
             {
                 cycle_tracker_start!("build Evm");
                 let mut revm = revm::Evm::builder()
@@ -70,21 +83,28 @@ impl EvmExecutor {
                     .build();
                 cycle_tracker_end!("build Evm");
 
-                trace!("handler cfg: {:?}", revm.handler.cfg);
+                dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
                 cycle_tracker_start!("transact_commit");
-                let result = revm.transact_commit().unwrap(); // TODO: handle error
+                let result =
+                    revm.transact_commit()
+                        .map_err(|e| VerificationError::EvmExecution {
+                            tx_hash: eth_tx.hash,
+                            source: e,
+                        })?;
                 cycle_tracker_end!("transact_commit");
-                trace!("{result:#?}");
+
+                dev_trace!("{result:#?}");
             }
             self.hooks.post_tx_execution(self, idx);
-            debug!("handle {idx}th tx done");
+
+            dev_debug!("handle {idx}th tx done");
             cycle_tracker_end!("handle tx {}", idx);
         }
         cycle_tracker_start!("commit_changes");
         self.commit_changes();
         cycle_tracker_end!("commit_changes");
-        H256::from(self.zktrie.root())
+        Ok(H256::from(self.zktrie.root()))
     }
 
     fn commit_changes(&mut self) {
@@ -105,7 +125,8 @@ impl EvmExecutor {
             if acc.is_empty() && info.is_empty() {
                 continue;
             }
-            trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
+
+            dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
             cycle_tracker_start!("commit account {}", addr);
 
             cycle_tracker_start!("get acc_data");
@@ -207,7 +228,7 @@ impl EvmExecutor {
             }
 
             #[cfg(feature = "debug-account")]
-            debug_account.insert(*addr, acc_data.clone());
+            debug_account.insert(*addr, acc_data);
 
             cycle_tracker_start!("Zktrie::update_account");
             self.zktrie

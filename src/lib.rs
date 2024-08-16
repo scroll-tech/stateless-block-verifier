@@ -1,17 +1,27 @@
+//! Stateless Block Verifier
+
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
-//! Stateless Block Verifier
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+
+#[cfg(feature = "dev")]
 #[macro_use]
-extern crate log;
+extern crate tracing;
+
+mod macros;
 
 mod database;
-mod executor;
-mod hardfork;
-mod marcos;
-/// Utilities
-pub mod utils;
-
 pub use database::ReadOnlyDB;
+
+mod error;
+pub use error::VerificationError;
+
+mod executor;
 pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
+
+mod hardfork;
 pub use hardfork::HardforkConfig;
-pub use utils::BlockTraceExt;
+
+mod utils;
+pub use utils::{post_check, BlockTraceExt};
