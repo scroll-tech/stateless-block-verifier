@@ -98,14 +98,16 @@ pub trait BlockZktrieExt: BlockTraceExt {
             for (k, bytes) in flatten_proofs {
                 zk_db.add_node_bytes(bytes, Some(k.as_bytes())).unwrap();
             }
-            zk_db.with_key_cache(
-                self.address_hashes()
-                    .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
-            );
-            zk_db.with_key_cache(
-                self.store_key_hashes()
-                    .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
-            );
+
+            // Key cache can reduce hash computation, but it's unsound.
+            // zk_db.with_key_cache(
+            //     self.address_hashes()
+            //         .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
+            // );
+            // zk_db.with_key_cache(
+            //     self.store_key_hashes()
+            //         .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
+            // );
 
             log::debug!(
                 "building partial ZktrieState done from flatten proofs, root {}",
