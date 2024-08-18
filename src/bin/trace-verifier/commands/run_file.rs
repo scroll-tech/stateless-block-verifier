@@ -1,8 +1,9 @@
-use crate::utils;
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
-use stateless_block_verifier::HardforkConfig;
+use stateless_block_verifier::{dev_info, HardforkConfig};
 use std::path::PathBuf;
+
+use crate::utils;
 
 #[derive(Args)]
 pub struct RunFileCommand {
@@ -18,22 +19,28 @@ impl RunFileCommand {
         disable_checks: bool,
     ) -> anyhow::Result<()> {
         for path in self.path {
-            info!("Reading trace from {:?}", path);
-            let trace = tokio::fs::read_to_string(&path).await?;
-            let l2_trace: BlockTrace = serde_json::from_str(&trace).unwrap_or_else(|_| {
-                #[derive(serde::Deserialize, Default, Debug, Clone)]
-                pub struct BlockTraceJsonRpcResult {
-                    pub result: BlockTrace,
-                }
-                serde_json::from_str::<BlockTraceJsonRpcResult>(&trace)
-                    .unwrap()
-                    .result
-            });
-            let fork_config = fork_config(l2_trace.chain_id);
+            dev_info!("Reading trace from {:?}", path);
+
+            let trace: BlockTrace = tokio::fs::read_to_string(&path).await.and_then(|trace| {
+                Ok(
+                    // Try to deserialize `BlockTrace` from JSON. In case of failure, try to
+                    // deserialize `BlockTrace` from a JSON-RPC response that has the actual block
+                    // trace nested in the value of the key "result".
+                    serde_json::from_str::<BlockTrace>(&trace).or::<serde_json::Error>({
+                        #[derive(serde::Deserialize, Default, Debug, Clone)]
+                        pub struct BlockTraceJsonRpcResult {
+                            pub result: BlockTrace,
+                        }
+                        Ok(serde_json::from_str::<BlockTraceJsonRpcResult>(&trace)?.result)
+                    })?,
+                )
+            })?;
+
+            let fork_config = fork_config(trace.chain_id);
             tokio::task::spawn_blocking(move || {
-                utils::verify(l2_trace, &fork_config, disable_checks, false)
+                utils::verify(trace, &fork_config, disable_checks, false)
             })
-            .await?;
+            .await??
         }
         Ok(())
     }

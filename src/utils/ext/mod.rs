@@ -1,3 +1,4 @@
+use crate::dev_debug;
 use eth_types::{state_db, Address, Transaction, Word, H256};
 use mpt_zktrie::ZktrieState;
 use revm::primitives::{AccessListItem, TransactTo, TxEnv, B256, U256};
@@ -92,7 +93,7 @@ pub trait BlockZktrieExt: BlockTraceExt {
         let old_root = self.root_before();
 
         if let Some(flatten_proofs) = self.flatten_proofs() {
-            log::debug!("init mpt state with flatten proofs");
+            dev_debug!("init mpt state with flatten proofs");
             let mut state = ZktrieState::construct(old_root);
             let zk_db = state.expose_db();
             for (k, bytes) in flatten_proofs {
@@ -109,7 +110,7 @@ pub trait BlockZktrieExt: BlockTraceExt {
             //         .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
             // );
 
-            log::debug!(
+            dev_debug!(
                 "building partial ZktrieState done from flatten proofs, root {}",
                 hex::encode(state.root())
             );
@@ -185,7 +186,7 @@ mod tests {
         let h160 = eth_types::H160::from(array::from_fn(|i| i as u8));
         let serialized = rkyv::to_bytes::<_, 20>(&h160).unwrap();
         let archived: &ArchivedH160 = unsafe { rkyv::archived_root::<H160>(&serialized[..]) };
-        assert_eq!(archived, &h160);
+        assert_eq!(archived.0, h160.0);
         let ptr_to_archived: usize = archived as *const _ as usize;
         let ptr_to_archived_inner: usize = (&archived.0) as *const _ as usize;
         assert_eq!(ptr_to_archived, ptr_to_archived_inner);
