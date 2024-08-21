@@ -88,6 +88,7 @@ impl EvmExecutor {
                         tx_hash: eth_tx.hash,
                         source: error,
                     })?;
+            cycle_tracker_end!("recover address");
 
             // verify that the transaction is valid
             if recovered_address != eth_tx.from {
@@ -97,7 +98,6 @@ impl EvmExecutor {
                     signer: recovered_address,
                 });
             }
-            cycle_tracker_end!("recover address");
 
             let tx_type = TxType::get_tx_type(&eth_tx);
             if tx_type.is_l1_msg() {
@@ -125,13 +125,13 @@ impl EvmExecutor {
                 dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
                 cycle_tracker_start!("transact_commit");
-                let _result =
-                    revm.transact_commit()
-                        .map_err(|e| VerificationError::EvmExecution {
-                            tx_hash: eth_tx.hash,
-                            source: e,
-                        })?;
+                let result = revm.transact_commit();
                 cycle_tracker_end!("transact_commit");
+
+                let _result = result.map_err(|e| VerificationError::EvmExecution {
+                    tx_hash: eth_tx.hash,
+                    source: e,
+                })?;
 
                 dev_trace!("{_result:#?}");
             }
