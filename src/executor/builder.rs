@@ -1,12 +1,10 @@
 use crate::{
-    cycle_tracker_end, cycle_tracker_start, dev_debug, dev_trace, executor::hooks::ExecuteHooks,
+    cycle_tracker_end, cycle_tracker_start, dev_trace, executor::hooks::ExecuteHooks,
     BlockTraceExt, EvmExecutor, HardforkConfig, ReadOnlyDB,
 };
-use core::fmt;
 use mpt_zktrie::ZktrieState;
 use revm::db::CacheDB;
 use std::borrow::Cow;
-use zktrie::{UpdateDb, ZkTrie};
 
 /// Builder for EVM executor.
 #[derive(Debug)]
@@ -75,9 +73,11 @@ impl EvmExecutorBuilder<'_, HardforkConfig> {
             Cow::Owned(zktrie_state)
         });
 
+        cycle_tracker_start!("build ReadOnlyDB");
         let mut db = ReadOnlyDB::new();
         db.update(l2_trace, &zktrie_state);
         let db = CacheDB::new(db);
+        cycle_tracker_end!("build ReadOnlyDB");
 
         let zktrie_db = zktrie_state.zk_db.clone();
         let zktrie = zktrie_db.new_trie(&l2_trace.root_before().0).unwrap();

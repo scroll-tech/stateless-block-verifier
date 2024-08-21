@@ -35,6 +35,7 @@ static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock
         .collect();
 
     dev_info!("Hardfork heights: {:#?}", heights);
+    #[allow(clippy::let_and_return)]
     heights
 });
 
