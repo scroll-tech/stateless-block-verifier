@@ -38,8 +38,8 @@ pub enum VerificationError {
     #[error("root_after in trace doesn't match with root_after in revm: root_trace={root_trace}, root_revm={root_revm}")]
     RootMismatch {
         /// Root after in trace
-        root_trace: U256,
+        root_trace: H256,
         /// Root after in revm
-        root_revm: U256,
+        root_revm: H256,
     },
 }

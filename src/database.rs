@@ -24,13 +24,28 @@ pub struct ReadOnlyDB {
 
 impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
-    pub fn new<T: BlockRevmDbExt>(l2_trace: &T, zktrie_state: &ZktrieState) -> Self {
-        cycle_tracker_start!("build ReadOnlyDB");
-        let mut sdb = StateDB::new();
+    pub fn new() -> Self {
+        ReadOnlyDB {
+            code_db: CodeDB::new(),
+            sdb: StateDB::new(),
+        }
+    }
+
+    /// Update the database with a new block trace.
+    pub fn update<T: BlockRevmDbExt>(&mut self, l2_trace: T, zktrie_state: &ZktrieState) {
+        dev_trace!(
+            "update ReadOnlyDB with trie root: {:?}",
+            l2_trace.root_before()
+        );
+
         cycle_tracker_start!("insert StateDB account");
         for (addr, account) in l2_trace.accounts(zktrie_state) {
             dev_trace!("insert account {:?} {:?}", addr, account);
-            sdb.set_account(&addr, account);
+            let (exist, old) = self.sdb.get_account(&addr);
+            // won't update exist value, those should be already updated in upper CacheDB
+            if !exist {
+                self.sdb.set_account(&addr, account);
+            }
         }
         cycle_tracker_end!("insert StateDB account");
 
@@ -38,20 +53,25 @@ impl ReadOnlyDB {
         for ((addr, key), val) in l2_trace.storages(zktrie_state) {
             dev_trace!("insert storage {:?} {:?} {:?}", addr, key, val);
             let key = key.to_word();
-            *sdb.get_storage_mut(&addr, &key).1 = val;
+            let (exist, _) = self.sdb.get_committed_storage(&addr, &key);
+            // won't update exist value, those should be already updated in upper CacheDB
+            if !exist {
+                *self.sdb.get_storage_mut(&addr, &key).1 = val;
+            }
         }
         cycle_tracker_end!("insert StateDB storage");
 
-        let mut code_db = CodeDB::new();
         cycle_tracker_start!("insert CodeDB");
         for code in l2_trace.codes() {
             let hash = revm::primitives::keccak256(code);
-            code_db.insert_with_hash(H256(hash.0), code.to_vec());
+            dev_trace!("insert code {:?}", hash);
+            // save a `to_vec` call if exists
+            if self.code_db.0.contains_key(&H256(hash.0)) {
+                continue;
+            }
+            self.code_db.insert_with_hash(H256(hash.0), code.to_vec());
         }
         cycle_tracker_end!("insert CodeDB");
-        cycle_tracker_end!("build ReadOnlyDB");
-
-        ReadOnlyDB { code_db, sdb }
     }
 }
 
@@ -86,8 +106,22 @@ impl DatabaseRef for ReadOnlyDB {
     }
 
     /// Get account code by its code hash.
-    fn code_by_hash_ref(&self, _: B256) -> Result<Bytecode, Self::Error> {
-        unreachable!("Code is either loaded or not needed (like EXTCODESIZE)");
+    fn code_by_hash_ref(&self, hash: B256) -> Result<Bytecode, Self::Error> {
+        // Sometimes the code in previous account info is not contained,
+        // and the CacheDB has already loaded the previous account info,
+        // then the upcoming trace contains code (meaning the code is used in this new block),
+        // we can't directly update the CacheDB, so we offer the code by hash here.
+        // However, if the code still cannot be found, this is an error.
+        self.code_db
+            .0
+            .get(&H256(hash.0))
+            .map(|vec| Bytecode::new_raw(revm::primitives::Bytes::from(vec.clone())))
+            .ok_or_else(|| {
+                unreachable!(
+                    "Code is either loaded or not needed (like EXTCODESIZE), code hash: {:?}",
+                    hash
+                );
+            })
     }
 
     /// Get storage value of address at index.

@@ -15,14 +15,13 @@ pub fn verify(
     l2_trace: &BlockTrace,
     fork_config: &HardforkConfig,
     disable_checks: bool,
-    tx_bytes_hasher: Option<Rc<RefCell<Keccak>>>,
     log_error: bool,
 ) -> Result<(), VerificationError> {
     static BLOCK_COUNTER: AtomicUsize = AtomicUsize::new(0);
     static LAST_TIME: LazyLock<Mutex<Instant>> = LazyLock::new(|| Mutex::new(Instant::now()));
 
     dev_trace!("{:#?}", l2_trace);
-    let root_after = l2_trace.storage_trace.root_after.to_word();
+    let root_after = l2_trace.storage_trace.root_after;
 
     // or with v2 trace
     // let v2_trace = BlockTraceV2::from(l2_trace.clone());
@@ -50,15 +49,10 @@ pub fn verify(
                     post_check(executor.db(), &l2_trace.execution_results[tx_id]);
                 })
             }
-
-            if let Some(hasher) = tx_bytes_hasher {
-                hooks.add_tx_rlp_handler(move |_, rlp| {
-                    hasher.borrow_mut().update(rlp);
-                });
-            }
         })
         .build(&l2_trace);
-    let revm_root_after = executor.handle_block(&l2_trace)?.to_word();
+    executor.handle_block(&l2_trace)?;
+    let revm_root_after = executor.commit_changes();
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

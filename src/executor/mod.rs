@@ -1,11 +1,15 @@
 use core::error;
 use eth_types::{geth_types::TxType, H160, H256, U256};
-use mpt_zktrie::AccountData;
+use mpt_zktrie::{AccountData, ZktrieState};
+use revm::inspectors::CustomPrintTracer;
 use revm::precompile::B256;
 use revm::{
     db::CacheDB,
+    inspector_handle_register,
     primitives::{AccountInfo, Env, SpecId},
+    DatabaseRef,
 };
+use std::convert::Infallible;
 use std::fmt::Debug;
 use std::rc::Rc;
 use zktrie::{UpdateDb, ZkMemoryDb, ZkTrie};
@@ -16,9 +20,11 @@ use crate::{
     dev_debug, dev_trace,
     error::VerificationError,
     utils::ext::{BlockTraceRevmExt, TxRevmExt},
+    HardforkConfig,
 };
 
 mod builder;
+use crate::utils::ext::BlockRevmDbExt;
 pub use builder::EvmExecutorBuilder;
 
 /// Execute hooks
@@ -26,6 +32,7 @@ pub mod hooks;
 
 /// EVM executor that handles the block.
 pub struct EvmExecutor {
+    hardfork_config: HardforkConfig,
     db: CacheDB<ReadOnlyDB>,
     zktrie_db: Rc<ZkMemoryDb>,
     zktrie: ZkTrie<UpdateDb>,
@@ -39,11 +46,20 @@ impl EvmExecutor {
         &self.db
     }
 
+    /// Update the DB
+    pub fn update_db<T: BlockRevmDbExt>(&mut self, l2_trace: &T, zktrie_state: &ZktrieState) {
+        self.db.db.update(l2_trace, zktrie_state)
+    }
+
     /// Handle a block.
     pub fn handle_block<T: BlockTraceRevmExt>(
         &mut self,
         l2_trace: &T,
-    ) -> Result<H256, VerificationError> {
+    ) -> Result<(), VerificationError> {
+        self.hardfork_config
+            .migrate(l2_trace.number(), &mut self.db)
+            .unwrap();
+
         dev_debug!("handle block {:?}", l2_trace.number());
         let mut env = Box::<Env>::default();
         env.cfg.chain_id = l2_trace.chain_id();
@@ -103,6 +119,8 @@ impl EvmExecutor {
                     .with_spec_id(self.spec_id)
                     .with_db(&mut self.db)
                     .with_env(env)
+                    // .with_external_context(CustomPrintTracer::default())
+                    // .append_handler_register(inspector_handle_register)
                     .build();
                 cycle_tracker_end!("build Evm");
 
@@ -124,13 +142,12 @@ impl EvmExecutor {
             dev_debug!("handle {idx}th tx done");
             cycle_tracker_end!("handle tx {}", idx);
         }
-        cycle_tracker_start!("commit_changes");
-        self.commit_changes();
-        cycle_tracker_end!("commit_changes");
-        Ok(H256::from(self.zktrie.root()))
+        Ok(())
     }
 
-    fn commit_changes(&mut self) {
+    /// Commit pending changes in cache db to zktrie
+    pub fn commit_changes(&mut self) -> H256 {
+        cycle_tracker_start!("commit_changes");
         // let changes = self.db.accounts;
         let sdb = &self.db.db.sdb;
 
@@ -294,6 +311,8 @@ impl EvmExecutor {
                 .expect("failed to write record");
             }
         }
+        cycle_tracker_end!("commit_changes");
+        H256::from(self.zktrie.root())
     }
 }
 

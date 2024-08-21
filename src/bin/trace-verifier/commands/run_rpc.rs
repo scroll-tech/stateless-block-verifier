@@ -93,13 +93,7 @@ impl RunRpcCommand {
                         );
 
                         if let Err(err) = tokio::task::spawn_blocking(move || {
-                            utils::verify(
-                                &l2_trace,
-                                &fork_config,
-                                disable_checks,
-                                None,
-                                is_log_error,
-                            )
+                            utils::verify(&l2_trace, &fork_config, disable_checks, is_log_error)
                         })
                         .await?
                         {
