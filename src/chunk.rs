@@ -1,11 +1,7 @@
-use crate::utils::ext::BlockChunkExt;
-use crate::{BlockTraceExt, ReadOnlyDB};
-use core::fmt;
+use crate::BlockTraceExt;
 use eth_types::H256;
 use mpt_zktrie::ZktrieState;
-use revm::db::CacheDB;
 use tiny_keccak::{Hasher, Keccak};
-use zktrie::{UpdateDb, ZkTrie};
 
 /// A chunk is a set of continuous blocks.
 /// ChunkInfo is metadata of chunk, with following fields:
@@ -114,10 +110,8 @@ impl ChunkInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{dev_info, EvmExecutorBuilder, HardforkConfig};
+    use crate::{EvmExecutorBuilder, HardforkConfig};
     use eth_types::l2_types::BlockTrace;
-    use revm::primitives::address;
-    use revm::{Database, DatabaseCommit, DatabaseRef};
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -157,7 +151,7 @@ mod tests {
             .build(&traces[0]);
         executor.handle_block(&traces[0]).unwrap();
 
-        for (idx, trace) in traces[1..].iter().enumerate() {
+        for trace in traces[1..].iter() {
             executor.update_db(trace, &zktrie_state);
             executor.handle_block(trace).unwrap();
         }

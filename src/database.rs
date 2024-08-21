@@ -22,6 +22,12 @@ pub struct ReadOnlyDB {
     pub(crate) sdb: StateDB,
 }
 
+impl Default for ReadOnlyDB {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
     pub fn new() -> Self {
@@ -41,7 +47,7 @@ impl ReadOnlyDB {
         cycle_tracker_start!("insert StateDB account");
         for (addr, account) in l2_trace.accounts(zktrie_state) {
             dev_trace!("insert account {:?} {:?}", addr, account);
-            let (exist, old) = self.sdb.get_account(&addr);
+            let (exist, _) = self.sdb.get_account(&addr);
             // won't update exist value, those should be already updated in upper CacheDB
             if !exist {
                 self.sdb.set_account(&addr, account);

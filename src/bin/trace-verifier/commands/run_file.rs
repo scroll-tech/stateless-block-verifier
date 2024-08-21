@@ -88,7 +88,7 @@ impl RunFileCommand {
                 .build(&traces[0]);
             executor.handle_block(&traces[0])?;
 
-            for (idx, trace) in traces[1..].iter().enumerate() {
+            for trace in traces[1..].iter() {
                 executor.update_db(trace, &zktrie_state);
                 executor.handle_block(trace)?;
             }

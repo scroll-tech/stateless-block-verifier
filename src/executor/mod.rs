@@ -1,15 +1,10 @@
-use core::error;
 use eth_types::{geth_types::TxType, H160, H256, U256};
 use mpt_zktrie::{AccountData, ZktrieState};
-use revm::inspectors::CustomPrintTracer;
 use revm::precompile::B256;
 use revm::{
     db::CacheDB,
-    inspector_handle_register,
     primitives::{AccountInfo, Env, SpecId},
-    DatabaseRef,
 };
-use std::convert::Infallible;
 use std::fmt::Debug;
 use std::rc::Rc;
 use zktrie::{UpdateDb, ZkMemoryDb, ZkTrie};
@@ -127,7 +122,7 @@ impl EvmExecutor {
                 dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
                 cycle_tracker_start!("transact_commit");
-                let result =
+                let _result =
                     revm.transact_commit()
                         .map_err(|e| VerificationError::EvmExecution {
                             tx_hash: eth_tx.hash,
@@ -135,7 +130,7 @@ impl EvmExecutor {
                         })?;
                 cycle_tracker_end!("transact_commit");
 
-                dev_trace!("{result:#?}");
+                dev_trace!("{_result:#?}");
             }
             self.hooks.post_tx_execution(self, idx);
 
