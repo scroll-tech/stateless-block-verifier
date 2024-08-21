@@ -1,4 +1,3 @@
-use core::error;
 use eth_types::{geth_types::TxType, H160, H256, U256};
 use mpt_zktrie::AccountData;
 use revm::precompile::B256;
@@ -105,15 +104,27 @@ impl EvmExecutor {
                 dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
                 cycle_tracker_start!("transact_commit");
-                let result =
+                #[cfg(feature = "dev")]
+                {
+                    let result =
+                        revm.transact_commit()
+                            .map_err(|e| VerificationError::EvmExecution {
+                                tx_hash: eth_tx.hash,
+                                source: e,
+                            })?;
+                    cycle_tracker_end!("transact_commit");
+
+                    dev_trace!("{result:#?}");
+                }
+                #[cfg(not(feature = "dev"))]
+                {
                     revm.transact_commit()
                         .map_err(|e| VerificationError::EvmExecution {
                             tx_hash: eth_tx.hash,
                             source: e,
                         })?;
-                cycle_tracker_end!("transact_commit");
-
-                dev_trace!("{result:#?}");
+                    cycle_tracker_end!("transact_commit");
+                }
             }
             self.hooks.post_tx_execution(self, idx);
 

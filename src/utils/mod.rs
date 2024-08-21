@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-#![allow(unused_variables)]
 use eth_types::l2_types::ExecutionResult;
 
 use revm::DatabaseRef;
@@ -9,7 +7,6 @@ use std::fmt::Debug;
 use tracing::Level;
 
 use crate::dev_error;
-use crate::dev_trace;
 
 pub(crate) mod ext;
 
@@ -61,26 +58,28 @@ where
         if enabled!(Level::TRACE) {
             let mut local_acc = local_acc.clone();
             local_acc.code = None;
-            dev_trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
+            crate::dev_trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
         }
         let local_balance = eth_types::U256(*local_acc.balance.as_limbs());
         if local_balance != account_post_state.balance {
             ok = false;
 
-            let post = account_post_state.balance;
             #[cfg(feature = "dev")]
-            error!(
-                "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
-                local_balance,
-                if local_balance < post { "<" } else { ">" },
-                post,
-                if local_balance < post { "-" } else { "+" },
-                if local_balance < post {
-                    post - local_balance
-                } else {
-                    local_balance - post
-                }
-            )
+            {
+                let post = account_post_state.balance;
+                dev_error!(
+                    "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
+                    local_balance,
+                    if local_balance < post { "<" } else { ">" },
+                    post,
+                    if local_balance < post { "-" } else { "+" },
+                    if local_balance < post {
+                        post - local_balance
+                    } else {
+                        local_balance - post
+                    }
+                )
+            }
         }
         if local_acc.nonce != account_post_state.nonce {
             ok = false;

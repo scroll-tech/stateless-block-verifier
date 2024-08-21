@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-#![allow(unused_variables)]
 #[cfg(feature = "dev")]
 #[macro_use]
 extern crate tracing;

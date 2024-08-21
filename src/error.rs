@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use eth_types::{types::SignatureError, Address, H256, U256};
 use revm::primitives::EVMError;
 

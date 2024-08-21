@@ -66,14 +66,10 @@ impl RunRpcCommand {
 
         let (tx, rx) = async_channel::bounded(self.parallel);
 
-        let error_log = OptionFuture::from(
-            self.log_error
-                .as_ref()
-                .map(tokio::fs::File::create),
-        )
-        .await
-        .transpose()?
-        .map(|f| Arc::new(Mutex::new(f)));
+        let error_log = OptionFuture::from(self.log_error.as_ref().map(tokio::fs::File::create))
+            .await
+            .transpose()?
+            .map(|f| Arc::new(Mutex::new(f)));
 
         let handles = {
             let mut handles = Vec::with_capacity(self.parallel);
@@ -96,7 +92,7 @@ impl RunRpcCommand {
                             l2_trace.header.hash.unwrap()
                         );
 
-                        if let Err(err) = tokio::task::spawn_blocking(move || {
+                        if let Err(_) = tokio::task::spawn_blocking(move || {
                             utils::verify(l2_trace, &fork_config, disable_checks, is_log_error)
                         })
                         .await?
