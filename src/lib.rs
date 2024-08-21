@@ -1,21 +1,44 @@
+//! Stateless Block Verifier
+
+#![feature(error_in_core)]
 #![feature(lazy_cell)]
-#![feature(slice_group_by)]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
-//! Stateless Block Verifier
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+
+#[cfg(feature = "dev")]
 #[macro_use]
-extern crate log;
+extern crate tracing;
+
+mod macros;
 
 mod chunk;
-mod database;
-mod executor;
-mod hardfork;
-mod marcos;
-/// Utilities
-pub mod utils;
 
 pub use chunk::ChunkInfo;
+
+mod database;
 pub use database::ReadOnlyDB;
+
+mod error;
+pub use error::VerificationError;
+
+mod executor;
 pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
+
+mod hardfork;
 pub use hardfork::HardforkConfig;
-pub use utils::BlockTraceExt;
+
+mod utils;
+pub use utils::{post_check, BlockTraceExt};
+
+#[cfg(all(feature = "dev", test))]
+#[ctor::ctor]
+fn init() {
+    use tracing_subscriber::EnvFilter;
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .init();
+}

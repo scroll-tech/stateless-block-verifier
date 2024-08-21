@@ -1,6 +1,10 @@
+use crate::{dev_debug, dev_warn};
 use eth_types::{state_db, Address, Transaction, Word, H256};
-use mpt_zktrie::ZktrieState;
+use mpt_zktrie::state::StorageData;
+use mpt_zktrie::{AccountData, ZktrieState};
 use revm::primitives::{AccessListItem, TransactTo, TxEnv, B256, U256};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
+use std::collections::HashMap;
 use std::fmt::Debug;
 
 mod imp;
@@ -70,8 +74,16 @@ pub trait BlockRevmDbExt: BlockTraceExt {
         &self,
         zktrie_state: &ZktrieState,
     ) -> impl Iterator<Item = (Address, state_db::Account)> {
-        zktrie_state
-            .query_accounts(self.account_proofs().map(|(addr, _)| addr))
+        let trie = zktrie_state
+            .zk_db
+            .new_ref_trie(&self.root_before().0)
+            .unwrap();
+        self.account_proofs()
+            .map(|(addr, _)| addr)
+            .map(move |&addr| {
+                let account = trie.get_account(addr.as_bytes()).map(AccountData::from);
+                (addr, account)
+            })
             .map(|(addr, acc)| {
                 (
                     addr,
@@ -84,48 +96,46 @@ pub trait BlockRevmDbExt: BlockTraceExt {
         &self,
         zktrie_state: &ZktrieState,
     ) -> impl Iterator<Item = ((Address, H256), Word)> {
-        zktrie_state
-            .query_storages(self.storage_proofs().map(|(addr, key, _)| (addr, key)))
+        let zk_db = zktrie_state.zk_db.clone();
+        let account_trie = zk_db.new_ref_trie(&self.root_before().0).unwrap();
+        let mut trie_cache = HashMap::new();
+        self.storage_proofs()
+            .map(|(addr, key, _)| (addr, key))
+            .map(move |(&addr, &key)| {
+                let store_val = match trie_cache.entry(addr) {
+                    Occupied(entry) => Some(entry.into_mut()),
+                    Vacant(entry) => account_trie
+                        .get_account(addr.as_bytes())
+                        .map(AccountData::from)
+                        .and_then(|account| {
+                            zk_db
+                                .new_ref_trie(&account.storage_root.0)
+                                .map(|tr| entry.insert(tr))
+                        }),
+                }
+                .and_then(|tr| tr.get_store(key.as_bytes()).map(StorageData::from));
+                ((addr, key), store_val)
+            })
             .map(|((addr, key), val)| ((addr, key), val.map(|val| val.into()).unwrap_or_default()))
     }
 }
 
 pub trait BlockZktrieExt: BlockTraceExt {
-    fn zktrie_state(&self) -> ZktrieState {
-        let old_root = self.root_before();
-
+    fn build_zktrie_state(&self, zktrie_state: &mut ZktrieState) {
         if let Some(flatten_proofs) = self.flatten_proofs() {
-            log::debug!("init mpt state with flatten proofs");
-            let mut state = ZktrieState::construct(old_root);
-            let zk_db = state.expose_db();
+            dev_debug!("init zktrie state with flatten proofs");
+            let zk_db = zktrie_state.expose_db();
+
             for (k, bytes) in flatten_proofs {
                 zk_db.add_node_bytes(bytes, Some(k.as_bytes())).unwrap();
             }
-
-            // Key cache can reduce hash computation, but it's unsound.
-            // zk_db.with_key_cache(
-            //     self.address_hashes()
-            //         .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
-            // );
-            // zk_db.with_key_cache(
-            //     self.store_key_hashes()
-            //         .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
-            // );
-
-            log::debug!(
-                "building partial ZktrieState done from flatten proofs, root {}",
-                hex::encode(state.root())
-            );
-
-            state
         } else {
-            ZktrieState::from_trace_with_additional(
-                old_root,
+            dev_warn!("no flatten proofs, fallback to update zktrie state from trace");
+            zktrie_state.update_from_trace(
                 self.account_proofs(),
                 self.storage_proofs(),
                 self.additional_proofs(),
-            )
-            .unwrap()
+            );
         }
     }
 }

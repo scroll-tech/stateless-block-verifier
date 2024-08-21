@@ -1,6 +1,11 @@
 use crate::utils::ext::BlockChunkExt;
+use crate::{BlockTraceExt, ReadOnlyDB};
+use core::fmt;
 use eth_types::H256;
+use mpt_zktrie::ZktrieState;
+use revm::db::CacheDB;
 use tiny_keccak::{Hasher, Keccak};
+use zktrie::{UpdateDb, ZkTrie};
 
 /// A chunk is a set of continuous blocks.
 /// ChunkInfo is metadata of chunk, with following fields:
@@ -21,7 +26,7 @@ pub struct ChunkInfo {
 
 impl ChunkInfo {
     /// Construct by block traces
-    pub fn from_block_traces<T: BlockChunkExt>(traces: &[T]) -> Self {
+    pub fn from_block_traces<T: BlockTraceExt>(traces: &[T]) -> (Self, ZktrieState) {
         let chain_id = traces.first().unwrap().chain_id();
         let prev_state_root = traces
             .first()
@@ -40,13 +45,20 @@ impl ChunkInfo {
         let mut data_hash = H256::zero();
         data_hasher.finalize(&mut data_hash.0);
 
-        ChunkInfo {
+        let mut zktrie_state = ZktrieState::construct(prev_state_root);
+        for trace in traces.iter() {
+            trace.build_zktrie_state(&mut zktrie_state);
+        }
+
+        let info = ChunkInfo {
             chain_id,
             prev_state_root,
             post_state_root,
             withdraw_root,
             data_hash,
-        }
+        };
+
+        (info, zktrie_state)
     }
 
     /// Public input hash for a given chunk is defined as
@@ -72,13 +84,40 @@ impl ChunkInfo {
         hasher.finalize(&mut public_input_hash.0);
         public_input_hash
     }
+
+    /// Chain ID of this chunk
+    pub fn chain_id(&self) -> u64 {
+        self.chain_id
+    }
+
+    /// State root before this chunk
+    pub fn prev_state_root(&self) -> H256 {
+        self.prev_state_root
+    }
+
+    /// State root after this chunk
+    pub fn post_state_root(&self) -> H256 {
+        self.post_state_root
+    }
+
+    /// Withdraw root after this chunk
+    pub fn withdraw_root(&self) -> H256 {
+        self.withdraw_root
+    }
+
+    /// Data hash of this chunk
+    pub fn data_hash(&self) -> H256 {
+        self.data_hash
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{EvmExecutorBuilder, HardforkConfig};
+    use crate::{dev_info, EvmExecutorBuilder, HardforkConfig};
     use eth_types::l2_types::BlockTrace;
+    use revm::primitives::address;
+    use revm::{Database, DatabaseCommit, DatabaseRef};
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -102,26 +141,34 @@ mod tests {
         });
 
         let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id);
-        let chunk_info = ChunkInfo::from_block_traces(&traces);
+        let (chunk_info, zktrie_state) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = Rc::new(RefCell::new(Keccak::v256()));
 
-        for trace in traces.iter() {
-            EvmExecutorBuilder::new()
-                .hardfork_config(fork_config)
-                .with_execute_hooks(|hooks| {
-                    let hasher = tx_bytes_hasher.clone();
-                    hooks.add_tx_rlp_handler(move |_, rlp| {
-                        hasher.borrow_mut().update(rlp);
-                    });
-                })
-                .build(trace)
-                .handle_block(trace);
+        let mut executor = EvmExecutorBuilder::new()
+            .hardfork_config(fork_config)
+            .with_execute_hooks(|hooks| {
+                let hasher = tx_bytes_hasher.clone();
+                hooks.add_tx_rlp_handler(move |_, rlp| {
+                    hasher.borrow_mut().update(rlp);
+                });
+            })
+            .zktrie_state(&zktrie_state)
+            .build(&traces[0]);
+        executor.handle_block(&traces[0]).unwrap();
+
+        for (idx, trace) in traces[1..].iter().enumerate() {
+            executor.update_db(trace, &zktrie_state);
+            executor.handle_block(trace).unwrap();
         }
 
+        let post_state_root = executor.commit_changes();
+        assert_eq!(post_state_root, chunk_info.post_state_root);
+        drop(executor); // drop executor to release Rc<Keccek>
+
         let mut tx_bytes_hash = H256::zero();
-        let haser = Rc::into_inner(tx_bytes_hasher).unwrap();
-        haser.into_inner().finalize(&mut tx_bytes_hash.0);
+        let hasher = Rc::into_inner(tx_bytes_hasher).unwrap();
+        hasher.into_inner().finalize(&mut tx_bytes_hash.0);
         let public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
 
         let aggregator_chunk_info = aggregator::ChunkInfo::from_block_traces(&traces);
