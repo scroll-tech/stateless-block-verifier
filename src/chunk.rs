@@ -116,7 +116,8 @@ mod tests {
                     });
                 })
                 .build(trace)
-                .handle_block(trace);
+                .handle_block(trace)
+                .unwrap();
         }
 
         let mut tx_bytes_hash = H256::zero();

@@ -1,15 +1,16 @@
-use crate::utils;
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use ethers_providers::{Http, Middleware, Provider};
 use futures::future::OptionFuture;
-use stateless_block_verifier::HardforkConfig;
+use stateless_block_verifier::{dev_info, HardforkConfig};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
 use url::Url;
+
+use crate::utils;
 
 #[derive(Args)]
 pub struct RunRpcCommand {
@@ -50,7 +51,7 @@ impl RunRpcCommand {
         fork_config: impl Fn(u64) -> HardforkConfig,
         disable_checks: bool,
     ) -> anyhow::Result<()> {
-        info!("Running RPC command with url: {}", self.url);
+        dev_info!("Running RPC command with url: {}", self.url);
         let provider = Provider::new(Http::new(self.url));
 
         let chain_id = provider.get_chainid().await?.as_u64();
@@ -65,14 +66,10 @@ impl RunRpcCommand {
 
         let (tx, rx) = async_channel::bounded(self.parallel);
 
-        let error_log = OptionFuture::from(
-            self.log_error
-                .as_ref()
-                .map(|path| tokio::fs::File::create(path)),
-        )
-        .await
-        .transpose()?
-        .map(|f| Arc::new(Mutex::new(f)));
+        let error_log = OptionFuture::from(self.log_error.as_ref().map(tokio::fs::File::create))
+            .await
+            .transpose()?
+            .map(|f| Arc::new(Mutex::new(f)));
 
         let handles = {
             let mut handles = Vec::with_capacity(self.parallel);
@@ -90,12 +87,12 @@ impl RunRpcCommand {
                             )
                             .await?;
 
-                        info!(
+                        dev_info!(
                             "worker#{idx}: load trace for block #{block_number}({})",
                             l2_trace.header.hash.unwrap()
                         );
 
-                        let success = tokio::task::spawn_blocking(move || {
+                        if let Err(err) = tokio::task::spawn_blocking(move || {
                             utils::verify(
                                 &l2_trace,
                                 &fork_config,
@@ -104,13 +101,14 @@ impl RunRpcCommand {
                                 is_log_error,
                             )
                         })
-                        .await?;
-
-                        if !success {
-                            let mut guard = error_log.as_ref().unwrap().lock().await;
-                            guard
-                                .write_all(format!("{block_number}\n").as_bytes())
-                                .await?;
+                        .await?
+                        {
+                            if let Some(error_log) = error_log.as_ref() {
+                                let mut guard = error_log.lock().await;
+                                guard
+                                    .write_all(format!("{block_number}\n").as_bytes())
+                                    .await?;
+                            }
                         }
                     }
                     Ok::<_, anyhow::Error>(())
@@ -135,7 +133,8 @@ impl RunRpcCommand {
                     }
                 } else if current_block % 10 == 0 {
                     let latest_block = provider.get_block_number().await?.as_u64();
-                    log::info!("distance to latest block: {}", latest_block - current_block);
+
+                    dev_info!("distance to latest block: {}", latest_block - current_block);
                 }
 
                 tx.send(current_block).await?;
@@ -144,7 +143,7 @@ impl RunRpcCommand {
                 let mut exponential_backoff = 1;
                 while provider.get_block_number().await?.as_u64() < current_block {
                     if exponential_backoff == 1 {
-                        info!("waiting for block #{}", current_block);
+                        dev_info!("waiting for block #{}", current_block);
                     }
                     tokio::time::sleep(tokio::time::Duration::from_secs(exponential_backoff)).await;
                     exponential_backoff *= 2;

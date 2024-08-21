@@ -1,3 +1,4 @@
+use crate::dev_debug;
 use eth_types::{state_db, Address, Transaction, Word, H256};
 use mpt_zktrie::ZktrieState;
 use revm::primitives::{AccessListItem, TransactTo, TxEnv, B256, U256};
@@ -95,22 +96,24 @@ pub trait BlockZktrieExt: BlockTraceExt {
         let old_root = self.root_before();
 
         if let Some(flatten_proofs) = self.flatten_proofs() {
-            log::debug!("init mpt state with flatten proofs");
+            dev_debug!("init mpt state with flatten proofs");
             let mut state = ZktrieState::construct(old_root);
             let zk_db = state.expose_db();
             for (k, bytes) in flatten_proofs {
                 zk_db.add_node_bytes(bytes, Some(k.as_bytes())).unwrap();
             }
-            zk_db.with_key_cache(
-                self.address_hashes()
-                    .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
-            );
-            zk_db.with_key_cache(
-                self.store_key_hashes()
-                    .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
-            );
 
-            log::debug!(
+            // Key cache can reduce hash computation, but it's unsound.
+            // zk_db.with_key_cache(
+            //     self.address_hashes()
+            //         .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
+            // );
+            // zk_db.with_key_cache(
+            //     self.store_key_hashes()
+            //         .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
+            // );
+
+            dev_debug!(
                 "building partial ZktrieState done from flatten proofs, root {}",
                 hex::encode(state.root())
             );

@@ -1,12 +1,13 @@
-use crate::utils;
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use futures::TryFutureExt;
-use stateless_block_verifier::{ChunkInfo, HardforkConfig};
+use stateless_block_verifier::{dev_info, ChunkInfo, HardforkConfig};
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
 use tiny_keccak::{Hasher, Keccak};
+
+use crate::utils;
 
 #[derive(Args)]
 pub struct RunFileCommand {
@@ -28,6 +29,9 @@ impl RunFileCommand {
             tokio::fs::read_to_string(path)
                 .map_err(anyhow::Error::from)
                 .and_then(|trace| {
+                    // Try to deserialize `BlockTrace` from JSON. In case of failure, try to
+                    // deserialize `BlockTrace` from a JSON-RPC response that has the actual block
+                    // trace nested in the value of the key "result".
                     #[derive(serde::Deserialize, Default, Debug, Clone)]
                     pub struct BlockTraceJsonRpcResult {
                         pub result: BlockTrace,
@@ -72,7 +76,7 @@ impl RunFileCommand {
                 disable_checks,
                 tx_bytes_hasher.clone(),
                 false,
-            );
+            )?;
         }
 
         if self.chunk_mode {
@@ -81,7 +85,7 @@ impl RunFileCommand {
             let haser = Rc::into_inner(tx_bytes_hasher.unwrap()).unwrap();
             haser.into_inner().finalize(&mut tx_bytes_hash);
             let public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash.into());
-            info!("[chunk mode] public input hash: {:?}", public_input_hash);
+            dev_info!("[chunk mode] public input hash: {:?}", public_input_hash);
         }
 
         Ok(())
