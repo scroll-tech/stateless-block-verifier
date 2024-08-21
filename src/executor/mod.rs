@@ -80,6 +80,7 @@ impl EvmExecutor {
                 l2_trace.base_fee_per_gas(),
             );
 
+            cycle_tracker_start!("recover address");
             let recovered_address =
                 eth_tx
                     .recover_from()
@@ -96,6 +97,7 @@ impl EvmExecutor {
                     signer: recovered_address,
                 });
             }
+            cycle_tracker_end!("recover address");
 
             let tx_type = TxType::get_tx_type(&eth_tx);
             if tx_type.is_l1_msg() {
