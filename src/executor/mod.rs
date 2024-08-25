@@ -9,6 +9,7 @@ use revm::{
 use std::fmt::Debug;
 use zktrie::ZkTrie;
 
+use crate::dev_info;
 use crate::{
     cycle_tracker_end, cycle_tracker_start,
     database::ReadOnlyDB,
@@ -67,24 +68,26 @@ impl EvmExecutor {
                 l2_trace.base_fee_per_gas(),
             );
 
-            let recovered_address =
-                eth_tx
-                    .recover_from()
-                    .map_err(|error| VerificationError::SignerRecovery {
-                        tx_hash: eth_tx.hash,
-                        source: error,
-                    })?;
-
-            // verify that the transaction is valid
-            if recovered_address != eth_tx.from {
-                return Err(VerificationError::SenderSignerMismatch {
-                    tx_hash: eth_tx.hash,
-                    sender: eth_tx.from,
-                    signer: recovered_address,
-                });
-            }
-
             let tx_type = TxType::get_tx_type(&eth_tx);
+
+            if !tx_type.is_l1_msg() {
+                let recovered_address =
+                    eth_tx
+                        .recover_from()
+                        .map_err(|error| VerificationError::SignerRecovery {
+                            tx_hash: eth_tx.hash,
+                            source: error,
+                        })?;
+
+                // verify that the transaction is valid
+                if recovered_address != eth_tx.from {
+                    return Err(VerificationError::SenderSignerMismatch {
+                        tx_hash: eth_tx.hash,
+                        sender: eth_tx.from,
+                        signer: recovered_address,
+                    });
+                }
+            }
             if tx_type.is_l1_msg() {
                 env.tx.nonce = None; // clear nonce for l1 msg
                 env.cfg.disable_base_fee = true; // disable base fee for l1 msg
