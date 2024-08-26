@@ -2,8 +2,11 @@
 #[macro_use]
 extern crate tracing;
 
+#[macro_use]
+extern crate stateless_block_verifier;
+
 use clap::Parser;
-use stateless_block_verifier::{dev_info, HardforkConfig};
+use stateless_block_verifier::HardforkConfig;
 
 #[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
@@ -23,6 +26,14 @@ struct Cli {
     /// Disable additional checks
     #[arg(short = 'k', long)]
     disable_checks: bool,
+    /// Start metrics server
+    #[cfg(feature = "metrics")]
+    #[arg(long)]
+    metrics: bool,
+    /// Metrics server address
+    #[cfg(feature = "metrics")]
+    #[arg(long, default_value = "127.0.0.1:9090")]
+    metrics_addr: std::net::SocketAddr,
 }
 
 #[tokio::main]
@@ -37,6 +48,11 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let cmd = Cli::parse();
+
+    #[cfg(feature = "metrics")]
+    if cmd.metrics {
+        stateless_block_verifier::metrics::start_metrics_server(cmd.metrics_addr);
+    }
 
     let get_fork_config = |chain_id: u64| {
         let mut config = HardforkConfig::default_from_chain_id(chain_id);

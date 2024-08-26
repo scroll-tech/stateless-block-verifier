@@ -70,3 +70,28 @@ macro_rules! dev_warn {
         }
     };
 }
+
+/// This macro is for measuring duration to metrics
+#[macro_export]
+macro_rules! measure_duration_histogram {
+    ($label:ident, $e:expr) => {{
+        #[cfg(feature = "metrics")]
+        let _start = std::time::Instant::now();
+
+        #[allow(clippy::let_and_return)]
+        let _result = $e;
+
+        #[cfg(feature = "metrics")]
+        $crate::metrics::REGISTRY
+            .$label
+            .observe(_start.elapsed().as_secs_f64());
+
+        dev_trace!(
+            "measured duration {} = {:?}",
+            stringify!($label),
+            _start.elapsed()
+        );
+
+        _result
+    }};
+}

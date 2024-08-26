@@ -7,6 +7,7 @@
 #[macro_use]
 extern crate tracing;
 
+#[macro_use]
 mod macros;
 
 mod chunk;
@@ -27,6 +28,10 @@ pub use hardfork::HardforkConfig;
 
 mod utils;
 pub use utils::{post_check, BlockTraceExt};
+
+#[cfg(feature = "metrics")]
+/// Metrics module
+pub mod metrics;
 
 #[cfg(all(feature = "dev", test))]
 #[ctor::ctor]

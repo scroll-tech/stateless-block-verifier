@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-#![allow(unused_variables)]
 use eth_types::l2_types::ExecutionResult;
 
 use revm::DatabaseRef;
@@ -7,9 +5,6 @@ use std::fmt::Debug;
 
 #[cfg(feature = "dev")]
 use tracing::Level;
-
-use crate::dev_error;
-use crate::dev_trace;
 
 pub(crate) mod ext;
 

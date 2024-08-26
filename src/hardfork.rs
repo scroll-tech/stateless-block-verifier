@@ -9,8 +9,6 @@ use revm::{
 };
 use std::{collections::HashMap, sync::LazyLock};
 
-use crate::{dev_info, dev_warn};
-
 /// Hardfork heights for Scroll networks, grouped by chain id.
 static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock::new(|| {
     let heights = hardfork_heights()

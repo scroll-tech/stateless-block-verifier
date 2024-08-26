@@ -2,13 +2,16 @@ use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use ethers_providers::{Http, Middleware, Provider};
 use futures::future::OptionFuture;
-use stateless_block_verifier::{dev_error, dev_info, HardforkConfig};
+use stateless_block_verifier::HardforkConfig;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
 use url::Url;
+
+#[cfg(feature = "metrics")]
+use stateless_block_verifier::metrics;
 
 use crate::utils;
 
@@ -138,8 +141,24 @@ impl RunRpcCommand {
                 tx.send(current_block).await?;
                 current_block += 1;
 
+                #[cfg(feature = "metrics")]
+                metrics::REGISTRY
+                    .fetched_rpc_block_height
+                    .set(current_block as i64);
+
                 let mut exponential_backoff = 1;
-                while provider.get_block_number().await?.as_u64() < current_block {
+                loop {
+                    let latest_block = provider.get_block_number().await?.as_u64();
+
+                    #[cfg(feature = "metrics")]
+                    metrics::REGISTRY
+                        .latest_rpc_block_height
+                        .set(latest_block as i64);
+
+                    if latest_block > current_block {
+                        break;
+                    }
+
                     if exponential_backoff == 1 {
                         dev_info!("waiting for block #{}", current_block);
                     }

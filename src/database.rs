@@ -10,7 +10,7 @@ use revm::{
 };
 use std::{convert::Infallible, fmt::Debug};
 
-use crate::{cycle_tracker_end, cycle_tracker_start, dev_trace, utils::ext::BlockRevmDbExt};
+use crate::utils::ext::BlockRevmDbExt;
 
 /// A read-only in-memory database that consists of account and storage information.
 #[derive(Debug)]
@@ -39,6 +39,13 @@ impl ReadOnlyDB {
 
     /// Update the database with a new block trace.
     pub fn update<T: BlockRevmDbExt>(&mut self, l2_trace: T, zktrie_state: &ZktrieState) {
+        measure_duration_histogram!(
+            update_db_duration_microseconds,
+            self.update_inner(l2_trace, zktrie_state)
+        );
+    }
+
+    fn update_inner<T: BlockRevmDbExt>(&mut self, l2_trace: T, zktrie_state: &ZktrieState) {
         dev_trace!(
             "update ReadOnlyDB with trie root: {:?}",
             l2_trace.root_before()

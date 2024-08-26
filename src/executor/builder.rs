@@ -1,6 +1,5 @@
 use crate::{
-    cycle_tracker_end, cycle_tracker_start, dev_trace, executor::hooks::ExecuteHooks,
-    BlockTraceExt, EvmExecutor, HardforkConfig, ReadOnlyDB,
+    executor::hooks::ExecuteHooks, BlockTraceExt, EvmExecutor, HardforkConfig, ReadOnlyDB,
 };
 use mpt_zktrie::ZktrieState;
 use revm::db::CacheDB;

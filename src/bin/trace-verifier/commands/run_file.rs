@@ -2,7 +2,7 @@ use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use eth_types::H256;
 use futures::TryFutureExt;
-use stateless_block_verifier::{dev_info, ChunkInfo, EvmExecutorBuilder, HardforkConfig};
+use stateless_block_verifier::{ChunkInfo, EvmExecutorBuilder, HardforkConfig};
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;

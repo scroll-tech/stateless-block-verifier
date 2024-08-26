@@ -9,11 +9,8 @@ use std::fmt::Debug;
 use std::rc::Rc;
 use zktrie::{UpdateDb, ZkMemoryDb, ZkTrie};
 
-use crate::dev_info;
 use crate::{
-    cycle_tracker_end, cycle_tracker_start,
     database::ReadOnlyDB,
-    dev_debug, dev_trace,
     error::VerificationError,
     utils::ext::{BlockTraceRevmExt, TxRevmExt},
     HardforkConfig,
@@ -49,6 +46,22 @@ impl EvmExecutor {
 
     /// Handle a block.
     pub fn handle_block<T: BlockTraceRevmExt>(
+        &mut self,
+        l2_trace: &T,
+    ) -> Result<(), VerificationError> {
+        measure_duration_histogram!(
+            handle_block_duration_microseconds,
+            self.handle_block_inner(l2_trace)
+        )?;
+
+        #[cfg(feature = "metrics")]
+        crate::metrics::REGISTRY.block_counter.inc();
+
+        Ok(())
+    }
+
+    #[inline(always)]
+    fn handle_block_inner<T: BlockTraceRevmExt>(
         &mut self,
         l2_trace: &T,
     ) -> Result<(), VerificationError> {
@@ -147,6 +160,13 @@ impl EvmExecutor {
 
     /// Commit pending changes in cache db to zktrie
     pub fn commit_changes(&mut self) -> H256 {
+        measure_duration_histogram!(
+            commit_changes_duration_microseconds,
+            self.commit_changes_inner()
+        )
+    }
+
+    fn commit_changes_inner(&mut self) -> H256 {
         cycle_tracker_start!("commit_changes");
         // let changes = self.db.accounts;
         let sdb = &self.db.db.sdb;
