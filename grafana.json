@@ -12,6 +12,12 @@
   "__elements": {},
   "__requires": [
     {
+      "type": "panel",
+      "id": "bargauge",
+      "name": "Bar gauge",
+      "version": ""
+    },
+    {
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
@@ -517,12 +523,12 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 24,
+        "w": 12,
         "x": 0,
         "y": 6
       },
       "id": 1,
-      "maxDataPoints": 60,
+      "maxDataPoints": 30,
       "options": {
         "calculate": false,
         "cellGap": 1,
@@ -592,6 +598,103 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
+      "description": "Distribution of the total time consumed to verify a block.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "50.0"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 13,
+      "maxDataPoints": 60,
+      "options": {
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "color"
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "disableTextWrap": false,
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "increase(total_block_verification_duration_bucket[1h]) / ignoring(le) group_left increase(total_block_verification_duration_count[1h])",
+          "format": "heatmap",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "interval": "",
+          "legendFormat": "{{le}}",
+          "range": true,
+          "refId": "A",
+          "useBackend": false
+        }
+      ],
+      "title": "Last 1h Total Block Verification Duration Distribution",
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "description": "Time consumed to insert records from trace to REVM database. ",
       "fieldConfig": {
         "defaults": {
@@ -615,7 +718,7 @@
         "y": 16
       },
       "id": 2,
-      "maxDataPoints": 25,
+      "maxDataPoints": 15,
       "options": {
         "calculate": false,
         "cellGap": 1,
@@ -708,7 +811,7 @@
         "y": 16
       },
       "id": 3,
-      "maxDataPoints": 25,
+      "maxDataPoints": 15,
       "options": {
         "calculate": false,
         "cellGap": 1,
@@ -801,7 +904,7 @@
         "y": 16
       },
       "id": 4,
-      "maxDataPoints": 25,
+      "maxDataPoints": 15,
       "options": {
         "calculate": false,
         "cellGap": 1,
@@ -894,7 +997,7 @@
         "y": 16
       },
       "id": 5,
-      "maxDataPoints": 25,
+      "maxDataPoints": 15,
       "options": {
         "calculate": false,
         "cellGap": 1,
@@ -967,13 +1070,13 @@
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Stateless Block Verfier",
   "uid": "edvynqud8kttsd",
-  "version": 36,
+  "version": 40,
   "weekStart": ""
 }
