@@ -86,10 +86,10 @@ macro_rules! measure_duration_histogram {
             .$label
             .observe(_start.elapsed().as_millis() as f64);
 
-        dev_info!(
-            "measured duration {} = {}ms",
+        dev_debug!(
+            "measured duration {} = {:?}ms",
             stringify!($label),
-            _start.elapsed().as_millis()
+            _start.elapsed()
         );
 
         _result
