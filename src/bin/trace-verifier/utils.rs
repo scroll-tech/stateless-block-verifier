@@ -7,11 +7,10 @@ pub fn verify(
     l2_trace: &BlockTrace,
     fork_config: &HardforkConfig,
     disable_checks: bool,
-    log_error: bool,
 ) -> Result<(), VerificationError> {
     measure_duration_histogram!(
         total_block_verification_duration_microseconds,
-        verify_inner(l2_trace, fork_config, disable_checks, log_error)
+        verify_inner(l2_trace, fork_config, disable_checks)
     )
 }
 
@@ -19,7 +18,6 @@ fn verify_inner(
     l2_trace: &BlockTrace,
     fork_config: &HardforkConfig,
     disable_checks: bool,
-    log_error: bool,
 ) -> Result<(), VerificationError> {
     dev_trace!("{l2_trace:#?}");
     let root_after = l2_trace.storage_trace.root_after;
@@ -89,10 +87,6 @@ fn verify_inner(
 
         #[cfg(feature = "metrics")]
         metrics::REGISTRY.verification_error.inc();
-
-        if !log_error {
-            std::process::exit(1);
-        }
 
         return Err(VerificationError::RootMismatch {
             root_trace: root_after,

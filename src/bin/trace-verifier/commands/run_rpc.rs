@@ -8,6 +8,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
+use tokio::task::JoinSet;
 use url::Url;
 
 #[cfg(feature = "metrics")]
@@ -74,49 +75,64 @@ impl RunRpcCommand {
             .transpose()?
             .map(|f| Arc::new(Mutex::new(f)));
 
-        let handles = {
-            let mut handles = Vec::with_capacity(self.parallel);
-            for _idx in 0..self.parallel {
-                let _provider = provider.clone();
-                let rx = rx.clone();
-                let is_log_error = error_log.is_some();
-                let error_log = error_log.clone();
-                let handle = tokio::spawn(async move {
-                    while let Ok(block_number) = rx.recv().await {
-                        let l2_trace: BlockTrace = _provider
-                            .request(
-                                "scroll_getBlockTraceByNumberOrHash",
-                                [format!("0x{:x}", block_number)],
-                            )
-                            .await?;
+        let mut handles = JoinSet::new();
+        for _idx in 0..self.parallel {
+            let _provider = provider.clone();
+            let rx = rx.clone();
+            handles.spawn(async move {
+                while let Ok(block_number) = rx.recv().await {
+                    let l2_trace = _provider
+                        .request::<_, BlockTrace>(
+                            "scroll_getBlockTraceByNumberOrHash",
+                            [
+                                serde_json::json!(format!("0x{:x}", block_number)),
+                                serde_json::json!({"StorageProofFormat": "flatten"}),
+                            ],
+                        )
+                        .await
+                        .map_err(|e| (block_number, e.into()))?;
 
-                        dev_info!(
-                            "worker#{_idx}: load trace for block #{block_number}({})",
-                            l2_trace.header.hash.unwrap()
-                        );
+                    dev_info!(
+                        "worker#{_idx}: load trace for block #{block_number}({})",
+                        l2_trace.header.hash.unwrap()
+                    );
 
-                        if let Err(_err) = tokio::task::spawn_blocking(move || {
-                            utils::verify(&l2_trace, &fork_config, disable_checks, is_log_error)
-                        })
-                        .await?
-                        {
-                            if let Some(error_log) = error_log.as_ref() {
-                                let mut guard = error_log.lock().await;
-                                guard
-                                    .write_all(format!("{block_number}\n").as_bytes())
-                                    .await?;
-                            } else {
-                                dev_error!("Error verifying block #{}: {:?}", block_number, _err);
-                                std::process::exit(-1);
-                            }
+                    tokio::task::spawn_blocking(move || {
+                        utils::verify(&l2_trace, &fork_config, disable_checks)
+                    })
+                    .await
+                    .expect("failed to spawn blocking task")
+                    .map_err(|e| (block_number, e.into()))?;
+                }
+                Ok::<_, (u64, anyhow::Error)>(())
+            });
+        }
+
+        // handle errors
+        tokio::spawn(async move {
+            let error_log = error_log.clone();
+            while let Some(result) = handles.join_next().await {
+                match result {
+                    Err(e) => {
+                        dev_error!("failed to join handle: {e:?}");
+                    }
+                    Ok(Err((block_number, e))) => {
+                        dev_error!("Error occurs when verifying block #{block_number}: {e:?}");
+
+                        if let Some(error_log) = error_log.as_ref() {
+                            let mut guard = error_log.lock().await;
+                            guard
+                                .write_all(format!("{block_number}\n").as_bytes())
+                                .await
+                                .ok();
+                        } else {
+                            std::process::exit(-1);
                         }
                     }
-                    Ok::<_, anyhow::Error>(())
-                });
-                handles.push(handle);
+                    Ok(Ok(())) => {}
+                }
             }
-            handles
-        };
+        });
 
         if let Some(block_list) = self.block_list {
             let block_list = tokio::fs::read_to_string(block_list).await?;
@@ -170,10 +186,6 @@ impl RunRpcCommand {
 
         tx.close();
         drop(tx);
-        for handle in handles {
-            handle.await??;
-        }
-
         Ok(())
     }
 }

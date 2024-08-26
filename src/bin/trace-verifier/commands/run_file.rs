@@ -68,7 +68,7 @@ impl RunFileCommand {
         if !self.chunk_mode {
             for trace in traces.iter() {
                 let fork_config = fork_config(trace.chain_id);
-                utils::verify(trace, &fork_config, disable_checks, false)?;
+                utils::verify(trace, &fork_config, disable_checks)?;
             }
         } else {
             let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id);
