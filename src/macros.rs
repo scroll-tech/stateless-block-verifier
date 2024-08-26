@@ -84,12 +84,12 @@ macro_rules! measure_duration_histogram {
         #[cfg(feature = "metrics")]
         $crate::metrics::REGISTRY
             .$label
-            .observe(_start.elapsed().as_secs_f64());
+            .observe(_start.elapsed().as_millis() as f64);
 
-        dev_trace!(
-            "measured duration {} = {:?}",
+        dev_info!(
+            "measured duration {} = {}ms",
             stringify!($label),
-            _start.elapsed()
+            _start.elapsed().as_millis()
         );
 
         _result

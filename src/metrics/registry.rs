@@ -55,28 +55,28 @@ pub(super) fn init() -> Registry {
         verification_error.clone(),
     );
 
-    let build_zktrie_state_duration_microseconds = Histogram::new(linear_buckets(0.0, 10.0, 30));
+    let build_zktrie_state_duration_microseconds = Histogram::new(linear_buckets(50.0, 30.0, 10));
     registry.register(
         "build_zktrie_state_duration",
         "Duration of build_zktrie_state in microseconds",
         build_zktrie_state_duration_microseconds.clone(),
     );
 
-    let update_db_duration_microseconds = Histogram::new(linear_buckets(0.0, 5.0, 10));
+    let update_db_duration_microseconds = Histogram::new(linear_buckets(2.0, 2.0, 10));
     registry.register(
         "update_db_duration",
         "Duration of update_db in microseconds",
         update_db_duration_microseconds.clone(),
     );
 
-    let handle_block_duration_microseconds = Histogram::new(linear_buckets(0.0, 1.0, 20));
+    let handle_block_duration_microseconds = Histogram::new(linear_buckets(1.0, 1.0, 10));
     registry.register(
         "handle_block_duration",
         "Duration of handle_block in microseconds",
         handle_block_duration_microseconds.clone(),
     );
 
-    let commit_changes_duration_microseconds = Histogram::new(linear_buckets(0.0, 10.0, 30));
+    let commit_changes_duration_microseconds = Histogram::new(linear_buckets(25.0, 25.0, 10));
     registry.register(
         "commit_changes_duration",
         "Duration of commit_changes in microseconds",
@@ -84,7 +84,7 @@ pub(super) fn init() -> Registry {
     );
 
     let total_block_verification_duration_microseconds =
-        Histogram::new(linear_buckets(0.0, 10.0, 50));
+        Histogram::new(linear_buckets(50.0, 25.0, 15));
     registry.register(
         "total_block_verification_duration",
         "Total block verification duration in microseconds",
