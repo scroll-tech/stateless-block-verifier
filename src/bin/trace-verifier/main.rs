@@ -1,9 +1,11 @@
 #[cfg(feature = "dev")]
 #[macro_use]
 extern crate tracing;
+#[macro_use]
+extern crate stateless_block_verifier;
 
 use clap::Parser;
-use stateless_block_verifier::{dev_info, HardforkConfig};
+use stateless_block_verifier::HardforkConfig;
 
 #[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
@@ -38,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
 
     let cmd = Cli::parse();
 
-    let get_fork_config = |chain_id: u64| {
+    let get_fork_config = move |chain_id: u64| {
         let mut config = HardforkConfig::default_from_chain_id(chain_id);
 
         dev_info!("Using hardfork config: {:?}", config);

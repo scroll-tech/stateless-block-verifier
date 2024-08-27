@@ -11,7 +11,7 @@ cargo run --bin stateless-block-verifier --features="bin-deps" -- [--disable-che
 
 ## Run Chunk mode trace files
 ```
-cargo run --bin stateless-block-verifier --features="bin-deps" -- [--disable-checks] run-file --chunk-mode testdata/mainnet_blocks/837*
+cargo run --bin stateless-block-verifier --features="bin-deps" -- run-file --chunk-mode testdata/mainnet_blocks/837*
 ```
 
 ## Fetch and verify traces from Geth rpc
