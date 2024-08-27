@@ -55,14 +55,20 @@ jobs:
         with:
           toolchain: "nightly-2024-07-07"
           components: clippy
-      - name: Cargo cache
+      - name: cargo cache
         uses: Swatinem/rust-cache@v2
-      - name: Cargo clippy default
+      - name: clippy default
         run: cargo clippy --workspace --all-targets --features="bin-deps" -- -D warnings
-      - name: Cargo clippy dev
+      - name: clippy dev
         run: cargo clippy --workspace --all-targets --features="bin-deps, dev" -- -D warnings
-      - name: Cargo clippy all
+      - name: cargo clippy all
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: cargo clippy bin default
+        run: cargo clippy --workspace --bin stateless-block-verifier --features="bin-deps" -- -D warnings
+      - name: cargo clippy bin dev
+        run: cargo clippy --workspace --bin stateless-block-verifier --features="bin-deps, dev" -- -D warnings
+      - name: cargo clippy bin all
+        run: cargo clippy --workspace --bin stateless-block-verifier --all-features -- -D warnings
 
 
   integration-tests:
