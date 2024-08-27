@@ -49,6 +49,10 @@ jobs:
     name: Clippy
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [ "--all-targets", "--bin stateless-block-verifier" ]
+        features: [ "", "--features=\"dev\"", "--all-features" ]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -57,19 +61,8 @@ jobs:
           components: clippy
       - name: cargo cache
         uses: Swatinem/rust-cache@v2
-      - name: clippy default
-        run: cargo clippy --workspace --all-targets --features="bin-deps" -- -D warnings
-      - name: clippy dev
-        run: cargo clippy --workspace --all-targets --features="bin-deps, dev" -- -D warnings
-      - name: cargo clippy all
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-      - name: cargo clippy bin default
-        run: cargo clippy --workspace --bin stateless-block-verifier --features="bin-deps" -- -D warnings
-      - name: cargo clippy bin dev
-        run: cargo clippy --workspace --bin stateless-block-verifier --features="bin-deps, dev" -- -D warnings
-      - name: cargo clippy bin all
-        run: cargo clippy --workspace --bin stateless-block-verifier --all-features -- -D warnings
-
+      - name: clippy
+        run: cargo clippy --workspace ${{ matrix.target }} ${{ matrix.features }} -- -D warnings
 
   integration-tests:
     needs: [ clippy ]
