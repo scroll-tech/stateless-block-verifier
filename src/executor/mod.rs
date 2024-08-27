@@ -7,7 +7,8 @@ use revm::{
     primitives::{AccountInfo, Env, SpecId},
 };
 use std::fmt::Debug;
-use zktrie::ZkTrie;
+use std::rc::Rc;
+use zktrie::{UpdateDb, ZkMemoryDb, ZkTrie};
 
 use crate::dev_info;
 use crate::{
@@ -27,7 +28,8 @@ pub mod hooks;
 /// EVM executor that handles the block.
 pub struct EvmExecutor {
     db: CacheDB<ReadOnlyDB>,
-    zktrie: ZkTrie,
+    zktrie_db: Rc<ZkMemoryDb>,
+    zktrie: ZkTrie<UpdateDb>,
     spec_id: SpecId,
     hooks: hooks::ExecuteHooks,
 }
@@ -178,8 +180,7 @@ impl EvmExecutor {
                 // get storage tire
                 cycle_tracker_start!("update storage_tire");
                 let mut storage_tire = self
-                    .zktrie
-                    .get_db()
+                    .zktrie_db
                     .new_trie(storage_root_before.as_fixed_bytes())
                     .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {

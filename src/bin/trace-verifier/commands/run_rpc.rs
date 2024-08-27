@@ -66,14 +66,10 @@ impl RunRpcCommand {
 
         let (tx, rx) = async_channel::bounded(self.parallel);
 
-        let error_log = OptionFuture::from(
-            self.log_error
-                .as_ref()
-                .map(tokio::fs::File::create),
-        )
-        .await
-        .transpose()?
-        .map(|f| Arc::new(Mutex::new(f)));
+        let error_log = OptionFuture::from(self.log_error.as_ref().map(tokio::fs::File::create))
+            .await
+            .transpose()?
+            .map(|f| Arc::new(Mutex::new(f)));
 
         let handles = {
             let mut handles = Vec::with_capacity(self.parallel);
@@ -101,10 +97,12 @@ impl RunRpcCommand {
                         })
                         .await?
                         {
-                            let mut guard = error_log.as_ref().unwrap().lock().await;
-                            guard
-                                .write_all(format!("{block_number}\n").as_bytes())
-                                .await?;
+                            if let Some(error_log) = error_log.as_ref() {
+                                let mut guard = error_log.lock().await;
+                                guard
+                                    .write_all(format!("{block_number}\n").as_bytes())
+                                    .await?;
+                            }
                         }
                     }
                     Ok::<_, anyhow::Error>(())

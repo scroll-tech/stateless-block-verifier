@@ -15,35 +15,16 @@ pub(crate) mod ext;
 
 /// Blanket trait for block trace extensions.
 pub trait BlockTraceExt:
-    ext::BlockTraceRevmExt + ext::BlockRevmDbExt + ext::BlockZktrieExt
+    ext::BlockTraceExt + ext::BlockTraceRevmExt + ext::BlockRevmDbExt + ext::BlockZktrieExt
 {
-    /// Get the root hash after the block.
-    fn root_after(&self) -> eth_types::U256;
 }
 
-impl BlockTraceExt for eth_types::l2_types::BlockTrace {
-    fn root_after(&self) -> eth_types::U256 {
-        eth_types::U256::from_big_endian(&self.storage_trace.root_after.0)
-    }
-}
+impl BlockTraceExt for eth_types::l2_types::BlockTrace {}
 
-impl BlockTraceExt for eth_types::l2_types::BlockTraceV2 {
-    fn root_after(&self) -> eth_types::U256 {
-        eth_types::U256::from_big_endian(&self.storage_trace.root_after.0)
-    }
-}
+impl BlockTraceExt for eth_types::l2_types::BlockTraceV2 {}
 
-impl BlockTraceExt for eth_types::l2_types::ArchivedBlockTraceV2 {
-    fn root_after(&self) -> eth_types::U256 {
-        eth_types::U256::from_big_endian(self.storage_trace.root_after.0.as_ref())
-    }
-}
-
-impl<T: BlockTraceExt> BlockTraceExt for &T {
-    fn root_after(&self) -> eth_types::U256 {
-        (*self).root_after()
-    }
-}
+impl BlockTraceExt for eth_types::l2_types::ArchivedBlockTraceV2 {}
+impl<T: BlockTraceExt> BlockTraceExt for &T {}
 
 /// Check the post state of the block with the execution result.
 pub fn post_check<DB: DatabaseRef>(db: DB, exec: &ExecutionResult) -> bool
