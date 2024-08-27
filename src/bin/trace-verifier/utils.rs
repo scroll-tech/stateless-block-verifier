@@ -60,7 +60,7 @@ pub fn verify(
         dev_info!("Profiling report saved to: {:?}", path);
     }
 
-    let elapsed = now.elapsed();
+    let _elapsed = now.elapsed();
 
     if root_after != revm_root_after {
         dev_error!("Root after in trace: {:x}", root_after);
@@ -76,16 +76,16 @@ pub fn verify(
         });
     }
 
-    dev_info!("Root matches in: {} ms", elapsed.as_millis());
+    dev_info!("Root matches in: {} ms", _elapsed.as_millis());
 
     let block_counter = BLOCK_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     if block_counter > 50 {
         let mut last_time = LAST_TIME.lock().unwrap();
-        let blocks = BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst);
-        let elapsed = last_time.elapsed().as_secs_f64();
-        let bps = blocks as f64 / elapsed;
-
-        dev_warn!("Verifying avg speed: {:.2} bps", bps);
+        dev_warn!(
+            "Verifying avg speed: {:.2} bps",
+            BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst) as f64
+                / last_time.elapsed().as_secs_f64()
+        );
         *last_time = Instant::now();
     }
 

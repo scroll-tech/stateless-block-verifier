@@ -17,7 +17,7 @@ pub enum Commands {
 impl Commands {
     pub async fn run(
         self,
-        fork_config: impl Fn(u64) -> HardforkConfig,
+        fork_config: impl Fn(u64) -> HardforkConfig + Send + Sync + Copy + 'static,
         disable_checks: bool,
     ) -> anyhow::Result<()> {
         match self {

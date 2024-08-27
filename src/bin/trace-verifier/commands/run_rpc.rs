@@ -73,7 +73,7 @@ impl RunRpcCommand {
 
         let handles = {
             let mut handles = Vec::with_capacity(self.parallel);
-            for idx in 0..self.parallel {
+            for _idx in 0..self.parallel {
                 let _provider = provider.clone();
                 let rx = rx.clone();
                 let is_log_error = error_log.is_some();
@@ -88,11 +88,11 @@ impl RunRpcCommand {
                             .await?;
 
                         dev_info!(
-                            "worker#{idx}: load trace for block #{block_number}({})",
+                            "worker#{_idx}: load trace for block #{block_number}({})",
                             l2_trace.header.hash.unwrap()
                         );
 
-                        if let Err(err) = tokio::task::spawn_blocking(move || {
+                        if let Err(_err) = tokio::task::spawn_blocking(move || {
                             utils::verify(l2_trace, &fork_config, disable_checks, is_log_error)
                         })
                         .await?
@@ -126,9 +126,10 @@ impl RunRpcCommand {
                         break;
                     }
                 } else if current_block % 10 == 0 {
-                    let latest_block = provider.get_block_number().await?.as_u64();
-
-                    dev_info!("distance to latest block: {}", latest_block - current_block);
+                    dev_info!(
+                        "distance to latest block: {}",
+                        provider.get_block_number().await?.as_u64() - current_block
+                    );
                 }
 
                 tx.send(current_block).await?;
