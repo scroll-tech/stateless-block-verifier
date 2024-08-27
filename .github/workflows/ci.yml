@@ -52,7 +52,7 @@ jobs:
     strategy:
       matrix:
         target: [ "--all-targets", "--bin stateless-block-verifier" ]
-        features: [ "", "--features=\"dev\"", "--all-features" ]
+        features: [ "--features=\"bin-deps\"", "--features=\"bin-deps, dev\"", "--all-features" ]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
