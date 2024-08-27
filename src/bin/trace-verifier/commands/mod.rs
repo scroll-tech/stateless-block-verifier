@@ -19,11 +19,10 @@ impl Commands {
         self,
         fork_config: impl Fn(u64) -> HardforkConfig + Send + Sync + Copy + 'static,
         disable_checks: bool,
-        parallel: usize,
     ) -> anyhow::Result<()> {
         match self {
-            Commands::RunFile(cmd) => cmd.run(fork_config, disable_checks, parallel).await,
-            Commands::RunRpc(cmd) => cmd.run(fork_config, disable_checks, parallel).await,
+            Commands::RunFile(cmd) => cmd.run(fork_config, disable_checks).await,
+            Commands::RunRpc(cmd) => cmd.run(fork_config, disable_checks).await,
         }
     }
 }

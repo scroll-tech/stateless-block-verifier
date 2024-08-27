@@ -2,9 +2,7 @@ use crate::utils;
 use anyhow::bail;
 use clap::Args;
 use eth_types::l2_types::BlockTrace;
-use futures::TryFutureExt;
-use stateless_block_verifier::{dev_error, dev_info, HardforkConfig};
-use std::future::ready;
+use stateless_block_verifier::HardforkConfig;
 use std::path::PathBuf;
 use tokio::task::JoinSet;
 
@@ -50,7 +48,6 @@ impl RunFileCommand {
         self,
         fork_config: impl Fn(u64) -> HardforkConfig + Send + Sync + Copy + 'static,
         disable_checks: bool,
-        parallel: usize,
     ) -> anyhow::Result<()> {
         let mut tasks = JoinSet::new();
 

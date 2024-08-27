@@ -23,6 +23,9 @@ pub struct RunRpcCommand {
     /// End block number
     #[arg(short, long)]
     end_block: Option<u64>,
+    /// parallel worker count
+    #[arg(short = 'j', long, default_value = "1")]
+    parallel: usize,
     /// Do not exit on verification failure, log the error and continue
     #[arg(short, long)]
     log_error: Option<PathBuf>,
@@ -47,7 +50,6 @@ impl RunRpcCommand {
         self,
         fork_config: impl Fn(u64) -> HardforkConfig,
         disable_checks: bool,
-        parallel: usize,
     ) -> anyhow::Result<()> {
         dev_info!("Running RPC command with url: {}", self.url);
         let provider = Provider::new(Http::new(self.url));
@@ -62,7 +64,7 @@ impl RunRpcCommand {
 
         let mut current_block = start_block;
 
-        let (tx, rx) = async_channel::bounded(parallel);
+        let (tx, rx) = async_channel::bounded(self.parallel);
 
         let error_log = OptionFuture::from(self.log_error.as_ref().map(tokio::fs::File::create))
             .await
@@ -70,8 +72,8 @@ impl RunRpcCommand {
             .map(|f| Arc::new(Mutex::new(f)));
 
         let handles = {
-            let mut handles = Vec::with_capacity(parallel);
-            for idx in 0..parallel {
+            let mut handles = Vec::with_capacity(self.parallel);
+            for _idx in 0..self.parallel {
                 let _provider = provider.clone();
                 let rx = rx.clone();
                 let is_log_error = error_log.is_some();
@@ -86,11 +88,11 @@ impl RunRpcCommand {
                             .await?;
 
                         dev_info!(
-                            "worker#{idx}: load trace for block #{block_number}({})",
+                            "worker#{_idx}: load trace for block #{block_number}({})",
                             l2_trace.header.hash.unwrap()
                         );
 
-                        if let Err(err) = tokio::task::spawn_blocking(move || {
+                        if let Err(_err) = tokio::task::spawn_blocking(move || {
                             utils::verify(l2_trace, &fork_config, disable_checks, is_log_error)
                         })
                         .await?
@@ -124,9 +126,10 @@ impl RunRpcCommand {
                         break;
                     }
                 } else if current_block % 10 == 0 {
-                    let latest_block = provider.get_block_number().await?.as_u64();
-
-                    dev_info!("distance to latest block: {}", latest_block - current_block);
+                    dev_info!(
+                        "distance to latest block: {}",
+                        provider.get_block_number().await?.as_u64() - current_block
+                    );
                 }
 
                 tx.send(current_block).await?;

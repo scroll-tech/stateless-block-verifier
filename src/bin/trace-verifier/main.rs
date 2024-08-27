@@ -1,11 +1,11 @@
-#![allow(unused_imports)]
-#![allow(unused_variables)]
 #[cfg(feature = "dev")]
 #[macro_use]
 extern crate tracing;
+#[macro_use]
+extern crate stateless_block_verifier;
 
 use clap::Parser;
-use stateless_block_verifier::{dev_info, HardforkConfig};
+use stateless_block_verifier::HardforkConfig;
 
 #[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
@@ -25,9 +25,6 @@ struct Cli {
     /// Disable additional checks
     #[arg(short = 'k', long)]
     disable_checks: bool,
-    /// parallel worker count
-    #[arg(short = 'j', long, default_value = "1")]
-    parallel: usize,
 }
 
 #[tokio::main]
@@ -54,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     cmd.commands
-        .run(get_fork_config, cmd.disable_checks, cmd.parallel)
+        .run(get_fork_config, cmd.disable_checks)
         .await?;
 
     Ok(())
