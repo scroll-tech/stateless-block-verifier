@@ -109,7 +109,7 @@ impl RunRpcCommand {
         }
 
         // handle errors
-        tokio::spawn(async move {
+        let error_handler = tokio::spawn(async move {
             let error_log = error_log.clone();
             while let Some(result) = handles.join_next().await {
                 match result {
@@ -186,6 +186,8 @@ impl RunRpcCommand {
 
         tx.close();
         drop(tx);
+        error_handler.await?;
+
         Ok(())
     }
 }
