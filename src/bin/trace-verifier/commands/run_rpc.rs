@@ -23,9 +23,6 @@ pub struct RunRpcCommand {
     /// End block number
     #[arg(short, long)]
     end_block: Option<u64>,
-    /// parallel worker count
-    #[arg(short = 'j', long, default_value = "1")]
-    parallel: usize,
     /// Do not exit on verification failure, log the error and continue
     #[arg(short, long)]
     log_error: Option<PathBuf>,
@@ -50,6 +47,7 @@ impl RunRpcCommand {
         self,
         fork_config: impl Fn(u64) -> HardforkConfig,
         disable_checks: bool,
+        parallel: usize,
     ) -> anyhow::Result<()> {
         dev_info!("Running RPC command with url: {}", self.url);
         let provider = Provider::new(Http::new(self.url));
@@ -64,7 +62,7 @@ impl RunRpcCommand {
 
         let mut current_block = start_block;
 
-        let (tx, rx) = async_channel::bounded(self.parallel);
+        let (tx, rx) = async_channel::bounded(parallel);
 
         let error_log = OptionFuture::from(self.log_error.as_ref().map(tokio::fs::File::create))
             .await
@@ -72,8 +70,8 @@ impl RunRpcCommand {
             .map(|f| Arc::new(Mutex::new(f)));
 
         let handles = {
-            let mut handles = Vec::with_capacity(self.parallel);
-            for idx in 0..self.parallel {
+            let mut handles = Vec::with_capacity(parallel);
+            for idx in 0..parallel {
                 let _provider = provider.clone();
                 let rx = rx.clone();
                 let is_log_error = error_log.is_some();

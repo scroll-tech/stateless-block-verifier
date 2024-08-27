@@ -25,6 +25,9 @@ struct Cli {
     /// Disable additional checks
     #[arg(short = 'k', long)]
     disable_checks: bool,
+    /// parallel worker count
+    #[arg(short = 'j', long, default_value = "1")]
+    parallel: usize,
 }
 
 #[tokio::main]
@@ -40,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
 
     let cmd = Cli::parse();
 
-    let get_fork_config = |chain_id: u64| {
+    let get_fork_config = move |chain_id: u64| {
         let mut config = HardforkConfig::default_from_chain_id(chain_id);
 
         dev_info!("Using hardfork config: {:?}", config);
@@ -51,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     cmd.commands
-        .run(get_fork_config, cmd.disable_checks)
+        .run(get_fork_config, cmd.disable_checks, cmd.parallel)
         .await?;
 
     Ok(())
