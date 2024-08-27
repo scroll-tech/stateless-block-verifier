@@ -26,7 +26,7 @@ fn deserialize_block_trace(trace: &str) -> anyhow::Result<BlockTrace> {
                 pub result: BlockTrace,
             }
             Ok::<_, serde_json::Error>(
-                serde_json::from_str::<BlockTraceJsonRpcResult>(&trace)?.result,
+                serde_json::from_str::<BlockTraceJsonRpcResult>(trace)?.result,
             )
         })?,
     )
