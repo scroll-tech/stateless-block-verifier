@@ -141,7 +141,7 @@ async fn run_trace(
 ) -> anyhow::Result<()> {
     let trace = read_block_trace(&path).await?;
     let fork_config = fork_config(trace.chain_id);
-    tokio::task::spawn_blocking(move || utils::verify(&trace, &fork_config, disable_checks, false))
+    tokio::task::spawn_blocking(move || utils::verify(&trace, &fork_config, disable_checks))
         .await??;
     Ok(())
 }
