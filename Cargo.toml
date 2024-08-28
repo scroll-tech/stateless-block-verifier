@@ -61,8 +61,6 @@ features = [
 ]
 
 [dev-dependencies]
-aggregator = { git = "https://github.com/scroll-tech/zkevm-circuits", branch = "feat/rkyv" }
-#aggregator = { path = "../zkevm-circuits/aggregator" }
 serde = { version = "1.0" }
 serde_json = { version = "1.0" }
 
