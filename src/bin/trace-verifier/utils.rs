@@ -1,15 +1,14 @@
 use eth_types::l2_types::BlockTrace;
-use eth_types::ToWord;
 use stateless_block_verifier::{
-    dev_error, dev_info, dev_trace, dev_warn, post_check, EvmExecutorBuilder, HardforkConfig,
+    dev_error, dev_info, dev_trace, post_check, EvmExecutorBuilder, HardforkConfig,
     VerificationError,
 };
-use std::cell::RefCell;
-use std::rc::Rc;
+#[cfg(feature = "dev")]
 use std::sync::atomic::AtomicUsize;
+#[cfg(feature = "dev")]
 use std::sync::{LazyLock, Mutex};
+#[cfg(feature = "dev")]
 use std::time::Instant;
-use tiny_keccak::{Hasher, Keccak};
 
 pub fn verify(
     l2_trace: &BlockTrace,
@@ -17,7 +16,9 @@ pub fn verify(
     disable_checks: bool,
     log_error: bool,
 ) -> Result<(), VerificationError> {
+    #[cfg(feature = "dev")]
     static BLOCK_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    #[cfg(feature = "dev")]
     static LAST_TIME: LazyLock<Mutex<Instant>> = LazyLock::new(|| Mutex::new(Instant::now()));
 
     dev_trace!("{:#?}", l2_trace);
@@ -31,6 +32,7 @@ pub fn verify(
     // let archived = unsafe { rkyv::archived_root::<BlockTraceV2>(&serialized[..]) };
     // let archived = rkyv::check_archived_root::<BlockTraceV2>(&serialized[..]).unwrap();
 
+    #[cfg(feature = "dev")]
     let now = Instant::now();
 
     #[cfg(feature = "profiling")]
@@ -69,6 +71,7 @@ pub fn verify(
         dev_info!("Profiling report saved to: {:?}", path);
     }
 
+    #[cfg(feature = "dev")]
     let elapsed = now.elapsed();
 
     if root_after != revm_root_after {
@@ -87,15 +90,18 @@ pub fn verify(
 
     dev_info!("Root matches in: {} ms", elapsed.as_millis());
 
-    let block_counter = BLOCK_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if block_counter > 50 {
-        let mut last_time = LAST_TIME.lock().unwrap();
-        let blocks = BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst);
-        let elapsed = last_time.elapsed().as_secs_f64();
-        let bps = blocks as f64 / elapsed;
+    #[cfg(feature = "dev")]
+    {
+        let block_counter = BLOCK_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if block_counter > 50 {
+            let mut last_time = LAST_TIME.lock().unwrap();
+            let blocks = BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst);
+            let elapsed = last_time.elapsed().as_secs_f64();
+            let bps = blocks as f64 / elapsed;
 
-        dev_warn!("Verifying avg speed: {:.2} bps", bps);
-        *last_time = Instant::now();
+            dev_info!("Verifying avg speed: {:.2} bps", bps);
+            *last_time = Instant::now();
+        }
     }
 
     Ok(())

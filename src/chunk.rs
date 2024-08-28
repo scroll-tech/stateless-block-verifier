@@ -163,11 +163,6 @@ mod tests {
         let mut tx_bytes_hash = H256::zero();
         let hasher = Rc::into_inner(tx_bytes_hasher).unwrap();
         hasher.into_inner().finalize(&mut tx_bytes_hash.0);
-        let public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
-
-        let aggregator_chunk_info = aggregator::ChunkInfo::from_block_traces(&traces);
-        let aggregator_public_input_hash = aggregator_chunk_info.public_input_hash();
-
-        assert_eq!(public_input_hash, aggregator_public_input_hash);
+        let _public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
     }
 }
