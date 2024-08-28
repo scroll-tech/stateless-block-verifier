@@ -11,6 +11,7 @@ use std::{collections::HashMap, sync::LazyLock};
 
 /// Hardfork heights for Scroll networks, grouped by chain id.
 static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock::new(|| {
+    #[allow(clippy::let_and_return)]
     let heights = hardfork_heights()
         .into_iter()
         .sorted_by_key(|(_, chain_id, _)| *chain_id)

@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, ready_for_review]
+  push:
+    branches:
+      - master
+
+env:
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: git
+
+jobs:
+  skip_check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          cancel_others: 'true'
+          concurrent_skipping: 'same_content_newer'
+          paths_ignore: '["**/README.md"]'
+
+  fmt:
+    needs: [ skip_check ]
+    if: |
+      github.event.pull_request.draft == false &&
+      (github.event.action == 'ready_for_review' || needs.skip_check.outputs.should_skip != 'true')
+    name: Rustfmt
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "nightly-2024-07-07"
+          components: rustfmt
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
+  clippy:
+    needs: [ fmt ]
+    if: |
+      github.event.pull_request.draft == false &&
+      (github.event.action == 'ready_for_review' || needs.skip_check.outputs.should_skip != 'true')
+    name: Clippy
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [ "--all-targets", "--bin stateless-block-verifier" ]
+        features: [ "--features=\"bin-deps\"", "--features=\"bin-deps, dev\"", "--all-features" ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "nightly-2024-07-07"
+          components: clippy
+      - name: cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: clippy
+        run: cargo clippy --workspace ${{ matrix.target }} ${{ matrix.features }} -- -D warnings
+
+  integration-tests:
+    needs: [ clippy ]
+    if: |
+      github.event.pull_request.draft == false &&
+      (github.event.action == 'ready_for_review' || needs.skip_check.outputs.should_skip != 'true')
+    name: Integration Tests
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [ "1.75", "nightly-2024-07-07" ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: checkout test data
+        uses: actions/checkout@v4
+        with:
+          repository: 'scroll-tech/block-testdata'
+          sparse-checkout: 'mainnet_blocks/flatten-proofs'
+          path: 'testdata'
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo run --release --features bin-deps --package stateless-block-verifier --bin stateless-block-verifier -- -k run-file testdata/mainnet_blocks/flatten-proofs/*
