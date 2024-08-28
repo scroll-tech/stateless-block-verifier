@@ -1143,7 +1143,7 @@ dependencies = [
 [[package]]
 name = "eth-types"
 version = "0.12.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#7038d1aed8c28c99e2615e8e9cbbb8655427d814"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#f93a72070256439608cb97f51e93a69eb850d8d6"
 dependencies = [
  "base64 0.13.1",
  "ethereum-types",
@@ -1157,8 +1157,8 @@ dependencies = [
  "poseidon-bn254",
  "primitive-types",
  "regex",
- "revm-precompile 9.2.0",
- "revm-primitives 7.1.0",
+ "revm-precompile",
+ "revm-primitives",
  "rkyv",
  "serde",
  "serde_json",
@@ -2088,7 +2088,7 @@ dependencies = [
 [[package]]
 name = "mpt-zktrie"
 version = "0.12.0"
-source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#7038d1aed8c28c99e2615e8e9cbbb8655427d814"
+source = "git+https://github.com/scroll-tech/zkevm-circuits?branch=feat/rkyv#f93a72070256439608cb97f51e93a69eb850d8d6"
 dependencies = [
  "eth-types",
  "hex",
@@ -2759,7 +2759,7 @@ dependencies = [
  "cfg-if",
  "dyn-clone",
  "revm-interpreter",
- "revm-precompile 10.0.0",
+ "revm-precompile",
  "serde",
  "serde_json",
 ]
@@ -2770,25 +2770,8 @@ version = "9.0.0"
 source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v41#c7f33a1800cf69e78db0d81fc6ae4b5cc65a32c2"
 dependencies = [
  "cfg-if",
- "revm-primitives 8.0.0",
+ "revm-primitives",
  "serde",
-]
-
-[[package]]
-name = "revm-precompile"
-version = "9.2.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#5e215742c4d9d771f73d74fcba39628b1a2e3452"
-dependencies = [
- "aurora-engine-modexp",
- "c-kzg",
- "cfg-if",
- "k256",
- "once_cell",
- "revm-primitives 7.1.0",
- "ripemd",
- "secp256k1",
- "sha2",
- "substrate-bn",
 ]
 
 [[package]]
@@ -2801,29 +2784,11 @@ dependencies = [
  "cfg-if",
  "k256",
  "once_cell",
- "revm-primitives 8.0.0",
+ "revm-primitives",
  "ripemd",
  "secp256k1",
  "sha2",
  "substrate-bn",
-]
-
-[[package]]
-name = "revm-primitives"
-version = "7.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#5e215742c4d9d771f73d74fcba39628b1a2e3452"
-dependencies = [
- "alloy-eips",
- "alloy-primitives",
- "auto_impl",
- "bitflags 2.6.0",
- "bitvec",
- "cfg-if",
- "dyn-clone",
- "enumn",
- "hashbrown 0.14.5",
- "hex",
- "serde",
 ]
 
 [[package]]
