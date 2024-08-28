@@ -114,7 +114,7 @@ impl RunFileCommand {
 
 async fn read_block_trace(path: &PathBuf) -> anyhow::Result<BlockTrace> {
     let trace = tokio::fs::read_to_string(&path).await?;
-    Ok(tokio::task::spawn_blocking(move || deserialize_block_trace(&trace)).await??)
+    tokio::task::spawn_blocking(move || deserialize_block_trace(&trace)).await?
 }
 
 fn deserialize_block_trace(trace: &str) -> anyhow::Result<BlockTrace> {
@@ -122,13 +122,13 @@ fn deserialize_block_trace(trace: &str) -> anyhow::Result<BlockTrace> {
         // Try to deserialize `BlockTrace` from JSON. In case of failure, try to
         // deserialize `BlockTrace` from a JSON-RPC response that has the actual block
         // trace nested in the value of the key "result".
-        serde_json::from_str::<BlockTrace>(&trace).or_else(|_| {
+        serde_json::from_str::<BlockTrace>(trace).or_else(|_| {
             #[derive(serde::Deserialize, Default, Debug, Clone)]
             pub struct BlockTraceJsonRpcResult {
                 pub result: BlockTrace,
             }
             Ok::<_, serde_json::Error>(
-                serde_json::from_str::<BlockTraceJsonRpcResult>(&trace)?.result,
+                serde_json::from_str::<BlockTraceJsonRpcResult>(trace)?.result,
             )
         })?,
     )
