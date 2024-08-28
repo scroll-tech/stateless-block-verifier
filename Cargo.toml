@@ -15,8 +15,8 @@ mpt-zktrie = { git = "https://github.com/scroll-tech/zkevm-circuits", branch = "
 zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "main", features= ["rs_zktrie"] }
 
 # for local development
-# eth-types = { path = "../zkevm-circuits/eth-types", features = ["scroll"] }
-# mpt-zktrie = { path = "../zkevm-circuits/zktrie" }
+#eth-types = { path = "../zkevm-circuits/eth-types", default-features = false, features = ["scroll", "poseidon-bn254"] }
+#mpt-zktrie = { path = "../zkevm-circuits/zktrie" }
 # revm = {path = "../revm/crates/revm", default-features = false, features = ["scroll-default-handler", "std", "optional_no_base_fee"] } # v40
 # zktrie = { path = "../zktrie", features= ["rs_zktrie"] }
 
@@ -49,7 +49,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = tr
 
 [dependencies.revm] # v40
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v40"
+branch = "scroll-evm-executor/v41"
 default-features = false
 features = [
     "scroll-default-handler",
@@ -96,9 +96,9 @@ ordered-db = ["revm/ordered-cache-db"]
 [patch.crates-io]
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
 ethers-signers  = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
-halo2curves = { git = "https://github.com/scroll-tech/halo2curves", branch = "v0.1.0" }
 primitive-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
 ethereum-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
+ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
 
 # ethers-core = { path = "../ethers-rs/ethers-core" }
 # ethers-providers = { path = "../ethers-rs/ethers-providers" }
@@ -107,9 +107,6 @@ ethereum-types = { git = "https://github.com/scroll-tech/parity-common.git", bra
 # ethers-signers  = { path = "../ethers-rs/ethers-signers" }
 # primitive-types = { path = "../parity-common/primitive-types" }
 # ethereum-types = { path = "../parity-common/ethereum-types" }
-
-[patch."https://github.com/privacy-scaling-explorations/bls12_381"]
-bls12_381 = { git = "https://github.com/scroll-tech/bls12_381", branch = "feat/impl_scalar_field" }
 
 [profile.release]
 debug-assertions = true
