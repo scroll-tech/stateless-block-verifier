@@ -535,7 +535,7 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7bc6d6292be3a19e6379786dac800f551e5865a5bb51ebbe3064ab80433f403"
 dependencies = [
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "group",
  "pairing",
  "rand_core",
@@ -547,7 +547,7 @@ name = "bls12_381"
 version = "0.8.0"
 source = "git+https://github.com/scroll-tech/bls12_381?branch=feat/impl_scalar_field#2c515f73a2462fef8681c8e884edf1710f52b22a"
 dependencies = [
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "group",
  "pairing",
  "pasta_curves",
@@ -565,6 +565,18 @@ dependencies = [
  "glob",
  "threadpool",
  "zeroize",
+]
+
+[[package]]
+name = "bn254"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/bn254#1773ed6c51f14652272056370cf135ff5d7a01c5"
+dependencies = [
+ "ff 0.13.0 (git+https://github.com/scroll-tech/ff?branch=feat/sp1)",
+ "getrandom",
+ "rand",
+ "rand_core",
+ "subtle",
 ]
 
 [[package]]
@@ -1065,7 +1077,7 @@ dependencies = [
  "base16ct",
  "crypto-bigint",
  "digest 0.10.7",
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "generic-array",
  "group",
  "pkcs8",
@@ -1182,8 +1194,8 @@ dependencies = [
  "poseidon-base",
  "primitive-types",
  "regex",
- "revm-precompile",
- "revm-primitives",
+ "revm-precompile 9.2.0",
+ "revm-primitives 7.1.0",
  "rkyv",
  "serde",
  "serde_json",
@@ -1368,6 +1380,16 @@ name = "ff"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ded41244b729663b1e574f1b4fb731469f69f79c17667b5d776b16cda0479449"
+dependencies = [
+ "bitvec",
+ "rand_core",
+ "subtle",
+]
+
+[[package]]
+name = "ff"
+version = "0.13.0"
+source = "git+https://github.com/scroll-tech/ff?branch=feat/sp1#244b1098f6be1d19c5fd3f0ec60117ac2940e6ca"
 dependencies = [
  "bitvec",
  "rand_core",
@@ -1587,7 +1609,7 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0f9ef7462f7c099f518d754361858f86d8a07af53ba9af0fe635bbccb151a63"
 dependencies = [
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core",
  "subtle",
 ]
@@ -1618,7 +1640,7 @@ source = "git+https://github.com/scroll-tech/halo2curves?branch=v0.1.0#a495a7b11
 dependencies = [
  "blake2b_simd",
  "bls12_381 0.8.0 (git+https://github.com/scroll-tech/bls12_381?branch=feat/impl_scalar_field)",
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "group",
  "lazy_static",
  "maybe-rayon",
@@ -2428,7 +2450,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3e57598f73cc7e1b2ac63c79c517b31a0877cd7c402cdcaa311b5208de7a095"
 dependencies = [
  "blake2b_simd",
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "group",
  "lazy_static",
  "rand",
@@ -2539,6 +2561,15 @@ dependencies = [
  "halo2curves",
  "lazy_static",
  "once_cell",
+]
+
+[[package]]
+name = "poseidon-bn254"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/poseidon-bn254?branch=master#ef4c505ffe943567acf72a62200818dd6ea5d577"
+dependencies = [
+ "bn254",
+ "itertools 0.13.0",
 ]
 
 [[package]]
@@ -2829,25 +2860,25 @@ dependencies = [
 
 [[package]]
 name = "revm"
-version = "12.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#5e215742c4d9d771f73d74fcba39628b1a2e3452"
+version = "13.0.0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v41#c7f33a1800cf69e78db0d81fc6ae4b5cc65a32c2"
 dependencies = [
  "auto_impl",
  "cfg-if",
  "dyn-clone",
  "revm-interpreter",
- "revm-precompile",
+ "revm-precompile 10.0.0",
  "serde",
  "serde_json",
 ]
 
 [[package]]
 name = "revm-interpreter"
-version = "8.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v40#5e215742c4d9d771f73d74fcba39628b1a2e3452"
+version = "9.0.0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v41#c7f33a1800cf69e78db0d81fc6ae4b5cc65a32c2"
 dependencies = [
  "cfg-if",
- "revm-primitives",
+ "revm-primitives 8.0.0",
  "serde",
 ]
 
@@ -2861,7 +2892,24 @@ dependencies = [
  "cfg-if",
  "k256",
  "once_cell",
- "revm-primitives",
+ "revm-primitives 7.1.0",
+ "ripemd",
+ "secp256k1",
+ "sha2",
+ "substrate-bn",
+]
+
+[[package]]
+name = "revm-precompile"
+version = "10.0.0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v41#c7f33a1800cf69e78db0d81fc6ae4b5cc65a32c2"
+dependencies = [
+ "aurora-engine-modexp",
+ "c-kzg",
+ "cfg-if",
+ "k256",
+ "once_cell",
+ "revm-primitives 8.0.0",
  "ripemd",
  "secp256k1",
  "sha2",
@@ -2878,15 +2926,32 @@ dependencies = [
  "auto_impl",
  "bitflags 2.6.0",
  "bitvec",
+ "cfg-if",
+ "dyn-clone",
+ "enumn",
+ "hashbrown 0.14.5",
+ "hex",
+ "serde",
+]
+
+[[package]]
+name = "revm-primitives"
+version = "8.0.0"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v41#c7f33a1800cf69e78db0d81fc6ae4b5cc65a32c2"
+dependencies = [
+ "alloy-eips",
+ "alloy-primitives",
+ "auto_impl",
+ "bitflags 2.6.0",
+ "bitvec",
  "c-kzg",
  "cfg-if",
  "dyn-clone",
  "enumn",
- "halo2curves",
  "hashbrown 0.14.5",
  "hex",
  "kzg-rs",
- "poseidon-base",
+ "poseidon-bn254",
  "serde",
 ]
 
