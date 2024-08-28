@@ -2,7 +2,7 @@ use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use ethers_providers::{Http, Middleware, Provider};
 use futures::future::OptionFuture;
-use stateless_block_verifier::{dev_info, HardforkConfig};
+use stateless_block_verifier::HardforkConfig;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -93,7 +93,7 @@ impl RunRpcCommand {
                         );
 
                         if let Err(_err) = tokio::task::spawn_blocking(move || {
-                            utils::verify(l2_trace, &fork_config, disable_checks, is_log_error)
+                            utils::verify(&l2_trace, &fork_config, disable_checks, is_log_error)
                         })
                         .await?
                         {
@@ -102,6 +102,9 @@ impl RunRpcCommand {
                                 guard
                                     .write_all(format!("{block_number}\n").as_bytes())
                                     .await?;
+                            } else {
+                                dev_error!("Error verifying block #{}: {:?}", block_number, _err);
+                                std::process::exit(-1);
                             }
                         }
                     }

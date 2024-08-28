@@ -14,6 +14,10 @@ impl BlockTraceExt for ArchivedBlockTraceV2 {
         H256::from(self.storage_trace.root_after.0)
     }
     #[inline(always)]
+    fn withdraw_root(&self) -> H256 {
+        H256::from(self.withdraw_trie_root.0)
+    }
+    #[inline(always)]
     fn flatten_proofs(&self) -> Option<impl Iterator<Item = (&H256, &[u8])>> {
         if self.storage_trace.flatten_proofs.is_empty() {
             None
@@ -70,6 +74,10 @@ impl BlockTraceExt for ArchivedBlockTraceV2 {
     #[inline]
     fn codes(&self) -> impl Iterator<Item = &[u8]> {
         self.codes.iter().map(|code| code.code.as_ref())
+    }
+    #[inline]
+    fn start_l1_queue_index(&self) -> u64 {
+        self.start_l1_queue_index
     }
 }
 
@@ -131,6 +139,10 @@ impl TxRevmExt for ArchivedTransactionTrace {
     #[inline]
     fn raw_type(&self) -> u8 {
         self.type_
+    }
+    #[inline]
+    fn tx_hash(&self) -> B256 {
+        B256::new(self.tx_hash.0)
     }
     #[inline]
     fn caller(&self) -> revm::precompile::Address {
@@ -204,3 +216,5 @@ impl TxRevmExt for ArchivedTransactionTrace {
         )
     }
 }
+
+impl BlockChunkExt for ArchivedBlockTraceV2 {}

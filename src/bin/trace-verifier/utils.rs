@@ -1,29 +1,38 @@
-use eth_types::l2_types::{BlockTrace, BlockTraceV2};
-use eth_types::ToWord;
+use eth_types::l2_types::BlockTrace;
 use stateless_block_verifier::{
-    dev_error, dev_info, dev_trace, dev_warn, post_check, EvmExecutorBuilder, HardforkConfig,
+    dev_error, dev_info, dev_trace, post_check, EvmExecutorBuilder, HardforkConfig,
     VerificationError,
 };
+#[cfg(feature = "dev")]
 use std::sync::atomic::AtomicUsize;
+#[cfg(feature = "dev")]
 use std::sync::{LazyLock, Mutex};
+#[cfg(feature = "dev")]
 use std::time::Instant;
 
 pub fn verify(
-    l2_trace: BlockTrace,
+    l2_trace: &BlockTrace,
     fork_config: &HardforkConfig,
     disable_checks: bool,
     log_error: bool,
 ) -> Result<(), VerificationError> {
+    #[cfg(feature = "dev")]
     static BLOCK_COUNTER: AtomicUsize = AtomicUsize::new(0);
+    #[cfg(feature = "dev")]
     static LAST_TIME: LazyLock<Mutex<Instant>> = LazyLock::new(|| Mutex::new(Instant::now()));
 
     dev_trace!("{:#?}", l2_trace);
-    let root_after = l2_trace.storage_trace.root_after.to_word();
+    let root_after = l2_trace.storage_trace.root_after;
 
-    let v2_trace = BlockTraceV2::from(l2_trace.clone());
-    let serialized = rkyv::to_bytes::<BlockTraceV2, 4096>(&v2_trace).unwrap();
-    let archived = rkyv::check_archived_root::<BlockTraceV2>(&serialized[..]).unwrap();
+    // or with v2 trace
+    // let v2_trace = BlockTraceV2::from(l2_trace.clone());
 
+    // or with rkyv zero copy
+    // let serialized = rkyv::to_bytes::<BlockTraceV2, 4096>(&v2_trace).unwrap();
+    // let archived = unsafe { rkyv::archived_root::<BlockTraceV2>(&serialized[..]) };
+    // let archived = rkyv::check_archived_root::<BlockTraceV2>(&serialized[..]).unwrap();
+
+    #[cfg(feature = "dev")]
     let now = Instant::now();
 
     #[cfg(feature = "profiling")]
@@ -36,14 +45,16 @@ pub fn verify(
     let mut executor = EvmExecutorBuilder::new()
         .hardfork_config(*fork_config)
         .with_execute_hooks(|hooks| {
+            let l2_trace = l2_trace.clone();
             if !disable_checks {
                 hooks.add_post_tx_execution_handler(move |executor, tx_id| {
                     post_check(executor.db(), &l2_trace.execution_results[tx_id]);
                 })
             }
         })
-        .build(archived);
-    let revm_root_after = executor.handle_block(archived)?.to_word();
+        .build(&l2_trace);
+    executor.handle_block(&l2_trace)?;
+    let revm_root_after = executor.commit_changes();
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {
@@ -60,7 +71,8 @@ pub fn verify(
         dev_info!("Profiling report saved to: {:?}", path);
     }
 
-    let _elapsed = now.elapsed();
+    #[cfg(feature = "dev")]
+    let elapsed = now.elapsed();
 
     if root_after != revm_root_after {
         dev_error!("Root after in trace: {:x}", root_after);
@@ -76,17 +88,20 @@ pub fn verify(
         });
     }
 
-    dev_info!("Root matches in: {} ms", _elapsed.as_millis());
+    dev_info!("Root matches in: {} ms", elapsed.as_millis());
 
-    let block_counter = BLOCK_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if block_counter > 50 {
-        let mut last_time = LAST_TIME.lock().unwrap();
-        dev_warn!(
-            "Verifying avg speed: {:.2} bps",
-            BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst) as f64
-                / last_time.elapsed().as_secs_f64()
-        );
-        *last_time = Instant::now();
+    #[cfg(feature = "dev")]
+    {
+        let block_counter = BLOCK_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if block_counter > 50 {
+            let mut last_time = LAST_TIME.lock().unwrap();
+            let blocks = BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst);
+            let elapsed = last_time.elapsed().as_secs_f64();
+            let bps = blocks as f64 / elapsed;
+
+            dev_info!("Verifying avg speed: {:.2} bps", bps);
+            *last_time = Instant::now();
+        }
     }
 
     Ok(())

@@ -1,7 +1,10 @@
-use crate::dev_debug;
+use crate::{dev_debug, dev_warn};
 use eth_types::{state_db, Address, Transaction, Word, H256};
-use mpt_zktrie::ZktrieState;
+use mpt_zktrie::state::StorageData;
+use mpt_zktrie::{AccountData, ZktrieState};
 use revm::primitives::{AccessListItem, TransactTo, TxEnv, B256, U256};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
+use std::collections::HashMap;
 use std::fmt::Debug;
 
 mod imp;
@@ -10,6 +13,7 @@ mod imp;
 pub trait BlockTraceExt {
     fn root_before(&self) -> H256;
     fn root_after(&self) -> H256;
+    fn withdraw_root(&self) -> H256;
     fn account_proofs(&self) -> impl Iterator<Item = (&Address, impl IntoIterator<Item = &[u8]>)>;
     fn storage_proofs(
         &self,
@@ -19,6 +23,7 @@ pub trait BlockTraceExt {
     fn address_hashes(&self) -> impl Iterator<Item = (&Address, &H256)>;
     fn store_key_hashes(&self) -> impl Iterator<Item = (&H256, &H256)>;
     fn codes(&self) -> impl Iterator<Item = &[u8]>;
+    fn start_l1_queue_index(&self) -> u64;
 }
 
 /// Revm extension trait for BlockTrace
@@ -48,6 +53,7 @@ pub trait BlockTraceRevmExt {
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx>;
 
     /// creates `revm::primitives::BlockEnv`
+    #[inline]
     fn env(&self) -> revm::primitives::BlockEnv {
         revm::primitives::BlockEnv {
             number: U256::from_limbs([self.number(), 0, 0, 0]),
@@ -68,8 +74,16 @@ pub trait BlockRevmDbExt: BlockTraceExt {
         &self,
         zktrie_state: &ZktrieState,
     ) -> impl Iterator<Item = (Address, state_db::Account)> {
-        zktrie_state
-            .query_accounts(self.account_proofs().map(|(addr, _)| addr))
+        let trie = zktrie_state
+            .zk_db
+            .new_ref_trie(&self.root_before().0)
+            .unwrap();
+        self.account_proofs()
+            .map(|(addr, _)| addr)
+            .map(move |&addr| {
+                let account = trie.get_account(addr.as_bytes()).map(AccountData::from);
+                (addr, account)
+            })
             .map(|(addr, acc)| {
                 (
                     addr,
@@ -82,48 +96,95 @@ pub trait BlockRevmDbExt: BlockTraceExt {
         &self,
         zktrie_state: &ZktrieState,
     ) -> impl Iterator<Item = ((Address, H256), Word)> {
-        zktrie_state
-            .query_storages(self.storage_proofs().map(|(addr, key, _)| (addr, key)))
+        let zk_db = zktrie_state.zk_db.clone();
+        let account_trie = zk_db.new_ref_trie(&self.root_before().0).unwrap();
+        let mut trie_cache = HashMap::new();
+        self.storage_proofs()
+            .map(|(addr, key, _)| (addr, key))
+            .map(move |(&addr, &key)| {
+                let store_val = match trie_cache.entry(addr) {
+                    Occupied(entry) => Some(entry.into_mut()),
+                    Vacant(entry) => account_trie
+                        .get_account(addr.as_bytes())
+                        .map(AccountData::from)
+                        .and_then(|account| {
+                            zk_db
+                                .new_ref_trie(&account.storage_root.0)
+                                .map(|tr| entry.insert(tr))
+                        }),
+                }
+                .and_then(|tr| tr.get_store(key.as_bytes()).map(StorageData::from));
+                ((addr, key), store_val)
+            })
             .map(|((addr, key), val)| ((addr, key), val.map(|val| val.into()).unwrap_or_default()))
     }
 }
 
 pub trait BlockZktrieExt: BlockTraceExt {
-    fn zktrie_state(&self) -> ZktrieState {
-        let old_root = self.root_before();
-
+    fn build_zktrie_state(&self, zktrie_state: &mut ZktrieState) {
         if let Some(flatten_proofs) = self.flatten_proofs() {
-            dev_debug!("init mpt state with flatten proofs");
-            let mut state = ZktrieState::construct(old_root);
-            let zk_db = state.expose_db();
+            dev_debug!("init zktrie state with flatten proofs");
+            let zk_db = zktrie_state.expose_db();
+
             for (k, bytes) in flatten_proofs {
                 zk_db.add_node_bytes(bytes, Some(k.as_bytes())).unwrap();
             }
-
-            // Key cache can reduce hash computation, but it's unsound.
-            // zk_db.with_key_cache(
-            //     self.address_hashes()
-            //         .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
-            // );
-            // zk_db.with_key_cache(
-            //     self.store_key_hashes()
-            //         .map(|(k, v)| (k.as_bytes(), v.as_bytes())),
-            // );
-
-            dev_debug!(
-                "building partial ZktrieState done from flatten proofs, root {}",
-                hex::encode(state.root())
-            );
-
-            state
         } else {
-            ZktrieState::from_trace_with_additional(
-                old_root,
+            dev_warn!("no flatten proofs, fallback to update zktrie state from trace");
+            zktrie_state.update_from_trace(
                 self.account_proofs(),
                 self.storage_proofs(),
                 self.additional_proofs(),
-            )
-            .unwrap()
+            );
+        }
+    }
+}
+
+pub trait BlockChunkExt: BlockTraceExt + BlockTraceRevmExt {
+    #[inline]
+    fn num_l1_txs(&self) -> u64 {
+        // 0x7e is l1 tx
+        match self
+            .transactions()
+            .filter(|tx| tx.is_l1_tx())
+            // tx.nonce for l1 tx is the l1 queue index, which is a globally index,
+            // not per user as suggested by the name...
+            .map(|tx| tx.nonce())
+            .max()
+        {
+            None => 0, // not l1 tx in this block
+            Some(end_l1_queue_index) => end_l1_queue_index - self.start_l1_queue_index() + 1,
+        }
+    }
+    #[inline]
+    fn num_l2_txs(&self) -> u64 {
+        // 0x7e is l1 tx
+        self.transactions().filter(|tx| !tx.is_l1_tx()).count() as u64
+    }
+
+    #[inline]
+    fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        let num_txs = (self.num_l1_txs() + self.num_l2_txs()) as u16;
+        hasher.update(&self.number().to_be_bytes());
+        hasher.update(&self.timestamp().to::<u64>().to_be_bytes());
+        hasher.update(
+            &self
+                .base_fee_per_gas()
+                .unwrap_or_default()
+                .to_be_bytes::<{ U256::BYTES }>(),
+        );
+        hasher.update(&self.gas_limit().to::<u64>().to_be_bytes());
+        hasher.update(&num_txs.to_be_bytes());
+    }
+
+    #[inline]
+    fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        for tx_hash in self
+            .transactions()
+            .filter(|tx| tx.is_l1_tx())
+            .map(|tx| tx.tx_hash())
+        {
+            hasher.update(tx_hash.as_slice())
         }
     }
 }
@@ -131,6 +192,10 @@ pub trait BlockZktrieExt: BlockTraceExt {
 pub trait TxRevmExt {
     /// get the raw tx type
     fn raw_type(&self) -> u8;
+    fn is_l1_tx(&self) -> bool {
+        self.raw_type() == 0x7e
+    }
+    fn tx_hash(&self) -> B256;
     fn caller(&self) -> revm::primitives::Address;
     fn gas_limit(&self) -> u64;
     fn gas_price(&self) -> U256;
