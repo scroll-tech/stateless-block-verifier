@@ -26,7 +26,8 @@ pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
 mod hardfork;
 pub use hardfork::HardforkConfig;
 
-mod utils;
+/// Module for utilities.
+pub mod utils;
 pub use utils::{post_check, BlockTraceExt};
 
 /// Metrics module

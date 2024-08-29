@@ -1,90 +1,131 @@
-use eth_types::{
-    state_db::{CodeDB, StateDB},
-    ToWord, H160, H256,
-};
-use mpt_zktrie::ZktrieState;
+use crate::error::ZkTrieError;
+use crate::utils::ext::BlockTraceExt;
+use mpt_zktrie::state::StorageData;
+use mpt_zktrie::{AccountData, ZktrieState};
+use once_cell::sync::Lazy;
+use revm::db::AccountState;
 use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
-    Database,
 };
-use std::{convert::Infallible, fmt::Debug};
+use std::rc::Rc;
+use std::{cell::RefCell, collections::HashMap, convert::Infallible, fmt};
+use zktrie::{SharedMemoryDb, ZkMemoryDb, ZkTrie};
 
-use crate::utils::ext::BlockRevmDbExt;
+type Result<T, E = ZkTrieError> = std::result::Result<T, E>;
+
+type StorageTrieLazyFn = Box<dyn FnOnce() -> ZkTrie<SharedMemoryDb>>;
 
 /// A read-only in-memory database that consists of account and storage information.
-#[derive(Debug)]
 pub struct ReadOnlyDB {
-    /// In-memory map of code hash to bytecode. The code hash is a poseidon hash of the bytecode if
-    /// the "scroll" feature is enabled, otherwise by default it is the keccak256 hash.
-    code_db: CodeDB,
-    /// In-memory key-value database representing the state trie.
-    pub(crate) sdb: StateDB,
+    /// In-memory map of code hash to bytecode.
+    code_db: HashMap<B256, Bytecode>,
+    /// Account Cache
+    account_cache: RefCell<HashMap<Address, AccountInfo>>,
+    /// Storage root Cache
+    storage_trie_refs: RefCell<HashMap<Address, Lazy<ZkTrie<SharedMemoryDb>, StorageTrieLazyFn>>>,
+    zktrie_root: B256,
+    zktrie_db: Rc<ZkMemoryDb>,
+    zktrie_db_ref: ZkTrie<SharedMemoryDb>,
 }
 
-impl Default for ReadOnlyDB {
-    fn default() -> Self {
-        Self::new()
+impl fmt::Debug for ReadOnlyDB {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ReadOnlyDB")
+            .field("code_db", &self.code_db.len())
+            .field("zktrie_root", &self.zktrie_root)
+            .finish()
     }
 }
 
 impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
-    pub fn new() -> Self {
-        ReadOnlyDB {
-            code_db: CodeDB::new(),
-            sdb: StateDB::new(),
+    pub fn new<T: BlockTraceExt>(l2_trace: T, zktrie_state: &ZktrieState) -> Result<Self> {
+        let size_hint = l2_trace.codes().len();
+        Self::new_with_size_hint(l2_trace, zktrie_state, size_hint)
+    }
+
+    /// Initialize an EVM database from a block trace with size hint of code database.
+    pub fn new_with_size_hint<T: BlockTraceExt>(
+        l2_trace: T,
+        zktrie_state: &ZktrieState,
+        size_hint: usize,
+    ) -> Result<Self> {
+        cycle_tracker_start!("insert CodeDB");
+        let mut code_db = HashMap::with_capacity(size_hint);
+        for code in l2_trace.codes() {
+            let hash = revm::primitives::keccak256(code);
+            code_db.entry(hash).or_insert_with(|| {
+                dev_trace!("insert code {:?}", hash);
+                Bytecode::new_raw(revm::primitives::Bytes::from(code.to_vec()))
+            });
         }
+        cycle_tracker_end!("insert CodeDB");
+
+        let zktrie_root = l2_trace.root_before().0.into();
+
+        Ok(ReadOnlyDB {
+            code_db,
+            account_cache: Default::default(),
+            storage_trie_refs: Default::default(),
+            zktrie_root,
+            zktrie_db: zktrie_state.zk_db.clone(),
+            zktrie_db_ref: zktrie_state
+                .zk_db
+                .new_ref_trie(&zktrie_root.0)
+                .ok_or(ZkTrieError::ZkTrieRootNotFound)?,
+        })
+    }
+
+    /// Get the current zkTrie root.
+    #[inline]
+    pub fn current_root(&self) -> B256 {
+        self.zktrie_root
+    }
+
+    /// Get the cached account information.
+    #[inline]
+    pub fn get_cached_account_info(&self, address: &Address) -> Option<AccountInfo> {
+        self.account_cache.borrow().get(address).cloned()
     }
 
     /// Update the database with a new block trace.
-    pub fn update<T: BlockRevmDbExt>(&mut self, l2_trace: T, zktrie_state: &ZktrieState) {
-        measure_duration_histogram!(
-            update_db_duration_microseconds,
-            self.update_inner(l2_trace, zktrie_state)
-        );
+    pub fn update<T: BlockTraceExt>(&mut self, l2_trace: T) -> Result<()> {
+        measure_duration_histogram!(update_db_duration_microseconds, self.update_inner(l2_trace))
     }
 
-    fn update_inner<T: BlockRevmDbExt>(&mut self, l2_trace: T, zktrie_state: &ZktrieState) {
-        dev_trace!(
-            "update ReadOnlyDB with trie root: {:?}",
-            l2_trace.root_before()
-        );
-
-        cycle_tracker_start!("insert StateDB account");
-        for (addr, account) in l2_trace.accounts(zktrie_state) {
-            dev_trace!("insert account {:?} {:?}", addr, account);
-            let (exist, _) = self.sdb.get_account(&addr);
-            // won't update exist value, those should be already updated in upper CacheDB
-            if !exist {
-                self.sdb.set_account(&addr, account);
-            }
-        }
-        cycle_tracker_end!("insert StateDB account");
-
-        cycle_tracker_start!("insert StateDB storage");
-        for ((addr, key), val) in l2_trace.storages(zktrie_state) {
-            dev_trace!("insert storage {:?} {:?} {:?}", addr, key, val);
-            let key = key.to_word();
-            let (exist, _) = self.sdb.get_committed_storage(&addr, &key);
-            // won't update exist value, those should be already updated in upper CacheDB
-            if !exist {
-                *self.sdb.get_storage_mut(&addr, &key).1 = val;
-            }
-        }
-        cycle_tracker_end!("insert StateDB storage");
-
+    fn update_inner<T: BlockTraceExt>(&mut self, l2_trace: T) -> Result<()> {
         cycle_tracker_start!("insert CodeDB");
         for code in l2_trace.codes() {
             let hash = revm::primitives::keccak256(code);
-            dev_trace!("insert code {:?}", hash);
-            // save a `to_vec` call if exists
-            if self.code_db.0.contains_key(&H256(hash.0)) {
-                continue;
-            }
-            self.code_db.insert_with_hash(H256(hash.0), code.to_vec());
+            self.code_db.entry(hash).or_insert_with(|| {
+                dev_trace!("insert code {:?}", hash);
+                Bytecode::new_raw(revm::primitives::Bytes::from(code.to_vec()))
+            });
         }
         cycle_tracker_end!("insert CodeDB");
+
+        self.zktrie_root = l2_trace.root_before().0.into();
+
+        self.zktrie_db_ref = self
+            .zktrie_db
+            .new_ref_trie(&self.zktrie_root.0)
+            .ok_or(ZkTrieError::ZkTrieRootNotFound)?;
+
+        Ok(())
+    }
+
+    /// Invalidate internal cache for any account touched by EVM.
+    pub fn invalidate_storage_root_caches(
+        &mut self,
+        account_states: impl Iterator<Item = (Address, AccountState)>,
+    ) {
+        let mut storage_trie_refs = self.storage_trie_refs.borrow_mut();
+        for (address, account_state) in account_states {
+            if account_state != AccountState::None {
+                storage_trie_refs.remove(&address);
+            }
+        }
     }
 }
 
@@ -93,29 +134,35 @@ impl DatabaseRef for ReadOnlyDB {
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let (exist, acc) = self.sdb.get_account(&H160::from(**address));
-
-        dev_trace!("loaded account: {address:?}, exist: {exist}, acc: {acc:?}");
-        if exist {
-            let acc = AccountInfo {
-                balance: U256::from_limbs(acc.balance.0),
-                nonce: acc.nonce.as_u64(),
-                code_size: acc.code_size.as_usize(),
-                // revm code hash is keccak256 of bytecode
-                code_hash: B256::from(acc.keccak_code_hash.to_fixed_bytes()),
-                // we also need poseidon code hash which is [eth_types::Account::code_hash]
-                poseidon_code_hash: B256::from(acc.code_hash.to_fixed_bytes()),
-                // if None, means CodeDB did not include the code, could cause by: EXTCODESIZE, EXTCODEHASH
-                code: self
-                    .code_db
-                    .0
-                    .get(&acc.keccak_code_hash)
-                    .map(|vec| Bytecode::new_raw(revm::primitives::Bytes::from(vec.clone()))),
-            };
-            Ok(Some(acc))
-        } else {
-            Ok(None)
-        }
+        Ok(self
+            .zktrie_db_ref
+            .get_account(address.as_slice())
+            .map(AccountData::from)
+            .map(|account_data| {
+                let code_hash = B256::from(account_data.keccak_code_hash.0);
+                let storage_root = account_data.storage_root;
+                let zktrie_db = self.zktrie_db.clone();
+                self.storage_trie_refs.borrow_mut().insert(
+                    address,
+                    Lazy::new(Box::new(move || {
+                        zktrie_db
+                            .new_ref_trie(&storage_root.0)
+                            .expect("storage trie associated with account not found")
+                    })),
+                );
+                let info = AccountInfo {
+                    balance: U256::from_limbs(account_data.balance.0),
+                    nonce: account_data.nonce,
+                    code_size: account_data.code_size as usize,
+                    code_hash,
+                    poseidon_code_hash: B256::from(account_data.poseidon_code_hash.0),
+                    code: self.code_db.get(&code_hash).cloned(),
+                };
+                self.account_cache
+                    .borrow_mut()
+                    .insert(address, info.clone());
+                info
+            }))
     }
 
     /// Get account code by its code hash.
@@ -125,48 +172,44 @@ impl DatabaseRef for ReadOnlyDB {
         // then the upcoming trace contains code (meaning the code is used in this new block),
         // we can't directly update the CacheDB, so we offer the code by hash here.
         // However, if the code still cannot be found, this is an error.
-        self.code_db
-            .0
-            .get(&H256(hash.0))
-            .map(|vec| Bytecode::new_raw(revm::primitives::Bytes::from(vec.clone())))
-            .ok_or_else(|| {
-                unreachable!(
-                    "Code is either loaded or not needed (like EXTCODESIZE), code hash: {:?}",
-                    hash
-                );
-            })
+        self.code_db.get(&hash).cloned().ok_or_else(|| {
+            unreachable!(
+                "Code is either loaded or not needed (like EXTCODESIZE), code hash: {:?}",
+                hash
+            );
+        })
     }
 
     /// Get storage value of address at index.
     fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        let (_, val) = self
-            .sdb
-            .get_storage(&H160::from(**address), &eth_types::U256(*index.as_limbs()));
-        Ok(U256::from_limbs(val.0))
+        let mut storage_trie_refs = self.storage_trie_refs.borrow_mut();
+        let trie = storage_trie_refs
+            .entry(address)
+            .or_insert_with_key(|address| {
+                let storage_root = self
+                    .zktrie_db_ref
+                    .get_account(address.as_slice())
+                    .map(AccountData::from)
+                    .map(|account_data| account_data.storage_root)
+                    .unwrap_or_default();
+                let zktrie_db = self.zktrie_db.clone();
+                Lazy::new(Box::new(move || {
+                    zktrie_db
+                        .clone()
+                        .new_ref_trie(&storage_root.0)
+                        .expect("storage trie associated with account not found")
+                }))
+            });
+
+        Ok(trie
+            .get_store(&index.to_be_bytes::<32>())
+            .map(StorageData::from)
+            .map(|val| U256::from_limbs(val.as_ref().0))
+            .unwrap_or_default())
     }
 
     /// Get block hash by block number.
     fn block_hash_ref(&self, _: u64) -> Result<B256, Self::Error> {
         unreachable!("BLOCKHASH is disabled")
-    }
-}
-
-impl Database for ReadOnlyDB {
-    type Error = Infallible;
-
-    fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        DatabaseRef::basic_ref(self, address)
-    }
-
-    fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
-        DatabaseRef::code_by_hash_ref(self, code_hash)
-    }
-
-    fn storage(&mut self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        DatabaseRef::storage_ref(self, address, index)
-    }
-
-    fn block_hash(&mut self, block_number: u64) -> Result<B256, Self::Error> {
-        DatabaseRef::block_hash_ref(self, block_number)
     }
 }

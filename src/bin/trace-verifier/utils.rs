@@ -1,5 +1,8 @@
 use eth_types::l2_types::BlockTrace;
-use stateless_block_verifier::{post_check, EvmExecutorBuilder, HardforkConfig, VerificationError};
+use mpt_zktrie::ZktrieState;
+use stateless_block_verifier::{
+    post_check, utils::ext::BlockZktrieExt, EvmExecutorBuilder, HardforkConfig, VerificationError,
+};
 
 pub fn verify(
     l2_trace: &BlockTrace,
@@ -35,7 +38,13 @@ fn verify_inner(
         .build()
         .unwrap();
 
-    let mut executor = EvmExecutorBuilder::new()
+    cycle_tracker_start!("build ZktrieState");
+    let old_root = l2_trace.storage_trace.root_before;
+    let mut zktrie_state = ZktrieState::construct(old_root);
+    l2_trace.build_zktrie_state(&mut zktrie_state);
+    cycle_tracker_end!("build ZktrieState");
+
+    let mut executor = EvmExecutorBuilder::new(&zktrie_state)
         .hardfork_config(*fork_config)
         .with_execute_hooks(|hooks| {
             let l2_trace = l2_trace.clone();
@@ -45,7 +54,7 @@ fn verify_inner(
                 })
             }
         })
-        .build(&l2_trace);
+        .build(&l2_trace)?;
 
     // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76
     #[allow(clippy::map_identity)]
@@ -58,7 +67,7 @@ fn verify_inner(
         update_metrics_counter!(verification_error);
         e
     })?;
-    let revm_root_after = executor.commit_changes();
+    let revm_root_after = executor.commit_changes(&mut zktrie_state);
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

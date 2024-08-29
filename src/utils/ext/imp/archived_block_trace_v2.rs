@@ -72,7 +72,7 @@ impl BlockTraceExt for ArchivedBlockTraceV2 {
             .map(|s| s.as_ref())
     }
     #[inline]
-    fn codes(&self) -> impl Iterator<Item = &[u8]> {
+    fn codes(&self) -> impl Iterator<Item = &[u8]> + ExactSizeIterator {
         self.codes.iter().map(|code| code.code.as_ref())
     }
     #[inline]
@@ -130,8 +130,6 @@ impl BlockTraceRevmExt for ArchivedBlockTraceV2 {
         self.transactions.iter()
     }
 }
-
-impl BlockRevmDbExt for ArchivedBlockTraceV2 {}
 
 impl BlockZktrieExt for ArchivedBlockTraceV2 {}
 
