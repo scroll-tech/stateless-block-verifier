@@ -20,9 +20,7 @@ type StorageTrieLazyFn = Box<dyn FnOnce() -> ZkTrie<SharedMemoryDb>>;
 pub struct ReadOnlyDB {
     /// In-memory map of code hash to bytecode.
     code_db: HashMap<B256, Bytecode>,
-    /// Account Cache
-    account_cache: RefCell<HashMap<Address, AccountInfo>>,
-    /// Storage root Cache
+    /// Storage root cache
     storage_trie_refs: RefCell<HashMap<Address, Lazy<ZkTrie<SharedMemoryDb>, StorageTrieLazyFn>>>,
     zktrie_root: B256,
     zktrie_db: Rc<ZkMemoryDb>,
@@ -66,7 +64,6 @@ impl ReadOnlyDB {
 
         Ok(ReadOnlyDB {
             code_db,
-            account_cache: Default::default(),
             storage_trie_refs: Default::default(),
             zktrie_root,
             zktrie_db: zktrie_state.zk_db.clone(),
@@ -81,12 +78,6 @@ impl ReadOnlyDB {
     #[inline]
     pub fn current_root(&self) -> B256 {
         self.zktrie_root
-    }
-
-    /// Get the cached account information.
-    #[inline]
-    pub fn get_cached_account_info(&self, address: &Address) -> Option<AccountInfo> {
-        self.account_cache.borrow().get(address).cloned()
     }
 
     /// Update the database with a new block trace.
@@ -150,18 +141,14 @@ impl DatabaseRef for ReadOnlyDB {
                             .expect("storage trie associated with account not found")
                     })),
                 );
-                let info = AccountInfo {
+                AccountInfo {
                     balance: U256::from_limbs(account_data.balance.0),
                     nonce: account_data.nonce,
                     code_size: account_data.code_size as usize,
                     code_hash,
                     poseidon_code_hash: B256::from(account_data.poseidon_code_hash.0),
                     code: self.code_db.get(&code_hash).cloned(),
-                };
-                self.account_cache
-                    .borrow_mut()
-                    .insert(address, info.clone());
-                info
+                }
             }))
     }
 

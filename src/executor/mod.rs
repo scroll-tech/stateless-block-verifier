@@ -179,26 +179,29 @@ impl EvmExecutor {
         let mut debug_account = std::collections::BTreeMap::new();
 
         for (addr, db_acc) in self.db.accounts.iter() {
+            // If EVM didn't touch the account, we don't need to update it
             if db_acc.account_state == AccountState::None {
                 continue;
             }
             let Some(info): Option<AccountInfo> = db_acc.info() else {
                 continue;
             };
-            let acc = self.db.db.get_cached_account_info(addr).unwrap_or_default();
-            if acc.is_empty() && info.is_empty() {
-                continue;
-            }
 
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
             cycle_tracker_start!("commit account {}", addr);
 
             cycle_tracker_start!("get acc_data");
-            let mut acc_data = zktrie
-                .get_account(addr.as_slice())
-                .map(AccountData::from)
-                .unwrap_or_default();
+            let (mut acc_data, is_original_empty) =
+                match zktrie.get_account(addr.as_slice()).map(AccountData::from) {
+                    Some(acc_data) => (acc_data, acc_data.is_empty()),
+                    None => (AccountData::default(), true),
+                };
             cycle_tracker_end!("get acc_data");
+
+            // If the account is empty in both zktrie and StateDB, we don't need to update it
+            if is_original_empty && info.is_empty() {
+                continue;
+            }
 
             acc_data.nonce = info.nonce;
             acc_data.balance = U256(*info.balance.as_limbs());
@@ -272,12 +275,15 @@ impl EvmExecutor {
                 }
             }
             // When the acc from StateDB is empty and info is not, also the code hash changes,
-            // we need to update the code hash and code size
-            if (acc.is_empty() && !info.is_empty()) || acc.code_hash != info.code_hash {
+            // we need to update the code hash and code size.
+            // Note, contracts can only be deployed to empty accounts.
+            if (is_original_empty && !info.is_empty())
+                || acc_data.keccak_code_hash.0 != info.code_hash.0
+            {
                 assert_ne!(
                     info.poseidon_code_hash,
                     B256::ZERO,
-                    "revm didn't update poseidon_code_hash, acc from StateDB: {acc:?}, revm: {info:?}",
+                    "revm didn't update poseidon_code_hash, acc from  revm: {info:?}",
                 );
                 acc_data.poseidon_code_hash = H256::from(info.poseidon_code_hash.0);
                 acc_data.keccak_code_hash = H256::from(info.code_hash.0);
