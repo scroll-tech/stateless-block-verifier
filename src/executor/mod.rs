@@ -1,13 +1,3 @@
-use eth_types::{geth_types::TxType, H256, U256};
-use mpt_zktrie::{AccountData, ZktrieState};
-use revm::db::AccountState;
-use revm::precompile::B256;
-use revm::{
-    db::CacheDB,
-    primitives::{AccountInfo, Env, SpecId},
-};
-use std::fmt::Debug;
-
 use crate::{
     database::ReadOnlyDB,
     error::VerificationError,
@@ -15,6 +5,16 @@ use crate::{
     utils::ext::{BlockTraceRevmExt, TxRevmExt},
     HardforkConfig,
 };
+use eth_types::{geth_types::TxType, H256, U256};
+use mpt_zktrie::{AccountData, ZktrieState};
+use revm::db::AccountState;
+use revm::precompile::B256;
+use revm::primitives::{KECCAK_EMPTY, POSEIDON_EMPTY};
+use revm::{
+    db::CacheDB,
+    primitives::{AccountInfo, Env, SpecId},
+};
+use std::fmt::Debug;
 
 mod builder;
 use crate::utils::ext::BlockTraceExt;
@@ -39,6 +39,13 @@ impl EvmExecutor {
 
     /// Update the DB
     pub fn update_db<T: BlockTraceExt>(&mut self, l2_trace: &T) -> Result<(), ZkTrieError> {
+        self.db.db.invalidate_storage_root_caches(
+            self.db
+                .accounts
+                .iter()
+                .map(|(addr, acc)| (*addr, acc.account_state.clone())),
+        );
+
         self.db.db.update(l2_trace)
     }
 
@@ -186,25 +193,18 @@ impl EvmExecutor {
             let Some(info): Option<AccountInfo> = db_acc.info() else {
                 continue;
             };
+            if info.is_empty() {
+                continue;
+            }
 
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
             cycle_tracker_start!("commit account {}", addr);
 
-            cycle_tracker_start!("get acc_data");
-            let (mut acc_data, is_original_empty) =
-                match zktrie.get_account(addr.as_slice()).map(AccountData::from) {
-                    Some(acc_data) => (acc_data, acc_data.is_empty()),
-                    None => (AccountData::default(), true),
-                };
-            cycle_tracker_end!("get acc_data");
-
-            // If the account is empty in both zktrie and StateDB, we don't need to update it
-            if is_original_empty && info.is_empty() {
-                continue;
-            }
+            let mut acc_data = AccountData::default();
 
             acc_data.nonce = info.nonce;
             acc_data.balance = U256(*info.balance.as_limbs());
+            acc_data.storage_root = self.db.db.prev_storage_root(addr).0.into();
             if !db_acc.storage.is_empty() {
                 #[cfg(feature = "debug-storage")]
                 let mut debug_storage = std::collections::BTreeMap::new();
@@ -274,25 +274,22 @@ impl EvmExecutor {
                     }
                 }
             }
-            // When the acc from StateDB is empty and info is not, also the code hash changes,
-            // we need to update the code hash and code size.
-            // Note, contracts can only be deployed to empty accounts.
-            if (is_original_empty && !info.is_empty())
-                || acc_data.keccak_code_hash.0 != info.code_hash.0
-            {
-                assert_ne!(
-                    info.poseidon_code_hash,
-                    B256::ZERO,
-                    "revm didn't update poseidon_code_hash, acc from  revm: {info:?}",
-                );
-                acc_data.poseidon_code_hash = H256::from(info.poseidon_code_hash.0);
-                acc_data.keccak_code_hash = H256::from(info.code_hash.0);
-                acc_data.code_size = self
-                    .db
-                    .contracts
-                    .get(&db_acc.info.code_hash)
-                    .map(|c| c.len())
-                    .unwrap_or_default() as u64;
+            if !info.is_empty() {
+                // if account not exist, all fields will be zero.
+                // but if account exist, code_hash will be empty hash if code is empty
+                if info.is_empty_code_hash() {
+                    acc_data.poseidon_code_hash = H256::from(POSEIDON_EMPTY.0);
+                    acc_data.keccak_code_hash = H256::from(KECCAK_EMPTY.0);
+                } else {
+                    assert_ne!(
+                        info.poseidon_code_hash,
+                        B256::ZERO,
+                        "revm didn't update poseidon_code_hash, revm: {info:?}",
+                    );
+                    acc_data.poseidon_code_hash = H256::from(info.poseidon_code_hash.0);
+                    acc_data.keccak_code_hash = H256::from(info.code_hash.0);
+                    acc_data.code_size = info.code_size as u64;
+                }
             }
 
             #[cfg(feature = "debug-account")]
@@ -344,13 +341,6 @@ impl EvmExecutor {
         let root_after = zktrie.root();
 
         zktrie_state.switch_to(root_after);
-
-        self.db.db.invalidate_storage_root_caches(
-            self.db
-                .accounts
-                .iter()
-                .map(|(addr, acc)| (*addr, acc.account_state.clone())),
-        );
 
         H256::from(root_after)
     }

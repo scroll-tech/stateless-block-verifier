@@ -20,10 +20,16 @@ type StorageTrieLazyFn = Box<dyn FnOnce() -> ZkTrie<SharedMemoryDb>>;
 pub struct ReadOnlyDB {
     /// In-memory map of code hash to bytecode.
     code_db: HashMap<B256, Bytecode>,
-    /// Storage root cache
+    /// The initial storage roots of accounts, used for after commit.
+    prev_storage_roots: RefCell<HashMap<Address, B256>>,
+    /// Storage trie cache, avoid re-creating trie for the same account.
+    /// Need to invalidate before `update`, otherwise the trie root may be outdated.
     storage_trie_refs: RefCell<HashMap<Address, Lazy<ZkTrie<SharedMemoryDb>, StorageTrieLazyFn>>>,
+    /// Current zkTrie root based on the block trace.
     zktrie_root: B256,
+    /// The underlying zkTrie database.
     zktrie_db: Rc<ZkMemoryDb>,
+    /// Current view of zkTrie database with `zktrie_root`.
     zktrie_db_ref: ZkTrie<SharedMemoryDb>,
 }
 
@@ -64,6 +70,7 @@ impl ReadOnlyDB {
 
         Ok(ReadOnlyDB {
             code_db,
+            prev_storage_roots: Default::default(),
             storage_trie_refs: Default::default(),
             zktrie_root,
             zktrie_db: zktrie_state.zk_db.clone(),
@@ -76,8 +83,12 @@ impl ReadOnlyDB {
 
     /// Get the current zkTrie root.
     #[inline]
-    pub fn current_root(&self) -> B256 {
-        self.zktrie_root
+    pub fn prev_storage_root(&self, address: &Address) -> B256 {
+        self.prev_storage_roots
+            .borrow()
+            .get(address)
+            .copied()
+            .unwrap_or_default()
     }
 
     /// Update the database with a new block trace.
@@ -131,7 +142,13 @@ impl DatabaseRef for ReadOnlyDB {
             .map(AccountData::from)
             .map(|account_data| {
                 let code_hash = B256::from(account_data.keccak_code_hash.0);
+
                 let storage_root = account_data.storage_root;
+                self.prev_storage_roots
+                    .borrow_mut()
+                    .entry(address)
+                    .or_insert(storage_root.0.into());
+
                 let zktrie_db = self.zktrie_db.clone();
                 self.storage_trie_refs.borrow_mut().insert(
                     address,
