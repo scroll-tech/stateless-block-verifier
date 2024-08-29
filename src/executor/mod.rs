@@ -194,14 +194,14 @@ impl EvmExecutor {
                 let storage_root_before = acc_data.storage_root;
                 // get storage tire
                 cycle_tracker_start!("update storage_tire");
-                let mut storage_tire = self
+                let mut storage_trie = self
                     .zktrie_db
                     .new_trie(storage_root_before.as_fixed_bytes())
                     .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {
                     if !value.is_zero() {
                         cycle_tracker_start!("Zktrie::update_store");
-                        storage_tire
+                        storage_trie
                             .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
                             .expect("failed to update storage");
                         cycle_tracker_end!("Zktrie::update_store");
@@ -217,7 +217,7 @@ impl EvmExecutor {
                         );
                     } else {
                         cycle_tracker_start!("Zktrie::delete");
-                        storage_tire.delete(&key.to_be_bytes::<32>());
+                        storage_trie.delete(&key.to_be_bytes::<32>());
                         cycle_tracker_end!("Zktrie::delete");
 
                         #[cfg(feature = "debug-storage")]
@@ -231,8 +231,13 @@ impl EvmExecutor {
                         );
                     }
                 }
+
+                if storage_trie.is_trie_dirty() {
+                    storage_trie.prepare_root();
+                }
+
                 cycle_tracker_end!("update storage_tire");
-                acc_data.storage_root = H256::from(storage_tire.root());
+                acc_data.storage_root = H256::from(storage_trie.root());
 
                 #[cfg(feature = "debug-storage")]
                 {
@@ -279,6 +284,9 @@ impl EvmExecutor {
 
         #[cfg(feature = "debug-account")]
         {
+            if self.zktrie.is_trie_dirty() {
+                self.zktrie.prepare_root();
+            }
             let output = std::fs::File::create(format!(
                 "/tmp/sbv-debug/account_0x{}.csv",
                 hex::encode(self.zktrie.root())
@@ -311,6 +319,10 @@ impl EvmExecutor {
             }
         }
         cycle_tracker_end!("commit_changes");
+
+        if self.zktrie.is_trie_dirty() {
+            self.zktrie.prepare_root();
+        }
         H256::from(self.zktrie.root())
     }
 }
