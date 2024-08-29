@@ -1,6 +1,3 @@
-#[cfg(feature = "dev")]
-#[macro_use]
-extern crate tracing;
 #[macro_use]
 extern crate stateless_block_verifier;
 

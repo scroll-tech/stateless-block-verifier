@@ -11,9 +11,6 @@ use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 use url::Url;
 
-#[cfg(feature = "metrics")]
-use stateless_block_verifier::metrics;
-
 use crate::utils;
 
 #[derive(Args)]
@@ -113,8 +110,8 @@ impl RunRpcCommand {
             let error_log = error_log.clone();
             while let Some(result) = handles.join_next().await {
                 match result {
-                    Err(e) => {
-                        dev_error!("failed to join handle: {e:?}");
+                    Err(_e) => {
+                        dev_error!("failed to join handle: {_e:?}");
                     }
                     Ok(Err((block_number, e))) => {
                         dev_error!("Error occurs when verifying block #{block_number}: {e:?}");
@@ -122,7 +119,7 @@ impl RunRpcCommand {
                         if let Some(error_log) = error_log.as_ref() {
                             let mut guard = error_log.lock().await;
                             guard
-                                .write_all(format!("{block_number}\n").as_bytes())
+                                .write_all(format!("{block_number}, {e:?}\n").as_bytes())
                                 .await
                                 .ok();
                         } else {
@@ -157,19 +154,13 @@ impl RunRpcCommand {
                 tx.send(current_block).await?;
                 current_block += 1;
 
-                #[cfg(feature = "metrics")]
-                metrics::REGISTRY
-                    .fetched_rpc_block_height
-                    .set(current_block as i64);
+                update_metrics_gauge!(fetched_rpc_block_height, current_block as i64);
 
                 let mut exponential_backoff = 1;
                 loop {
                     let latest_block = provider.get_block_number().await?.as_u64();
 
-                    #[cfg(feature = "metrics")]
-                    metrics::REGISTRY
-                        .latest_rpc_block_height
-                        .set(latest_block as i64);
+                    update_metrics_gauge!(latest_rpc_block_height, latest_block as i64);
 
                     if latest_block > current_block {
                         break;

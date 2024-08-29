@@ -22,7 +22,7 @@ macro_rules! dev_trace {
     ($($arg:tt)*) => {
         #[cfg(feature = "dev")]
         {
-            trace!($($arg)*);
+            $crate::tracing::trace!($($arg)*);
         }
     };
 }
@@ -33,7 +33,7 @@ macro_rules! dev_info {
     ($($arg:tt)*) => {
         #[cfg(feature = "dev")]
         {
-            info!($($arg)*);
+            $crate::tracing::info!($($arg)*);
         }
     };
 }
@@ -44,7 +44,7 @@ macro_rules! dev_error {
     ($($arg:tt)*) => {
         #[cfg(feature = "dev")]
         {
-            error!($($arg)*);
+            $crate::tracing::error!($($arg)*);
         }
     };
 }
@@ -55,7 +55,7 @@ macro_rules! dev_debug {
     ($($arg:tt)*) => {
         #[cfg(feature = "dev")]
         {
-            debug!($($arg)*);
+            $crate::tracing::debug!($($arg)*);
         }
     };
 }
@@ -66,7 +66,7 @@ macro_rules! dev_warn {
     ($($arg:tt)*) => {
         #[cfg(feature = "dev")]
         {
-            warn!($($arg)*);
+            $crate::tracing::warn!($($arg)*);
         }
     };
 }
@@ -76,22 +76,45 @@ macro_rules! dev_warn {
 macro_rules! measure_duration_histogram {
     ($label:ident, $e:expr) => {{
         #[cfg(feature = "metrics")]
-        let _start = std::time::Instant::now();
+        let __measure_duration_histogram_start = std::time::Instant::now();
 
         #[allow(clippy::let_and_return)]
-        let _result = $e;
+        let __measure_duration_histogram_result = $e;
 
         #[cfg(feature = "metrics")]
         $crate::metrics::REGISTRY
             .$label
-            .observe(_start.elapsed().as_millis() as f64);
+            .observe(__measure_duration_histogram_start.elapsed().as_millis() as f64);
 
+        #[cfg(feature = "metrics")]
         dev_debug!(
             "measured duration {} = {:?}",
             stringify!($label),
-            _start.elapsed()
+            __measure_duration_histogram_start.elapsed(),
         );
 
-        _result
+        __measure_duration_histogram_result
     }};
+}
+
+/// This macro is for update gauge to metrics
+#[macro_export]
+macro_rules! update_metrics_gauge {
+    ($label:ident, $e:expr) => {
+        #[cfg(feature = "metrics")]
+        {
+            $crate::metrics::REGISTRY.$label.set($e);
+        }
+    };
+}
+
+/// This macro is for update counter to metrics
+#[macro_export]
+macro_rules! update_metrics_counter {
+    ($label:ident) => {
+        #[cfg(feature = "metrics")]
+        {
+            $crate::metrics::REGISTRY.$label.inc();
+        }
+    };
 }

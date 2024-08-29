@@ -1,6 +1,4 @@
 use eth_types::l2_types::BlockTrace;
-#[cfg(feature = "metrics")]
-use stateless_block_verifier::metrics;
 use stateless_block_verifier::{post_check, EvmExecutorBuilder, HardforkConfig, VerificationError};
 
 pub fn verify(
@@ -50,17 +48,16 @@ fn verify_inner(
         .build(&l2_trace);
 
     // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76
-    if let Err(e) = executor.handle_block(&l2_trace) {
+    #[allow(clippy::map_identity)]
+    executor.handle_block(&l2_trace).map_err(|e| {
         dev_error!(
-            "Error occurs when verifying block {:?}: {e:?}",
+            "Error occurs when executing block {:?}: {e:?}",
             l2_trace.header.hash.unwrap()
         );
 
-        #[cfg(feature = "metrics")]
-        metrics::REGISTRY.verification_error.inc();
-
-        return Err(e);
-    }
+        update_metrics_counter!(verification_error);
+        e
+    })?;
     let revm_root_after = executor.commit_changes();
 
     #[cfg(feature = "profiling")]
@@ -85,8 +82,7 @@ fn verify_inner(
             l2_trace.header.hash.unwrap()
         );
 
-        #[cfg(feature = "metrics")]
-        metrics::REGISTRY.verification_error.inc();
+        update_metrics_counter!(verification_error);
 
         return Err(VerificationError::RootMismatch {
             root_trace: root_after,
