@@ -58,7 +58,7 @@ impl<'a> EvmExecutorBuilder<'a, HardforkConfig> {
         dev_trace!("use spec id {:?}", spec_id);
 
         cycle_tracker_start!("build ReadOnlyDB");
-        let db = ReadOnlyDB::new(l2_trace, &self.zktrie_state)?;
+        let db = ReadOnlyDB::new(l2_trace, self.zktrie_state)?;
         let db = CacheDB::new(db);
         cycle_tracker_end!("build ReadOnlyDB");
 

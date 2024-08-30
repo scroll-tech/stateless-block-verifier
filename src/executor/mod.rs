@@ -200,11 +200,13 @@ impl EvmExecutor {
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
             cycle_tracker_start!("commit account {}", addr);
 
-            let mut acc_data = AccountData::default();
+            let mut acc_data = AccountData {
+                nonce: info.nonce,
+                balance: U256(*info.balance.as_limbs()),
+                storage_root: self.db.db.prev_storage_root(addr).0.into(),
+                ..Default::default()
+            };
 
-            acc_data.nonce = info.nonce;
-            acc_data.balance = U256(*info.balance.as_limbs());
-            acc_data.storage_root = self.db.db.prev_storage_root(addr).0.into();
             if !db_acc.storage.is_empty() {
                 #[cfg(feature = "debug-storage")]
                 let mut debug_storage = std::collections::BTreeMap::new();
