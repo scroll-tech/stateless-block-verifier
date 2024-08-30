@@ -48,8 +48,6 @@ fn verify_inner(
         "build ZktrieState"
     );
 
-    cycle_tracker_end!("build ZktrieState");
-
     let mut executor = EvmExecutorBuilder::new(&zktrie_state)
         .hardfork_config(*fork_config)
         .with_execute_hooks(|hooks| {
