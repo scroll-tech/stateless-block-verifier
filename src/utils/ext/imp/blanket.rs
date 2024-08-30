@@ -42,7 +42,7 @@ impl<T: BlockTraceExt> BlockTraceExt for &T {
         (*self).store_key_hashes()
     }
     #[inline(always)]
-    fn codes(&self) -> impl Iterator<Item = &[u8]> + ExactSizeIterator {
+    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]> {
         (*self).codes()
     }
     #[inline(always)]

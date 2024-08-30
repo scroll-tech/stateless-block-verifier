@@ -28,7 +28,7 @@ pub trait BlockTraceExt {
     /// store key hashes
     fn store_key_hashes(&self) -> impl Iterator<Item = (&H256, &H256)>;
     /// codes
-    fn codes(&self) -> impl Iterator<Item = &[u8]> + ExactSizeIterator;
+    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]>;
     /// start l1 queue index
     fn start_l1_queue_index(&self) -> u64;
 }
