@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 hex = "0.4"
 itertools = "0.13.0" # for compatibility msrv 1.75
+once_cell = "1.19"
 rkyv = { version = "0.7", features = ["validation"] }
 thiserror = "1.0"
 tiny-keccak = "2.0"
@@ -41,7 +42,6 @@ ctor = { version = "0.2", optional = true }
 hyper = { version = "1.4", features = ["server", "http1"], optional = true }
 hyper-util = { version = "0.1", features = ["tokio"], optional = true }
 http-body-util = { version = "0.1", optional = true }
-once_cell = { version = "1.19", optional = true }
 prometheus-client = { version = "0.22", optional = true }
 pprof = { version = "0.13", features = ["flamegraph"], optional = true }
 tracing = { version = "0.1", optional = true }
@@ -100,7 +100,7 @@ profiling = ["pprof"]
 debug-account = ["csv", "revm/serde"]
 debug-storage = ["csv", "revm/serde"]
 dev = ["ctor", "tracing", "tracing-subscriber"]
-metrics = ["hyper", "hyper-util", "http-body-util", "once_cell", "prometheus-client", "tokio", "tokio/macros", "tokio/signal"]
+metrics = ["hyper", "hyper-util", "http-body-util", "prometheus-client", "tokio", "tokio/macros", "tokio/signal"]
 
 # sp1 related
 sp1 = []

@@ -6,15 +6,15 @@ use std::fmt::Debug;
 #[cfg(feature = "dev")]
 use tracing::Level;
 
-pub(crate) mod ext;
+/// Debugging utilities.
+#[cfg(any(feature = "debug-account", feature = "debug-storage"))]
+pub(crate) mod debug;
+/// Extensions for block trace.
+pub mod ext;
 
 /// Blanket trait for block trace extensions.
 pub trait BlockTraceExt:
-    ext::BlockTraceExt
-    + ext::BlockTraceRevmExt
-    + ext::BlockRevmDbExt
-    + ext::BlockZktrieExt
-    + ext::BlockChunkExt
+    ext::BlockTraceExt + ext::BlockTraceRevmExt + ext::BlockZktrieExt + ext::BlockChunkExt
 {
 }
 

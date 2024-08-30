@@ -74,11 +74,11 @@ impl RunFileCommand {
         }
 
         let fork_config = fork_config(traces[0].chain_id);
-        let (chunk_info, zktrie_state) = ChunkInfo::from_block_traces(&traces);
+        let (chunk_info, mut zktrie_state) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = Rc::new(RefCell::new(Keccak::v256()));
 
-        let mut executor = EvmExecutorBuilder::new()
+        let mut executor = EvmExecutorBuilder::new(&zktrie_state)
             .hardfork_config(fork_config)
             .with_execute_hooks(|hooks| {
                 let hasher = tx_bytes_hasher.clone();
@@ -86,16 +86,15 @@ impl RunFileCommand {
                     hasher.borrow_mut().update(rlp);
                 });
             })
-            .zktrie_state(&zktrie_state)
-            .build(&traces[0]);
+            .build(&traces[0])?;
         executor.handle_block(&traces[0])?;
 
         for trace in traces[1..].iter() {
-            executor.update_db(trace, &zktrie_state);
+            executor.update_db(trace)?;
             executor.handle_block(trace)?;
         }
 
-        let post_state_root = executor.commit_changes();
+        let post_state_root = executor.commit_changes(&mut zktrie_state);
         if post_state_root != chunk_info.post_state_root() {
             bail!("post state root mismatch");
         }
