@@ -21,6 +21,7 @@ pub struct ReadOnlyDB {
     /// In-memory map of code hash to bytecode.
     code_db: HashMap<B256, Bytecode>,
     /// The initial storage roots of accounts, used for after commit.
+    /// Need to be updated after zkTrie commit.
     prev_storage_roots: RefCell<HashMap<Address, B256>>,
     /// Storage trie cache, avoid re-creating trie for the same account.
     /// Need to invalidate before `update`, otherwise the trie root may be outdated.
@@ -81,9 +82,23 @@ impl ReadOnlyDB {
         })
     }
 
-    /// Get the current zkTrie root.
+    /// Set the previous storage root of an account.
+    ///
+    /// Should be updated after commit.
     #[inline]
-    pub fn prev_storage_root(&self, address: &Address) -> B256 {
+    pub(crate) fn set_prev_storage_root(
+        &self,
+        address: Address,
+        storage_root: B256,
+    ) -> Option<B256> {
+        self.prev_storage_roots
+            .borrow_mut()
+            .insert(address, storage_root)
+    }
+
+    /// Get the previous storage root of an account.
+    #[inline]
+    pub(crate) fn prev_storage_root(&self, address: &Address) -> B256 {
         self.prev_storage_roots
             .borrow()
             .get(address)
@@ -118,7 +133,7 @@ impl ReadOnlyDB {
     }
 
     /// Invalidate internal cache for any account touched by EVM.
-    pub fn invalidate_storage_root_caches(
+    pub(crate) fn invalidate_storage_root_caches(
         &mut self,
         account_states: impl Iterator<Item = (Address, AccountState)>,
     ) {

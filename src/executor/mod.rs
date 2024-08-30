@@ -262,6 +262,9 @@ impl EvmExecutor {
                 }
                 cycle_tracker_end!("update storage_tire");
                 acc_data.storage_root = H256::from(storage_tire.root());
+                self.db
+                    .db
+                    .set_prev_storage_root(*addr, acc_data.storage_root.0.into());
 
                 #[cfg(feature = "debug-storage")]
                 {
