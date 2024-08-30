@@ -1,32 +1,25 @@
+use crate::error::ZkTrieError;
 use crate::{
-    cycle_tracker_end, cycle_tracker_start, dev_trace, executor::hooks::ExecuteHooks,
-    BlockTraceExt, EvmExecutor, HardforkConfig, ReadOnlyDB,
+    executor::hooks::ExecuteHooks, BlockTraceExt, EvmExecutor, HardforkConfig, ReadOnlyDB,
 };
 use mpt_zktrie::ZktrieState;
 use revm::db::CacheDB;
-use std::borrow::Cow;
 
 /// Builder for EVM executor.
 #[derive(Debug)]
 pub struct EvmExecutorBuilder<'a, H> {
     hardfork_config: H,
     execute_hooks: ExecuteHooks,
-    zktrie_state: Option<Cow<'a, ZktrieState>>,
+    zktrie_state: &'a ZktrieState,
 }
 
-impl Default for EvmExecutorBuilder<'static, ()> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl EvmExecutorBuilder<'static, ()> {
+impl<'a> EvmExecutorBuilder<'a, ()> {
     /// Create a new builder.
-    pub fn new() -> Self {
+    pub fn new(zktrie_state: &'a ZktrieState) -> Self {
         Self {
             hardfork_config: (),
             execute_hooks: ExecuteHooks::default(),
-            zktrie_state: None,
+            zktrie_state,
         }
     }
 }
@@ -50,45 +43,30 @@ impl<'a, H> EvmExecutorBuilder<'a, H> {
     /// Set zktrie state.
     pub fn zktrie_state(self, zktrie_state: &ZktrieState) -> EvmExecutorBuilder<H> {
         EvmExecutorBuilder {
-            zktrie_state: Some(Cow::Borrowed(zktrie_state)),
+            zktrie_state,
             ..self
         }
     }
 }
 
-impl EvmExecutorBuilder<'_, HardforkConfig> {
+impl<'a> EvmExecutorBuilder<'a, HardforkConfig> {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn build<T: BlockTraceExt>(self, l2_trace: &T) -> EvmExecutor {
+    pub fn build<T: BlockTraceExt>(self, l2_trace: &'a T) -> Result<EvmExecutor, ZkTrieError> {
         let block_number = l2_trace.number();
         let spec_id = self.hardfork_config.get_spec_id(block_number);
 
         dev_trace!("use spec id {:?}", spec_id);
 
-        let zktrie_state = self.zktrie_state.unwrap_or_else(|| {
-            cycle_tracker_start!("build ZktrieState");
-            let old_root = l2_trace.root_before();
-            let mut zktrie_state = ZktrieState::construct(old_root);
-            l2_trace.build_zktrie_state(&mut zktrie_state);
-            cycle_tracker_end!("build ZktrieState");
-            Cow::Owned(zktrie_state)
-        });
+        let db = cycle_track!(
+            CacheDB::new(ReadOnlyDB::new(l2_trace, self.zktrie_state)?),
+            "build ReadOnlyDB"
+        );
 
-        cycle_tracker_start!("build ReadOnlyDB");
-        let mut db = ReadOnlyDB::new();
-        db.update(l2_trace, &zktrie_state);
-        let db = CacheDB::new(db);
-        cycle_tracker_end!("build ReadOnlyDB");
-
-        let zktrie_db = zktrie_state.zk_db.clone();
-        let zktrie = zktrie_db.new_trie(&l2_trace.root_before().0).unwrap();
-
-        EvmExecutor {
+        Ok(EvmExecutor {
             hardfork_config: self.hardfork_config,
             db,
-            zktrie_db,
-            zktrie,
             spec_id,
             hooks: self.execute_hooks,
-        }
+        })
     }
 }

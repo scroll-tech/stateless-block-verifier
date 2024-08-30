@@ -1,6 +1,5 @@
 use crate::utils::ext::*;
-use eth_types::{state_db, Address, Transaction, Word, H256};
-use mpt_zktrie::ZktrieState;
+use eth_types::{Address, Transaction, H256};
 use revm::primitives::{AccessListItem, TransactTo, B256, U256};
 
 impl<T: BlockTraceExt> BlockTraceExt for &T {
@@ -43,7 +42,7 @@ impl<T: BlockTraceExt> BlockTraceExt for &T {
         (*self).store_key_hashes()
     }
     #[inline(always)]
-    fn codes(&self) -> impl Iterator<Item = &[u8]> {
+    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]> {
         (*self).codes()
     }
     #[inline(always)]
@@ -103,24 +102,6 @@ impl<T: BlockTraceRevmExt> BlockTraceRevmExt for &T {
     #[inline(always)]
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
         (*self).transactions()
-    }
-}
-
-impl<T: BlockRevmDbExt> BlockRevmDbExt for &T {
-    #[inline(always)]
-    fn accounts(
-        &self,
-        zktrie_state: &ZktrieState,
-    ) -> impl Iterator<Item = (Address, state_db::Account)> {
-        (*self).accounts(zktrie_state)
-    }
-
-    #[inline(always)]
-    fn storages(
-        &self,
-        zktrie_state: &ZktrieState,
-    ) -> impl Iterator<Item = ((Address, H256), Word)> {
-        (*self).storages(zktrie_state)
     }
 }
 

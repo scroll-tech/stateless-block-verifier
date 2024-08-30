@@ -1,25 +1,23 @@
-use eth_types::{geth_types::TxType, H160, H256, U256};
+use crate::{
+    database::ReadOnlyDB,
+    error::VerificationError,
+    error::ZkTrieError,
+    utils::ext::{BlockTraceRevmExt, TxRevmExt},
+    HardforkConfig,
+};
+use eth_types::{geth_types::TxType, H256, U256};
 use mpt_zktrie::{AccountData, ZktrieState};
+use revm::db::AccountState;
 use revm::precompile::B256;
+use revm::primitives::{KECCAK_EMPTY, POSEIDON_EMPTY};
 use revm::{
     db::CacheDB,
     primitives::{AccountInfo, Env, SpecId},
 };
 use std::fmt::Debug;
-use std::rc::Rc;
-use zktrie::{UpdateDb, ZkMemoryDb, ZkTrie};
-
-use crate::{
-    cycle_tracker_end, cycle_tracker_start,
-    database::ReadOnlyDB,
-    dev_debug, dev_trace,
-    error::VerificationError,
-    utils::ext::{BlockTraceRevmExt, TxRevmExt},
-    HardforkConfig,
-};
 
 mod builder;
-use crate::utils::ext::BlockRevmDbExt;
+use crate::utils::ext::BlockTraceExt;
 pub use builder::EvmExecutorBuilder;
 
 /// Execute hooks
@@ -29,8 +27,6 @@ pub mod hooks;
 pub struct EvmExecutor {
     hardfork_config: HardforkConfig,
     db: CacheDB<ReadOnlyDB>,
-    zktrie_db: Rc<ZkMemoryDb>,
-    zktrie: ZkTrie<UpdateDb>,
     spec_id: SpecId,
     hooks: hooks::ExecuteHooks,
 }
@@ -42,12 +38,35 @@ impl EvmExecutor {
     }
 
     /// Update the DB
-    pub fn update_db<T: BlockRevmDbExt>(&mut self, l2_trace: &T, zktrie_state: &ZktrieState) {
-        self.db.db.update(l2_trace, zktrie_state)
+    pub fn update_db<T: BlockTraceExt>(&mut self, l2_trace: &T) -> Result<(), ZkTrieError> {
+        self.db.db.invalidate_storage_root_caches(
+            self.db
+                .accounts
+                .iter()
+                .map(|(addr, acc)| (*addr, acc.account_state.clone())),
+        );
+
+        self.db.db.update(l2_trace)
     }
 
     /// Handle a block.
     pub fn handle_block<T: BlockTraceRevmExt>(
+        &mut self,
+        l2_trace: &T,
+    ) -> Result<(), VerificationError> {
+        measure_duration_histogram!(
+            handle_block_duration_microseconds,
+            self.handle_block_inner(l2_trace)
+        )?;
+
+        #[cfg(feature = "metrics")]
+        crate::metrics::REGISTRY.block_counter.inc();
+
+        Ok(())
+    }
+
+    #[inline(always)]
+    fn handle_block_inner<T: BlockTraceRevmExt>(
         &mut self,
         l2_trace: &T,
     ) -> Result<(), VerificationError> {
@@ -58,9 +77,7 @@ impl EvmExecutor {
         dev_debug!("handle block {:?}", l2_trace.number());
         let mut env = Box::<Env>::default();
         env.cfg.chain_id = l2_trace.chain_id();
-        cycle_tracker_start!("create BlockEnv");
-        env.block = l2_trace.env();
-        cycle_tracker_end!("create BlockEnv");
+        env.block = cycle_track!(l2_trace.env(), "create BlockEnv");
 
         for (idx, tx) in l2_trace.transactions().enumerate() {
             cycle_tracker_start!("handle tx {}", idx);
@@ -83,15 +100,15 @@ impl EvmExecutor {
             let tx_type = TxType::get_tx_type(&eth_tx);
 
             if !tx_type.is_l1_msg() {
-                cycle_tracker_start!("recover address");
-                let recovered_address =
+                let recovered_address = cycle_track!(
                     eth_tx
                         .recover_from()
-                        .map_err(|error| VerificationError::SignerRecovery {
+                        .map_err(|source| VerificationError::SignerRecovery {
                             tx_hash: eth_tx.hash,
-                            source: error,
-                        })?;
-                cycle_tracker_end!("recover address");
+                            source,
+                        })?,
+                    "recover address"
+                );
 
                 // verify that the transaction is valid
                 if recovered_address != eth_tx.from {
@@ -113,26 +130,26 @@ impl EvmExecutor {
 
             dev_trace!("{env:#?}");
             {
-                cycle_tracker_start!("build Evm");
-                let mut revm = revm::Evm::builder()
-                    .with_spec_id(self.spec_id)
-                    .with_db(&mut self.db)
-                    .with_env(env)
-                    // .with_external_context(CustomPrintTracer::default())
-                    // .append_handler_register(inspector_handle_register)
-                    .build();
-                cycle_tracker_end!("build Evm");
+                let mut revm = cycle_track!(
+                    revm::Evm::builder()
+                        .with_spec_id(self.spec_id)
+                        .with_db(&mut self.db)
+                        .with_env(env)
+                        // .with_external_context(CustomPrintTracer::default())
+                        // .append_handler_register(inspector_handle_register)
+                        .build(),
+                    "build Evm"
+                );
 
                 dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
-                cycle_tracker_start!("transact_commit");
-                let result = revm.transact_commit();
-                cycle_tracker_end!("transact_commit");
-
-                let _result = result.map_err(|e| VerificationError::EvmExecution {
-                    tx_hash: eth_tx.hash,
-                    source: e,
-                })?;
+                let _result =
+                    cycle_track!(revm.transact_commit(), "transact_commit").map_err(|e| {
+                        VerificationError::EvmExecution {
+                            tx_hash: eth_tx.hash,
+                            source: e,
+                        }
+                    })?;
 
                 dev_trace!("{_result:#?}");
             }
@@ -145,91 +162,70 @@ impl EvmExecutor {
     }
 
     /// Commit pending changes in cache db to zktrie
-    pub fn commit_changes(&mut self) -> H256 {
-        cycle_tracker_start!("commit_changes");
-        // let changes = self.db.accounts;
-        let sdb = &self.db.db.sdb;
+    pub fn commit_changes(&mut self, zktrie_state: &mut ZktrieState) -> H256 {
+        measure_duration_histogram!(
+            commit_changes_duration_microseconds,
+            cycle_track!(self.commit_changes_inner(zktrie_state), "commit_changes")
+        )
+    }
+
+    fn commit_changes_inner(&mut self, zktrie_state: &mut ZktrieState) -> H256 {
+        let mut zktrie = zktrie_state
+            .zk_db
+            .new_trie(&zktrie_state.trie_root)
+            .expect("infallible");
 
         #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
-        std::fs::create_dir_all("/tmp/sbv-debug").expect("failed to create debug dir");
-
-        #[cfg(feature = "debug-account")]
-        let mut debug_account = std::collections::BTreeMap::new();
+        let mut debug_recorder = crate::utils::debug::DebugRecorder::new();
 
         for (addr, db_acc) in self.db.accounts.iter() {
+            // If EVM didn't touch the account, we don't need to update it
+            if db_acc.account_state == AccountState::None {
+                continue;
+            }
             let Some(info): Option<AccountInfo> = db_acc.info() else {
                 continue;
             };
-            let (_, acc) = sdb.get_account(&H160::from(*addr.0));
-            if acc.is_empty() && info.is_empty() {
+            if info.is_empty() {
                 continue;
             }
 
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
             cycle_tracker_start!("commit account {}", addr);
 
-            cycle_tracker_start!("get acc_data");
-            let mut acc_data = self
-                .zktrie
-                .get_account(addr.as_slice())
-                .map(AccountData::from)
-                .unwrap_or_default();
-            cycle_tracker_end!("get acc_data");
+            let mut acc_data = AccountData {
+                nonce: info.nonce,
+                balance: U256(*info.balance.as_limbs()),
+                storage_root: self.db.db.prev_storage_root(addr).0.into(),
+                ..Default::default()
+            };
 
-            acc_data.nonce = info.nonce;
-            acc_data.balance = U256(*info.balance.as_limbs());
             if !db_acc.storage.is_empty() {
-                #[cfg(feature = "debug-storage")]
-                let mut debug_storage = std::collections::BTreeMap::new();
-
-                #[cfg(feature = "debug-storage")]
-                #[derive(serde::Serialize)]
-                struct StorageOps {
-                    kind: &'static str,
-                    key: revm::primitives::U256,
-                    value: Option<revm::primitives::U256>,
-                }
-
                 // get current storage root
                 let storage_root_before = acc_data.storage_root;
                 // get storage tire
                 cycle_tracker_start!("update storage_tire");
-                let mut storage_trie = self
-                    .zktrie_db
+                let mut storage_trie = zktrie_state
+                    .zk_db
                     .new_trie(storage_root_before.as_fixed_bytes())
                     .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {
                     if !value.is_zero() {
-                        cycle_tracker_start!("Zktrie::update_store");
-                        storage_trie
-                            .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
-                            .expect("failed to update storage");
-                        cycle_tracker_end!("Zktrie::update_store");
-
-                        #[cfg(feature = "debug-storage")]
-                        debug_storage.insert(
-                            *key,
-                            StorageOps {
-                                kind: "update",
-                                key: *key,
-                                value: Some(*value),
-                            },
+                        cycle_track!(
+                            storage_trie
+                                .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
+                                .expect("failed to update storage"),
+                            "Zktrie::update_store"
                         );
                     } else {
-                        cycle_tracker_start!("Zktrie::delete");
-                        storage_trie.delete(&key.to_be_bytes::<32>());
-                        cycle_tracker_end!("Zktrie::delete");
-
-                        #[cfg(feature = "debug-storage")]
-                        debug_storage.insert(
-                            *key,
-                            StorageOps {
-                                kind: "delete",
-                                key: *key,
-                                value: None,
-                            },
+                        cycle_track!(
+                            storage_trie.delete(&key.to_be_bytes::<32>()),
+                            "Zktrie::delete"
                         );
                     }
+
+                    #[cfg(feature = "debug-storage")]
+                    debug_recorder.record_storage(*addr, *key, *value);
                 }
 
                 if storage_trie.is_trie_dirty() {
@@ -240,90 +236,52 @@ impl EvmExecutor {
                 acc_data.storage_root = H256::from(storage_trie.root());
 
                 #[cfg(feature = "debug-storage")]
-                {
-                    let output = std::fs::File::create(format!(
-                        "/tmp/sbv-debug/storage_{:?}_{:?}.csv",
-                        addr, acc_data.storage_root
-                    ))
-                    .expect("failed to create debug file");
-                    let mut wtr = csv::Writer::from_writer(output);
-                    for ops in debug_storage.into_values() {
-                        wtr.serialize(ops).expect("failed to write record");
-                    }
-                }
-            }
-            // When the acc from StateDB is empty and info is not, also the code hash changes,
-            // we need to update the code hash and code size
-            if (acc.is_empty() && !info.is_empty()) || acc.keccak_code_hash.0 != info.code_hash.0 {
-                assert_ne!(
-                    info.poseidon_code_hash,
-                    B256::ZERO,
-                    "revm didn't update poseidon_code_hash, acc from StateDB: {acc:?}, revm: {info:?}",
-                );
-                acc_data.poseidon_code_hash = H256::from(info.poseidon_code_hash.0);
-                acc_data.keccak_code_hash = H256::from(info.code_hash.0);
-                acc_data.code_size = self
+                debug_recorder.record_storage_root(*addr, acc_data.storage_root);
+
+                self.db
                     .db
-                    .contracts
-                    .get(&db_acc.info.code_hash)
-                    .map(|c| c.len())
-                    .unwrap_or_default() as u64;
+                    .set_prev_storage_root(*addr, acc_data.storage_root.0.into());
+            }
+            if !info.is_empty() {
+                // if account not exist, all fields will be zero.
+                // but if account exist, code_hash will be empty hash if code is empty
+                if info.is_empty_code_hash() {
+                    acc_data.poseidon_code_hash = H256::from(POSEIDON_EMPTY.0);
+                    acc_data.keccak_code_hash = H256::from(KECCAK_EMPTY.0);
+                } else {
+                    assert_ne!(
+                        info.poseidon_code_hash,
+                        B256::ZERO,
+                        "revm didn't update poseidon_code_hash, revm: {info:?}",
+                    );
+                    acc_data.poseidon_code_hash = H256::from(info.poseidon_code_hash.0);
+                    acc_data.keccak_code_hash = H256::from(info.code_hash.0);
+                    acc_data.code_size = info.code_size as u64;
+                }
             }
 
             #[cfg(feature = "debug-account")]
-            debug_account.insert(*addr, acc_data);
+            debug_recorder.record_account(*addr, acc_data);
 
-            cycle_tracker_start!("Zktrie::update_account");
-            self.zktrie
-                .update_account(addr.as_slice(), &acc_data.into())
-                .expect("failed to update account");
-            cycle_tracker_end!("Zktrie::update_account");
+            cycle_track!(
+                zktrie
+                    .update_account(addr.as_slice(), &acc_data.into())
+                    .expect("failed to update account"),
+                "Zktrie::update_account"
+            );
 
             cycle_tracker_end!("commit account {}", addr);
         }
 
-        #[cfg(feature = "debug-account")]
-        {
-            if self.zktrie.is_trie_dirty() {
-                self.zktrie.prepare_root();
-            }
-            let output = std::fs::File::create(format!(
-                "/tmp/sbv-debug/account_0x{}.csv",
-                hex::encode(self.zktrie.root())
-            ))
-            .expect("failed to create debug file");
-            let mut wtr = csv::Writer::from_writer(output);
-
-            #[derive(serde::Serialize)]
-            pub struct AccountData {
-                addr: revm::primitives::Address,
-                nonce: u64,
-                balance: U256,
-                keccak_code_hash: H256,
-                poseidon_code_hash: H256,
-                code_size: u64,
-                storage_root: H256,
-            }
-
-            for (addr, acc) in debug_account.into_iter() {
-                wtr.serialize(AccountData {
-                    addr,
-                    nonce: acc.nonce,
-                    balance: acc.balance,
-                    keccak_code_hash: acc.keccak_code_hash,
-                    poseidon_code_hash: acc.poseidon_code_hash,
-                    code_size: acc.code_size,
-                    storage_root: acc.storage_root,
-                })
-                .expect("failed to write record");
-            }
+        if zktrie.is_trie_dirty() {
+            zktrie.prepare_root();
         }
-        cycle_tracker_end!("commit_changes");
 
-        if self.zktrie.is_trie_dirty() {
-            self.zktrie.prepare_root();
-        }
-        H256::from(self.zktrie.root())
+        let root_after = zktrie.root();
+
+        zktrie_state.switch_to(root_after);
+
+        H256::from(root_after)
     }
 }
 
@@ -331,7 +289,7 @@ impl Debug for EvmExecutor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EvmExecutor")
             .field("db", &self.db)
-            .field("zktrie", &self.zktrie.root())
+            .field("spec_id", &self.spec_id)
             .finish()
     }
 }

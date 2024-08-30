@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-#![allow(unused_variables)]
 use eth_types::l2_types::ExecutionResult;
 
 use revm::DatabaseRef;
@@ -8,18 +6,15 @@ use std::fmt::Debug;
 #[cfg(feature = "dev")]
 use tracing::Level;
 
-use crate::dev_error;
-use crate::dev_trace;
-
-pub(crate) mod ext;
+/// Debugging utilities.
+#[cfg(any(feature = "debug-account", feature = "debug-storage"))]
+pub(crate) mod debug;
+/// Extensions for block trace.
+pub mod ext;
 
 /// Blanket trait for block trace extensions.
 pub trait BlockTraceExt:
-    ext::BlockTraceExt
-    + ext::BlockTraceRevmExt
-    + ext::BlockRevmDbExt
-    + ext::BlockZktrieExt
-    + ext::BlockChunkExt
+    ext::BlockTraceExt + ext::BlockTraceRevmExt + ext::BlockZktrieExt + ext::BlockChunkExt
 {
 }
 
@@ -43,7 +38,7 @@ where
             .unwrap();
 
         #[cfg(feature = "dev")]
-        if enabled!(Level::TRACE) {
+        if tracing::enabled!(Level::TRACE) {
             let mut local_acc = local_acc.clone();
             local_acc.code = None;
             dev_trace!("local acc {local_acc:?}, trace acc {account_post_state:?}");
@@ -52,18 +47,18 @@ where
         if local_balance != account_post_state.balance {
             ok = false;
 
-            let post = account_post_state.balance;
+            let _post = account_post_state.balance;
             #[cfg(feature = "dev")]
-            error!(
+            dev_error!(
                 "incorrect balance, local {:#x} {} post {:#x} (diff {}{:#x})",
                 local_balance,
-                if local_balance < post { "<" } else { ">" },
-                post,
-                if local_balance < post { "-" } else { "+" },
-                if local_balance < post {
-                    post - local_balance
+                if local_balance < _post { "<" } else { ">" },
+                _post,
+                if local_balance < _post { "-" } else { "+" },
+                if local_balance < _post {
+                    _post - local_balance
                 } else {
-                    local_balance - post
+                    local_balance - _post
                 }
             )
         }
