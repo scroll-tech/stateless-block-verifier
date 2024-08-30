@@ -99,6 +99,7 @@ impl EvmExecutor {
 
             let tx_type = TxType::get_tx_type(&eth_tx);
 
+            /*
             if !tx_type.is_l1_msg() {
                 let recovered_address = cycle_track!(
                     eth_tx
@@ -119,6 +120,7 @@ impl EvmExecutor {
                     });
                 }
             }
+            */
             if tx_type.is_l1_msg() {
                 env.tx.nonce = None; // clear nonce for l1 msg
                 env.cfg.disable_base_fee = true; // disable base fee for l1 msg
