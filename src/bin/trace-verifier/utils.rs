@@ -38,10 +38,16 @@ fn verify_inner(
         .build()
         .unwrap();
 
-    cycle_tracker_start!("build ZktrieState");
-    let old_root = l2_trace.storage_trace.root_before;
-    let mut zktrie_state = ZktrieState::construct(old_root);
-    l2_trace.build_zktrie_state(&mut zktrie_state);
+    let mut zktrie_state = cycle_track!(
+        {
+            let old_root = l2_trace.storage_trace.root_before;
+            let mut zktrie_state = ZktrieState::construct(old_root);
+            l2_trace.build_zktrie_state(&mut zktrie_state);
+            zktrie_state
+        },
+        "build ZktrieState"
+    );
+
     cycle_tracker_end!("build ZktrieState");
 
     let mut executor = EvmExecutorBuilder::new(&zktrie_state)

@@ -6,6 +6,9 @@ use std::fmt::Debug;
 #[cfg(feature = "dev")]
 use tracing::Level;
 
+/// Debugging utilities.
+#[cfg(any(feature = "debug-account", feature = "debug-storage"))]
+pub(crate) mod debug;
 /// Extensions for block trace.
 pub mod ext;
 
