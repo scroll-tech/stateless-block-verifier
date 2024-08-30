@@ -207,21 +207,21 @@ impl EvmExecutor {
                 let storage_root_before = acc_data.storage_root;
                 // get storage tire
                 cycle_tracker_start!("update storage_tire");
-                let mut storage_tire = zktrie_state
+                let mut storage_trie = zktrie_state
                     .zk_db
                     .new_trie(storage_root_before.as_fixed_bytes())
                     .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {
                     if !value.is_zero() {
                         cycle_track!(
-                            storage_tire
+                            storage_trie
                                 .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
                                 .expect("failed to update storage"),
                             "Zktrie::update_store"
                         );
                     } else {
                         cycle_track!(
-                            storage_tire.delete(&key.to_be_bytes::<32>()),
+                            storage_trie.delete(&key.to_be_bytes::<32>()),
                             "Zktrie::delete"
                         );
                     }
@@ -229,8 +229,13 @@ impl EvmExecutor {
                     #[cfg(feature = "debug-storage")]
                     debug_recorder.record_storage(*addr, *key, *value);
                 }
+
+                if storage_trie.is_trie_dirty() {
+                    storage_trie.prepare_root();
+                }
+
                 cycle_tracker_end!("update storage_tire");
-                acc_data.storage_root = H256::from(storage_tire.root());
+                acc_data.storage_root = H256::from(storage_trie.root());
 
                 #[cfg(feature = "debug-storage")]
                 debug_recorder.record_storage_root(*addr, acc_data.storage_root);
@@ -268,6 +273,10 @@ impl EvmExecutor {
             );
 
             cycle_tracker_end!("commit account {}", addr);
+        }
+
+        if zktrie.is_trie_dirty() {
+            zktrie.prepare_root();
         }
 
         let root_after = zktrie.root();

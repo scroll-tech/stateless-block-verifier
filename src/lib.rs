@@ -1,5 +1,6 @@
 //! Stateless Block Verifier
 
+#![feature(lazy_cell)]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
