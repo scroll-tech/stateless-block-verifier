@@ -4,9 +4,10 @@
 #![deny(missing_debug_implementations)]
 
 #[cfg(feature = "dev")]
-#[macro_use]
-extern crate tracing;
+#[doc(hidden)]
+pub use tracing;
 
+#[macro_use]
 mod macros;
 
 mod chunk;
@@ -27,6 +28,11 @@ pub use hardfork::HardforkConfig;
 
 mod utils;
 pub use utils::{post_check, BlockTraceExt};
+
+/// Metrics module
+#[cfg(feature = "metrics")]
+#[doc(hidden)]
+pub mod metrics;
 
 #[cfg(all(feature = "dev", test))]
 #[ctor::ctor]

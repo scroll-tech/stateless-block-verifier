@@ -1,4 +1,3 @@
-use crate::{dev_debug, dev_warn};
 use eth_types::{state_db, Address, Transaction, Word, H256};
 use mpt_zktrie::state::StorageData;
 use mpt_zktrie::{AccountData, ZktrieState};
@@ -122,21 +121,24 @@ pub trait BlockRevmDbExt: BlockTraceExt {
 
 pub trait BlockZktrieExt: BlockTraceExt {
     fn build_zktrie_state(&self, zktrie_state: &mut ZktrieState) {
-        if let Some(flatten_proofs) = self.flatten_proofs() {
-            dev_debug!("init zktrie state with flatten proofs");
-            let zk_db = zktrie_state.expose_db();
+        measure_duration_histogram!(
+            build_zktrie_state_duration_microseconds,
+            if let Some(flatten_proofs) = self.flatten_proofs() {
+                dev_debug!("init zktrie state with flatten proofs");
+                let zk_db = zktrie_state.expose_db();
 
-            for (k, bytes) in flatten_proofs {
-                zk_db.add_node_bytes(bytes, Some(k.as_bytes())).unwrap();
+                for (k, bytes) in flatten_proofs {
+                    zk_db.add_node_bytes(bytes, Some(k.as_bytes())).unwrap();
+                }
+            } else {
+                dev_warn!("no flatten proofs, fallback to update zktrie state from trace");
+                zktrie_state.update_from_trace(
+                    self.account_proofs(),
+                    self.storage_proofs(),
+                    self.additional_proofs(),
+                );
             }
-        } else {
-            dev_warn!("no flatten proofs, fallback to update zktrie state from trace");
-            zktrie_state.update_from_trace(
-                self.account_proofs(),
-                self.storage_proofs(),
-                self.additional_proofs(),
-            );
-        }
+        );
     }
 }
 

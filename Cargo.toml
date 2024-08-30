@@ -38,6 +38,11 @@ url = { version = "2.5", optional = true }
 # optional dependencies
 csv = { version = "1.3", optional = true }
 ctor = { version = "0.2", optional = true }
+hyper = { version = "1.4", features = ["server", "http1"], optional = true }
+hyper-util = { version = "0.1", features = ["tokio"], optional = true }
+http-body-util = { version = "0.1", optional = true }
+once_cell = { version = "1.19", optional = true }
+prometheus-client = { version = "0.22", optional = true }
 pprof = { version = "0.13", features = ["flamegraph"], optional = true }
 tracing = { version = "0.1", optional = true }
 tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
@@ -61,6 +66,8 @@ features = [
 ]
 
 [dev-dependencies]
+rand = "0.8"
+reqwest = "0.12"
 serde = { version = "1.0" }
 serde_json = { version = "1.0" }
 
@@ -93,6 +100,7 @@ profiling = ["pprof"]
 debug-account = ["csv", "revm/serde"]
 debug-storage = ["csv", "revm/serde"]
 dev = ["ctor", "tracing", "tracing-subscriber"]
+metrics = ["hyper", "hyper-util", "http-body-util", "once_cell", "prometheus-client", "tokio", "tokio/macros", "tokio/signal"]
 
 # sp1 related
 sp1 = []

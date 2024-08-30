@@ -1,27 +1,23 @@
 use eth_types::l2_types::BlockTrace;
-use stateless_block_verifier::{
-    dev_error, dev_info, dev_trace, post_check, EvmExecutorBuilder, HardforkConfig,
-    VerificationError,
-};
-#[cfg(feature = "dev")]
-use std::sync::atomic::AtomicUsize;
-#[cfg(feature = "dev")]
-use std::sync::{LazyLock, Mutex};
-#[cfg(feature = "dev")]
-use std::time::Instant;
+use stateless_block_verifier::{post_check, EvmExecutorBuilder, HardforkConfig, VerificationError};
 
 pub fn verify(
     l2_trace: &BlockTrace,
     fork_config: &HardforkConfig,
     disable_checks: bool,
-    log_error: bool,
 ) -> Result<(), VerificationError> {
-    #[cfg(feature = "dev")]
-    static BLOCK_COUNTER: AtomicUsize = AtomicUsize::new(0);
-    #[cfg(feature = "dev")]
-    static LAST_TIME: LazyLock<Mutex<Instant>> = LazyLock::new(|| Mutex::new(Instant::now()));
+    measure_duration_histogram!(
+        total_block_verification_duration_microseconds,
+        verify_inner(l2_trace, fork_config, disable_checks)
+    )
+}
 
-    dev_trace!("{:#?}", l2_trace);
+fn verify_inner(
+    l2_trace: &BlockTrace,
+    fork_config: &HardforkConfig,
+    disable_checks: bool,
+) -> Result<(), VerificationError> {
+    dev_trace!("{l2_trace:#?}");
     let root_after = l2_trace.storage_trace.root_after;
 
     // or with v2 trace
@@ -31,9 +27,6 @@ pub fn verify(
     // let serialized = rkyv::to_bytes::<BlockTraceV2, 4096>(&v2_trace).unwrap();
     // let archived = unsafe { rkyv::archived_root::<BlockTraceV2>(&serialized[..]) };
     // let archived = rkyv::check_archived_root::<BlockTraceV2>(&serialized[..]).unwrap();
-
-    #[cfg(feature = "dev")]
-    let now = Instant::now();
 
     #[cfg(feature = "profiling")]
     let guard = pprof::ProfilerGuardBuilder::default()
@@ -53,7 +46,18 @@ pub fn verify(
             }
         })
         .build(&l2_trace);
-    executor.handle_block(&l2_trace)?;
+
+    // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76
+    #[allow(clippy::map_identity)]
+    executor.handle_block(&l2_trace).map_err(|e| {
+        dev_error!(
+            "Error occurs when executing block {:?}: {e:?}",
+            l2_trace.header.hash.unwrap()
+        );
+
+        update_metrics_counter!(verification_error);
+        e
+    })?;
     let revm_root_after = executor.commit_changes();
 
     #[cfg(feature = "profiling")]
@@ -71,38 +75,24 @@ pub fn verify(
         dev_info!("Profiling report saved to: {:?}", path);
     }
 
-    #[cfg(feature = "dev")]
-    let elapsed = now.elapsed();
-
     if root_after != revm_root_after {
-        dev_error!("Root after in trace: {:x}", root_after);
-        dev_error!("Root after in revm: {:x}", revm_root_after);
-        dev_error!("Root mismatch");
+        dev_error!(
+            "Block #{}({:?}) root mismatch: root after in trace = {root_after:x}, root after in revm = {revm_root_after:x}",
+            l2_trace.header.number.unwrap().as_u64(),
+            l2_trace.header.hash.unwrap()
+        );
 
-        if !log_error {
-            std::process::exit(1);
-        }
+        update_metrics_counter!(verification_error);
+
         return Err(VerificationError::RootMismatch {
             root_trace: root_after,
             root_revm: revm_root_after,
         });
     }
-
-    dev_info!("Root matches in: {} ms", elapsed.as_millis());
-
-    #[cfg(feature = "dev")]
-    {
-        let block_counter = BLOCK_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        if block_counter > 50 {
-            let mut last_time = LAST_TIME.lock().unwrap();
-            let blocks = BLOCK_COUNTER.swap(0, std::sync::atomic::Ordering::SeqCst);
-            let elapsed = last_time.elapsed().as_secs_f64();
-            let bps = blocks as f64 / elapsed;
-
-            dev_info!("Verifying avg speed: {:.2} bps", bps);
-            *last_time = Instant::now();
-        }
-    }
-
+    dev_info!(
+        "Block #{}({}) verified successfully",
+        l2_trace.header.number.unwrap().as_u64(),
+        l2_trace.header.hash.unwrap()
+    );
     Ok(())
 }
