@@ -32,10 +32,21 @@ where
 {
     let mut ok = true;
     for account_post_state in exec.account_after.iter() {
-        let local_acc = db
-            .basic_ref(account_post_state.address.0.into())
-            .unwrap()
-            .unwrap();
+        let local_acc = match db.basic_ref(account_post_state.address.0.into()).unwrap() {
+            Some(acc) => acc,
+            None => {
+                if account_post_state.balance.is_zero()
+                    && account_post_state.nonce == 0
+                    && account_post_state.poseidon_code_hash.is_zero()
+                    && account_post_state.keccak_code_hash.is_zero()
+                {
+                    continue;
+                }
+                ok = false;
+                dev_error!("local acc not found, trace acc {account_post_state:?}");
+                continue;
+            }
+        };
 
         #[cfg(feature = "dev")]
         if tracing::enabled!(Level::TRACE) {
