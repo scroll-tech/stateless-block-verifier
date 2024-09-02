@@ -3,14 +3,15 @@ use mpt_zktrie::AccountData;
 use revm::primitives::{Address, U256};
 use std::collections::BTreeMap;
 
-#[derive(serde::Serialize)]
+#[derive(Debug, serde::Serialize)]
 struct StorageOps {
     kind: &'static str,
     key: U256,
     value: Option<U256>,
 }
 
-#[derive(Default)]
+/// Debug recorder for recording account and storage data.
+#[derive(Debug, Default)]
 pub struct DebugRecorder {
     accounts: BTreeMap<Address, AccountData>,
     storages_roots: BTreeMap<Address, H256>,
@@ -18,6 +19,7 @@ pub struct DebugRecorder {
 }
 
 impl DebugRecorder {
+    /// Create a new debug recorder.
     pub fn new() -> Self {
         #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
         std::fs::create_dir_all("/tmp/sbv-debug").expect("failed to create debug dir");
@@ -25,16 +27,19 @@ impl DebugRecorder {
         Self::default()
     }
 
+    /// Record the account data.
     #[cfg(feature = "debug-account")]
     pub fn record_account(&mut self, addr: Address, data: AccountData) {
         self.accounts.insert(addr, data);
     }
 
+    /// Record the storage root of an account.
     #[cfg(feature = "debug-storage")]
     pub fn record_storage_root(&mut self, addr: Address, storage_root: H256) {
         self.storages_roots.insert(addr, storage_root);
     }
 
+    /// Record the storage operation.
     #[cfg(feature = "debug-storage")]
     pub fn record_storage(&mut self, addr: Address, key: U256, value: U256) {
         let entry = self.storages.entry(addr).or_default();

@@ -3395,6 +3395,7 @@ dependencies = [
  "http-body-util",
  "hyper 1.4.1",
  "hyper-util",
+ "mpt-zktrie",
  "once_cell",
  "prometheus-client",
  "revm",
