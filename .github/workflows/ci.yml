@@ -66,7 +66,7 @@ jobs:
       - name: clippy all
         run: cargo clippy --workspace --all-features -- -D warnings
       - name: clippy test
-        run: cargo clippy --workspace --tests --features test -- -D warnings
+        run: cargo clippy --workspace --tests -- -D warnings
       - name: clippy test all
         run: cargo clippy --workspace --tests --all-features -- -D warnings
 

@@ -6,9 +6,8 @@ edition = "2021"
 [dependencies]
 anyhow.workspace = true
 async-channel.workspace = true
-clap = { workspace = true, features = ["derive"]}
-env_logger.workspace = true
-ethers-core = { workspace = true, features = ["scroll"]}
+clap = { workspace = true, features = ["derive"] }
+ethers-core = { workspace = true, features = ["scroll"] }
 ethers-providers.workspace = true
 futures.workspace = true
 serde_json.workspace = true
