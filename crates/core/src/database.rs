@@ -1,5 +1,4 @@
 use crate::error::ZkTrieError;
-use crate::utils::ext::BlockTraceExt;
 use mpt_zktrie::state::StorageData;
 use mpt_zktrie::{AccountData, ZktrieState};
 use once_cell::sync::Lazy;
@@ -8,6 +7,7 @@ use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
 };
+use sbv_primitives::BlockTrace;
 use std::rc::Rc;
 use std::{cell::RefCell, collections::HashMap, convert::Infallible, fmt};
 use zktrie::{SharedMemoryDb, ZkMemoryDb, ZkTrie};
@@ -45,13 +45,13 @@ impl fmt::Debug for ReadOnlyDB {
 
 impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
-    pub fn new<T: BlockTraceExt>(l2_trace: T, zktrie_state: &ZktrieState) -> Result<Self> {
+    pub fn new<T: BlockTrace>(l2_trace: T, zktrie_state: &ZktrieState) -> Result<Self> {
         let size_hint = l2_trace.codes().len();
         Self::new_with_size_hint(l2_trace, zktrie_state, size_hint)
     }
 
     /// Initialize an EVM database from a block trace with size hint of code database.
-    pub fn new_with_size_hint<T: BlockTraceExt>(
+    pub fn new_with_size_hint<T: BlockTrace>(
         l2_trace: T,
         zktrie_state: &ZktrieState,
         size_hint: usize,
@@ -107,11 +107,11 @@ impl ReadOnlyDB {
     }
 
     /// Update the database with a new block trace.
-    pub fn update<T: BlockTraceExt>(&mut self, l2_trace: T) -> Result<()> {
+    pub fn update<T: BlockTrace>(&mut self, l2_trace: T) -> Result<()> {
         measure_duration_histogram!(update_db_duration_microseconds, self.update_inner(l2_trace))
     }
 
-    fn update_inner<T: BlockTraceExt>(&mut self, l2_trace: T) -> Result<()> {
+    fn update_inner<T: BlockTrace>(&mut self, l2_trace: T) -> Result<()> {
         cycle_tracker_start!("insert CodeDB");
         for code in l2_trace.codes() {
             let hash = revm::primitives::keccak256(code);

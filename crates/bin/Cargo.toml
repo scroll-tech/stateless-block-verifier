@@ -1,0 +1,40 @@
+[package]
+name = "stateless-block-verifier"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow.workspace = true
+async-channel.workspace = true
+clap = { workspace = true, features = ["derive"]}
+env_logger.workspace = true
+ethers-core = { workspace = true, features = ["scroll"]}
+ethers-providers.workspace = true
+futures.workspace = true
+serde_json.workspace = true
+serde = { workspace = true, features = ["derive"] }
+tiny-keccak.workspace = true
+tokio = { workspace = true, features = ["fs", "macros", "rt-multi-thread"] }
+url.workspace = true
+
+sbv-core.workspace = true
+sbv-primitives.workspace = true
+sbv-utils.workspace = true
+
+eth-types.workspace = true
+mpt-zktrie.workspace = true
+
+pprof = { workspace = true, optional = true }
+tracing-subscriber = { workspace = true, optional = true }
+
+[dev-dependencies]
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[features]
+default = ["dev"]
+dev = ["sbv-core/dev", "dep:tracing-subscriber"]
+debug-account = ["sbv-core/debug-account"]
+debug-storage = ["sbv-core/debug-storage"]
+profiling = ["dep:pprof"]
+metrics = ["sbv-core/metrics"]

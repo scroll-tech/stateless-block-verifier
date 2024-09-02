@@ -1,14 +1,14 @@
-use crate::utils::ext::TxRevmExt;
+use crate::Transaction;
 use eth_types::l2_types::TransactionTrace;
-use eth_types::{Transaction, H256};
-use revm::primitives::{AccessListItem, TransactTo, B256, U256};
+use eth_types::H256;
+use revm_primitives::{AccessListItem, TransactTo, B256, U256};
 
 mod archived_block_trace_v2;
 mod blanket;
 mod block_trace;
 mod block_trace_v2;
 
-impl TxRevmExt for TransactionTrace {
+impl Transaction for TransactionTrace {
     #[inline]
     fn raw_type(&self) -> u8 {
         self.type_
@@ -18,7 +18,7 @@ impl TxRevmExt for TransactionTrace {
         B256::new(self.tx_hash.0)
     }
     #[inline]
-    fn caller(&self) -> revm::precompile::Address {
+    fn caller(&self) -> revm_primitives::Address {
         self.from.0.into()
     }
     #[inline]
@@ -41,8 +41,8 @@ impl TxRevmExt for TransactionTrace {
         U256::from_limbs(self.value.0)
     }
     #[inline]
-    fn data(&self) -> revm::precompile::Bytes {
-        revm::precompile::Bytes::copy_from_slice(self.data.as_ref())
+    fn data(&self) -> revm_primitives::Bytes {
+        revm_primitives::Bytes::copy_from_slice(self.data.as_ref())
     }
     #[inline]
     fn nonce(&self) -> u64 {
@@ -81,7 +81,7 @@ impl TxRevmExt for TransactionTrace {
         block_number: u64,
         transaction_index: usize,
         base_fee_per_gas: Option<U256>,
-    ) -> Transaction {
+    ) -> eth_types::Transaction {
         self.to_eth_tx(
             Some(H256::from(block_hash.0)),
             Some(block_number.into()),

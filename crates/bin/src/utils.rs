@@ -1,11 +1,10 @@
-use eth_types::l2_types::BlockTrace;
 use mpt_zktrie::ZktrieState;
-use stateless_block_verifier::{
-    post_check, utils::ext::BlockZktrieExt, EvmExecutorBuilder, HardforkConfig, VerificationError,
-};
+use sbv_core::{EvmExecutorBuilder, HardforkConfig, VerificationError};
+use sbv_primitives::BlockTrace;
+use sbv_utils::post_check;
 
-pub fn verify(
-    l2_trace: &BlockTrace,
+pub fn verify<T: BlockTrace + Clone>(
+    l2_trace: T,
     fork_config: &HardforkConfig,
     disable_checks: bool,
 ) -> Result<(), VerificationError> {
@@ -15,13 +14,13 @@ pub fn verify(
     )
 }
 
-fn verify_inner(
-    l2_trace: &BlockTrace,
+fn verify_inner<T: BlockTrace + Clone>(
+    l2_trace: T,
     fork_config: &HardforkConfig,
     disable_checks: bool,
 ) -> Result<(), VerificationError> {
     dev_trace!("{l2_trace:#?}");
-    let root_after = l2_trace.storage_trace.root_after;
+    let root_after = l2_trace.root_after();
 
     // or with v2 trace
     // let v2_trace = BlockTraceV2::from(l2_trace.clone());
@@ -40,9 +39,12 @@ fn verify_inner(
 
     let mut zktrie_state = cycle_track!(
         {
-            let old_root = l2_trace.storage_trace.root_before;
+            let old_root = l2_trace.root_before();
             let mut zktrie_state = ZktrieState::construct(old_root);
-            l2_trace.build_zktrie_state(&mut zktrie_state);
+            measure_duration_histogram!(
+                build_zktrie_state_duration_microseconds,
+                l2_trace.build_zktrie_state(&mut zktrie_state)
+            );
             zktrie_state
         },
         "build ZktrieState"
@@ -51,10 +53,13 @@ fn verify_inner(
     let mut executor = EvmExecutorBuilder::new(&zktrie_state)
         .hardfork_config(*fork_config)
         .with_execute_hooks(|hooks| {
-            let l2_trace = l2_trace.clone();
             if !disable_checks {
-                hooks.add_post_tx_execution_handler(move |executor, tx_id| {
-                    post_check(executor.db(), &l2_trace.execution_results[tx_id]);
+                hooks.add_post_tx_execution_handler(|executor, tx_id| {
+                    if let Some(execution_result) = l2_trace.execution_results(tx_id) {
+                        post_check(executor.db(), execution_result);
+                    } else {
+                        dev_warn!("No execution result found in trace but post check is enabled");
+                    }
                 })
             }
         })
@@ -62,10 +67,12 @@ fn verify_inner(
 
     // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76
     #[allow(clippy::map_identity)]
+    #[allow(clippy::manual_inspect)]
     executor.handle_block(&l2_trace).map_err(|e| {
         dev_error!(
-            "Error occurs when executing block {:?}: {e:?}",
-            l2_trace.header.hash.unwrap()
+            "Error occurs when executing block #{}({:?}): {e:?}",
+            l2_trace.number(),
+            l2_trace.block_hash()
         );
 
         update_metrics_counter!(verification_error);
@@ -79,10 +86,7 @@ fn verify_inner(
             .join(env!("CARGO_PKG_NAME"))
             .join("profiling");
         std::fs::create_dir_all(&dir).unwrap();
-        let path = dir.join(format!(
-            "block-{}.svg",
-            l2_trace.header.number.unwrap().as_u64()
-        ));
+        let path = dir.join(format!("block-{}.svg", l2_trace.number()));
         let file = std::fs::File::create(&path).unwrap();
         report.flamegraph(file).unwrap();
         dev_info!("Profiling report saved to: {:?}", path);
@@ -91,8 +95,8 @@ fn verify_inner(
     if root_after != revm_root_after {
         dev_error!(
             "Block #{}({:?}) root mismatch: root after in trace = {root_after:x}, root after in revm = {revm_root_after:x}",
-            l2_trace.header.number.unwrap().as_u64(),
-            l2_trace.header.hash.unwrap()
+            l2_trace.number(),
+            l2_trace.block_hash(),
         );
 
         update_metrics_counter!(verification_error);
@@ -104,8 +108,8 @@ fn verify_inner(
     }
     dev_info!(
         "Block #{}({}) verified successfully",
-        l2_trace.header.number.unwrap().as_u64(),
-        l2_trace.header.hash.unwrap()
+        l2_trace.number(),
+        l2_trace.block_hash(),
     );
     Ok(())
 }

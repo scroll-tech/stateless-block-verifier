@@ -1,9 +1,31 @@
-use eth_types::{Address, Transaction, H256};
+//! Stateless Block Verifier primitives library.
+
+#![deny(missing_docs)]
+#![deny(missing_debug_implementations)]
+
+#[macro_use]
+extern crate sbv_utils;
+
+use eth_types::{Address, H256};
 use mpt_zktrie::ZktrieState;
-use revm::primitives::{AccessListItem, TransactTo, TxEnv, B256, U256};
+use revm_primitives::{AccessListItem, TransactTo, TxEnv, B256, U256};
 use std::fmt::Debug;
 
 mod imp;
+
+/// Blanket trait for block trace extensions.
+pub trait BlockTrace:
+    BlockTraceExt + BlockTraceRevmExt + BlockZktrieExt + BlockChunkExt + Debug
+{
+}
+
+impl BlockTrace for eth_types::l2_types::BlockTrace {}
+
+impl BlockTrace for eth_types::l2_types::BlockTraceV2 {}
+
+impl BlockTrace for eth_types::l2_types::ArchivedBlockTraceV2 {}
+
+impl<T: BlockTrace> BlockTrace for &T {}
 
 /// Common extension trait for BlockTrace
 pub trait BlockTraceExt {
@@ -31,12 +53,16 @@ pub trait BlockTraceExt {
     fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]>;
     /// start l1 queue index
     fn start_l1_queue_index(&self) -> u64;
+    /// execution_results
+    fn execution_results(&self, _tx_id: usize) -> Option<&eth_types::l2_types::ExecutionResult> {
+        None
+    }
 }
 
 /// Revm extension trait for BlockTrace
 pub trait BlockTraceRevmExt {
     /// transaction type
-    type Tx: TxRevmExt + Debug;
+    type Tx: Transaction + Debug;
 
     /// block number
     fn number(&self) -> u64;
@@ -45,7 +71,7 @@ pub trait BlockTraceRevmExt {
     /// chain id
     fn chain_id(&self) -> u64;
     /// coinbase address
-    fn coinbase(&self) -> revm::primitives::Address;
+    fn coinbase(&self) -> revm_primitives::Address;
     /// timestamp
     fn timestamp(&self) -> U256;
     /// gas limit
@@ -62,8 +88,8 @@ pub trait BlockTraceRevmExt {
 
     /// creates `revm::primitives::BlockEnv`
     #[inline]
-    fn env(&self) -> revm::primitives::BlockEnv {
-        revm::primitives::BlockEnv {
+    fn env(&self) -> revm_primitives::BlockEnv {
+        revm_primitives::BlockEnv {
             number: U256::from_limbs([self.number(), 0, 0, 0]),
             coinbase: self.coinbase(),
             timestamp: self.timestamp(),
@@ -80,24 +106,21 @@ pub trait BlockTraceRevmExt {
 pub trait BlockZktrieExt: BlockTraceExt {
     /// Update zktrie state from trace
     fn build_zktrie_state(&self, zktrie_state: &mut ZktrieState) {
-        measure_duration_histogram!(
-            build_zktrie_state_duration_microseconds,
-            if let Some(flatten_proofs) = self.flatten_proofs() {
-                dev_debug!("init zktrie state with flatten proofs");
-                let zk_db = zktrie_state.expose_db();
+        if let Some(flatten_proofs) = self.flatten_proofs() {
+            dev_debug!("init zktrie state with flatten proofs");
+            let zk_db = zktrie_state.expose_db();
 
-                for (k, bytes) in flatten_proofs {
-                    zk_db.add_node_bytes(bytes, Some(k.as_bytes())).unwrap();
-                }
-            } else {
-                dev_warn!("no flatten proofs, fallback to update zktrie state from trace");
-                zktrie_state.update_from_trace(
-                    self.account_proofs(),
-                    self.storage_proofs(),
-                    self.additional_proofs(),
-                );
+            for (k, bytes) in flatten_proofs {
+                zk_db.add_node_bytes(bytes, Some(k.as_bytes())).unwrap();
             }
-        );
+        } else {
+            dev_warn!("no flatten proofs, fallback to update zktrie state from trace");
+            zktrie_state.update_from_trace(
+                self.account_proofs(),
+                self.storage_proofs(),
+                self.additional_proofs(),
+            );
+        }
     }
 }
 
@@ -156,7 +179,7 @@ pub trait BlockChunkExt: BlockTraceExt + BlockTraceRevmExt {
 }
 
 /// Revm extension trait for Transaction
-pub trait TxRevmExt {
+pub trait Transaction {
     /// get the raw tx type
     fn raw_type(&self) -> u8;
     /// check if the tx is l1 tx
@@ -166,7 +189,7 @@ pub trait TxRevmExt {
     /// get the tx hash
     fn tx_hash(&self) -> B256;
     /// get the caller
-    fn caller(&self) -> revm::primitives::Address;
+    fn caller(&self) -> revm_primitives::Address;
     /// get the gas limit
     fn gas_limit(&self) -> u64;
     /// get the gas price
@@ -176,7 +199,7 @@ pub trait TxRevmExt {
     /// get the value
     fn value(&self) -> U256;
     /// get the data
-    fn data(&self) -> revm::primitives::Bytes;
+    fn data(&self) -> revm_primitives::Bytes;
     /// get the nonce
     fn nonce(&self) -> u64;
     /// get the chain id
@@ -210,7 +233,7 @@ pub trait TxRevmExt {
         block_number: u64,
         transaction_index: usize,
         base_fee_per_gas: Option<U256>,
-    ) -> Transaction;
+    ) -> eth_types::Transaction;
 }
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 use clap::Subcommand;
-use stateless_block_verifier::HardforkConfig;
+use sbv_core::HardforkConfig;
 
 mod run_file;
 mod run_rpc;

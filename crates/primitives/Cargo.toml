@@ -1,0 +1,14 @@
+[package]
+name = "sbv-primitives"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+revm-primitives.workspace = true
+rkyv.workspace = true
+tiny-keccak.workspace = true
+
+eth-types.workspace = true
+mpt-zktrie.workspace = true
+
+sbv-utils.workspace = true

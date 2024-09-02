@@ -1,17 +1,12 @@
-//! Stateless Block Verifier
+//! Stateless Block Verifier core library.
 
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
-#[cfg(feature = "dev")]
-#[doc(hidden)]
-pub use tracing;
-
 #[macro_use]
-mod macros;
+extern crate sbv_utils;
 
 mod chunk;
-
 pub use chunk::ChunkInfo;
 
 mod database;
@@ -26,16 +21,7 @@ pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
 mod hardfork;
 pub use hardfork::HardforkConfig;
 
-/// Module for utilities.
-pub mod utils;
-pub use utils::{post_check, BlockTraceExt};
-
-/// Metrics module
-#[cfg(feature = "metrics")]
-#[doc(hidden)]
-pub mod metrics;
-
-#[cfg(all(feature = "dev", test))]
+#[cfg(test)]
 #[ctor::ctor]
 fn init() {
     use tracing_subscriber::EnvFilter;

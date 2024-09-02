@@ -1,9 +1,9 @@
-use crate::utils::ext::*;
-use eth_types::l2_types::{BlockTrace, TransactionTrace};
+use crate::*;
+use eth_types::l2_types::{BlockTraceV2, TransactionTrace};
 use eth_types::{Address, H256};
-use revm::primitives::{B256, U256};
+use revm_primitives::{B256, U256};
 
-impl BlockTraceExt for BlockTrace {
+impl BlockTraceExt for BlockTraceV2 {
     #[inline(always)]
     fn root_before(&self) -> H256 {
         self.storage_trace.root_before
@@ -79,23 +79,22 @@ impl BlockTraceExt for BlockTrace {
     }
 }
 
-impl BlockTraceRevmExt for BlockTrace {
+impl BlockTraceRevmExt for BlockTraceV2 {
     type Tx = TransactionTrace;
-
     #[inline]
     fn number(&self) -> u64 {
-        self.header.number.expect("incomplete block").as_u64()
+        self.header.number.as_u64()
     }
     #[inline]
     fn block_hash(&self) -> B256 {
-        self.header.hash.expect("incomplete block").0.into()
+        self.header.hash.0.into()
     }
     #[inline]
     fn chain_id(&self) -> u64 {
         self.chain_id
     }
     #[inline]
-    fn coinbase(&self) -> revm::primitives::Address {
+    fn coinbase(&self) -> revm_primitives::Address {
         self.coinbase.address.0.into()
     }
     #[inline]
@@ -118,7 +117,7 @@ impl BlockTraceRevmExt for BlockTrace {
     fn prevrandao(&self) -> Option<B256> {
         self.header
             .mix_hash
-            .map(|h| revm::primitives::B256::from(h.0))
+            .map(|h| revm_primitives::B256::from(h.0))
     }
     #[inline]
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
@@ -126,6 +125,6 @@ impl BlockTraceRevmExt for BlockTrace {
     }
 }
 
-impl BlockZktrieExt for BlockTrace {}
+impl BlockZktrieExt for BlockTraceV2 {}
 
-impl BlockChunkExt for BlockTrace {}
+impl BlockChunkExt for BlockTraceV2 {}

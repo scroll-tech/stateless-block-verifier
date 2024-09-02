@@ -1,8 +1,8 @@
 #[macro_use]
-extern crate stateless_block_verifier;
+extern crate sbv_utils;
 
 use clap::Parser;
-use stateless_block_verifier::HardforkConfig;
+use sbv_core::HardforkConfig;
 
 #[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
 
     #[cfg(feature = "metrics")]
     if cmd.metrics {
-        stateless_block_verifier::metrics::start_metrics_server(cmd.metrics_addr);
+        sbv_core::metrics::start_metrics_server(cmd.metrics_addr);
     }
 
     let get_fork_config = move |chain_id: u64| {

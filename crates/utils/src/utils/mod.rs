@@ -8,22 +8,7 @@ use tracing::Level;
 
 /// Debugging utilities.
 #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
-pub(crate) mod debug;
-/// Extensions for block trace.
-pub mod ext;
-
-/// Blanket trait for block trace extensions.
-pub trait BlockTraceExt:
-    ext::BlockTraceExt + ext::BlockTraceRevmExt + ext::BlockZktrieExt + ext::BlockChunkExt
-{
-}
-
-impl BlockTraceExt for eth_types::l2_types::BlockTrace {}
-
-impl BlockTraceExt for eth_types::l2_types::BlockTraceV2 {}
-
-impl BlockTraceExt for eth_types::l2_types::ArchivedBlockTraceV2 {}
-impl<T: BlockTraceExt> BlockTraceExt for &T {}
+pub mod debug;
 
 /// Check the post state of the block with the execution result.
 pub fn post_check<DB: DatabaseRef>(db: DB, exec: &ExecutionResult) -> bool

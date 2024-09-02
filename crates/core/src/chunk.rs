@@ -1,6 +1,6 @@
-use crate::BlockTraceExt;
 use eth_types::H256;
 use mpt_zktrie::ZktrieState;
+use sbv_primitives::BlockTrace;
 use tiny_keccak::{Hasher, Keccak};
 
 /// A chunk is a set of continuous blocks.
@@ -22,7 +22,7 @@ pub struct ChunkInfo {
 
 impl ChunkInfo {
     /// Construct by block traces
-    pub fn from_block_traces<T: BlockTraceExt>(traces: &[T]) -> (Self, ZktrieState) {
+    pub fn from_block_traces<T: BlockTrace>(traces: &[T]) -> (Self, ZktrieState) {
         let chain_id = traces.first().unwrap().chain_id();
         let prev_state_root = traces
             .first()
@@ -43,7 +43,10 @@ impl ChunkInfo {
 
         let mut zktrie_state = ZktrieState::construct(prev_state_root);
         for trace in traces.iter() {
-            trace.build_zktrie_state(&mut zktrie_state);
+            measure_duration_histogram!(
+                build_zktrie_state_duration_microseconds,
+                trace.build_zktrie_state(&mut zktrie_state)
+            );
         }
 
         let info = ChunkInfo {
@@ -113,13 +116,12 @@ mod tests {
     use crate::{EvmExecutorBuilder, HardforkConfig};
     use eth_types::l2_types::BlockTrace;
     use std::cell::RefCell;
-    use std::rc::Rc;
 
     const TRACES_STR: [&str; 4] = [
-        include_str!("../testdata/mainnet_blocks/8370400.json"),
-        include_str!("../testdata/mainnet_blocks/8370401.json"),
-        include_str!("../testdata/mainnet_blocks/8370402.json"),
-        include_str!("../testdata/mainnet_blocks/8370403.json"),
+        include_str!("../../../testdata/mainnet_blocks/8370400.json"),
+        include_str!("../../../testdata/mainnet_blocks/8370401.json"),
+        include_str!("../../../testdata/mainnet_blocks/8370402.json"),
+        include_str!("../../../testdata/mainnet_blocks/8370403.json"),
     ];
 
     #[test]
@@ -137,14 +139,13 @@ mod tests {
         let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id);
         let (chunk_info, mut zktrie_state) = ChunkInfo::from_block_traces(&traces);
 
-        let tx_bytes_hasher = Rc::new(RefCell::new(Keccak::v256()));
+        let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
         let mut executor = EvmExecutorBuilder::new(&zktrie_state)
             .hardfork_config(fork_config)
             .with_execute_hooks(|hooks| {
-                let hasher = tx_bytes_hasher.clone();
-                hooks.add_tx_rlp_handler(move |_, rlp| {
-                    hasher.borrow_mut().update(rlp);
+                hooks.add_tx_rlp_handler(|_, rlp| {
+                    tx_bytes_hasher.borrow_mut().update(rlp);
                 });
             })
             .zktrie_state(&zktrie_state)
@@ -162,8 +163,7 @@ mod tests {
         drop(executor); // drop executor to release Rc<Keccek>
 
         let mut tx_bytes_hash = H256::zero();
-        let hasher = Rc::into_inner(tx_bytes_hasher).unwrap();
-        hasher.into_inner().finalize(&mut tx_bytes_hash.0);
+        tx_bytes_hasher.into_inner().finalize(&mut tx_bytes_hash.0);
         let _public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
     }
 }

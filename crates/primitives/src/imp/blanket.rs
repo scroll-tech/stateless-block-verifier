@@ -1,6 +1,6 @@
-use crate::utils::ext::*;
-use eth_types::{Address, Transaction, H256};
-use revm::primitives::{AccessListItem, TransactTo, B256, U256};
+use crate::*;
+use eth_types::{Address, H256};
+use revm_primitives::{AccessListItem, TransactTo, B256, U256};
 
 impl<T: BlockTraceExt> BlockTraceExt for &T {
     #[inline(always)]
@@ -70,7 +70,7 @@ impl<T: BlockTraceRevmExt> BlockTraceRevmExt for &T {
     }
 
     #[inline(always)]
-    fn coinbase(&self) -> revm::precompile::Address {
+    fn coinbase(&self) -> revm_primitives::Address {
         (*self).coinbase()
     }
 
@@ -107,7 +107,7 @@ impl<T: BlockTraceRevmExt> BlockTraceRevmExt for &T {
 
 impl<T: BlockZktrieExt> BlockZktrieExt for &T {}
 
-impl<T: TxRevmExt> TxRevmExt for &T {
+impl<T: Transaction> Transaction for &T {
     #[inline(always)]
     fn raw_type(&self) -> u8 {
         (*self).raw_type()
@@ -118,7 +118,7 @@ impl<T: TxRevmExt> TxRevmExt for &T {
     }
 
     #[inline(always)]
-    fn caller(&self) -> revm::precompile::Address {
+    fn caller(&self) -> revm_primitives::Address {
         (*self).caller()
     }
 
@@ -143,7 +143,7 @@ impl<T: TxRevmExt> TxRevmExt for &T {
     }
 
     #[inline(always)]
-    fn data(&self) -> revm::precompile::Bytes {
+    fn data(&self) -> revm_primitives::Bytes {
         (*self).data()
     }
 
@@ -174,7 +174,7 @@ impl<T: TxRevmExt> TxRevmExt for &T {
         block_number: u64,
         transaction_index: usize,
         base_fee_per_gas: Option<U256>,
-    ) -> Transaction {
+    ) -> eth_types::Transaction {
         (*self).to_eth_tx(
             block_hash,
             block_number,

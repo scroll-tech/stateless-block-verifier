@@ -2,7 +2,7 @@ use clap::Args;
 use eth_types::l2_types::BlockTrace;
 use ethers_providers::{Http, Middleware, Provider};
 use futures::future::OptionFuture;
-use stateless_block_verifier::HardforkConfig;
+use sbv_core::HardforkConfig;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;

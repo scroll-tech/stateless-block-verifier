@@ -49,10 +49,6 @@ jobs:
     name: Clippy
     timeout-minutes: 30
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [ "--all-targets", "--bin stateless-block-verifier" ]
-        features: [ "--features=\"bin-deps\"", "--features=\"bin-deps, dev\"", "--all-features" ]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -61,8 +57,18 @@ jobs:
           components: clippy
       - name: cargo cache
         uses: Swatinem/rust-cache@v2
-      - name: clippy
-        run: cargo clippy --workspace ${{ matrix.target }} ${{ matrix.features }} -- -D warnings
+      - name: clippy default
+        run: cargo clippy --workspace -- -D warnings
+      - name: clippy dev
+        run: cargo clippy --workspace --features dev -- -D warnings
+      - name: clippy metrics
+        run: cargo clippy --workspace --features metrics -- -D warnings
+      - name: clippy all
+        run: cargo clippy --workspace --all-features -- -D warnings
+      - name: clippy test
+        run: cargo clippy --workspace --tests --features test -- -D warnings
+      - name: clippy test all
+        run: cargo clippy --workspace --tests --all-features -- -D warnings
 
   integration-tests:
     needs: [ clippy ]
@@ -88,5 +94,5 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo run --release --features bin-deps --package stateless-block-verifier --bin stateless-block-verifier -- -k run-file testdata/mainnet_blocks/flatten-proofs/*
-      - run: cargo run --release --features bin-deps --package stateless-block-verifier --bin stateless-block-verifier -- -k run-file testdata/sepolia_blocks/*
+      - run: cargo run --release --package stateless-block-verifier -- -k run-file testdata/mainnet_blocks/flatten-proofs/*
+      - run: cargo run --release --package stateless-block-verifier -- -k run-file testdata/sepolia_blocks/*

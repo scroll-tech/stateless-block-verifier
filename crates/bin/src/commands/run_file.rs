@@ -2,8 +2,8 @@ use crate::utils;
 use anyhow::bail;
 use clap::Args;
 use eth_types::{l2_types::BlockTrace, H256};
-use stateless_block_verifier::{ChunkInfo, EvmExecutorBuilder, HardforkConfig};
-use std::{cell::RefCell, path::PathBuf, rc::Rc};
+use sbv_core::{ChunkInfo, EvmExecutorBuilder, HardforkConfig};
+use std::{cell::RefCell, path::PathBuf};
 use tiny_keccak::{Hasher, Keccak};
 use tokio::task::JoinSet;
 
@@ -76,14 +76,13 @@ impl RunFileCommand {
         let fork_config = fork_config(traces[0].chain_id);
         let (chunk_info, mut zktrie_state) = ChunkInfo::from_block_traces(&traces);
 
-        let tx_bytes_hasher = Rc::new(RefCell::new(Keccak::v256()));
+        let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
         let mut executor = EvmExecutorBuilder::new(&zktrie_state)
             .hardfork_config(fork_config)
             .with_execute_hooks(|hooks| {
-                let hasher = tx_bytes_hasher.clone();
-                hooks.add_tx_rlp_handler(move |_, rlp| {
-                    hasher.borrow_mut().update(rlp);
+                hooks.add_tx_rlp_handler(|_, rlp| {
+                    tx_bytes_hasher.borrow_mut().update(rlp);
                 });
             })
             .build(&traces[0])?;
@@ -101,8 +100,7 @@ impl RunFileCommand {
         drop(executor);
 
         let mut tx_bytes_hash = H256::zero();
-        let hasher = Rc::into_inner(tx_bytes_hasher).unwrap();
-        hasher.into_inner().finalize(&mut tx_bytes_hash.0);
+        tx_bytes_hasher.into_inner().finalize(&mut tx_bytes_hash.0);
         let _public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
 
         dev_info!("[chunk mode] public input hash: {:?}", _public_input_hash);

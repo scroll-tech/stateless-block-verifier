@@ -1,10 +1,4 @@
-use crate::{
-    database::ReadOnlyDB,
-    error::VerificationError,
-    error::ZkTrieError,
-    utils::ext::{BlockTraceRevmExt, TxRevmExt},
-    HardforkConfig,
-};
+use crate::{database::ReadOnlyDB, error::VerificationError, error::ZkTrieError, HardforkConfig};
 use eth_types::{geth_types::TxType, H256, U256};
 use mpt_zktrie::{AccountData, ZktrieState};
 use revm::db::AccountState;
@@ -14,31 +8,31 @@ use revm::{
     db::CacheDB,
     primitives::{AccountInfo, Env, SpecId},
 };
+use sbv_primitives::{BlockTrace, Transaction};
 use std::fmt::Debug;
 
 mod builder;
-use crate::utils::ext::BlockTraceExt;
 pub use builder::EvmExecutorBuilder;
 
 /// Execute hooks
 pub mod hooks;
 
 /// EVM executor that handles the block.
-pub struct EvmExecutor {
+pub struct EvmExecutor<'a> {
     hardfork_config: HardforkConfig,
     db: CacheDB<ReadOnlyDB>,
     spec_id: SpecId,
-    hooks: hooks::ExecuteHooks,
+    hooks: hooks::ExecuteHooks<'a>,
 }
 
-impl EvmExecutor {
+impl EvmExecutor<'_> {
     /// Get reference to the DB
     pub fn db(&self) -> &CacheDB<ReadOnlyDB> {
         &self.db
     }
 
     /// Update the DB
-    pub fn update_db<T: BlockTraceExt>(&mut self, l2_trace: &T) -> Result<(), ZkTrieError> {
+    pub fn update_db<T: BlockTrace>(&mut self, l2_trace: &T) -> Result<(), ZkTrieError> {
         self.db.db.invalidate_storage_root_caches(
             self.db
                 .accounts
@@ -50,26 +44,20 @@ impl EvmExecutor {
     }
 
     /// Handle a block.
-    pub fn handle_block<T: BlockTraceRevmExt>(
-        &mut self,
-        l2_trace: &T,
-    ) -> Result<(), VerificationError> {
+    pub fn handle_block<T: BlockTrace>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
         measure_duration_histogram!(
             handle_block_duration_microseconds,
             self.handle_block_inner(l2_trace)
         )?;
 
         #[cfg(feature = "metrics")]
-        crate::metrics::REGISTRY.block_counter.inc();
+        sbv_utils::metrics::REGISTRY.block_counter.inc();
 
         Ok(())
     }
 
     #[inline(always)]
-    fn handle_block_inner<T: BlockTraceRevmExt>(
-        &mut self,
-        l2_trace: &T,
-    ) -> Result<(), VerificationError> {
+    fn handle_block_inner<T: BlockTrace>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
         self.hardfork_config
             .migrate(l2_trace.number(), &mut self.db)
             .unwrap();
@@ -176,7 +164,7 @@ impl EvmExecutor {
             .expect("infallible");
 
         #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
-        let mut debug_recorder = crate::utils::debug::DebugRecorder::new();
+        let mut debug_recorder = sbv_utils::DebugRecorder::new();
 
         for (addr, db_acc) in self.db.accounts.iter() {
             // If EVM didn't touch the account, we don't need to update it
@@ -276,7 +264,7 @@ impl EvmExecutor {
     }
 }
 
-impl Debug for EvmExecutor {
+impl Debug for EvmExecutor<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EvmExecutor")
             .field("db", &self.db)

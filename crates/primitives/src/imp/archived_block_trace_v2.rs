@@ -1,7 +1,7 @@
-use crate::utils::ext::*;
+use crate::*;
 use eth_types::l2_types::{ArchivedBlockTraceV2, ArchivedTransactionTrace, TransactionTrace};
-use eth_types::{Address, Transaction, H256};
-use revm::primitives::{AccessListItem, TransactTo, B256, U256};
+use eth_types::{Address, H256};
+use revm_primitives::{AccessListItem, TransactTo, B256, U256};
 use rkyv::Deserialize;
 
 impl BlockTraceExt for ArchivedBlockTraceV2 {
@@ -96,7 +96,7 @@ impl BlockTraceRevmExt for ArchivedBlockTraceV2 {
         self.chain_id
     }
     #[inline]
-    fn coinbase(&self) -> revm::primitives::Address {
+    fn coinbase(&self) -> revm_primitives::Address {
         self.coinbase.address.0.into()
     }
     #[inline]
@@ -120,10 +120,7 @@ impl BlockTraceRevmExt for ArchivedBlockTraceV2 {
     }
     #[inline]
     fn prevrandao(&self) -> Option<B256> {
-        self.header
-            .mix_hash
-            .as_ref()
-            .map(|h| revm::primitives::B256::from(h.0))
+        self.header.mix_hash.as_ref().map(|h| B256::from(h.0))
     }
     #[inline]
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
@@ -133,7 +130,7 @@ impl BlockTraceRevmExt for ArchivedBlockTraceV2 {
 
 impl BlockZktrieExt for ArchivedBlockTraceV2 {}
 
-impl TxRevmExt for ArchivedTransactionTrace {
+impl Transaction for ArchivedTransactionTrace {
     #[inline]
     fn raw_type(&self) -> u8 {
         self.type_
@@ -143,7 +140,7 @@ impl TxRevmExt for ArchivedTransactionTrace {
         B256::new(self.tx_hash.0)
     }
     #[inline]
-    fn caller(&self) -> revm::precompile::Address {
+    fn caller(&self) -> revm_primitives::Address {
         self.from.0.into()
     }
     #[inline]
@@ -166,8 +163,8 @@ impl TxRevmExt for ArchivedTransactionTrace {
         U256::from_limbs(self.value.0)
     }
     #[inline]
-    fn data(&self) -> revm::precompile::Bytes {
-        revm::precompile::Bytes::copy_from_slice(self.data.as_ref())
+    fn data(&self) -> revm_primitives::Bytes {
+        revm_primitives::Bytes::copy_from_slice(self.data.as_ref())
     }
     #[inline]
     fn nonce(&self) -> u64 {
@@ -202,7 +199,7 @@ impl TxRevmExt for ArchivedTransactionTrace {
         block_number: u64,
         transaction_index: usize,
         base_fee_per_gas: Option<U256>,
-    ) -> Transaction {
+    ) -> eth_types::Transaction {
         // FIXME: zero copy here pls
         let tx_trace: TransactionTrace =
             Deserialize::<TransactionTrace, _>::deserialize(self, &mut rkyv::Infallible).unwrap();
