@@ -54,9 +54,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = tr
 # [patch."https://github.com/scroll-tech/revm"]
 # revm = { path = "../revm/crates/revm" }
 
-[patch."https://github.com/scroll-tech/zktrie"]
-zktrie = { git = "https://github.com/scroll-tech//zktrie.git", branch = "lazy-commitment-for-rust-zktrie" }
-
 [dependencies.revm] # v40
 git = "https://github.com/scroll-tech/revm"
 branch = "scroll-evm-executor/v41"
