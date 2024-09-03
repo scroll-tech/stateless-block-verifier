@@ -8,7 +8,7 @@ use revm::{
     db::CacheDB,
     primitives::{AccountInfo, Env, SpecId},
 };
-use sbv_primitives::{BlockTrace, Transaction};
+use sbv_primitives::{Block, Transaction};
 use std::fmt::Debug;
 
 mod builder;
@@ -32,7 +32,7 @@ impl EvmExecutor<'_> {
     }
 
     /// Update the DB
-    pub fn update_db<T: BlockTrace>(&mut self, l2_trace: &T) -> Result<(), ZkTrieError> {
+    pub fn update_db<T: Block>(&mut self, l2_trace: &T) -> Result<(), ZkTrieError> {
         self.db.db.invalidate_storage_root_caches(
             self.db
                 .accounts
@@ -44,7 +44,7 @@ impl EvmExecutor<'_> {
     }
 
     /// Handle a block.
-    pub fn handle_block<T: BlockTrace>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
+    pub fn handle_block<T: Block>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
         measure_duration_histogram!(
             handle_block_duration_microseconds,
             self.handle_block_inner(l2_trace)
@@ -57,7 +57,7 @@ impl EvmExecutor<'_> {
     }
 
     #[inline(always)]
-    fn handle_block_inner<T: BlockTrace>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
+    fn handle_block_inner<T: Block>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
         self.hardfork_config
             .migrate(l2_trace.number(), &mut self.db)
             .unwrap();

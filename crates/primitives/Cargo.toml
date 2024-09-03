@@ -1,14 +1,21 @@
 [package]
 name = "sbv-primitives"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
 
 [dependencies]
-revm-primitives.workspace = true
+alloy = { workspace = true, features = ["consensus", "eips", "k256", "rlp", "serde"] }
+revm-primitives = { workspace = true, features = ["serde"] }
 rkyv.workspace = true
+serde = { workspace = true, features = ["derive"] }
+serde_with.workspace = true
 tiny-keccak.workspace = true
 
-eth-types.workspace = true
 mpt-zktrie.workspace = true
 
 sbv-utils.workspace = true
+
+[dev-dependencies]
+eth-types.workspace = true
+serde_json.workspace = true

@@ -2,7 +2,13 @@
 members = ["crates/*"]
 resolver = "2"
 
+[workspace.package]
+version = "0.3.0"
+edition = "2021"
+rust-version = "1.75"
+
 [workspace.dependencies]
+alloy = "0.3"
 hex = "0.4"
 itertools = "0.13.0" # for compatibility msrv 1.75
 once_cell = "1.19"
@@ -23,8 +29,9 @@ env_logger = "0.9"
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
 ethers-providers = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv", default-features = false }
 futures = "0.3"
-serde_json = "1.0"
 serde = "1.0"
+serde_json = "1.0"
+serde_with = "3.9"
 tokio = { version = "1", default-features = false }
 url = "2.5"
 
@@ -48,9 +55,9 @@ sbv-core = { path = "crates/core" }
 sbv-primitives = { path = "crates/primitives" }
 sbv-utils = { path = "crates/utils" }
 
-[workspace.dependencies.revm] # v41
+[workspace.dependencies.revm] # v42
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v41"
+branch = "scroll-evm-executor/v42"
 default-features = false
 features = [
     "scroll-default-handler",
@@ -59,9 +66,9 @@ features = [
     "optional_no_base_fee"
 ]
 
-[workspace.dependencies.revm-primitives] # v41
+[workspace.dependencies.revm-primitives] # v42
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v41"
+branch = "scroll-evm-executor/v42"
 default-features = false
 features = [
     "scroll-default-handler",
@@ -71,6 +78,10 @@ features = [
 ]
 
 [patch.crates-io]
+alloy = { git = "https://github.com/scroll-tech/alloy.git", branch = "rustc-1.75" }
+alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "rustc-1.75" }
+alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "rustc-1.75" }
+alloy-eip7702 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "rustc-1.75" }
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
 ethers-signers  = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
 primitive-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
