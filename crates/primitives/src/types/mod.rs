@@ -7,7 +7,8 @@ mod tx;
 pub use tx::{TransactionTrace, TxL1Msg, TypedTransaction};
 
 /// Block header
-#[derive(Deserialize, Default, Debug, Clone)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[archive(check_bytes)]
 pub struct BlockHeader {
     /// block number
     pub number: U256,
@@ -29,14 +30,16 @@ pub struct BlockHeader {
 }
 
 /// Coinbase
-#[derive(Deserialize, Default, Debug, Clone)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[archive(check_bytes)]
 pub struct Coinbase {
     /// address of coinbase
     pub address: Address,
 }
 
 /// Bytecode trace
-#[derive(Deserialize, Default, Debug, Clone)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[archive(check_bytes)]
 pub struct BytecodeTrace {
     /// bytecode
     pub code: Bytes,
@@ -44,7 +47,18 @@ pub struct BytecodeTrace {
 
 /// storage trace
 #[serde_as]
-#[derive(Deserialize, Default, Debug, Clone, Eq, PartialEq)]
+#[derive(
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    Deserialize,
+    Default,
+    Debug,
+    Clone,
+    Eq,
+    PartialEq,
+)]
+#[archive(check_bytes)]
 pub struct StorageTrace {
     /// root before
     #[serde(rename = "rootBefore")]
@@ -59,7 +73,8 @@ pub struct StorageTrace {
 }
 
 /// Legacy format of block trace
-#[derive(Deserialize, Default, Debug, Clone)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[archive(check_bytes)]
 pub struct BlockTrace {
     /// chain id
     #[serde(rename = "chainID", default)]

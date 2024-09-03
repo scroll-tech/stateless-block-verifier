@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-alloy = { workspace = true, features = ["consensus", "eips", "k256", "rlp", "serde"] }
+alloy = { workspace = true, features = ["consensus", "eips", "k256", "rlp", "rkyv", "serde"] }
 revm-primitives = { workspace = true, features = ["serde"] }
 rkyv.workspace = true
 serde = { workspace = true, features = ["derive"] }

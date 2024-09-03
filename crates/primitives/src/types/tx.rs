@@ -54,7 +54,8 @@ pub struct TxL1Msg {
 
 /// Transaction Trace
 #[serde_as]
-#[derive(Deserialize, Default, Debug, Clone)]
+#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[archive(check_bytes)]
 pub struct TransactionTrace {
     /// tx hash
     #[serde(default, rename = "txHash")]

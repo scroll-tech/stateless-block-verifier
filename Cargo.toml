@@ -78,15 +78,23 @@ features = [
 ]
 
 [patch.crates-io]
-alloy = { git = "https://github.com/scroll-tech/alloy.git", branch = "rustc-1.75" }
-alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "rustc-1.75" }
-alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "rustc-1.75" }
-alloy-eip7702 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "rustc-1.75" }
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
 ethers-signers  = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
 primitive-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
 ethereum-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
 ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
+
+# patched add rkyv support & MSRV 1.75
+ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
+
+alloy = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.3.0" }
+alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.3.0" }
+
+alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.1.0" }
+alloy-eip7702 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.1.0" }
+
+alloy-core = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0"}
+alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0"}
 
 # ethers-core = { path = "../ethers-rs/ethers-core" }
 # ethers-providers = { path = "../ethers-rs/ethers-providers" }
