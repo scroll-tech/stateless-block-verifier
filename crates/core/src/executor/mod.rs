@@ -158,15 +158,15 @@ impl EvmExecutor<'_> {
     }
 
     /// Commit pending changes in cache db to zktrie
-    pub fn commit_changes(&mut self, zk_db: &Rc<ZkMemoryDb>) -> B256 {
+    pub fn commit_changes(&mut self, zktrie_db: &Rc<ZkMemoryDb>) -> B256 {
         measure_duration_histogram!(
             commit_changes_duration_microseconds,
-            cycle_track!(self.commit_changes_inner(zk_db), "commit_changes")
+            cycle_track!(self.commit_changes_inner(zktrie_db), "commit_changes")
         )
     }
 
-    fn commit_changes_inner(&mut self, zk_db: &Rc<ZkMemoryDb>) -> B256 {
-        let mut zktrie = zk_db
+    fn commit_changes_inner(&mut self, zktrie_db: &Rc<ZkMemoryDb>) -> B256 {
+        let mut zktrie = zktrie_db
             .new_trie(&self.db.db.committed_zktrie_root())
             .expect("infallible");
 
@@ -198,7 +198,7 @@ impl EvmExecutor<'_> {
                 let storage_root_before = storage_root;
                 // get storage tire
                 cycle_tracker_start!("update storage_tire");
-                let mut storage_trie = zk_db
+                let mut storage_trie = zktrie_db
                     .new_trie(storage_root_before.as_ref())
                     .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {

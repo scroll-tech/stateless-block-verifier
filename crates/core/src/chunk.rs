@@ -41,14 +41,14 @@ impl ChunkInfo {
         let mut data_hash = B256::ZERO;
         data_hasher.finalize(&mut data_hash.0);
 
-        let mut zk_db = ZkMemoryDb::new();
+        let mut zktrie_db = ZkMemoryDb::new();
         for trace in traces.iter() {
             measure_duration_histogram!(
-                build_zktrie_state_duration_microseconds,
-                trace.build_zktrie_state(&mut zk_db)
+                build_zktrie_db_duration_microseconds,
+                trace.build_zktrie_db(&mut zktrie_db)
             );
         }
-        let zk_db = Rc::new(zk_db);
+        let zktrie_db = Rc::new(zktrie_db);
 
         let info = ChunkInfo {
             chain_id,
@@ -58,7 +58,7 @@ impl ChunkInfo {
             data_hash,
         };
 
-        (info, zk_db)
+        (info, zktrie_db)
     }
 
     /// Public input hash for a given chunk is defined as
@@ -138,11 +138,11 @@ mod tests {
         });
 
         let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id());
-        let (chunk_info, zk_db) = ChunkInfo::from_block_traces(&traces);
+        let (chunk_info, zktrie_db) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
-        let mut executor = EvmExecutorBuilder::new(zk_db.clone())
+        let mut executor = EvmExecutorBuilder::new(zktrie_db.clone())
             .hardfork_config(fork_config)
             .with_execute_hooks(|hooks| {
                 hooks.add_tx_rlp_handler(|_, rlp| {
@@ -158,7 +158,7 @@ mod tests {
             executor.handle_block(trace).unwrap();
         }
 
-        let post_state_root = executor.commit_changes(&zk_db);
+        let post_state_root = executor.commit_changes(&zktrie_db);
         assert_eq!(post_state_root, chunk_info.post_state_root);
         drop(executor); // drop executor to release Rc<Keccek>
 

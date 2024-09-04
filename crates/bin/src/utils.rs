@@ -37,19 +37,19 @@ fn verify_inner<T: Block + Clone>(
         .build()
         .unwrap();
 
-    let zk_db = cycle_track!(
+    let zktrie_db = cycle_track!(
         {
-            let mut zk_db = ZkMemoryDb::new();
+            let mut zktrie_db = ZkMemoryDb::new();
             measure_duration_histogram!(
-                build_zktrie_state_duration_microseconds,
-                l2_trace.build_zktrie_state(&mut zk_db)
+                build_zktrie_db_duration_microseconds,
+                l2_trace.build_zktrie_db(&mut zktrie_db)
             );
-            Rc::new(zk_db)
+            Rc::new(zktrie_db)
         },
         "build ZktrieState"
     );
 
-    let mut executor = EvmExecutorBuilder::new(zk_db.clone())
+    let mut executor = EvmExecutorBuilder::new(zktrie_db.clone())
         .hardfork_config(*fork_config)
         .build(&l2_trace)?;
 
@@ -66,7 +66,7 @@ fn verify_inner<T: Block + Clone>(
         update_metrics_counter!(verification_error);
         e
     })?;
-    let revm_root_after = executor.commit_changes(&zk_db);
+    let revm_root_after = executor.commit_changes(&zktrie_db);
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

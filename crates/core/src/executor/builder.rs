@@ -9,7 +9,7 @@ use std::rc::Rc;
 pub struct EvmExecutorBuilder<'e, H> {
     hardfork_config: H,
     execute_hooks: ExecuteHooks<'e>,
-    zk_db: Rc<ZkMemoryDb>,
+    zktrie_db: Rc<ZkMemoryDb>,
 }
 
 impl fmt::Debug for EvmExecutorBuilder<'_, ()> {
@@ -17,18 +17,18 @@ impl fmt::Debug for EvmExecutorBuilder<'_, ()> {
         f.debug_struct("EvmExecutorBuilder")
             .field("hardfork_config", &self.hardfork_config)
             .field("execute_hooks", &self.execute_hooks)
-            .field("zk_db", &"...")
+            .field("zktrie_db", &"...")
             .finish()
     }
 }
 
 impl<'e> EvmExecutorBuilder<'e, ()> {
     /// Create a new builder.
-    pub fn new(zk_db: Rc<ZkMemoryDb>) -> Self {
+    pub fn new(zktrie_db: Rc<ZkMemoryDb>) -> Self {
         Self {
             hardfork_config: (),
             execute_hooks: ExecuteHooks::default(),
-            zk_db,
+            zktrie_db,
         }
     }
 }
@@ -39,7 +39,7 @@ impl<'e, H> EvmExecutorBuilder<'e, H> {
         EvmExecutorBuilder {
             hardfork_config,
             execute_hooks: self.execute_hooks,
-            zk_db: self.zk_db,
+            zktrie_db: self.zktrie_db,
         }
     }
 
@@ -50,8 +50,8 @@ impl<'e, H> EvmExecutorBuilder<'e, H> {
     }
 
     /// Set zktrie state.
-    pub fn zktrie_state(self, zk_db: Rc<ZkMemoryDb>) -> EvmExecutorBuilder<'e, H> {
-        EvmExecutorBuilder { zk_db, ..self }
+    pub fn zktrie_db(self, zktrie_db: Rc<ZkMemoryDb>) -> EvmExecutorBuilder<'e, H> {
+        EvmExecutorBuilder { zktrie_db, ..self }
     }
 }
 
@@ -64,7 +64,7 @@ impl<'e> EvmExecutorBuilder<'e, HardforkConfig> {
         dev_trace!("use spec id {:?}", spec_id);
 
         let db = cycle_track!(
-            CacheDB::new(ReadOnlyDB::new(l2_trace, &self.zk_db)?),
+            CacheDB::new(ReadOnlyDB::new(l2_trace, &self.zktrie_db)?),
             "build ReadOnlyDB"
         );
 

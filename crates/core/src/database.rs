@@ -45,15 +45,15 @@ impl fmt::Debug for ReadOnlyDB {
 
 impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
-    pub fn new<T: Block>(l2_trace: T, zk_db: &Rc<ZkMemoryDb>) -> Result<Self> {
+    pub fn new<T: Block>(l2_trace: T, zktrie_db: &Rc<ZkMemoryDb>) -> Result<Self> {
         let size_hint = l2_trace.codes().len();
-        Self::new_with_size_hint(l2_trace, zk_db, size_hint)
+        Self::new_with_size_hint(l2_trace, zktrie_db, size_hint)
     }
 
     /// Initialize an EVM database from a block trace with size hint of code database.
     pub fn new_with_size_hint<T: Block>(
         l2_trace: T,
-        zk_db: &Rc<ZkMemoryDb>,
+        zktrie_db: &Rc<ZkMemoryDb>,
         size_hint: usize,
     ) -> Result<Self> {
         init_hash_scheme();
@@ -76,8 +76,8 @@ impl ReadOnlyDB {
             prev_storage_roots: Default::default(),
             storage_trie_refs: Default::default(),
             committed_zktrie_root: uncommitted_zktrie_root,
-            zktrie_db: zk_db.clone(),
-            zktrie_db_ref: zk_db
+            zktrie_db: zktrie_db.clone(),
+            zktrie_db_ref: zktrie_db
                 .new_ref_trie(&uncommitted_zktrie_root.0)
                 .ok_or(ZkTrieError::ZkTrieRootNotFound)?,
         })
