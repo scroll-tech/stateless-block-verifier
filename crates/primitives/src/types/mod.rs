@@ -49,9 +49,9 @@ struct Coinbase {
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
-pub struct BytecodeTrace {
+struct BytecodeTrace {
     /// bytecode
-    pub code: Bytes,
+    code: Bytes,
 }
 
 /// storage trace
@@ -101,8 +101,7 @@ pub struct BlockTrace {
     header: BlockHeader,
     /// txs
     transactions: Vec<TransactionTrace>,
-    /// Accessed bytecodes with hashes
-    #[serde(default)]
+    /// bytecodes
     codes: Vec<BytecodeTrace>,
     /// storage trace BEFORE execution
     #[serde(rename = "storageTrace")]
