@@ -27,8 +27,6 @@ url.workspace = true
 
 sbv.workspace = true
 
-mpt-zktrie.workspace = true
-
 pprof = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, optional = true }
 

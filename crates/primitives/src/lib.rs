@@ -6,8 +6,9 @@ use alloy::{
     eips::eip2930::AccessList,
     primitives::{Bytes, ChainId, Signature, SignatureError, TxKind},
 };
-use mpt_zktrie::ZktrieState;
 use std::fmt::Debug;
+use std::sync::Once;
+use zktrie::ZkMemoryDb;
 
 /// Predeployed contracts
 pub mod predeployed;
@@ -18,6 +19,21 @@ pub use alloy::consensus as alloy_consensus;
 pub use alloy::consensus::Transaction;
 pub use alloy::primitives as alloy_primitives;
 pub use alloy::primitives::{Address, B256, U256};
+pub use zktrie as zk_trie;
+
+/// Initialize the hash scheme for zkTrie.
+pub fn init_hash_scheme() {
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        zktrie::init_hash_scheme_simple(|a: &[u8; 32], b: &[u8; 32], domain: &[u8; 32]| {
+            use poseidon_bn254::{hash_with_domain, Fr};
+            let a = Fr::from_bytes(a).into_option()?;
+            let b = Fr::from_bytes(b).into_option()?;
+            let domain = Fr::from_bytes(domain).into_option()?;
+            Some(hash_with_domain(&[a, b], domain).to_bytes())
+        });
+    });
+}
 
 /// Blanket trait for block trace extensions.
 pub trait Block: Debug {
@@ -70,9 +86,7 @@ pub trait Block: Debug {
 
     /// Update zktrie state from trace
     #[inline]
-    fn build_zktrie_state(&self, zktrie_state: &mut ZktrieState) {
-        let zk_db = zktrie_state.expose_db();
-
+    fn build_zktrie_state(&self, zk_db: &mut ZkMemoryDb) {
         for (k, bytes) in self.flatten_proofs() {
             zk_db.add_node_bytes(bytes, Some(k.as_slice())).unwrap();
         }

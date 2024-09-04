@@ -1,6 +1,6 @@
-use mpt_zktrie::ZktrieState;
 use revm::primitives::B256;
-use sbv_primitives::Block;
+use sbv_primitives::{zk_trie::ZkMemoryDb, Block};
+use std::rc::Rc;
 use tiny_keccak::{Hasher, Keccak};
 
 /// A chunk is a set of continuous blocks.
@@ -22,7 +22,7 @@ pub struct ChunkInfo {
 
 impl ChunkInfo {
     /// Construct by block traces
-    pub fn from_block_traces<T: Block>(traces: &[T]) -> (Self, ZktrieState) {
+    pub fn from_block_traces<T: Block>(traces: &[T]) -> (Self, Rc<ZkMemoryDb>) {
         let chain_id = traces.first().unwrap().chain_id();
         let prev_state_root = traces
             .first()
@@ -41,13 +41,14 @@ impl ChunkInfo {
         let mut data_hash = B256::ZERO;
         data_hasher.finalize(&mut data_hash.0);
 
-        let mut zktrie_state = ZktrieState::construct(prev_state_root.0.into());
+        let mut zk_db = ZkMemoryDb::new();
         for trace in traces.iter() {
             measure_duration_histogram!(
                 build_zktrie_state_duration_microseconds,
-                trace.build_zktrie_state(&mut zktrie_state)
+                trace.build_zktrie_state(&mut zk_db)
             );
         }
+        let zk_db = Rc::new(zk_db);
 
         let info = ChunkInfo {
             chain_id,
@@ -57,7 +58,7 @@ impl ChunkInfo {
             data_hash,
         };
 
-        (info, zktrie_state)
+        (info, zk_db)
     }
 
     /// Public input hash for a given chunk is defined as
@@ -137,18 +138,17 @@ mod tests {
         });
 
         let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id());
-        let (chunk_info, mut zktrie_state) = ChunkInfo::from_block_traces(&traces);
+        let (chunk_info, zk_db) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
-        let mut executor = EvmExecutorBuilder::new(&zktrie_state)
+        let mut executor = EvmExecutorBuilder::new(zk_db.clone())
             .hardfork_config(fork_config)
             .with_execute_hooks(|hooks| {
                 hooks.add_tx_rlp_handler(|_, rlp| {
                     tx_bytes_hasher.borrow_mut().update(rlp);
                 });
             })
-            .zktrie_state(&zktrie_state)
             .build(&traces[0])
             .unwrap();
         executor.handle_block(&traces[0]).unwrap();
@@ -158,7 +158,7 @@ mod tests {
             executor.handle_block(trace).unwrap();
         }
 
-        let post_state_root = executor.commit_changes(&mut zktrie_state);
+        let post_state_root = executor.commit_changes(&zk_db);
         assert_eq!(post_state_root, chunk_info.post_state_root);
         drop(executor); // drop executor to release Rc<Keccek>
 

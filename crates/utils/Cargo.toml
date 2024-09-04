@@ -15,8 +15,6 @@ workspace = true
 [dependencies]
 revm.workspace = true
 
-mpt-zktrie = { workspace = true, optional = true }
-
 csv = { workspace = true, optional = true }
 hyper = { workspace = true, optional = true }
 hyper-util = { workspace = true, optional = true }
@@ -32,7 +30,7 @@ rand.workspace = true
 reqwest.workspace = true
 
 [features]
-debug-account = ["dep:csv", "dep:mpt-zktrie", "dep:serde", "revm/serde"]
-debug-storage = ["dep:csv", "dep:mpt-zktrie", "dep:serde", "revm/serde"]
+debug-account = ["dep:csv", "dep:serde", "revm/serde"]
+debug-storage = ["dep:csv", "dep:serde", "revm/serde"]
 dev = ["dep:tracing"]
 metrics = ["dep:hyper", "dep:hyper-util", "dep:http-body-util", "dep:once_cell", "dep:prometheus-client", "dep:tokio", "tokio/macros", "tokio/signal"]

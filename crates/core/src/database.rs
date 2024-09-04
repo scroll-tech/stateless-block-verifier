@@ -1,16 +1,16 @@
 use crate::error::ZkTrieError;
-use mpt_zktrie::state::StorageData;
-use mpt_zktrie::{AccountData, ZktrieState};
 use once_cell::sync::Lazy;
-use revm::db::AccountState;
 use revm::{
-    db::DatabaseRef,
+    db::{AccountState, DatabaseRef},
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
 };
-use sbv_primitives::Block;
+use sbv_primitives::{
+    init_hash_scheme,
+    zk_trie::{SharedMemoryDb, ZkMemoryDb, ZkTrie},
+    Block,
+};
 use std::rc::Rc;
 use std::{cell::RefCell, collections::HashMap, convert::Infallible, fmt};
-use zktrie::{SharedMemoryDb, ZkMemoryDb, ZkTrie};
 
 type Result<T, E = ZkTrieError> = std::result::Result<T, E>;
 
@@ -26,11 +26,11 @@ pub struct ReadOnlyDB {
     /// Storage trie cache, avoid re-creating trie for the same account.
     /// Need to invalidate before `update`, otherwise the trie root may be outdated.
     storage_trie_refs: RefCell<HashMap<Address, Lazy<ZkTrie<SharedMemoryDb>, StorageTrieLazyFn>>>,
-    /// Current zkTrie root based on the block trace.
-    zktrie_root: B256,
+    /// Current uncommitted zkTrie root based on the block trace.
+    committed_zktrie_root: B256,
     /// The underlying zkTrie database.
     zktrie_db: Rc<ZkMemoryDb>,
-    /// Current view of zkTrie database with `zktrie_root`.
+    /// Current view of zkTrie database.
     zktrie_db_ref: ZkTrie<SharedMemoryDb>,
 }
 
@@ -38,24 +38,26 @@ impl fmt::Debug for ReadOnlyDB {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("ReadOnlyDB")
             .field("code_db", &self.code_db.len())
-            .field("zktrie_root", &self.zktrie_root)
+            .field("committed_zktrie_root", &self.committed_zktrie_root)
             .finish()
     }
 }
 
 impl ReadOnlyDB {
     /// Initialize an EVM database from a block trace.
-    pub fn new<T: Block>(l2_trace: T, zktrie_state: &ZktrieState) -> Result<Self> {
+    pub fn new<T: Block>(l2_trace: T, zk_db: &Rc<ZkMemoryDb>) -> Result<Self> {
         let size_hint = l2_trace.codes().len();
-        Self::new_with_size_hint(l2_trace, zktrie_state, size_hint)
+        Self::new_with_size_hint(l2_trace, zk_db, size_hint)
     }
 
     /// Initialize an EVM database from a block trace with size hint of code database.
     pub fn new_with_size_hint<T: Block>(
         l2_trace: T,
-        zktrie_state: &ZktrieState,
+        zk_db: &Rc<ZkMemoryDb>,
         size_hint: usize,
     ) -> Result<Self> {
+        init_hash_scheme();
+
         cycle_tracker_start!("insert CodeDB");
         let mut code_db = HashMap::with_capacity(size_hint);
         for code in l2_trace.codes() {
@@ -67,17 +69,16 @@ impl ReadOnlyDB {
         }
         cycle_tracker_end!("insert CodeDB");
 
-        let zktrie_root = l2_trace.root_before().0.into();
+        let uncommitted_zktrie_root = l2_trace.root_before();
 
         Ok(ReadOnlyDB {
             code_db,
             prev_storage_roots: Default::default(),
             storage_trie_refs: Default::default(),
-            zktrie_root,
-            zktrie_db: zktrie_state.zk_db.clone(),
-            zktrie_db_ref: zktrie_state
-                .zk_db
-                .new_ref_trie(&zktrie_root.0)
+            committed_zktrie_root: uncommitted_zktrie_root,
+            zktrie_db: zk_db.clone(),
+            zktrie_db_ref: zk_db
+                .new_ref_trie(&uncommitted_zktrie_root.0)
                 .ok_or(ZkTrieError::ZkTrieRootNotFound)?,
         })
     }
@@ -106,6 +107,18 @@ impl ReadOnlyDB {
             .unwrap_or_default()
     }
 
+    /// Get the zkTrie root.
+    #[inline]
+    pub(crate) fn committed_zktrie_root(&self) -> B256 {
+        self.committed_zktrie_root
+    }
+
+    /// Get the zkTrie root.
+    #[inline]
+    pub(crate) fn updated_committed_zktrie_root(&mut self, new_root: B256) {
+        self.committed_zktrie_root = new_root;
+    }
+
     /// Update the database with a new block trace.
     pub fn update<T: Block>(&mut self, l2_trace: T) -> Result<()> {
         measure_duration_histogram!(update_db_duration_microseconds, self.update_inner(l2_trace))
@@ -122,11 +135,9 @@ impl ReadOnlyDB {
         }
         cycle_tracker_end!("insert CodeDB");
 
-        self.zktrie_root = l2_trace.root_before().0.into();
-
         self.zktrie_db_ref = self
             .zktrie_db
-            .new_ref_trie(&self.zktrie_root.0)
+            .new_ref_trie(&l2_trace.root_before().0)
             .ok_or(ZkTrieError::ZkTrieRootNotFound)?;
 
         Ok(())
@@ -154,11 +165,15 @@ impl DatabaseRef for ReadOnlyDB {
         Ok(self
             .zktrie_db_ref
             .get_account(address.as_slice())
-            .map(AccountData::from)
             .map(|account_data| {
-                let code_hash = B256::from(account_data.keccak_code_hash.0);
+                let code_size =
+                    u64::from_be_bytes((&account_data[0][16..24]).try_into().unwrap()) as usize;
+                let nonce = u64::from_be_bytes((&account_data[0][24..]).try_into().unwrap());
+                let balance = U256::from_be_bytes(account_data[1]);
+                let code_hash = B256::from(account_data[3]);
+                let poseidon_code_hash = B256::from(account_data[4]);
 
-                let storage_root = account_data.storage_root;
+                let storage_root = B256::from(account_data[2]);
                 self.prev_storage_roots
                     .borrow_mut()
                     .entry(address)
@@ -174,11 +189,11 @@ impl DatabaseRef for ReadOnlyDB {
                     })),
                 );
                 AccountInfo {
-                    balance: U256::from_limbs(account_data.balance.0),
-                    nonce: account_data.nonce,
-                    code_size: account_data.code_size as usize,
+                    balance,
+                    nonce,
+                    code_size,
                     code_hash,
-                    poseidon_code_hash: B256::from(account_data.poseidon_code_hash.0),
+                    poseidon_code_hash,
                     code: self.code_db.get(&code_hash).cloned(),
                 }
             }))
@@ -208,8 +223,7 @@ impl DatabaseRef for ReadOnlyDB {
                 let storage_root = self
                     .zktrie_db_ref
                     .get_account(address.as_slice())
-                    .map(AccountData::from)
-                    .map(|account_data| account_data.storage_root)
+                    .map(|account_data| B256::from(account_data[2]))
                     .unwrap_or_default();
                 let zktrie_db = self.zktrie_db.clone();
                 Lazy::new(Box::new(move || {
@@ -222,8 +236,7 @@ impl DatabaseRef for ReadOnlyDB {
 
         Ok(trie
             .get_store(&index.to_be_bytes::<32>())
-            .map(StorageData::from)
-            .map(|val| U256::from_limbs(val.as_ref().0))
+            .map(|store_data| U256::from_be_bytes(store_data))
             .unwrap_or_default())
     }
 
