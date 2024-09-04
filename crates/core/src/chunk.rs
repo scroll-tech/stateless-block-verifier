@@ -115,6 +115,7 @@ impl ChunkInfo {
 mod tests {
     use super::*;
     use crate::{EvmExecutorBuilder, HardforkConfig};
+    use revm::primitives::b256;
     use sbv_primitives::types::BlockTrace;
     use std::cell::RefCell;
 
@@ -164,6 +165,10 @@ mod tests {
 
         let mut tx_bytes_hash = B256::ZERO;
         tx_bytes_hasher.into_inner().finalize(&mut tx_bytes_hash.0);
-        let _public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
+        let public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
+        assert_eq!(
+            public_input_hash,
+            b256!("764bffabc9fd4227d447a46d8bb04e5448ed64d89d6e5f4215fcf3593e00f109")
+        );
     }
 }

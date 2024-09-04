@@ -3130,7 +3130,7 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 
 [[package]]
 name = "sbv"
-version = "0.3.0"
+version = "2.0.0"
 dependencies = [
  "sbv-core",
  "sbv-primitives",
@@ -3139,7 +3139,7 @@ dependencies = [
 
 [[package]]
 name = "sbv-core"
-version = "0.3.0"
+version = "2.0.0"
 dependencies = [
  "ctor",
  "hex",
@@ -3158,7 +3158,7 @@ dependencies = [
 
 [[package]]
 name = "sbv-primitives"
-version = "0.3.0"
+version = "2.0.0"
 dependencies = [
  "alloy",
  "poseidon-bn254",
@@ -3172,7 +3172,7 @@ dependencies = [
 
 [[package]]
 name = "sbv-utils"
-version = "0.3.0"
+version = "2.0.0"
 dependencies = [
  "csv",
  "http-body-util",
@@ -3474,7 +3474,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "stateless-block-verifier"
-version = "0.3.0"
+version = "2.0.0"
 dependencies = [
  "alloy",
  "anyhow",
