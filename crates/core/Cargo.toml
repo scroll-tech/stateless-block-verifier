@@ -13,7 +13,6 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-alloy = { workspace = true, features = ["consensus"] }
 hex.workspace = true
 once_cell.workspace = true
 revm.workspace = true

@@ -2,7 +2,7 @@
 
 use crate::types::{TxL1Msg, TypedTransaction};
 use alloy::{
-    consensus::SignableTransaction,
+    consensus::{SignableTransaction, TxEip1559, TxEip2930, TxEnvelope, TxLegacy},
     eips::eip2930::AccessList,
     primitives::{Bytes, ChainId, Signature, SignatureError, TxKind},
 };
@@ -15,7 +15,7 @@ pub mod predeployed;
 pub mod types;
 
 pub use alloy::consensus as alloy_consensus;
-pub use alloy::consensus::{Transaction, TxEip1559, TxEip2930, TxEnvelope, TxLegacy};
+pub use alloy::consensus::Transaction;
 pub use alloy::primitives as alloy_primitives;
 pub use alloy::primitives::{Address, B256, U256};
 

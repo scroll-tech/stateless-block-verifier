@@ -1,3 +1,5 @@
+//! Stateless Block Verifier
+
 #[macro_use]
 extern crate sbv;
 

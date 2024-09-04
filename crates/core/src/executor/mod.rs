@@ -101,10 +101,6 @@ impl EvmExecutor<'_> {
                     .map(U256::from)
                     .ok_or_else(|| VerificationError::InvalidGasPrice {
                         tx_hash: *tx.tx_hash(),
-                        ty: tx.ty(),
-                        max_fee_per_gas: tx.max_fee_per_gas(),
-                        max_priority_fee_per_gas: tx.max_priority_fee_per_gas(),
-                        base_fee_per_gas: l2_trace.base_fee_per_gas(),
                     })?,
                 transact_to: tx.to(),
                 value: tx.value(),

@@ -1,6 +1,5 @@
 use revm::primitives::alloy_primitives::SignatureError;
 use revm::primitives::{EVMError, B256};
-use sbv_primitives::U256;
 use std::convert::Infallible;
 
 /// Error variants encountered during manipulation of a zkTrie.
@@ -29,24 +28,10 @@ pub enum VerificationError {
         source: SignatureError,
     },
     /// Invalid gas price
-    #[error("invalid gas price for tx_hash={tx_hash}: ty={ty}, max_fee_per_gas={max_fee_per_gas}, max_priority_fee_per_gas={max_priority_fee_per_gas:?}, base_fee_per_gas={base_fee_per_gas:?}")]
+    #[error("invalid gas price for tx_hash={tx_hash}")]
     InvalidGasPrice {
         /// The tx hash.
         tx_hash: B256,
-        /// The transaction type.
-        ty: u8,
-        /// The EIP-1559 the maximum fee per gas the caller is willing to pay.
-        ///
-        /// For legacy transactions this is `gas_price`.
-        ///
-        /// This is also commonly referred to as the "Gas Fee Cap".
-        max_fee_per_gas: u128,
-        /// The EIP-1559 Priority fee the caller is paying to the block author.
-        ///
-        /// This is `None` for non-EIP1559 transactions
-        max_priority_fee_per_gas: Option<u128>,
-        /// The base fee per gas.
-        base_fee_per_gas: Option<U256>,
     },
     /// Error encountered from [`revm`].
     #[error("error encountered from revm for tx_hash={tx_hash}: {source}")]
