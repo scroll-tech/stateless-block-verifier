@@ -20,10 +20,6 @@ rkyv.workspace = true
 thiserror.workspace = true
 tiny-keccak.workspace = true
 
-# dependencies from scroll-tech
-mpt-zktrie.workspace = true
-zktrie.workspace = true
-
 sbv-primitives.workspace = true
 sbv-utils.workspace = true
 

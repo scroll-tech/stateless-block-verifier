@@ -17,7 +17,7 @@ pub struct Registry {
 
     pub verification_error: Counter,
 
-    pub build_zktrie_state_duration_microseconds: Histogram,
+    pub build_zktrie_db_duration_microseconds: Histogram,
     pub update_db_duration_microseconds: Histogram,
     pub handle_block_duration_microseconds: Histogram,
     pub commit_changes_duration_microseconds: Histogram,
@@ -55,11 +55,11 @@ pub(super) fn init() -> Registry {
         verification_error.clone(),
     );
 
-    let build_zktrie_state_duration_microseconds = Histogram::new(linear_buckets(50.0, 50.0, 10));
+    let build_zktrie_db_duration_microseconds = Histogram::new(linear_buckets(50.0, 50.0, 10));
     registry.register(
-        "build_zktrie_state_duration",
-        "Duration of build_zktrie_state in microseconds",
-        build_zktrie_state_duration_microseconds.clone(),
+        "build_zktrie_db_duration",
+        "Duration of build_zktrie_db_duration in microseconds",
+        build_zktrie_db_duration_microseconds.clone(),
     );
 
     let update_db_duration_microseconds = Histogram::new(linear_buckets(2.0, 4.0, 10));
@@ -100,7 +100,7 @@ pub(super) fn init() -> Registry {
 
         verification_error,
 
-        build_zktrie_state_duration_microseconds,
+        build_zktrie_db_duration_microseconds,
         update_db_duration_microseconds,
         handle_block_duration_microseconds,
         commit_changes_duration_microseconds,

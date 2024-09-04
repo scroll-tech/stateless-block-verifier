@@ -19,7 +19,8 @@ serde = { workspace = true, features = ["derive"] }
 serde_with.workspace = true
 tiny-keccak.workspace = true
 
-mpt-zktrie.workspace = true
+poseidon-bn254.workspace = true
+zktrie.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

@@ -1,4 +1,3 @@
-use mpt_zktrie::AccountData;
 use revm::primitives::{Address, B256, U256};
 use std::collections::BTreeMap;
 
@@ -7,6 +6,17 @@ struct StorageOps {
     kind: &'static str,
     key: U256,
     value: Option<U256>,
+}
+
+#[derive(Debug, serde::Serialize)]
+struct AccountData {
+    addr: Address,
+    nonce: u64,
+    balance: U256,
+    code_hash: B256,
+    poseidon_code_hash: B256,
+    code_size: u64,
+    storage_root: B256,
 }
 
 /// Debug recorder for recording account and storage data.
@@ -28,8 +38,29 @@ impl DebugRecorder {
 
     /// Record the account data.
     #[cfg(feature = "debug-account")]
-    pub fn record_account(&mut self, addr: Address, data: AccountData) {
-        self.accounts.insert(addr, data);
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_account(
+        &mut self,
+        addr: Address,
+        nonce: u64,
+        balance: U256,
+        code_hash: B256,
+        poseidon_code_hash: B256,
+        code_size: u64,
+        storage_root: B256,
+    ) {
+        self.accounts.insert(
+            addr,
+            AccountData {
+                addr,
+                nonce,
+                balance,
+                code_hash,
+                poseidon_code_hash,
+                code_size,
+                storage_root,
+            },
+        );
     }
 
     /// Record the storage root of an account.
@@ -72,28 +103,8 @@ impl Drop for DebugRecorder {
                 .expect("failed to create debug file");
             let mut wtr = csv::Writer::from_writer(output);
 
-            #[derive(serde::Serialize)]
-            pub struct AccountData {
-                addr: Address,
-                nonce: u64,
-                balance: U256,
-                keccak_code_hash: B256,
-                poseidon_code_hash: B256,
-                code_size: u64,
-                storage_root: B256,
-            }
-
-            for (addr, acc) in self.accounts.iter() {
-                wtr.serialize(AccountData {
-                    addr: *addr,
-                    nonce: acc.nonce,
-                    balance: U256::from_limbs(acc.balance.0),
-                    keccak_code_hash: acc.keccak_code_hash.0.into(),
-                    poseidon_code_hash: acc.poseidon_code_hash.0.into(),
-                    code_size: acc.code_size,
-                    storage_root: acc.storage_root.0.into(),
-                })
-                .expect("failed to write record");
+            for (_, acc) in self.accounts.iter() {
+                wtr.serialize(acc).expect("failed to write record");
             }
         }
 

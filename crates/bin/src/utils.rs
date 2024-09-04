@@ -1,8 +1,9 @@
-use mpt_zktrie::ZktrieState;
+use sbv::primitives::zk_trie::ZkMemoryDb;
 use sbv::{
     core::{EvmExecutorBuilder, HardforkConfig, VerificationError},
     primitives::Block,
 };
+use std::rc::Rc;
 
 pub fn verify<T: Block + Clone>(
     l2_trace: T,
@@ -36,20 +37,19 @@ fn verify_inner<T: Block + Clone>(
         .build()
         .unwrap();
 
-    let mut zktrie_state = cycle_track!(
+    let zktrie_db = cycle_track!(
         {
-            let old_root = l2_trace.root_before();
-            let mut zktrie_state = ZktrieState::construct(old_root.0.into());
+            let mut zktrie_db = ZkMemoryDb::new();
             measure_duration_histogram!(
-                build_zktrie_state_duration_microseconds,
-                l2_trace.build_zktrie_state(&mut zktrie_state)
+                build_zktrie_db_duration_microseconds,
+                l2_trace.build_zktrie_db(&mut zktrie_db)
             );
-            zktrie_state
+            Rc::new(zktrie_db)
         },
         "build ZktrieState"
     );
 
-    let mut executor = EvmExecutorBuilder::new(&zktrie_state)
+    let mut executor = EvmExecutorBuilder::new(zktrie_db.clone())
         .hardfork_config(*fork_config)
         .build(&l2_trace)?;
 
@@ -66,7 +66,7 @@ fn verify_inner<T: Block + Clone>(
         update_metrics_counter!(verification_error);
         e
     })?;
-    let revm_root_after = executor.commit_changes(&mut zktrie_state);
+    let revm_root_after = executor.commit_changes(&zktrie_db);
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

@@ -20,7 +20,7 @@ thiserror = "1.0"
 tiny-keccak = "2.0"
 
 # dependencies from scroll-tech
-mpt-zktrie = { git = "https://github.com/scroll-tech/zkevm-circuits", branch = "feat/rkyv" }
+poseidon-bn254 = { git = "https://github.com/scroll-tech/poseidon-bn254", branch = "master" }
 zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "main", features= ["rs_zktrie"] }
 
 # binary dependencies
@@ -86,7 +86,6 @@ missing-debug-implementations = "deny"
 
 [patch.crates-io]
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
-ethers-signers  = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
 primitive-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
 ethereum-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
 ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
@@ -107,13 +106,10 @@ alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch =
 # ethers-providers = { path = "../ethers-rs/ethers-providers" }
 # ethers = { path = "../ethers-rs/ethers" }
 # ethers-etherscan = { path = "../ethers-rs/ethers-etherscan" }
-# ethers-signers  = { path = "../ethers-rs/ethers-signers" }
 # primitive-types = { path = "../parity-common/primitive-types" }
 # ethereum-types = { path = "../parity-common/ethereum-types" }
 
 # for local development
-# [patch."https://github.com/scroll-tech/zkevm-circuits"]
-# mpt-zktrie = { path = "../zkevm-circuits/zktrie" }
 # [patch."https://github.com/scroll-tech/revm"]
 # revm = { path = "../revm/crates/revm" }
 
