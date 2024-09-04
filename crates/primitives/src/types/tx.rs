@@ -1,15 +1,12 @@
 use crate::TxTrace;
 use alloy::{
-    consensus::{
-        SignableTransaction, Transaction, TxEip1559, TxEip2930, TxEnvelope, TxLegacy, TxType,
-    },
+    consensus::{Transaction, TxEnvelope, TxType},
     eips::eip2718::Encodable2718,
     eips::{eip2930::AccessList, eip7702::SignedAuthorization},
     primitives::{Address, Bytes, ChainId, Signature, SignatureError, TxKind, B256, U256, U64},
     rlp::{BufMut, BytesMut, Encodable, Header},
 };
 use revm_primitives::TxEnv;
-use serde::Deserialize;
 use serde_with::{serde_as, DefaultOnNull};
 
 /// Wrapped Ethereum Transaction
@@ -54,8 +51,11 @@ pub struct TxL1Msg {
 
 /// Transaction Trace
 #[serde_as]
-#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[derive(
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, serde::Deserialize, Default, Debug, Clone,
+)]
 #[archive(check_bytes)]
+#[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct TransactionTrace {
     /// tx hash
     #[serde(default, rename = "txHash")]
@@ -103,93 +103,135 @@ pub struct TransactionTrace {
 }
 
 impl TxTrace for TransactionTrace {
-    fn tx_hash(&self) -> &B256 {
-        &self.tx_hash
+    fn tx_hash(&self) -> B256 {
+        self.tx_hash
+    }
+
+    fn ty(&self) -> u8 {
+        self.ty
     }
 
     fn nonce(&self) -> u64 {
         self.nonce
     }
 
-    fn ty(&self) -> u8 {
-        self.ty
+    fn gas_limit(&self) -> u128 {
+        self.gas as u128
+    }
+
+    fn gas_price(&self) -> u128 {
+        self.gas_price.to()
+    }
+
+    fn max_fee_per_gas(&self) -> u128 {
+        self.gas_fee_cap.map(|v| v.to()).unwrap_or_default()
+    }
+
+    fn max_priority_fee_per_gas(&self) -> u128 {
+        self.gas_tip_cap.map(|v| v.to()).unwrap_or_default()
+    }
+
+    unsafe fn get_from_unchecked(&self) -> Address {
+        self.from
+    }
+
+    fn to(&self) -> TxKind {
+        if self.is_create {
+            TxKind::Create
+        } else {
+            debug_assert!(self.to.map(|a| !a.is_zero()).unwrap_or(false));
+            TxKind::Call(self.to.expect("to address must be present"))
+        }
+    }
+
+    fn chain_id(&self) -> ChainId {
+        self.chain_id.to()
+    }
+
+    fn value(&self) -> U256 {
+        self.value
+    }
+
+    fn data(&self) -> Bytes {
+        self.data.clone()
+    }
+
+    fn access_list(&self) -> AccessList {
+        self.access_list.clone()
+    }
+
+    fn signature(&self) -> Result<Signature, SignatureError> {
+        Signature::from_rs_and_parity(self.r, self.s, self.v)
     }
 }
 
-impl TryFrom<TransactionTrace> for TypedTransaction {
-    type Error = SignatureError;
-    fn try_from(tx: TransactionTrace) -> Result<Self, Self::Error> {
-        let chain_id: ChainId = tx.chain_id.to();
-        let tx_kind = if tx.is_create {
+impl TxTrace for ArchivedTransactionTrace {
+    fn tx_hash(&self) -> B256 {
+        self.tx_hash
+    }
+
+    fn ty(&self) -> u8 {
+        self.ty
+    }
+
+    fn nonce(&self) -> u64 {
+        self.nonce
+    }
+
+    fn gas_limit(&self) -> u128 {
+        self.gas as u128
+    }
+
+    fn gas_price(&self) -> u128 {
+        self.gas_price.to()
+    }
+
+    fn max_fee_per_gas(&self) -> u128 {
+        self.gas_fee_cap
+            .as_ref()
+            .map(|v| v.to())
+            .unwrap_or_default()
+    }
+
+    fn max_priority_fee_per_gas(&self) -> u128 {
+        self.gas_tip_cap
+            .as_ref()
+            .map(|v| v.to())
+            .unwrap_or_default()
+    }
+
+    unsafe fn get_from_unchecked(&self) -> Address {
+        self.from
+    }
+
+    fn to(&self) -> TxKind {
+        if self.is_create {
             TxKind::Create
         } else {
-            debug_assert!(tx.to.map(|a| !a.is_zero()).unwrap_or(false));
-            TxKind::Call(tx.to.expect("to address must be present"))
-        };
+            debug_assert!(self.to.as_ref().map(|a| !a.is_zero()).unwrap_or(false));
+            TxKind::Call(*self.to.as_ref().expect("to address must be present"))
+        }
+    }
 
-        let tx = match tx.ty {
-            0x0 => {
-                let sig = Signature::from_rs_and_parity(tx.r, tx.s, tx.v)?;
-                let tx = TxLegacy {
-                    chain_id: if chain_id >= 35 { Some(chain_id) } else { None },
-                    nonce: tx.nonce,
-                    gas_price: tx.gas_price.to(),
-                    gas_limit: tx.gas as u128,
-                    to: tx_kind,
-                    value: tx.value,
-                    input: tx.data,
-                };
+    fn chain_id(&self) -> ChainId {
+        self.chain_id.to()
+    }
 
-                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(sig)))
-            }
-            0x1 => {
-                let sig = Signature::from_rs_and_parity(tx.r, tx.s, tx.v)?;
-                let tx = TxEip2930 {
-                    chain_id,
-                    nonce: tx.nonce,
-                    gas_price: tx.gas_price.to(),
-                    gas_limit: tx.gas as u128,
-                    to: tx_kind,
-                    value: tx.value,
-                    access_list: tx.access_list,
-                    input: tx.data,
-                };
+    fn value(&self) -> U256 {
+        self.value
+    }
 
-                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(sig)))
-            }
-            0x02 => {
-                let sig = Signature::from_rs_and_parity(tx.r, tx.s, tx.v)?;
-                let tx = TxEip1559 {
-                    chain_id,
-                    nonce: tx.nonce,
-                    max_fee_per_gas: tx.gas_fee_cap.unwrap_or_default().to(),
-                    max_priority_fee_per_gas: tx.gas_tip_cap.unwrap_or_default().to(),
-                    gas_limit: tx.gas as u128,
-                    to: tx_kind,
-                    value: tx.value,
-                    access_list: tx.access_list,
-                    input: tx.data,
-                };
+    fn data(&self) -> Bytes {
+        Bytes::copy_from_slice(self.data.as_ref())
+    }
 
-                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(sig)))
-            }
-            0x7e => {
-                let tx = TxL1Msg {
-                    tx_hash: tx.tx_hash,
-                    from: tx.from,
-                    nonce: tx.nonce,
-                    gas_limit: tx.gas as u128,
-                    to: tx_kind,
-                    value: tx.value,
-                    input: tx.data,
-                };
+    fn access_list(&self) -> AccessList {
+        rkyv::Deserialize::<AccessList, _>::deserialize(&self.access_list, &mut rkyv::Infallible)
+            .unwrap()
+    }
 
-                TypedTransaction::L1Msg(tx)
-            }
-            _ => unimplemented!("unsupported tx type: {}", tx.ty),
-        };
-
-        Ok(tx)
+    fn signature(&self) -> Result<Signature, SignatureError> {
+        Signature::from_rs_and_parity(self.r, self.s, self.v)
     }
 }
 
@@ -426,7 +468,7 @@ impl TypedTransaction {
     /// Get the caller of the transaction, recover the signer if the transaction is enveloped.
     ///
     /// Fails if the transaction is enveloped and recovering the signer fails.
-    pub fn caller(&self) -> Result<Address, SignatureError> {
+    pub fn get_or_recover_signer(&self) -> Result<Address, SignatureError> {
         match self {
             TypedTransaction::Enveloped(tx) => tx.recover_signer(),
             TypedTransaction::L1Msg(tx) => Ok(tx.from),
@@ -459,7 +501,7 @@ impl TypedTransaction {
     /// creates [`revm::primitives::TxEnv`]
     pub fn tx_env(&self) -> Result<TxEnv, SignatureError> {
         Ok(TxEnv {
-            caller: self.caller()?,
+            caller: self.get_or_recover_signer()?,
             gas_limit: self.gas_limit() as u64,
             gas_price: self
                 .gas_price()
@@ -509,7 +551,7 @@ mod tests {
         let txs = trace["transactions"].clone();
         for tx in txs.as_array().unwrap() {
             let tx: TransactionTrace = serde_json::from_value(tx.clone()).unwrap();
-            let _ = TypedTransaction::try_from(tx).unwrap();
+            let _ = tx.try_build_typed_tx().unwrap();
         }
     }
 
@@ -530,7 +572,7 @@ mod tests {
             );
             let eth_rlp = eth_tx.rlp();
 
-            let tx = TypedTransaction::try_from(tx).unwrap();
+            let tx = tx.try_build_typed_tx().unwrap();
             let tx_rlp = tx.rlp();
 
             assert_eq!(eth_rlp.as_ref(), tx_rlp.as_ref(), "tx: {}", idx);
@@ -540,7 +582,7 @@ mod tests {
             serde_json::from_str(L1_MSG_TX).unwrap();
         let eth_l1_msg_tx = eth_l1_msg_tx.to_eth_tx(None, None, None, Some(0x2605c9c.into()));
         let l1_msg_tx: TransactionTrace = serde_json::from_str(L1_MSG_TX).unwrap();
-        let l1_msg_tx = TypedTransaction::try_from(l1_msg_tx).unwrap();
+        let l1_msg_tx = l1_msg_tx.try_build_typed_tx().unwrap();
 
         let eth_rlp = eth_l1_msg_tx.rlp();
         let tx_rlp = l1_msg_tx.rlp();

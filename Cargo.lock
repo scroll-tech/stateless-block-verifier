@@ -3704,7 +3704,7 @@ dependencies = [
 [[package]]
 name = "ruint"
 version = "1.12.3"
-source = "git+https://github.com/scroll-tech/uint.git?branch=v1.12.3#ee7f95e8634e0de4ddc2f909db6d0316f5e64095"
+source = "git+https://github.com/scroll-tech/uint.git?branch=v1.12.3#6d6f74be1169bdc41052f50ddfb66ae96bf78475"
 dependencies = [
  "alloy-rlp",
  "ark-ff 0.3.0",
@@ -3728,7 +3728,7 @@ dependencies = [
 [[package]]
 name = "ruint-macro"
 version = "1.2.1"
-source = "git+https://github.com/scroll-tech/uint.git?branch=v1.12.3#ee7f95e8634e0de4ddc2f909db6d0316f5e64095"
+source = "git+https://github.com/scroll-tech/uint.git?branch=v1.12.3#6d6f74be1169bdc41052f50ddfb66ae96bf78475"
 
 [[package]]
 name = "rustc-demangle"
@@ -3874,7 +3874,6 @@ name = "sbv-primitives"
 version = "0.3.0"
 dependencies = [
  "alloy",
- "eth-types",
  "mpt-zktrie",
  "revm-primitives 9.0.0",
  "rkyv",

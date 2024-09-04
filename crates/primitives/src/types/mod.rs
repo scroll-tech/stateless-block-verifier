@@ -4,11 +4,12 @@ use serde::Deserialize;
 use serde_with::{serde_as, Map};
 
 mod tx;
-pub use tx::{TransactionTrace, TxL1Msg, TypedTransaction};
+pub use tx::{ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransaction};
 
 /// Block header
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
 #[archive(check_bytes)]
+#[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BlockHeader {
     /// block number
     pub number: U256,
@@ -32,6 +33,7 @@ pub struct BlockHeader {
 /// Coinbase
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
 #[archive(check_bytes)]
+#[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct Coinbase {
     /// address of coinbase
     pub address: Address,
@@ -40,6 +42,7 @@ pub struct Coinbase {
 /// Bytecode trace
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
 #[archive(check_bytes)]
+#[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BytecodeTrace {
     /// bytecode
     pub code: Bytes,
@@ -59,6 +62,7 @@ pub struct BytecodeTrace {
     PartialEq,
 )]
 #[archive(check_bytes)]
+#[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct StorageTrace {
     /// root before
     #[serde(rename = "rootBefore")]
@@ -69,12 +73,13 @@ pub struct StorageTrace {
     /// proofs
     #[serde(rename = "flattenProofs")]
     #[serde_as(as = "Map<_, _>")]
-    flatten_proofs: Vec<(B256, eth_types::Bytes)>,
+    flatten_proofs: Vec<(B256, Bytes)>,
 }
 
 /// Legacy format of block trace
 #[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
 #[archive(check_bytes)]
+#[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BlockTrace {
     /// chain id
     #[serde(rename = "chainID", default)]
@@ -165,9 +170,81 @@ impl Block for BlockTrace {
     }
 }
 
+impl Block for ArchivedBlockTrace {
+    type Tx = ArchivedTransactionTrace;
+
+    fn number(&self) -> u64 {
+        self.header.number.to()
+    }
+
+    fn block_hash(&self) -> B256 {
+        self.header.hash
+    }
+
+    fn chain_id(&self) -> u64 {
+        self.chain_id
+    }
+
+    fn coinbase(&self) -> Address {
+        self.coinbase.address
+    }
+
+    fn timestamp(&self) -> U256 {
+        self.header.timestamp
+    }
+
+    fn gas_limit(&self) -> U256 {
+        self.header.gas_limit
+    }
+
+    fn base_fee_per_gas(&self) -> Option<U256> {
+        self.header.base_fee_per_gas.as_ref().copied()
+    }
+
+    fn difficulty(&self) -> U256 {
+        self.header.difficulty
+    }
+
+    fn prevrandao(&self) -> Option<B256> {
+        self.header.mix_hash.as_ref().copied()
+    }
+
+    fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
+        self.transactions.iter()
+    }
+
+    fn root_before(&self) -> B256 {
+        self.storage_trace.root_before
+    }
+
+    fn root_after(&self) -> B256 {
+        self.storage_trace.root_after
+    }
+
+    fn withdraw_root(&self) -> B256 {
+        self.withdraw_trie_root
+    }
+
+    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]> {
+        self.codes.iter().map(|code| code.code.as_ref())
+    }
+
+    fn start_l1_queue_index(&self) -> u64 {
+        self.start_l1_queue_index
+    }
+
+    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])> {
+        self.storage_trace
+            .flatten_proofs
+            .iter()
+            .map(|(k, v)| (k, v.as_ref()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::TxTrace;
     use alloy::primitives::*;
 
     const TRACE: &str = include_str!("../../../../testdata/mainnet_blocks/8370400.json");
@@ -252,5 +329,67 @@ mod tests {
             result: BlockTrace,
         }
         let _block: BlockTrace = serde_json::from_str::<Test>(TRACE).unwrap().result;
+    }
+
+    #[test]
+    fn test_rkyv() {
+        let trace = serde_json::from_str::<serde_json::Value>(TRACE).unwrap()["result"].clone();
+        let block: BlockTrace = serde_json::from_value(trace).unwrap();
+        let archived_bytes = rkyv::to_bytes::<_, 4096>(&block).unwrap();
+        let archived_block =
+            rkyv::check_archived_root::<BlockTrace>(archived_bytes.as_ref()).unwrap();
+
+        assert_eq!(block.chain_id, archived_block.chain_id);
+        assert_eq!(block.coinbase.address, archived_block.coinbase.address);
+
+        assert_eq!(block.header.number, archived_block.header.number);
+        assert_eq!(block.header.hash, archived_block.header.hash);
+        assert_eq!(block.header.timestamp, archived_block.header.timestamp);
+        assert_eq!(block.header.gas_limit, archived_block.header.gas_limit);
+        assert_eq!(
+            block.header.base_fee_per_gas,
+            archived_block.header.base_fee_per_gas
+        );
+        assert_eq!(block.header.difficulty, archived_block.header.difficulty);
+        assert_eq!(block.header.mix_hash, archived_block.header.mix_hash);
+
+        let txs = block
+            .transactions
+            .iter()
+            .map(|tx| tx.try_build_typed_tx().unwrap());
+        let archived_txs = archived_block
+            .transactions
+            .iter()
+            .map(|tx| tx.try_build_typed_tx().unwrap());
+        for (tx, archived_tx) in txs.zip(archived_txs) {
+            assert_eq!(tx, archived_tx);
+        }
+
+        for (code, archived_code) in block.codes.iter().zip(archived_block.codes.iter()) {
+            assert_eq!(code.code.as_ref(), archived_code.code.as_ref());
+        }
+
+        assert_eq!(
+            block.storage_trace.root_before,
+            archived_block.storage_trace.root_before
+        );
+        assert_eq!(
+            block.storage_trace.root_after,
+            archived_block.storage_trace.root_after
+        );
+        for (proof, archived_proof) in block
+            .storage_trace
+            .flatten_proofs
+            .iter()
+            .zip(archived_block.storage_trace.flatten_proofs.iter())
+        {
+            assert_eq!(proof.0, archived_proof.0);
+            assert_eq!(proof.1.as_ref(), archived_proof.1.as_ref());
+        }
+
+        assert_eq!(
+            block.start_l1_queue_index,
+            archived_block.start_l1_queue_index
+        );
     }
 }

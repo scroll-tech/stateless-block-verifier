@@ -17,5 +17,4 @@ mpt-zktrie.workspace = true
 sbv-utils.workspace = true
 
 [dev-dependencies]
-eth-types.workspace = true
 serde_json.workspace = true

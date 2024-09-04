@@ -6,9 +6,13 @@
 #[macro_use]
 extern crate sbv_utils;
 
-use alloy::primitives::SignatureError;
+use crate::types::{TxL1Msg, TypedTransaction};
+use alloy::{
+    consensus::{SignableTransaction, TxEip1559, TxEip2930, TxEnvelope, TxLegacy},
+    eips::eip2930::AccessList,
+    primitives::{Address, Bytes, ChainId, Signature, SignatureError, TxKind, B256, U256},
+};
 use mpt_zktrie::ZktrieState;
-use revm_primitives::{Address, B256, U256};
 use std::fmt::Debug;
 
 /// Types definition
@@ -139,55 +143,120 @@ pub trait Block: Debug {
             hasher.update(tx_hash.as_slice())
         }
     }
-
-    /// execution_results
-    fn execution_results(&self, _tx_id: usize) -> Option<&eth_types::l2_types::ExecutionResult> {
-        None
-    }
 }
 
 /// Utility trait for transaction trace
-pub trait TxTrace: TryInto<types::TypedTransaction, Error = SignatureError> {
+pub trait TxTrace {
     /// Return the hash of the transaction
-    fn tx_hash(&self) -> &B256;
+    fn tx_hash(&self) -> B256;
+
+    /// Returns the transaction type
+    fn ty(&self) -> u8;
 
     /// Get `nonce`.
     fn nonce(&self) -> u64;
 
-    /// Returns the transaction type
-    fn ty(&self) -> u8;
+    /// Get `gas_limit`.
+    fn gas_limit(&self) -> u128;
+
+    /// Get `gas_price`
+    fn gas_price(&self) -> u128;
+
+    /// Get `max_fee_per_gas`
+    fn max_fee_per_gas(&self) -> u128;
+
+    /// Get `max_priority_fee_per_gas`
+    fn max_priority_fee_per_gas(&self) -> u128;
+
+    /// Get `from` without checking
+    unsafe fn get_from_unchecked(&self) -> Address;
+
+    /// Get `to`.
+    fn to(&self) -> TxKind;
+
+    /// Get `chain_id`.
+    fn chain_id(&self) -> ChainId;
+
+    /// Get `value`.
+    fn value(&self) -> U256;
+
+    /// Get `data`.
+    fn data(&self) -> Bytes;
+
+    /// Get `access_list`.
+    fn access_list(&self) -> AccessList;
+
+    /// Get `signature`.
+    fn signature(&self) -> Result<Signature, SignatureError>;
 
     /// Check if the transaction is an L1 transaction
     fn is_l1_tx(&self) -> bool {
         self.ty() == 0x7e
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use std::array;
-    use std::mem::transmute;
+    /// Try to build a typed transaction
+    fn try_build_typed_tx(&self) -> Result<TypedTransaction, SignatureError> {
+        let chain_id = self.chain_id();
 
-    #[test]
-    fn test_memory_layout() {
-        use eth_types::{ArchivedH160, H160};
-        // H160 and ArchivedH160 should have the same memory layout
-        assert_eq!(size_of::<H160>(), 20);
-        assert_eq!(size_of::<ArchivedH160>(), 20);
-        assert_eq!(size_of::<&[u8; 20]>(), size_of::<usize>());
-        assert_eq!(size_of::<&H160>(), size_of::<usize>());
-        assert_eq!(size_of::<&ArchivedH160>(), size_of::<usize>());
+        let tx = match self.ty() {
+            0x0 => {
+                let tx = TxLegacy {
+                    chain_id: if chain_id >= 35 { Some(chain_id) } else { None },
+                    nonce: self.nonce(),
+                    gas_price: self.gas_price(),
+                    gas_limit: self.gas_limit(),
+                    to: self.to(),
+                    value: self.value(),
+                    input: self.data(),
+                };
 
-        let h160 = eth_types::H160::from(array::from_fn(|i| i as u8));
-        let serialized = rkyv::to_bytes::<_, 20>(&h160).unwrap();
-        let archived: &ArchivedH160 = unsafe { rkyv::archived_root::<H160>(&serialized[..]) };
-        assert_eq!(archived.0, h160.0);
-        let ptr_to_archived: usize = archived as *const _ as usize;
-        let ptr_to_archived_inner: usize = (&archived.0) as *const _ as usize;
-        assert_eq!(ptr_to_archived, ptr_to_archived_inner);
-        let transmuted: &H160 = unsafe { transmute(archived) };
-        assert_eq!(transmuted, &h160);
-        let transmuted: &H160 = unsafe { transmute(&archived.0) };
-        assert_eq!(transmuted, &h160);
+                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(self.signature()?)))
+            }
+            0x1 => {
+                let tx = TxEip2930 {
+                    chain_id,
+                    nonce: self.nonce(),
+                    gas_price: self.gas_price(),
+                    gas_limit: self.gas_limit(),
+                    to: self.to(),
+                    value: self.value(),
+                    access_list: self.access_list(),
+                    input: self.data(),
+                };
+
+                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(self.signature()?)))
+            }
+            0x02 => {
+                let tx = TxEip1559 {
+                    chain_id,
+                    nonce: self.nonce(),
+                    max_fee_per_gas: self.max_fee_per_gas(),
+                    max_priority_fee_per_gas: self.max_priority_fee_per_gas(),
+                    gas_limit: self.gas_limit(),
+                    to: self.to(),
+                    value: self.value(),
+                    access_list: self.access_list(),
+                    input: self.data(),
+                };
+
+                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(self.signature()?)))
+            }
+            0x7e => {
+                let tx = TxL1Msg {
+                    tx_hash: self.tx_hash(),
+                    from: unsafe { self.get_from_unchecked() },
+                    nonce: self.nonce(),
+                    gas_limit: self.gas_limit(),
+                    to: self.to(),
+                    value: self.value(),
+                    input: self.data(),
+                };
+
+                TypedTransaction::L1Msg(tx)
+            }
+            _ => unimplemented!("unsupported tx type: {}", self.ty()),
+        };
+
+        Ok(tx)
     }
 }

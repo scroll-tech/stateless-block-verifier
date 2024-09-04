@@ -17,7 +17,6 @@ thiserror = "1.0"
 tiny-keccak = "2.0"
 
 # dependencies from scroll-tech
-eth-types = { git = "https://github.com/scroll-tech/zkevm-circuits", features = ["scroll"], branch = "feat/rkyv" }
 mpt-zktrie = { git = "https://github.com/scroll-tech/zkevm-circuits", branch = "feat/rkyv" }
 zktrie = { git = "https://github.com/scroll-tech/zktrie.git", branch = "main", features= ["rs_zktrie"] }
 
@@ -106,7 +105,6 @@ alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch =
 
 # for local development
 # [patch."https://github.com/scroll-tech/zkevm-circuits"]
-# eth-types = { path = "../zkevm-circuits/eth-types" }
 # mpt-zktrie = { path = "../zkevm-circuits/zktrie" }
 # [patch."https://github.com/scroll-tech/revm"]
 # revm = { path = "../revm/crates/revm" }
