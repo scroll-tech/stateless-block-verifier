@@ -2,7 +2,10 @@ use crate::utils;
 use clap::Args;
 use ethers_providers::{Http, Middleware, Provider};
 use futures::future::OptionFuture;
-use sbv::{core::HardforkConfig, primitives::types::BlockTrace};
+use sbv::{
+    core::HardforkConfig,
+    primitives::{types::BlockTrace, Block},
+};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -85,7 +88,7 @@ impl RunRpcCommand {
 
                     dev_info!(
                         "worker#{_idx}: load trace for block #{block_number}({})",
-                        l2_trace.header.hash
+                        l2_trace.block_hash()
                     );
 
                     tokio::task::spawn_blocking(move || utils::verify(&l2_trace, &fork_config))

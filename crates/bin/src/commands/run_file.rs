@@ -61,7 +61,7 @@ impl RunFileCommand {
 
         let has_same_chain_id = traces
             .iter()
-            .all(|trace| trace.chain_id == traces[0].chain_id);
+            .all(|trace| trace.chain_id() == traces[0].chain_id());
         if !has_same_chain_id {
             bail!("All traces must have the same chain id in chunk mode");
         }
@@ -73,7 +73,7 @@ impl RunFileCommand {
             bail!("All traces must have sequential block numbers in chunk mode");
         }
 
-        let fork_config = fork_config(traces[0].chain_id);
+        let fork_config = fork_config(traces[0].chain_id());
         let (chunk_info, mut zktrie_state) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
@@ -136,7 +136,7 @@ async fn run_trace(
     fork_config: impl Fn(u64) -> HardforkConfig,
 ) -> anyhow::Result<()> {
     let trace = read_block_trace(&path).await?;
-    let fork_config = fork_config(trace.chain_id);
+    let fork_config = fork_config(trace.chain_id());
     tokio::task::spawn_blocking(move || utils::verify(&trace, &fork_config)).await??;
     Ok(())
 }

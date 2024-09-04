@@ -136,7 +136,7 @@ mod tests {
                 .result
         });
 
-        let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id);
+        let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id());
         let (chunk_info, mut zktrie_state) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());

@@ -33,6 +33,6 @@ pub mod l1_gas_price_oracle {
     /// id":1,"jsonrpc":"2.0"}'
     pub static V1_BYTECODE: &[u8] = include_bytes!("./data/v1_l1_oracle_bytecode.bin");
     /// Bytecode after curie hardfork
-    /// https://github.com/scroll-tech/go-ethereum/blob/9ec83a509ac7f6dd2d0beb054eb14c19f3e67a72/rollup/rcfg/config.go#L50
+    /// <https://github.com/scroll-tech/go-ethereum/blob/9ec83a509ac7f6dd2d0beb054eb14c19f3e67a72/rollup/rcfg/config.go#L50>
     pub static V2_BYTECODE: &[u8] = include_bytes!("./data/v2_l1_oracle_bytecode.bin");
 }

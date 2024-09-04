@@ -12,24 +12,24 @@ pub use tx::{ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransacti
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
-pub struct BlockHeader {
+struct BlockHeader {
     /// block number
-    pub number: U256,
+    number: U256,
     /// block hash
-    pub hash: B256,
+    hash: B256,
     /// timestamp
-    pub timestamp: U256,
+    timestamp: U256,
     /// gas limit
     #[serde(rename = "gasLimit")]
-    pub gas_limit: U256,
+    gas_limit: U256,
     /// base fee per gas
     #[serde(rename = "baseFeePerGas")]
-    pub base_fee_per_gas: Option<U256>,
+    base_fee_per_gas: Option<U256>,
     /// difficulty
-    pub difficulty: U256,
+    difficulty: U256,
     /// mix hash
     #[serde(rename = "mixHash")]
-    pub mix_hash: Option<B256>,
+    mix_hash: Option<B256>,
 }
 
 /// Coinbase
@@ -38,9 +38,9 @@ pub struct BlockHeader {
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
-pub struct Coinbase {
+struct Coinbase {
     /// address of coinbase
-    pub address: Address,
+    address: Address,
 }
 
 /// Bytecode trace
@@ -70,20 +70,22 @@ pub struct BytecodeTrace {
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
-pub struct StorageTrace {
+struct StorageTrace {
     /// root before
     #[serde(rename = "rootBefore")]
-    pub root_before: B256,
+    root_before: B256,
     /// root after
     #[serde(rename = "rootAfter")]
-    pub root_after: B256,
+    root_after: B256,
     /// proofs
     #[serde(rename = "flattenProofs")]
     #[serde_as(as = "Map<_, _>")]
     flatten_proofs: Vec<(B256, Bytes)>,
 }
 
-/// Legacy format of block trace
+/// Block trace format
+///
+/// ref: <https://github.com/scroll-tech/go-ethereum/blob/develop/core/types/l2trace.go>
 #[derive(
     rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Serialize, Deserialize, Default, Debug, Clone,
 )]
@@ -92,24 +94,24 @@ pub struct StorageTrace {
 pub struct BlockTrace {
     /// chain id
     #[serde(rename = "chainID", default)]
-    pub chain_id: u64,
-    /// coinbase's status AFTER execution
-    pub coinbase: Coinbase,
+    chain_id: u64,
+    /// coinbase
+    coinbase: Coinbase,
     /// block
-    pub header: BlockHeader,
+    header: BlockHeader,
     /// txs
-    pub transactions: Vec<TransactionTrace>,
+    transactions: Vec<TransactionTrace>,
     /// Accessed bytecodes with hashes
     #[serde(default)]
-    pub codes: Vec<BytecodeTrace>,
+    codes: Vec<BytecodeTrace>,
     /// storage trace BEFORE execution
     #[serde(rename = "storageTrace")]
-    pub storage_trace: StorageTrace,
+    storage_trace: StorageTrace,
     /// l1 tx queue
     #[serde(rename = "startL1QueueIndex", default)]
-    pub start_l1_queue_index: u64,
+    start_l1_queue_index: u64,
     /// Withdraw root
-    pub withdraw_trie_root: B256,
+    withdraw_trie_root: B256,
 }
 
 impl Block for BlockTrace {
