@@ -1,5 +1,4 @@
 use crate::{database::ReadOnlyDB, error::VerificationError, error::ZkTrieError, HardforkConfig};
-use alloy::consensus::Transaction;
 use mpt_zktrie::{AccountData, ZktrieState};
 use revm::db::AccountState;
 use revm::primitives::{BlockEnv, TxEnv, U256};
@@ -7,7 +6,7 @@ use revm::{
     db::CacheDB,
     primitives::{AccountInfo, Env, SpecId, B256, KECCAK_EMPTY, POSEIDON_EMPTY},
 };
-use sbv_primitives::{Block, TxTrace};
+use sbv_primitives::{Block, Transaction, TxTrace};
 use std::fmt::Debug;
 
 mod builder;
@@ -98,9 +97,15 @@ impl EvmExecutor<'_> {
                 })?,
                 gas_limit: tx.gas_limit() as u64,
                 gas_price: tx
-                    .gas_price()
+                    .effective_gas_price(l2_trace.base_fee_per_gas().unwrap_or_default().to())
                     .map(U256::from)
-                    .expect("gas price is required"),
+                    .ok_or_else(|| VerificationError::InvalidGasPrice {
+                        tx_hash: *tx.tx_hash(),
+                        ty: tx.ty(),
+                        max_fee_per_gas: tx.max_fee_per_gas(),
+                        max_priority_fee_per_gas: tx.max_priority_fee_per_gas(),
+                        base_fee_per_gas: l2_trace.base_fee_per_gas(),
+                    })?,
                 transact_to: tx.to(),
                 value: tx.value(),
                 data: tx.data(),

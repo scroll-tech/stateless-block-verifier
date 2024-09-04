@@ -481,6 +481,17 @@ impl TypedTransaction {
         }
     }
 
+    /// Get the effective gas price of the transaction.
+    pub fn effective_gas_price(&self, base_fee_per_gas: u64) -> Option<u128> {
+        match self {
+            TypedTransaction::Enveloped(TxEnvelope::Eip1559(ref tx)) => {
+                let priority_fee_per_gas = tx.tx().effective_tip_per_gas(base_fee_per_gas)?;
+                Some(priority_fee_per_gas + base_fee_per_gas as u128)
+            }
+            _ => self.gas_price(),
+        }
+    }
+
     /// Encode the transaction according to [EIP-2718] rules. First a 1-byte
     /// type flag in the range 0x0-0x7f, then the body of the transaction.
     pub fn rlp(&self) -> Bytes {
