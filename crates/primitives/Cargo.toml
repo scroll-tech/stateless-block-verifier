@@ -1,8 +1,16 @@
 [package]
 name = "sbv-primitives"
+homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/primitives"
+
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
 
 [dependencies]
 alloy = { workspace = true, features = ["consensus", "eips", "k256", "rlp", "rkyv", "serde"] }

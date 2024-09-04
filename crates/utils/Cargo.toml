@@ -1,8 +1,16 @@
 [package]
 name = "sbv-utils"
+homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/utils"
+
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
 
 [dependencies]
 revm.workspace = true

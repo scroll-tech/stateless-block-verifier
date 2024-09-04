@@ -1,3 +1,5 @@
+//! Umbrella crate for the SBV library.
+
 pub use sbv_core as core;
 pub use sbv_primitives as primitives;
 pub use sbv_utils as utils;

@@ -1,8 +1,5 @@
 //! Stateless Block Verifier utils library.
 
-#![deny(missing_docs)]
-#![deny(missing_debug_implementations)]
-
 #[cfg(any(feature = "dev", test))]
 #[doc(hidden)]
 pub use tracing;

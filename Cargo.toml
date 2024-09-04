@@ -6,6 +6,10 @@ resolver = "2"
 version = "0.3.0"
 edition = "2021"
 rust-version = "1.75"
+authors = ["Scroll developers"]
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/scroll-tech/stateless-block-verifier"
+repository = "https://github.com/scroll-tech/stateless-block-verifier"
 
 [workspace.dependencies]
 alloy = "0.3"
@@ -75,6 +79,10 @@ features = [
     "std",
     "optional_no_base_fee"
 ]
+
+[workspace.lints.rust]
+missing-docs = "deny"
+missing-debug-implementations = "deny"
 
 [patch.crates-io]
 ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }

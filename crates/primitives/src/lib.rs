@@ -1,8 +1,5 @@
 //! Stateless Block Verifier primitives library.
 
-#![deny(missing_docs)]
-#![deny(missing_debug_implementations)]
-
 use crate::types::{TxL1Msg, TypedTransaction};
 use alloy::{
     consensus::SignableTransaction,
