@@ -232,7 +232,7 @@ impl EvmExecutor<'_> {
                 acc_data.storage_root = storage_trie.root().into();
 
                 #[cfg(feature = "debug-storage")]
-                debug_recorder.record_storage_root(*addr, acc_data.storage_root);
+                debug_recorder.record_storage_root(*addr, acc_data.storage_root.0.into());
 
                 self.db
                     .db

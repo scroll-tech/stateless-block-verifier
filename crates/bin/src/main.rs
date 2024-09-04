@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
 
     #[cfg(feature = "metrics")]
     if cmd.metrics {
-        sbv_utils::metrics::start_metrics_server(cmd.metrics_addr);
+        sbv::utils::metrics::start_metrics_server(cmd.metrics_addr);
     }
 
     let get_fork_config = move |chain_id: u64| {

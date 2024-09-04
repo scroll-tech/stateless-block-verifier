@@ -1,6 +1,5 @@
-use eth_types::H256;
 use mpt_zktrie::AccountData;
-use revm::primitives::{Address, U256};
+use revm::primitives::{Address, B256, U256};
 use std::collections::BTreeMap;
 
 #[derive(Debug, serde::Serialize)]
@@ -14,7 +13,7 @@ struct StorageOps {
 #[derive(Debug, Default)]
 pub struct DebugRecorder {
     accounts: BTreeMap<Address, AccountData>,
-    storages_roots: BTreeMap<Address, H256>,
+    storages_roots: BTreeMap<Address, B256>,
     storages: BTreeMap<Address, BTreeMap<U256, StorageOps>>,
 }
 
@@ -35,7 +34,7 @@ impl DebugRecorder {
 
     /// Record the storage root of an account.
     #[cfg(feature = "debug-storage")]
-    pub fn record_storage_root(&mut self, addr: Address, storage_root: H256) {
+    pub fn record_storage_root(&mut self, addr: Address, storage_root: B256) {
         self.storages_roots.insert(addr, storage_root);
     }
 
@@ -78,10 +77,10 @@ impl Drop for DebugRecorder {
                 addr: Address,
                 nonce: u64,
                 balance: U256,
-                keccak_code_hash: H256,
-                poseidon_code_hash: H256,
+                keccak_code_hash: B256,
+                poseidon_code_hash: B256,
                 code_size: u64,
-                storage_root: H256,
+                storage_root: B256,
             }
 
             for (addr, acc) in self.accounts.iter() {
@@ -89,10 +88,10 @@ impl Drop for DebugRecorder {
                     addr: *addr,
                     nonce: acc.nonce,
                     balance: U256::from_limbs(acc.balance.0),
-                    keccak_code_hash: acc.keccak_code_hash,
-                    poseidon_code_hash: acc.poseidon_code_hash,
+                    keccak_code_hash: acc.keccak_code_hash.0.into(),
+                    poseidon_code_hash: acc.poseidon_code_hash.0.into(),
                     code_size: acc.code_size,
-                    storage_root: acc.storage_root,
+                    storage_root: acc.storage_root.0.into(),
                 })
                 .expect("failed to write record");
             }

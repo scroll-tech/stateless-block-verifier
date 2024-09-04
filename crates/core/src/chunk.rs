@@ -162,7 +162,7 @@ mod tests {
         assert_eq!(post_state_root, chunk_info.post_state_root);
         drop(executor); // drop executor to release Rc<Keccek>
 
-        let mut tx_bytes_hash = B256::zero();
+        let mut tx_bytes_hash = B256::ZERO;
         tx_bytes_hasher.into_inner().finalize(&mut tx_bytes_hash.0);
         let _public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
     }
