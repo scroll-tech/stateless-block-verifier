@@ -85,9 +85,6 @@ missing-docs = "deny"
 missing-debug-implementations = "deny"
 
 [patch.crates-io]
-ethers-core = { git = "https://github.com/scroll-tech/ethers-rs.git", branch = "feat/rkyv" }
-primitive-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
-ethereum-types = { git = "https://github.com/scroll-tech/parity-common.git", branch = "feat/rkyv" }
 ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
 
 # patched add rkyv support & MSRV 1.75
@@ -101,13 +98,6 @@ alloy-eip7702 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v
 
 alloy-core = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0"}
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0"}
-
-# ethers-core = { path = "../ethers-rs/ethers-core" }
-# ethers-providers = { path = "../ethers-rs/ethers-providers" }
-# ethers = { path = "../ethers-rs/ethers" }
-# ethers-etherscan = { path = "../ethers-rs/ethers-etherscan" }
-# primitive-types = { path = "../parity-common/primitive-types" }
-# ethereum-types = { path = "../parity-common/ethereum-types" }
 
 # for local development
 # [patch."https://github.com/scroll-tech/revm"]
