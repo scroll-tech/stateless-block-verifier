@@ -1,8 +1,8 @@
 #[macro_use]
-extern crate sbv_utils;
+extern crate sbv;
 
 use clap::Parser;
-use sbv_core::HardforkConfig;
+use sbv::core::HardforkConfig;
 
 #[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
@@ -19,9 +19,6 @@ struct Cli {
     /// Curie block number, defaults to be determined by chain id
     #[arg(short, long)]
     curie_block: Option<u64>,
-    /// Disable additional checks
-    #[arg(short = 'k', long)]
-    disable_checks: bool,
     /// Start metrics server
     #[cfg(feature = "metrics")]
     #[arg(long)]
@@ -60,9 +57,7 @@ async fn main() -> anyhow::Result<()> {
         config
     };
 
-    cmd.commands
-        .run(get_fork_config, cmd.disable_checks)
-        .await?;
+    cmd.commands.run(get_fork_config).await?;
 
     Ok(())
 }

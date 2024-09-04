@@ -1,8 +1,10 @@
 use crate::utils;
 use anyhow::bail;
 use clap::Args;
-use eth_types::{l2_types::BlockTrace, H256};
-use sbv_core::{ChunkInfo, EvmExecutorBuilder, HardforkConfig};
+use sbv::{
+    core::{ChunkInfo, EvmExecutorBuilder, HardforkConfig},
+    primitives::{types::BlockTrace, Block, B256},
+};
 use std::{cell::RefCell, path::PathBuf};
 use tiny_keccak::{Hasher, Keccak};
 use tokio::task::JoinSet;
@@ -21,24 +23,22 @@ impl RunFileCommand {
     pub async fn run(
         self,
         fork_config: impl Fn(u64) -> HardforkConfig + Send + Sync + Copy + 'static,
-        disable_checks: bool,
     ) -> anyhow::Result<()> {
         if self.chunk_mode {
             self.run_chunk(fork_config).await
         } else {
-            self.run_traces(fork_config, disable_checks).await
+            self.run_traces(fork_config).await
         }
     }
 
     async fn run_traces(
         self,
         fork_config: impl Fn(u64) -> HardforkConfig + Send + Sync + Copy + 'static,
-        disable_checks: bool,
     ) -> anyhow::Result<()> {
         let mut tasks = JoinSet::new();
 
         for path in self.path.into_iter() {
-            tasks.spawn(run_trace(path, fork_config, disable_checks));
+            tasks.spawn(run_trace(path, fork_config));
         }
 
         while let Some(task) = tasks.join_next().await {
@@ -68,7 +68,7 @@ impl RunFileCommand {
 
         let has_seq_block_number = traces
             .windows(2)
-            .all(|w| w[0].header.number.unwrap() + 1 == w[1].header.number.unwrap());
+            .all(|w| w[0].number() + 1 == w[1].number());
         if !has_seq_block_number {
             bail!("All traces must have sequential block numbers in chunk mode");
         }
@@ -99,7 +99,7 @@ impl RunFileCommand {
         }
         drop(executor);
 
-        let mut tx_bytes_hash = H256::zero();
+        let mut tx_bytes_hash = B256::ZERO;
         tx_bytes_hasher.into_inner().finalize(&mut tx_bytes_hash.0);
         let _public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
 
@@ -134,11 +134,9 @@ fn deserialize_block_trace(trace: &str) -> anyhow::Result<BlockTrace> {
 async fn run_trace(
     path: PathBuf,
     fork_config: impl Fn(u64) -> HardforkConfig,
-    disable_checks: bool,
 ) -> anyhow::Result<()> {
     let trace = read_block_trace(&path).await?;
     let fork_config = fork_config(trace.chain_id);
-    tokio::task::spawn_blocking(move || utils::verify(&trace, &fork_config, disable_checks))
-        .await??;
+    tokio::task::spawn_blocking(move || utils::verify(&trace, &fork_config)).await??;
     Ok(())
 }

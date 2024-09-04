@@ -1,23 +1,22 @@
 use mpt_zktrie::ZktrieState;
-use sbv_core::{EvmExecutorBuilder, HardforkConfig, VerificationError};
-use sbv_primitives::BlockTrace;
-use sbv_utils::post_check;
+use sbv::{
+    core::{EvmExecutorBuilder, HardforkConfig, VerificationError},
+    primitives::Block,
+};
 
-pub fn verify<T: BlockTrace + Clone>(
+pub fn verify<T: Block + Clone>(
     l2_trace: T,
     fork_config: &HardforkConfig,
-    disable_checks: bool,
 ) -> Result<(), VerificationError> {
     measure_duration_histogram!(
         total_block_verification_duration_microseconds,
-        verify_inner(l2_trace, fork_config, disable_checks)
+        verify_inner(l2_trace, fork_config)
     )
 }
 
-fn verify_inner<T: BlockTrace + Clone>(
+fn verify_inner<T: Block + Clone>(
     l2_trace: T,
     fork_config: &HardforkConfig,
-    disable_checks: bool,
 ) -> Result<(), VerificationError> {
     dev_trace!("{l2_trace:#?}");
     let root_after = l2_trace.root_after();
@@ -40,7 +39,7 @@ fn verify_inner<T: BlockTrace + Clone>(
     let mut zktrie_state = cycle_track!(
         {
             let old_root = l2_trace.root_before();
-            let mut zktrie_state = ZktrieState::construct(old_root);
+            let mut zktrie_state = ZktrieState::construct(old_root.0.into());
             measure_duration_histogram!(
                 build_zktrie_state_duration_microseconds,
                 l2_trace.build_zktrie_state(&mut zktrie_state)
@@ -52,17 +51,6 @@ fn verify_inner<T: BlockTrace + Clone>(
 
     let mut executor = EvmExecutorBuilder::new(&zktrie_state)
         .hardfork_config(*fork_config)
-        .with_execute_hooks(|hooks| {
-            if !disable_checks {
-                hooks.add_post_tx_execution_handler(|executor, tx_id| {
-                    if let Some(execution_result) = l2_trace.execution_results(tx_id) {
-                        post_check(executor.db(), execution_result);
-                    } else {
-                        dev_warn!("No execution result found in trace but post check is enabled");
-                    }
-                })
-            }
-        })
         .build(&l2_trace)?;
 
     // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76

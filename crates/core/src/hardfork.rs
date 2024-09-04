@@ -1,41 +1,35 @@
-use eth_types::{
-    forks::{hardfork_heights, HardforkId},
-    l2_predeployed::l1_gas_price_oracle,
-};
-use itertools::Itertools;
+use once_cell::sync::Lazy;
 use revm::{
     primitives::{Account, AccountStatus, Address, Bytecode, Bytes, EvmStorageSlot, SpecId, U256},
     Database, DatabaseCommit,
 };
-use std::{collections::HashMap, sync::LazyLock};
+use sbv_primitives::predeployed::l1_gas_price_oracle;
+use std::collections::HashMap;
+
+/// Scroll devnet chain id
+pub const SCROLL_DEVNET_CHAIN_ID: u64 = 222222;
+/// Scroll testnet chain id
+pub const SCROLL_TESTNET_CHAIN_ID: u64 = 534351;
+/// Scroll mainnet chain id
+pub const SCROLL_MAINNET_CHAIN_ID: u64 = 534352;
 
 /// Hardfork heights for Scroll networks, grouped by chain id.
-static HARDFORK_HEIGHTS: LazyLock<HashMap<u64, HashMap<SpecId, u64>>> = LazyLock::new(|| {
-    #[allow(clippy::let_and_return)]
-    let heights = hardfork_heights()
-        .into_iter()
-        .sorted_by_key(|(_, chain_id, _)| *chain_id)
-        .chunk_by(|(_, chain_id, _)| *chain_id)
-        .into_iter()
-        .map(|(chain_id, slice)| {
-            (
-                chain_id,
-                slice
-                    .map(|(fork_id, _chain_id, height)| {
-                        let fork_id = match fork_id {
-                            HardforkId::Bernoulli => SpecId::BERNOULLI,
-                            HardforkId::Curie => SpecId::CURIE,
-                        };
-                        (fork_id, height)
-                    })
-                    .collect::<HashMap<_, _>>(),
-            )
-        })
-        .collect();
+static HARDFORK_HEIGHTS: Lazy<HashMap<u64, HashMap<SpecId, u64>>> = Lazy::new(|| {
+    let mut map = HashMap::new();
+    map.insert(
+        SCROLL_DEVNET_CHAIN_ID,
+        HashMap::from([(SpecId::BERNOULLI, 0), (SpecId::CURIE, 5)]),
+    );
+    map.insert(
+        SCROLL_TESTNET_CHAIN_ID,
+        HashMap::from([(SpecId::BERNOULLI, 3747132), (SpecId::CURIE, 4740239)]),
+    );
+    map.insert(
+        SCROLL_MAINNET_CHAIN_ID,
+        HashMap::from([(SpecId::BERNOULLI, 5220340), (SpecId::CURIE, 7096836)]),
+    );
 
-    dev_info!("Hardfork heights: {:#?}", heights);
-    #[allow(clippy::let_and_return)]
-    heights
+    map
 });
 
 /// Hardfork configuration for Scroll networks.
@@ -100,9 +94,7 @@ impl HardforkConfig {
         let l1_gas_price_oracle_addr = Address::from(l1_gas_price_oracle::ADDRESS.0);
         let mut l1_gas_price_oracle_info = db.basic(l1_gas_price_oracle_addr)?.unwrap_or_default();
         // Set the new code
-        let code = Bytecode::new_raw(Bytes::copy_from_slice(
-            l1_gas_price_oracle::V2_BYTECODE.as_slice(),
-        ));
+        let code = Bytecode::new_raw(Bytes::from_static(l1_gas_price_oracle::V2_BYTECODE));
         l1_gas_price_oracle_info.code_size = code.len();
         l1_gas_price_oracle_info.code_hash = code.hash_slow();
         l1_gas_price_oracle_info.poseidon_code_hash = code.poseidon_hash_slow();
@@ -112,24 +104,20 @@ impl HardforkConfig {
             info: l1_gas_price_oracle_info,
             storage: HashMap::from([
                 (
-                    U256::from_limbs(l1_gas_price_oracle::IS_CURIE_SLOT.0),
+                    l1_gas_price_oracle::IS_CURIE_SLOT,
                     EvmStorageSlot::new(U256::from(1)),
                 ),
                 (
-                    U256::from_limbs(l1_gas_price_oracle::L1_BLOB_BASEFEE_SLOT.0),
+                    l1_gas_price_oracle::L1_BLOB_BASEFEE_SLOT,
                     EvmStorageSlot::new(U256::from(1)),
                 ),
                 (
-                    U256::from_limbs(l1_gas_price_oracle::COMMIT_SCALAR_SLOT.0),
-                    EvmStorageSlot::new(U256::from_limbs(
-                        l1_gas_price_oracle::INITIAL_COMMIT_SCALAR.0,
-                    )),
+                    l1_gas_price_oracle::COMMIT_SCALAR_SLOT,
+                    EvmStorageSlot::new(l1_gas_price_oracle::INITIAL_COMMIT_SCALAR),
                 ),
                 (
-                    U256::from_limbs(l1_gas_price_oracle::BLOB_SCALAR_SLOT.0),
-                    EvmStorageSlot::new(U256::from_limbs(
-                        l1_gas_price_oracle::INITIAL_BLOB_SCALAR.0,
-                    )),
+                    l1_gas_price_oracle::BLOB_SCALAR_SLOT,
+                    EvmStorageSlot::new(l1_gas_price_oracle::INITIAL_BLOB_SCALAR),
                 ),
             ]),
             status: AccountStatus::Touched,

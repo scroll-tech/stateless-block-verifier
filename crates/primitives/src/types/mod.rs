@@ -1,13 +1,15 @@
 use crate::Block;
 use alloy::primitives::{Address, Bytes, B256, U256};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, Map};
 
 mod tx;
 pub use tx::{ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransaction};
 
 /// Block header
-#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[derive(
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Serialize, Deserialize, Default, Debug, Clone,
+)]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BlockHeader {
@@ -31,7 +33,9 @@ pub struct BlockHeader {
 }
 
 /// Coinbase
-#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[derive(
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Serialize, Deserialize, Default, Debug, Clone,
+)]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct Coinbase {
@@ -40,7 +44,9 @@ pub struct Coinbase {
 }
 
 /// Bytecode trace
-#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[derive(
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Serialize, Deserialize, Default, Debug, Clone,
+)]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BytecodeTrace {
@@ -54,6 +60,7 @@ pub struct BytecodeTrace {
     rkyv::Archive,
     rkyv::Serialize,
     rkyv::Deserialize,
+    Serialize,
     Deserialize,
     Default,
     Debug,
@@ -77,7 +84,9 @@ pub struct StorageTrace {
 }
 
 /// Legacy format of block trace
-#[derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Deserialize, Default, Debug, Clone)]
+#[derive(
+    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, Serialize, Deserialize, Default, Debug, Clone,
+)]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BlockTrace {

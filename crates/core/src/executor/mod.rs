@@ -1,14 +1,13 @@
 use crate::{database::ReadOnlyDB, error::VerificationError, error::ZkTrieError, HardforkConfig};
-use eth_types::{geth_types::TxType, H256, U256};
+use alloy::consensus::Transaction;
 use mpt_zktrie::{AccountData, ZktrieState};
 use revm::db::AccountState;
-use revm::precompile::B256;
-use revm::primitives::{KECCAK_EMPTY, POSEIDON_EMPTY};
+use revm::primitives::{BlockEnv, TxEnv, U256};
 use revm::{
     db::CacheDB,
-    primitives::{AccountInfo, Env, SpecId},
+    primitives::{AccountInfo, Env, SpecId, B256, KECCAK_EMPTY, POSEIDON_EMPTY},
 };
-use sbv_primitives::{Block, Transaction};
+use sbv_primitives::{Block, TxTrace};
 use std::fmt::Debug;
 
 mod builder;
@@ -65,56 +64,64 @@ impl EvmExecutor<'_> {
         dev_debug!("handle block {:?}", l2_trace.number());
         let mut env = Box::<Env>::default();
         env.cfg.chain_id = l2_trace.chain_id();
-        env.block = cycle_track!(l2_trace.env(), "create BlockEnv");
+        env.block = BlockEnv {
+            number: U256::from_limbs([l2_trace.number(), 0, 0, 0]),
+            coinbase: l2_trace.coinbase(),
+            timestamp: l2_trace.timestamp(),
+            gas_limit: l2_trace.gas_limit(),
+            basefee: l2_trace.base_fee_per_gas().unwrap_or_default(),
+            difficulty: l2_trace.difficulty(),
+            prevrandao: l2_trace.prevrandao(),
+            blob_excess_gas_and_price: None,
+        };
 
         for (idx, tx) in l2_trace.transactions().enumerate() {
             cycle_tracker_start!("handle tx {}", idx);
 
             dev_trace!("handle {idx}th tx");
 
+            let tx = tx
+                .try_build_typed_tx()
+                .map_err(|e| VerificationError::InvalidSignature {
+                    tx_hash: tx.tx_hash(),
+                    source: e,
+                })?;
+
             dev_trace!("{tx:#?}");
             let mut env = env.clone();
-            env.tx = tx.tx_env();
-            if tx.raw_type() == 0 {
-                env.tx.chain_id = Some(l2_trace.chain_id());
-            }
-            let eth_tx = tx.to_eth_tx(
-                l2_trace.block_hash(),
-                l2_trace.number(),
-                idx,
-                l2_trace.base_fee_per_gas(),
-            );
+            env.tx = TxEnv {
+                caller: tx.get_or_recover_signer().map_err(|e| {
+                    VerificationError::InvalidSignature {
+                        tx_hash: *tx.tx_hash(),
+                        source: e,
+                    }
+                })?,
+                gas_limit: tx.gas_limit() as u64,
+                gas_price: tx
+                    .gas_price()
+                    .map(U256::from)
+                    .expect("gas price is required"),
+                transact_to: tx.to(),
+                value: tx.value(),
+                data: tx.data(),
+                nonce: if !tx.is_l1_msg() {
+                    Some(tx.nonce())
+                } else {
+                    None
+                },
+                chain_id: tx.chain_id(),
+                access_list: tx.access_list().cloned().unwrap_or_default().0,
+                gas_priority_fee: tx.max_priority_fee_per_gas().map(U256::from),
+                ..Default::default()
+            };
 
-            let tx_type = TxType::get_tx_type(&eth_tx);
-
-            if !tx_type.is_l1_msg() {
-                let recovered_address = cycle_track!(
-                    eth_tx
-                        .recover_from()
-                        .map_err(|source| VerificationError::SignerRecovery {
-                            tx_hash: eth_tx.hash,
-                            source,
-                        })?,
-                    "recover address"
-                );
-
-                // verify that the transaction is valid
-                if recovered_address != eth_tx.from {
-                    return Err(VerificationError::SenderSignerMismatch {
-                        tx_hash: eth_tx.hash,
-                        sender: eth_tx.from,
-                        signer: recovered_address,
-                    });
-                }
-            }
-            if tx_type.is_l1_msg() {
-                env.tx.nonce = None; // clear nonce for l1 msg
+            if tx.is_l1_msg() {
                 env.cfg.disable_base_fee = true; // disable base fee for l1 msg
             }
-            env.tx.scroll.is_l1_msg = tx_type.is_l1_msg();
-            let rlp_bytes = eth_tx.rlp().to_vec();
+            env.tx.scroll.is_l1_msg = tx.is_l1_msg();
+            let rlp_bytes = tx.rlp();
             self.hooks.tx_rlp(self, &rlp_bytes);
-            env.tx.scroll.rlp_bytes = Some(revm::primitives::Bytes::from(rlp_bytes));
+            env.tx.scroll.rlp_bytes = Some(rlp_bytes);
 
             dev_trace!("{env:#?}");
             {
@@ -134,7 +141,7 @@ impl EvmExecutor<'_> {
                 let _result =
                     cycle_track!(revm.transact_commit(), "transact_commit").map_err(|e| {
                         VerificationError::EvmExecution {
-                            tx_hash: eth_tx.hash,
+                            tx_hash: *tx.tx_hash(),
                             source: e,
                         }
                     })?;
@@ -150,14 +157,14 @@ impl EvmExecutor<'_> {
     }
 
     /// Commit pending changes in cache db to zktrie
-    pub fn commit_changes(&mut self, zktrie_state: &mut ZktrieState) -> H256 {
+    pub fn commit_changes(&mut self, zktrie_state: &mut ZktrieState) -> B256 {
         measure_duration_histogram!(
             commit_changes_duration_microseconds,
             cycle_track!(self.commit_changes_inner(zktrie_state), "commit_changes")
         )
     }
 
-    fn commit_changes_inner(&mut self, zktrie_state: &mut ZktrieState) -> H256 {
+    fn commit_changes_inner(&mut self, zktrie_state: &mut ZktrieState) -> B256 {
         let mut zktrie = zktrie_state
             .zk_db
             .new_trie(&zktrie_state.trie_root)
@@ -183,7 +190,7 @@ impl EvmExecutor<'_> {
 
             let mut acc_data = AccountData {
                 nonce: info.nonce,
-                balance: U256(*info.balance.as_limbs()),
+                balance: info.balance.to_be_bytes::<32>().into(),
                 storage_root: self.db.db.prev_storage_root(addr).0.into(),
                 ..Default::default()
             };
@@ -221,7 +228,7 @@ impl EvmExecutor<'_> {
                 }
 
                 cycle_tracker_end!("update storage_tire");
-                acc_data.storage_root = H256::from(storage_trie.root());
+                acc_data.storage_root = storage_trie.root().into();
 
                 #[cfg(feature = "debug-storage")]
                 debug_recorder.record_storage_root(*addr, acc_data.storage_root);
@@ -234,16 +241,16 @@ impl EvmExecutor<'_> {
                 // if account not exist, all fields will be zero.
                 // but if account exist, code_hash will be empty hash if code is empty
                 if info.is_empty_code_hash() {
-                    acc_data.poseidon_code_hash = H256::from(POSEIDON_EMPTY.0);
-                    acc_data.keccak_code_hash = H256::from(KECCAK_EMPTY.0);
+                    acc_data.poseidon_code_hash = POSEIDON_EMPTY.0.into();
+                    acc_data.keccak_code_hash = KECCAK_EMPTY.0.into();
                 } else {
                     assert_ne!(
                         info.poseidon_code_hash,
                         B256::ZERO,
                         "revm didn't update poseidon_code_hash, revm: {info:?}",
                     );
-                    acc_data.poseidon_code_hash = H256::from(info.poseidon_code_hash.0);
-                    acc_data.keccak_code_hash = H256::from(info.code_hash.0);
+                    acc_data.poseidon_code_hash = info.poseidon_code_hash.0.into();
+                    acc_data.keccak_code_hash = info.code_hash.0.into();
                     acc_data.code_size = info.code_size as u64;
                 }
             }
@@ -269,7 +276,7 @@ impl EvmExecutor<'_> {
 
         zktrie_state.switch_to(root_after);
 
-        H256::from(root_after)
+        B256::from(root_after)
     }
 }
 

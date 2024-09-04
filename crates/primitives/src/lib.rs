@@ -3,20 +3,22 @@
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
-#[macro_use]
-extern crate sbv_utils;
-
 use crate::types::{TxL1Msg, TypedTransaction};
 use alloy::{
     consensus::{SignableTransaction, TxEip1559, TxEip2930, TxEnvelope, TxLegacy},
     eips::eip2930::AccessList,
-    primitives::{Address, Bytes, ChainId, Signature, SignatureError, TxKind, B256, U256},
+    primitives::{Bytes, ChainId, Signature, SignatureError, TxKind},
 };
 use mpt_zktrie::ZktrieState;
 use std::fmt::Debug;
 
+/// Predeployed contracts
+pub mod predeployed;
 /// Types definition
 pub mod types;
+
+pub use alloy::primitives as alloy_primitives;
+pub use alloy::primitives::{Address, B256, U256};
 
 /// Blanket trait for block trace extensions.
 pub trait Block: Debug {
@@ -49,21 +51,6 @@ pub trait Block: Debug {
 
     /// Get prevrandao
     fn prevrandao(&self) -> Option<B256>;
-
-    /// creates [`revm::primitives::BlockEnv`]
-    #[inline]
-    fn as_block_env(&self) -> revm_primitives::BlockEnv {
-        revm_primitives::BlockEnv {
-            number: U256::from_limbs([self.number(), 0, 0, 0]),
-            coinbase: self.coinbase(),
-            timestamp: self.timestamp(),
-            gas_limit: self.gas_limit(),
-            basefee: self.base_fee_per_gas().unwrap_or_default(),
-            difficulty: self.difficulty(),
-            prevrandao: self.prevrandao(),
-            blob_excess_gas_and_price: None,
-        }
-    }
 
     /// transactions
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx>;
@@ -169,6 +156,10 @@ pub trait TxTrace {
     fn max_priority_fee_per_gas(&self) -> u128;
 
     /// Get `from` without checking
+    ///
+    /// # Safety
+    ///
+    /// Can only be used when the transaction is known to be an L1 transaction
     unsafe fn get_from_unchecked(&self) -> Address;
 
     /// Get `to`.
@@ -258,5 +249,131 @@ pub trait TxTrace {
         };
 
         Ok(tx)
+    }
+}
+
+impl<T: Block> Block for &T {
+    type Tx = <T as Block>::Tx;
+
+    fn number(&self) -> u64 {
+        (*self).number()
+    }
+
+    fn block_hash(&self) -> B256 {
+        (*self).block_hash()
+    }
+
+    fn chain_id(&self) -> u64 {
+        (*self).chain_id()
+    }
+
+    fn coinbase(&self) -> Address {
+        (*self).coinbase()
+    }
+
+    fn timestamp(&self) -> U256 {
+        (*self).timestamp()
+    }
+
+    fn gas_limit(&self) -> U256 {
+        (*self).gas_limit()
+    }
+
+    fn base_fee_per_gas(&self) -> Option<U256> {
+        (*self).base_fee_per_gas()
+    }
+
+    fn difficulty(&self) -> U256 {
+        (*self).difficulty()
+    }
+
+    fn prevrandao(&self) -> Option<B256> {
+        (*self).prevrandao()
+    }
+
+    fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
+        (*self).transactions()
+    }
+
+    fn root_before(&self) -> B256 {
+        (*self).root_before()
+    }
+
+    fn root_after(&self) -> B256 {
+        (*self).root_after()
+    }
+
+    fn withdraw_root(&self) -> B256 {
+        (*self).withdraw_root()
+    }
+
+    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]> {
+        (*self).codes()
+    }
+
+    fn start_l1_queue_index(&self) -> u64 {
+        (*self).start_l1_queue_index()
+    }
+
+    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])> {
+        (*self).flatten_proofs()
+    }
+}
+
+impl<T: TxTrace> TxTrace for &T {
+    fn tx_hash(&self) -> B256 {
+        (*self).tx_hash()
+    }
+
+    fn ty(&self) -> u8 {
+        (*self).ty()
+    }
+
+    fn nonce(&self) -> u64 {
+        (*self).nonce()
+    }
+
+    fn gas_limit(&self) -> u128 {
+        (*self).gas_limit()
+    }
+
+    fn gas_price(&self) -> u128 {
+        (*self).gas_price()
+    }
+
+    fn max_fee_per_gas(&self) -> u128 {
+        (*self).max_fee_per_gas()
+    }
+
+    fn max_priority_fee_per_gas(&self) -> u128 {
+        (*self).max_priority_fee_per_gas()
+    }
+
+    unsafe fn get_from_unchecked(&self) -> Address {
+        (*self).get_from_unchecked()
+    }
+
+    fn to(&self) -> TxKind {
+        (*self).to()
+    }
+
+    fn chain_id(&self) -> ChainId {
+        (*self).chain_id()
+    }
+
+    fn value(&self) -> U256 {
+        (*self).value()
+    }
+
+    fn data(&self) -> Bytes {
+        (*self).data()
+    }
+
+    fn access_list(&self) -> AccessList {
+        (*self).access_list()
+    }
+
+    fn signature(&self) -> Result<Signature, SignatureError> {
+        (*self).signature()
     }
 }

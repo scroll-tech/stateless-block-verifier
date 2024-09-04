@@ -2,7 +2,7 @@ use crate::error::ZkTrieError;
 use crate::{executor::hooks::ExecuteHooks, EvmExecutor, HardforkConfig, ReadOnlyDB};
 use mpt_zktrie::ZktrieState;
 use revm::db::CacheDB;
-use sbv_primitives::BlockTrace;
+use sbv_primitives::Block;
 
 /// Builder for EVM executor.
 #[derive(Debug)]
@@ -50,7 +50,7 @@ impl<'e, 'z, H> EvmExecutorBuilder<'e, 'z, H> {
 
 impl<'e, 'z> EvmExecutorBuilder<'e, 'z, HardforkConfig> {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn build<T: BlockTrace>(self, l2_trace: &'z T) -> Result<EvmExecutor<'e>, ZkTrieError> {
+    pub fn build<T: Block>(self, l2_trace: &'z T) -> Result<EvmExecutor<'e>, ZkTrieError> {
         let block_number = l2_trace.number();
         let spec_id = self.hardfork_config.get_spec_id(block_number);
 

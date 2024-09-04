@@ -17,11 +17,8 @@ tiny-keccak.workspace = true
 tokio = { workspace = true, features = ["fs", "macros", "rt-multi-thread"] }
 url.workspace = true
 
-sbv-core.workspace = true
-sbv-primitives.workspace = true
-sbv-utils.workspace = true
+sbv.workspace = true
 
-eth-types.workspace = true
 mpt-zktrie.workspace = true
 
 pprof = { workspace = true, optional = true }
@@ -33,8 +30,8 @@ tracing-subscriber.workspace = true
 
 [features]
 default = ["dev"]
-dev = ["sbv-core/dev", "dep:tracing-subscriber"]
-debug-account = ["sbv-core/debug-account"]
-debug-storage = ["sbv-core/debug-storage"]
+dev = ["sbv/dev", "dep:tracing-subscriber"]
+debug-account = ["sbv/debug-account"]
+debug-storage = ["sbv/debug-storage"]
 profiling = ["dep:pprof"]
-metrics = ["sbv-core/metrics"]
+metrics = ["sbv/metrics"]

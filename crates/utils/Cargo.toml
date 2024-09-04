@@ -7,7 +7,6 @@ rust-version.workspace = true
 [dependencies]
 revm.workspace = true
 
-eth-types.workspace = true
 mpt-zktrie = { workspace = true, optional = true }
 
 csv = { workspace = true, optional = true }

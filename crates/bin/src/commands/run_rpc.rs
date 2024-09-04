@@ -1,8 +1,8 @@
+use crate::utils;
 use clap::Args;
-use eth_types::l2_types::BlockTrace;
 use ethers_providers::{Http, Middleware, Provider};
 use futures::future::OptionFuture;
-use sbv_core::HardforkConfig;
+use sbv::{core::HardforkConfig, primitives::types::BlockTrace};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -10,8 +10,6 @@ use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 use url::Url;
-
-use crate::utils;
 
 #[derive(Args)]
 pub struct RunRpcCommand {
@@ -47,11 +45,7 @@ pub enum StartBlockSpec {
 }
 
 impl RunRpcCommand {
-    pub async fn run(
-        self,
-        fork_config: impl Fn(u64) -> HardforkConfig,
-        disable_checks: bool,
-    ) -> anyhow::Result<()> {
+    pub async fn run(self, fork_config: impl Fn(u64) -> HardforkConfig) -> anyhow::Result<()> {
         dev_info!("Running RPC command with url: {}", self.url);
         let provider = Provider::new(Http::new(self.url));
 
@@ -91,15 +85,13 @@ impl RunRpcCommand {
 
                     dev_info!(
                         "worker#{_idx}: load trace for block #{block_number}({})",
-                        l2_trace.header.hash.unwrap()
+                        l2_trace.header.hash
                     );
 
-                    tokio::task::spawn_blocking(move || {
-                        utils::verify(&l2_trace, &fork_config, disable_checks)
-                    })
-                    .await
-                    .expect("failed to spawn blocking task")
-                    .map_err(|e| (block_number, e.into()))?;
+                    tokio::task::spawn_blocking(move || utils::verify(&l2_trace, &fork_config))
+                        .await
+                        .expect("failed to spawn blocking task")
+                        .map_err(|e| (block_number, e.into()))?;
                 }
                 Ok::<_, (u64, anyhow::Error)>(())
             });

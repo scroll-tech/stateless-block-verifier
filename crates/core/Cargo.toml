@@ -5,8 +5,8 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+alloy = { workspace = true, features = ["consensus"] }
 hex.workspace = true
-itertools.workspace = true
 once_cell.workspace = true
 revm.workspace = true
 rkyv.workspace = true
@@ -14,7 +14,6 @@ thiserror.workspace = true
 tiny-keccak.workspace = true
 
 # dependencies from scroll-tech
-eth-types.workspace = true
 mpt-zktrie.workspace = true
 zktrie.workspace = true
 

@@ -3847,13 +3847,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "sbv"
+version = "0.3.0"
+dependencies = [
+ "sbv-core",
+ "sbv-primitives",
+ "sbv-utils",
+]
+
+[[package]]
 name = "sbv-core"
 version = "0.3.0"
 dependencies = [
+ "alloy",
  "ctor",
- "eth-types",
  "hex",
- "itertools 0.13.0",
  "mpt-zktrie",
  "once_cell",
  "revm",
@@ -3875,9 +3883,7 @@ version = "0.3.0"
 dependencies = [
  "alloy",
  "mpt-zktrie",
- "revm-primitives 9.0.0",
  "rkyv",
- "sbv-utils",
  "serde",
  "serde_json",
  "serde_with",
@@ -3889,7 +3895,6 @@ name = "sbv-utils"
 version = "0.3.0"
 dependencies = [
  "csv",
- "eth-types",
  "http-body-util",
  "hyper 1.4.1",
  "hyper-util",
@@ -4253,15 +4258,12 @@ dependencies = [
  "anyhow",
  "async-channel",
  "clap",
- "eth-types",
  "ethers-core",
  "ethers-providers",
  "futures",
  "mpt-zktrie",
  "pprof",
- "sbv-core",
- "sbv-primitives",
- "sbv-utils",
+ "sbv",
  "serde",
  "serde_json",
  "tiny-keccak",

@@ -6,7 +6,6 @@ use alloy::{
     primitives::{Address, Bytes, ChainId, Signature, SignatureError, TxKind, B256, U256, U64},
     rlp::{BufMut, BytesMut, Encodable, Header},
 };
-use revm_primitives::TxEnv;
 use serde_with::{serde_as, DefaultOnNull};
 
 /// Wrapped Ethereum Transaction
@@ -52,7 +51,14 @@ pub struct TxL1Msg {
 /// Transaction Trace
 #[serde_as]
 #[derive(
-    rkyv::Archive, rkyv::Serialize, rkyv::Deserialize, serde::Deserialize, Default, Debug, Clone,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    serde::Serialize,
+    serde::Deserialize,
+    Default,
+    Debug,
+    Clone,
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
@@ -486,7 +492,8 @@ impl TypedTransaction {
         Bytes(bytes.freeze())
     }
 
-    fn data(&self) -> Bytes {
+    /// Get `data`
+    pub fn data(&self) -> Bytes {
         match self {
             TypedTransaction::Enveloped(tx) => match tx.tx_type() {
                 TxType::Legacy => tx.as_legacy().unwrap().tx().input.clone(),
@@ -498,24 +505,9 @@ impl TypedTransaction {
         }
     }
 
-    /// creates [`revm::primitives::TxEnv`]
-    pub fn tx_env(&self) -> Result<TxEnv, SignatureError> {
-        Ok(TxEnv {
-            caller: self.get_or_recover_signer()?,
-            gas_limit: self.gas_limit() as u64,
-            gas_price: self
-                .gas_price()
-                .map(U256::from)
-                .expect("gas price is required"),
-            transact_to: self.to(),
-            value: self.value(),
-            data: self.data(),
-            nonce: Some(self.nonce()),
-            chain_id: self.chain_id(),
-            access_list: self.access_list().cloned().unwrap_or_default().0,
-            gas_priority_fee: self.max_priority_fee_per_gas().map(U256::from),
-            ..Default::default()
-        })
+    /// Check if the transaction is an L1 transaction
+    pub fn is_l1_msg(&self) -> bool {
+        matches!(self, TypedTransaction::L1Msg(_))
     }
 }
 
@@ -525,26 +517,6 @@ mod tests {
 
     const TRACE: &str = include_str!("../../../../testdata/mainnet_blocks/8370400.json");
 
-    const L1_MSG_TX: &str = r#"{
-      "type": 126,
-      "nonce": 927290,
-      "txHash": "0x51b8fb307fd5d240145854763b25529eb2266403e717844d2f106bcc8d4a6c2f",
-      "gas": 180000,
-      "gasPrice": "0x0",
-      "gasTipCap": "0x0",
-      "gasFeeCap": "0x0",
-      "from": "0x7885bcbd5cecef1336b5300fb5186a12ddd8c478",
-      "to": "0x781e90f1c8fc4611c9b7497c3b47f99ef6969cbc",
-      "chainId": "0x0",
-      "value": "0x0",
-      "data": "0x8ef1332e000000000000000000000000a033ff09f2da45f0e9ae495f525363722df42b2a0000000000000000000000009ebf2f33526cd571f8b2ad312492cb650870cfd6000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e263a00000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e48431f5c1000000000000000000000000d9a442856c234a39a81a089c06451ebaa4306a72000000000000000000000000c4d46e8402f476f269c379677c99f18e22ea030e000000000000000000000000c830fe4df0775d1c6ce5541693cbf4210ceac2fb000000000000000000000000c830fe4df0775d1c6ce5541693cbf4210ceac2fb0000000000000000000000000000000000000000000000000214e8348c4f001600000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      "isCreate": false,
-      "accessList": null,
-      "v": "0x0",
-      "r": "0x0",
-      "s": "0x0"
-    }"#;
-
     #[test]
     fn test_transaction_trace_deserialize() {
         let trace = serde_json::from_str::<serde_json::Value>(TRACE).unwrap()["result"].clone();
@@ -553,40 +525,5 @@ mod tests {
             let tx: TransactionTrace = serde_json::from_value(tx.clone()).unwrap();
             let _ = tx.try_build_typed_tx().unwrap();
         }
-    }
-
-    #[test]
-    fn test_rlp() {
-        let trace = serde_json::from_str::<serde_json::Value>(TRACE).unwrap()["result"].clone();
-        let txs: Vec<TransactionTrace> =
-            serde_json::from_value(trace["transactions"].clone()).unwrap();
-
-        let block: eth_types::l2_types::BlockTrace = serde_json::from_value(trace).unwrap();
-
-        for (idx, (eth_tx, tx)) in block.transactions.into_iter().zip(txs).enumerate() {
-            let eth_tx = eth_tx.to_eth_tx(
-                block.header.hash,
-                block.header.number,
-                Some((idx as u64).into()),
-                block.header.base_fee_per_gas,
-            );
-            let eth_rlp = eth_tx.rlp();
-
-            let tx = tx.try_build_typed_tx().unwrap();
-            let tx_rlp = tx.rlp();
-
-            assert_eq!(eth_rlp.as_ref(), tx_rlp.as_ref(), "tx: {}", idx);
-        }
-
-        let eth_l1_msg_tx: eth_types::l2_types::TransactionTrace =
-            serde_json::from_str(L1_MSG_TX).unwrap();
-        let eth_l1_msg_tx = eth_l1_msg_tx.to_eth_tx(None, None, None, Some(0x2605c9c.into()));
-        let l1_msg_tx: TransactionTrace = serde_json::from_str(L1_MSG_TX).unwrap();
-        let l1_msg_tx = l1_msg_tx.try_build_typed_tx().unwrap();
-
-        let eth_rlp = eth_l1_msg_tx.rlp();
-        let tx_rlp = l1_msg_tx.rlp();
-
-        assert_eq!(eth_rlp.as_ref(), tx_rlp.as_ref());
     }
 }
