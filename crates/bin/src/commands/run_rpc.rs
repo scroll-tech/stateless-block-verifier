@@ -1,6 +1,6 @@
 use crate::utils;
+use alloy::providers::{Provider, ProviderBuilder};
 use clap::Args;
-use ethers_providers::{Http, Middleware, Provider};
 use futures::future::OptionFuture;
 use sbv::{
     core::HardforkConfig,
@@ -50,13 +50,13 @@ pub enum StartBlockSpec {
 impl RunRpcCommand {
     pub async fn run(self, fork_config: impl Fn(u64) -> HardforkConfig) -> anyhow::Result<()> {
         dev_info!("Running RPC command with url: {}", self.url);
-        let provider = Provider::new(Http::new(self.url));
+        let provider = ProviderBuilder::new().on_http(self.url);
 
-        let chain_id = provider.get_chainid().await?.as_u64();
+        let chain_id = provider.get_chain_id().await?;
         let fork_config = fork_config(chain_id);
 
         let start_block = match self.start_block {
-            StartBlockSpec::Latest => provider.get_block_number().await?.as_u64(),
+            StartBlockSpec::Latest => provider.get_block_number().await?,
             StartBlockSpec::Number(n) => n,
         };
 
@@ -76,12 +76,12 @@ impl RunRpcCommand {
             handles.spawn(async move {
                 while let Ok(block_number) = rx.recv().await {
                     let l2_trace = _provider
-                        .request::<_, BlockTrace>(
-                            "scroll_getBlockTraceByNumberOrHash",
-                            [
-                                serde_json::json!(format!("0x{:x}", block_number)),
+                        .raw_request::<_, BlockTrace>(
+                            "scroll_getBlockTraceByNumberOrHash".into(),
+                            (
+                                format!("0x{:x}", block_number),
                                 serde_json::json!({"StorageProofFormat": "flatten"}),
-                            ],
+                            ),
                         )
                         .await
                         .map_err(|e| (block_number, e.into()))?;
@@ -142,7 +142,7 @@ impl RunRpcCommand {
                 } else if current_block % 10 == 0 {
                     dev_info!(
                         "distance to latest block: {}",
-                        provider.get_block_number().await?.as_u64() - current_block
+                        provider.get_block_number().await? - current_block
                     );
                 }
 
@@ -153,7 +153,7 @@ impl RunRpcCommand {
 
                 let mut exponential_backoff = 1;
                 loop {
-                    let latest_block = provider.get_block_number().await?.as_u64();
+                    let latest_block = provider.get_block_number().await?;
 
                     update_metrics_gauge!(latest_rpc_block_height, latest_block as i64);
 
