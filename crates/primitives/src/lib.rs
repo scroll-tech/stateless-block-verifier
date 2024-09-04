@@ -1,131 +1,83 @@
 //! Stateless Block Verifier primitives library.
 
-#![deny(missing_docs)]
-#![deny(missing_debug_implementations)]
-
-#[macro_use]
-extern crate sbv_utils;
-
-use eth_types::{Address, H256};
+use crate::types::{TxL1Msg, TypedTransaction};
+use alloy::{
+    consensus::{SignableTransaction, TxEip1559, TxEip2930, TxEnvelope, TxLegacy},
+    eips::eip2930::AccessList,
+    primitives::{Bytes, ChainId, Signature, SignatureError, TxKind},
+};
 use mpt_zktrie::ZktrieState;
-use revm_primitives::{AccessListItem, TransactTo, TxEnv, B256, U256};
 use std::fmt::Debug;
 
-mod imp;
+/// Predeployed contracts
+pub mod predeployed;
+/// Types definition
+pub mod types;
+
+pub use alloy::consensus as alloy_consensus;
+pub use alloy::consensus::Transaction;
+pub use alloy::primitives as alloy_primitives;
+pub use alloy::primitives::{Address, B256, U256};
 
 /// Blanket trait for block trace extensions.
-pub trait BlockTrace:
-    BlockTraceExt + BlockTraceRevmExt + BlockZktrieExt + BlockChunkExt + Debug
-{
-}
-
-impl BlockTrace for eth_types::l2_types::BlockTrace {}
-
-impl BlockTrace for eth_types::l2_types::BlockTraceV2 {}
-
-impl BlockTrace for eth_types::l2_types::ArchivedBlockTraceV2 {}
-
-impl<T: BlockTrace> BlockTrace for &T {}
-
-/// Common extension trait for BlockTrace
-pub trait BlockTraceExt {
-    /// root before
-    fn root_before(&self) -> H256;
-    /// root after
-    fn root_after(&self) -> H256;
-    /// withdraw root
-    fn withdraw_root(&self) -> H256;
-    /// account proofs
-    fn account_proofs(&self) -> impl Iterator<Item = (&Address, impl IntoIterator<Item = &[u8]>)>;
-    /// storage proofs
-    fn storage_proofs(
-        &self,
-    ) -> impl Iterator<Item = (&Address, &H256, impl IntoIterator<Item = &[u8]>)>;
-    /// additional proofs
-    fn additional_proofs(&self) -> impl Iterator<Item = &[u8]>;
-    /// flatten proofs
-    fn flatten_proofs(&self) -> Option<impl Iterator<Item = (&H256, &[u8])>>;
-    /// address hashes
-    fn address_hashes(&self) -> impl Iterator<Item = (&Address, &H256)>;
-    /// store key hashes
-    fn store_key_hashes(&self) -> impl Iterator<Item = (&H256, &H256)>;
-    /// codes
-    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]>;
-    /// start l1 queue index
-    fn start_l1_queue_index(&self) -> u64;
-    /// execution_results
-    fn execution_results(&self, _tx_id: usize) -> Option<&eth_types::l2_types::ExecutionResult> {
-        None
-    }
-}
-
-/// Revm extension trait for BlockTrace
-pub trait BlockTraceRevmExt {
+pub trait Block: Debug {
     /// transaction type
-    type Tx: Transaction + Debug;
+    type Tx: TxTrace;
 
-    /// block number
+    /// Get block number
     fn number(&self) -> u64;
-    /// block hash
+
+    /// Get block hash
     fn block_hash(&self) -> B256;
-    /// chain id
+
+    /// Get chain id
     fn chain_id(&self) -> u64;
-    /// coinbase address
-    fn coinbase(&self) -> revm_primitives::Address;
-    /// timestamp
+
+    /// Get coinbase
+    fn coinbase(&self) -> Address;
+
+    /// Get timestamp
     fn timestamp(&self) -> U256;
-    /// gas limit
+
+    /// Get gas limit
     fn gas_limit(&self) -> U256;
-    /// base fee per gas
+
+    /// Get base fee per gas
     fn base_fee_per_gas(&self) -> Option<U256>;
-    /// difficulty
+
+    /// Get difficulty
     fn difficulty(&self) -> U256;
-    /// prevrandao
+
+    /// Get prevrandao
     fn prevrandao(&self) -> Option<B256>;
 
     /// transactions
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx>;
 
-    /// creates `revm::primitives::BlockEnv`
-    #[inline]
-    fn env(&self) -> revm_primitives::BlockEnv {
-        revm_primitives::BlockEnv {
-            number: U256::from_limbs([self.number(), 0, 0, 0]),
-            coinbase: self.coinbase(),
-            timestamp: self.timestamp(),
-            gas_limit: self.gas_limit(),
-            basefee: self.base_fee_per_gas().unwrap_or_default(),
-            difficulty: self.difficulty(),
-            prevrandao: self.prevrandao(),
-            blob_excess_gas_and_price: None,
-        }
-    }
-}
+    /// root before
+    fn root_before(&self) -> B256;
+    /// root after
+    fn root_after(&self) -> B256;
+    /// withdraw root
+    fn withdraw_root(&self) -> B256;
+    /// codes
+    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]>;
+    /// start l1 queue index
+    fn start_l1_queue_index(&self) -> u64;
 
-/// ZkTrie extension trait for BlockTrace
-pub trait BlockZktrieExt: BlockTraceExt {
+    /// flatten proofs
+    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])>;
+
     /// Update zktrie state from trace
+    #[inline]
     fn build_zktrie_state(&self, zktrie_state: &mut ZktrieState) {
-        if let Some(flatten_proofs) = self.flatten_proofs() {
-            dev_debug!("init zktrie state with flatten proofs");
-            let zk_db = zktrie_state.expose_db();
+        let zk_db = zktrie_state.expose_db();
 
-            for (k, bytes) in flatten_proofs {
-                zk_db.add_node_bytes(bytes, Some(k.as_bytes())).unwrap();
-            }
-        } else {
-            dev_warn!("no flatten proofs, fallback to update zktrie state from trace");
-            zktrie_state.update_from_trace(
-                self.account_proofs(),
-                self.storage_proofs(),
-                self.additional_proofs(),
-            );
+        for (k, bytes) in self.flatten_proofs() {
+            zk_db.add_node_bytes(bytes, Some(k.as_slice())).unwrap();
         }
     }
-}
 
-/// Chunk mode extension trait for ZktrieState
-pub trait BlockChunkExt: BlockTraceExt + BlockTraceRevmExt {
     /// Number of l1 transactions
     #[inline]
     fn num_l1_txs(&self) -> u64 {
@@ -142,6 +94,7 @@ pub trait BlockChunkExt: BlockTraceExt + BlockTraceRevmExt {
             Some(end_l1_queue_index) => end_l1_queue_index - self.start_l1_queue_index() + 1,
         }
     }
+
     /// Number of l2 transactions
     #[inline]
     fn num_l2_txs(&self) -> u64 {
@@ -178,89 +131,248 @@ pub trait BlockChunkExt: BlockTraceExt + BlockTraceRevmExt {
     }
 }
 
-/// Revm extension trait for Transaction
-pub trait Transaction {
-    /// get the raw tx type
-    fn raw_type(&self) -> u8;
-    /// check if the tx is l1 tx
-    fn is_l1_tx(&self) -> bool {
-        self.raw_type() == 0x7e
-    }
-    /// get the tx hash
+/// Utility trait for transaction trace
+pub trait TxTrace {
+    /// Return the hash of the transaction
     fn tx_hash(&self) -> B256;
-    /// get the caller
-    fn caller(&self) -> revm_primitives::Address;
-    /// get the gas limit
-    fn gas_limit(&self) -> u64;
-    /// get the gas price
-    fn gas_price(&self) -> U256;
-    /// get transact_to
-    fn transact_to(&self) -> TransactTo;
-    /// get the value
-    fn value(&self) -> U256;
-    /// get the data
-    fn data(&self) -> revm_primitives::Bytes;
-    /// get the nonce
-    fn nonce(&self) -> u64;
-    /// get the chain id
-    fn chain_id(&self) -> u64;
-    /// get the access list
-    fn access_list(&self) -> Vec<AccessListItem>;
-    /// get the gas priority fee
-    fn gas_priority_fee(&self) -> Option<U256>;
 
-    /// creates `revm::primitives::TxEnv`
-    fn tx_env(&self) -> TxEnv {
-        TxEnv {
-            caller: self.caller(),
-            gas_limit: self.gas_limit(),
-            gas_price: self.gas_price(),
-            transact_to: self.transact_to(),
-            value: self.value(),
-            data: self.data(),
-            nonce: Some(self.nonce()),
-            chain_id: Some(self.chain_id()),
-            access_list: self.access_list(),
-            gas_priority_fee: self.gas_priority_fee(),
-            ..Default::default()
-        }
+    /// Returns the transaction type
+    fn ty(&self) -> u8;
+
+    /// Get `nonce`.
+    fn nonce(&self) -> u64;
+
+    /// Get `gas_limit`.
+    fn gas_limit(&self) -> u128;
+
+    /// Get `gas_price`
+    fn gas_price(&self) -> u128;
+
+    /// Get `max_fee_per_gas`
+    fn max_fee_per_gas(&self) -> u128;
+
+    /// Get `max_priority_fee_per_gas`
+    fn max_priority_fee_per_gas(&self) -> u128;
+
+    /// Get `from` without checking
+    ///
+    /// # Safety
+    ///
+    /// Can only be used when the transaction is known to be an L1 transaction
+    unsafe fn get_from_unchecked(&self) -> Address;
+
+    /// Get `to`.
+    fn to(&self) -> TxKind;
+
+    /// Get `chain_id`.
+    fn chain_id(&self) -> ChainId;
+
+    /// Get `value`.
+    fn value(&self) -> U256;
+
+    /// Get `data`.
+    fn data(&self) -> Bytes;
+
+    /// Get `access_list`.
+    fn access_list(&self) -> AccessList;
+
+    /// Get `signature`.
+    fn signature(&self) -> Result<Signature, SignatureError>;
+
+    /// Check if the transaction is an L1 transaction
+    fn is_l1_tx(&self) -> bool {
+        self.ty() == 0x7e
     }
 
-    /// creates `ethers::Transaction`
-    fn to_eth_tx(
-        &self,
-        block_hash: B256,
-        block_number: u64,
-        transaction_index: usize,
-        base_fee_per_gas: Option<U256>,
-    ) -> eth_types::Transaction;
+    /// Try to build a typed transaction
+    fn try_build_typed_tx(&self) -> Result<TypedTransaction, SignatureError> {
+        let chain_id = self.chain_id();
+
+        let tx = match self.ty() {
+            0x0 => {
+                let tx = TxLegacy {
+                    chain_id: if chain_id >= 35 { Some(chain_id) } else { None },
+                    nonce: self.nonce(),
+                    gas_price: self.gas_price(),
+                    gas_limit: self.gas_limit(),
+                    to: self.to(),
+                    value: self.value(),
+                    input: self.data(),
+                };
+
+                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(self.signature()?)))
+            }
+            0x1 => {
+                let tx = TxEip2930 {
+                    chain_id,
+                    nonce: self.nonce(),
+                    gas_price: self.gas_price(),
+                    gas_limit: self.gas_limit(),
+                    to: self.to(),
+                    value: self.value(),
+                    access_list: self.access_list(),
+                    input: self.data(),
+                };
+
+                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(self.signature()?)))
+            }
+            0x02 => {
+                let tx = TxEip1559 {
+                    chain_id,
+                    nonce: self.nonce(),
+                    max_fee_per_gas: self.max_fee_per_gas(),
+                    max_priority_fee_per_gas: self.max_priority_fee_per_gas(),
+                    gas_limit: self.gas_limit(),
+                    to: self.to(),
+                    value: self.value(),
+                    access_list: self.access_list(),
+                    input: self.data(),
+                };
+
+                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(self.signature()?)))
+            }
+            0x7e => {
+                let tx = TxL1Msg {
+                    tx_hash: self.tx_hash(),
+                    from: unsafe { self.get_from_unchecked() },
+                    nonce: self.nonce(),
+                    gas_limit: self.gas_limit(),
+                    to: self.to(),
+                    value: self.value(),
+                    input: self.data(),
+                };
+
+                TypedTransaction::L1Msg(tx)
+            }
+            _ => unimplemented!("unsupported tx type: {}", self.ty()),
+        };
+
+        Ok(tx)
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::array;
-    use std::mem::transmute;
+impl<T: Block> Block for &T {
+    type Tx = <T as Block>::Tx;
 
-    #[test]
-    fn test_memory_layout() {
-        use eth_types::{ArchivedH160, H160};
-        // H160 and ArchivedH160 should have the same memory layout
-        assert_eq!(size_of::<H160>(), 20);
-        assert_eq!(size_of::<ArchivedH160>(), 20);
-        assert_eq!(size_of::<&[u8; 20]>(), size_of::<usize>());
-        assert_eq!(size_of::<&H160>(), size_of::<usize>());
-        assert_eq!(size_of::<&ArchivedH160>(), size_of::<usize>());
+    fn number(&self) -> u64 {
+        (*self).number()
+    }
 
-        let h160 = eth_types::H160::from(array::from_fn(|i| i as u8));
-        let serialized = rkyv::to_bytes::<_, 20>(&h160).unwrap();
-        let archived: &ArchivedH160 = unsafe { rkyv::archived_root::<H160>(&serialized[..]) };
-        assert_eq!(archived.0, h160.0);
-        let ptr_to_archived: usize = archived as *const _ as usize;
-        let ptr_to_archived_inner: usize = (&archived.0) as *const _ as usize;
-        assert_eq!(ptr_to_archived, ptr_to_archived_inner);
-        let transmuted: &H160 = unsafe { transmute(archived) };
-        assert_eq!(transmuted, &h160);
-        let transmuted: &H160 = unsafe { transmute(&archived.0) };
-        assert_eq!(transmuted, &h160);
+    fn block_hash(&self) -> B256 {
+        (*self).block_hash()
+    }
+
+    fn chain_id(&self) -> u64 {
+        (*self).chain_id()
+    }
+
+    fn coinbase(&self) -> Address {
+        (*self).coinbase()
+    }
+
+    fn timestamp(&self) -> U256 {
+        (*self).timestamp()
+    }
+
+    fn gas_limit(&self) -> U256 {
+        (*self).gas_limit()
+    }
+
+    fn base_fee_per_gas(&self) -> Option<U256> {
+        (*self).base_fee_per_gas()
+    }
+
+    fn difficulty(&self) -> U256 {
+        (*self).difficulty()
+    }
+
+    fn prevrandao(&self) -> Option<B256> {
+        (*self).prevrandao()
+    }
+
+    fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
+        (*self).transactions()
+    }
+
+    fn root_before(&self) -> B256 {
+        (*self).root_before()
+    }
+
+    fn root_after(&self) -> B256 {
+        (*self).root_after()
+    }
+
+    fn withdraw_root(&self) -> B256 {
+        (*self).withdraw_root()
+    }
+
+    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]> {
+        (*self).codes()
+    }
+
+    fn start_l1_queue_index(&self) -> u64 {
+        (*self).start_l1_queue_index()
+    }
+
+    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])> {
+        (*self).flatten_proofs()
+    }
+}
+
+impl<T: TxTrace> TxTrace for &T {
+    fn tx_hash(&self) -> B256 {
+        (*self).tx_hash()
+    }
+
+    fn ty(&self) -> u8 {
+        (*self).ty()
+    }
+
+    fn nonce(&self) -> u64 {
+        (*self).nonce()
+    }
+
+    fn gas_limit(&self) -> u128 {
+        (*self).gas_limit()
+    }
+
+    fn gas_price(&self) -> u128 {
+        (*self).gas_price()
+    }
+
+    fn max_fee_per_gas(&self) -> u128 {
+        (*self).max_fee_per_gas()
+    }
+
+    fn max_priority_fee_per_gas(&self) -> u128 {
+        (*self).max_priority_fee_per_gas()
+    }
+
+    unsafe fn get_from_unchecked(&self) -> Address {
+        (*self).get_from_unchecked()
+    }
+
+    fn to(&self) -> TxKind {
+        (*self).to()
+    }
+
+    fn chain_id(&self) -> ChainId {
+        (*self).chain_id()
+    }
+
+    fn value(&self) -> U256 {
+        (*self).value()
+    }
+
+    fn data(&self) -> Bytes {
+        (*self).data()
+    }
+
+    fn access_list(&self) -> AccessList {
+        (*self).access_list()
+    }
+
+    fn signature(&self) -> Result<Signature, SignatureError> {
+        (*self).signature()
     }
 }

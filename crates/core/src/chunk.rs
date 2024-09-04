@@ -1,6 +1,6 @@
-use eth_types::H256;
 use mpt_zktrie::ZktrieState;
-use sbv_primitives::BlockTrace;
+use revm::primitives::B256;
+use sbv_primitives::Block;
 use tiny_keccak::{Hasher, Keccak};
 
 /// A chunk is a set of continuous blocks.
@@ -14,15 +14,15 @@ use tiny_keccak::{Hasher, Keccak};
 #[derive(Debug)]
 pub struct ChunkInfo {
     chain_id: u64,
-    prev_state_root: H256,
-    post_state_root: H256,
-    withdraw_root: H256,
-    data_hash: H256,
+    prev_state_root: B256,
+    post_state_root: B256,
+    withdraw_root: B256,
+    data_hash: B256,
 }
 
 impl ChunkInfo {
     /// Construct by block traces
-    pub fn from_block_traces<T: BlockTrace>(traces: &[T]) -> (Self, ZktrieState) {
+    pub fn from_block_traces<T: Block>(traces: &[T]) -> (Self, ZktrieState) {
         let chain_id = traces.first().unwrap().chain_id();
         let prev_state_root = traces
             .first()
@@ -38,10 +38,10 @@ impl ChunkInfo {
         for trace in traces.iter() {
             trace.hash_l1_msg(&mut data_hasher);
         }
-        let mut data_hash = H256::zero();
+        let mut data_hash = B256::ZERO;
         data_hasher.finalize(&mut data_hash.0);
 
-        let mut zktrie_state = ZktrieState::construct(prev_state_root);
+        let mut zktrie_state = ZktrieState::construct(prev_state_root.0.into());
         for trace in traces.iter() {
             measure_duration_histogram!(
                 build_zktrie_state_duration_microseconds,
@@ -69,17 +69,17 @@ impl ChunkInfo {
     ///     chunk data hash ||
     ///     chunk txdata hash
     /// )
-    pub fn public_input_hash(&self, tx_bytes_hash: &H256) -> H256 {
+    pub fn public_input_hash(&self, tx_bytes_hash: &B256) -> B256 {
         let mut hasher = Keccak::v256();
 
         hasher.update(&self.chain_id.to_be_bytes());
         hasher.update(self.prev_state_root.as_ref());
-        hasher.update(self.post_state_root.as_bytes());
-        hasher.update(self.withdraw_root.as_bytes());
-        hasher.update(self.data_hash.as_bytes());
-        hasher.update(tx_bytes_hash.as_bytes());
+        hasher.update(self.post_state_root.as_slice());
+        hasher.update(self.withdraw_root.as_slice());
+        hasher.update(self.data_hash.as_slice());
+        hasher.update(tx_bytes_hash.as_slice());
 
-        let mut public_input_hash = H256::zero();
+        let mut public_input_hash = B256::ZERO;
         hasher.finalize(&mut public_input_hash.0);
         public_input_hash
     }
@@ -90,22 +90,22 @@ impl ChunkInfo {
     }
 
     /// State root before this chunk
-    pub fn prev_state_root(&self) -> H256 {
+    pub fn prev_state_root(&self) -> B256 {
         self.prev_state_root
     }
 
     /// State root after this chunk
-    pub fn post_state_root(&self) -> H256 {
+    pub fn post_state_root(&self) -> B256 {
         self.post_state_root
     }
 
     /// Withdraw root after this chunk
-    pub fn withdraw_root(&self) -> H256 {
+    pub fn withdraw_root(&self) -> B256 {
         self.withdraw_root
     }
 
     /// Data hash of this chunk
-    pub fn data_hash(&self) -> H256 {
+    pub fn data_hash(&self) -> B256 {
         self.data_hash
     }
 }
@@ -114,7 +114,7 @@ impl ChunkInfo {
 mod tests {
     use super::*;
     use crate::{EvmExecutorBuilder, HardforkConfig};
-    use eth_types::l2_types::BlockTrace;
+    use sbv_primitives::types::BlockTrace;
     use std::cell::RefCell;
 
     const TRACES_STR: [&str; 4] = [
@@ -136,7 +136,7 @@ mod tests {
                 .result
         });
 
-        let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id);
+        let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id());
         let (chunk_info, mut zktrie_state) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
@@ -162,7 +162,7 @@ mod tests {
         assert_eq!(post_state_root, chunk_info.post_state_root);
         drop(executor); // drop executor to release Rc<Keccek>
 
-        let mut tx_bytes_hash = H256::zero();
+        let mut tx_bytes_hash = B256::ZERO;
         tx_bytes_hasher.into_inner().finalize(&mut tx_bytes_hash.0);
         let _public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
     }

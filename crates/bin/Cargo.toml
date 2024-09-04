@@ -1,7 +1,16 @@
 [package]
 name = "stateless-block-verifier"
-version = "0.1.0"
-edition = "2021"
+homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/bin"
+
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
 
 [dependencies]
 anyhow.workspace = true
@@ -16,11 +25,8 @@ tiny-keccak.workspace = true
 tokio = { workspace = true, features = ["fs", "macros", "rt-multi-thread"] }
 url.workspace = true
 
-sbv-core.workspace = true
-sbv-primitives.workspace = true
-sbv-utils.workspace = true
+sbv.workspace = true
 
-eth-types.workspace = true
 mpt-zktrie.workspace = true
 
 pprof = { workspace = true, optional = true }
@@ -32,8 +38,8 @@ tracing-subscriber.workspace = true
 
 [features]
 default = ["dev"]
-dev = ["sbv-core/dev", "dep:tracing-subscriber"]
-debug-account = ["sbv-core/debug-account"]
-debug-storage = ["sbv-core/debug-storage"]
+dev = ["sbv/dev", "dep:tracing-subscriber"]
+debug-account = ["sbv/debug-account"]
+debug-storage = ["sbv/debug-storage"]
 profiling = ["dep:pprof"]
-metrics = ["sbv-core/metrics"]
+metrics = ["sbv/metrics"]

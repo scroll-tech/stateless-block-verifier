@@ -1,8 +1,10 @@
+//! Stateless Block Verifier
+
 #[macro_use]
-extern crate sbv_utils;
+extern crate sbv;
 
 use clap::Parser;
-use sbv_core::HardforkConfig;
+use sbv::core::HardforkConfig;
 
 #[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
@@ -19,9 +21,6 @@ struct Cli {
     /// Curie block number, defaults to be determined by chain id
     #[arg(short, long)]
     curie_block: Option<u64>,
-    /// Disable additional checks
-    #[arg(short = 'k', long)]
-    disable_checks: bool,
     /// Start metrics server
     #[cfg(feature = "metrics")]
     #[arg(long)]
@@ -47,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
 
     #[cfg(feature = "metrics")]
     if cmd.metrics {
-        sbv_utils::metrics::start_metrics_server(cmd.metrics_addr);
+        sbv::utils::metrics::start_metrics_server(cmd.metrics_addr);
     }
 
     let get_fork_config = move |chain_id: u64| {
@@ -60,9 +59,7 @@ async fn main() -> anyhow::Result<()> {
         config
     };
 
-    cmd.commands
-        .run(get_fork_config, cmd.disable_checks)
-        .await?;
+    cmd.commands.run(get_fork_config).await?;
 
     Ok(())
 }

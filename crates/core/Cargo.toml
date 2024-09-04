@@ -1,11 +1,19 @@
 [package]
 name = "sbv-core"
-version = "0.1.0"
-edition = "2021"
+homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/core"
+
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
 
 [dependencies]
 hex.workspace = true
-itertools.workspace = true
 once_cell.workspace = true
 revm.workspace = true
 rkyv.workspace = true
@@ -13,7 +21,6 @@ thiserror.workspace = true
 tiny-keccak.workspace = true
 
 # dependencies from scroll-tech
-eth-types.workspace = true
 mpt-zktrie.workspace = true
 zktrie.workspace = true
 

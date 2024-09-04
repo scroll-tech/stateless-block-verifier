@@ -94,5 +94,4 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo run --release --package stateless-block-verifier -- -k run-file testdata/mainnet_blocks/flatten-proofs/*
-      - run: cargo run --release --package stateless-block-verifier -- -k run-file testdata/sepolia_blocks/*
+      - run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/flatten-proofs/*

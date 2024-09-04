@@ -1,5 +1,5 @@
-use eth_types::{types::SignatureError, Address, H256};
-use revm::primitives::EVMError;
+use revm::primitives::alloy_primitives::SignatureError;
+use revm::primitives::{EVMError, B256};
 use std::convert::Infallible;
 
 /// Error variants encountered during manipulation of a zkTrie.
@@ -20,28 +20,24 @@ pub enum VerificationError {
         source: ZkTrieError,
     },
     /// Error while recovering signer from an ECDSA signature.
-    #[error("failed to recover signer from signature for tx_hash={tx_hash}: {source}")]
-    SignerRecovery {
+    #[error("invalid signature for tx_hash={tx_hash}: {source}")]
+    InvalidSignature {
         /// The tx hash.
-        tx_hash: H256,
+        tx_hash: B256,
         /// The source error that occurred while recovering signer.
         source: SignatureError,
     },
-    /// The signer recovered from the tx's signature does not match the stated tx sender.
-    #[error("recovered signer does not match tx sender for tx_hash={tx_hash}: sender={sender}, signer={signer}")]
-    SenderSignerMismatch {
+    /// Invalid gas price
+    #[error("invalid gas price for tx_hash={tx_hash}")]
+    InvalidGasPrice {
         /// The tx hash.
-        tx_hash: H256,
-        /// The tx sender address.
-        sender: Address,
-        /// The signer address recovered from tx signature.
-        signer: Address,
+        tx_hash: B256,
     },
     /// Error encountered from [`revm`].
     #[error("error encountered from revm for tx_hash={tx_hash}: {source}")]
     EvmExecution {
         /// The tx hash.
-        tx_hash: H256,
+        tx_hash: B256,
         /// The source error originating in [`revm`].
         source: EVMError<Infallible>,
     },
@@ -49,8 +45,8 @@ pub enum VerificationError {
     #[error("root_after in trace doesn't match with root_after in revm: root_trace={root_trace}, root_revm={root_revm}")]
     RootMismatch {
         /// Root after in trace
-        root_trace: H256,
+        root_trace: B256,
         /// Root after in revm
-        root_revm: H256,
+        root_revm: B256,
     },
 }
