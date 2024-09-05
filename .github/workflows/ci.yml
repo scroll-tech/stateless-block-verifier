@@ -94,4 +94,11 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2
-      - run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/flatten-proofs/*
+      - name: Test mainnet pre bernoulli
+        run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/pre-bernoulli/*
+      - name: Test mainnet bernoulli
+        run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/bernoulli/*
+      - name: Test mainnet curie
+        run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/curie/*
+      - name: Test mainnet darwin
+        run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/darwin/*
