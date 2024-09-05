@@ -81,6 +81,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        network: [ "mainnet" ]
+        hardfork: [ "pre-bernoulli", "bernoulli", "curie", "darwin" ]
         rust: [ "1.75", "nightly-2024-07-07" ]
 
     steps:
@@ -90,15 +92,10 @@ jobs:
         with:
           repository: 'scroll-tech/block-testdata'
           path: 'testdata'
+          sparse-checkout: '${{ matrix.network }}_blocks/${{ matrix.hardfork }}'
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
       - uses: Swatinem/rust-cache@v2
-      - name: Test mainnet pre bernoulli
-        run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/pre-bernoulli/*
-      - name: Test mainnet bernoulli
-        run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/bernoulli/*
-      - name: Test mainnet curie
-        run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/curie/*
-      - name: Test mainnet darwin
-        run: cargo run --release --package stateless-block-verifier -- run-file testdata/mainnet_blocks/darwin/*
+      - name: Test ${{ matrix.network }} ${{ matrix.hardfork }}
+        run: cargo run --release --package stateless-block-verifier -- run-file testdata/${{ matrix.network }}_blocks/${{ matrix.hardfork }}/*
