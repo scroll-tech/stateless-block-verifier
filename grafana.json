@@ -861,7 +861,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "code",
-          "expr": "sum by(le) (increase(build_zktrie_state_duration_bucket[$__interval]) / ignoring(le)  group_left increase(build_zktrie_state_duration_count[$__interval]))",
+          "expr": "sum by(le) (increase(build_zktrie_db_duration_bucket[$__interval]) / ignoring(le)  group_left increase(build_zktrie_db_duration_count[$__interval]))",
           "format": "heatmap",
           "fullMetaSearch": false,
           "hide": false,
