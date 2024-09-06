@@ -26,11 +26,11 @@ pub fn init_hash_scheme() {
     static INIT: Once = Once::new();
     INIT.call_once(|| {
         zktrie::init_hash_scheme_simple(|a: &[u8; 32], b: &[u8; 32], domain: &[u8; 32]| {
-            use poseidon_bn254::{hash_with_domain, Fr};
+            use poseidon_bn254::{hash_with_domain, Fr, PrimeField};
             let a = Fr::from_bytes(a).into_option()?;
             let b = Fr::from_bytes(b).into_option()?;
             let domain = Fr::from_bytes(domain).into_option()?;
-            Some(hash_with_domain(&[a, b], domain).to_bytes())
+            Some(hash_with_domain(&[a, b], domain).to_repr())
         });
     });
 }
