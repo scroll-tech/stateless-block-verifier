@@ -58,6 +58,9 @@ pub trait Block: Debug {
     /// Get gas limit
     fn gas_limit(&self) -> U256;
 
+    /// Get gas used
+    fn gas_used(&self) -> U256;
+
     /// Get base fee per gas
     fn base_fee_per_gas(&self) -> Option<U256>;
 
@@ -290,6 +293,10 @@ impl<T: Block> Block for &T {
 
     fn gas_limit(&self) -> U256 {
         (*self).gas_limit()
+    }
+
+    fn gas_used(&self) -> U256 {
+        (*self).gas_used()
     }
 
     fn base_fee_per_gas(&self) -> Option<U256> {
