@@ -8,7 +8,7 @@ use alloy::{
 };
 use std::fmt::Debug;
 use std::sync::Once;
-use zktrie::ZkMemoryDb;
+use zktrie::{ZkMemoryDb, ZkTrieNode};
 
 /// Predeployed contracts
 pub mod predeployed;
@@ -87,8 +87,8 @@ pub trait Block: Debug {
     /// Update zktrie state from trace
     #[inline]
     fn build_zktrie_db(&self, zktrie_db: &mut ZkMemoryDb) {
-        for (k, bytes) in self.flatten_proofs() {
-            zktrie_db.add_node_bytes(bytes, Some(k.as_slice())).unwrap();
+        for (_, bytes) in self.flatten_proofs() {
+            zktrie_db.add_node_bytes(bytes, None).unwrap();
         }
     }
 
