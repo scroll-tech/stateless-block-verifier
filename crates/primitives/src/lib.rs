@@ -87,6 +87,7 @@ pub trait Block: Debug {
     /// Update zktrie state from trace
     #[inline]
     fn build_zktrie_db(&self, zktrie_db: &mut ZkMemoryDb) {
+        init_hash_scheme();
         for (_, bytes) in self.flatten_proofs() {
             zktrie_db.add_node_bytes(bytes, None).unwrap();
         }
