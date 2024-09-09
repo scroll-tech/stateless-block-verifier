@@ -80,7 +80,12 @@ impl RunRpcCommand {
                             "scroll_getBlockTraceByNumberOrHash".into(),
                             (
                                 format!("0x{:x}", block_number),
-                                serde_json::json!({"StorageProofFormat": "flatten"}),
+                                serde_json::json!({
+                                    "ExcludeExecutionResults": true,
+                                    "ExcludeTxStorageTraces": true,
+                                    "StorageProofFormat": "flatten",
+                                    "FlattenProofsOnly": true
+                                }),
                             ),
                         )
                         .await
