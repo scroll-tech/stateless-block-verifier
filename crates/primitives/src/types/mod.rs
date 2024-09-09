@@ -22,6 +22,9 @@ struct BlockHeader {
     /// gas limit
     #[serde(rename = "gasLimit")]
     gas_limit: U256,
+    /// gas used
+    #[serde(rename = "gasUsed")]
+    gas_used: U256,
     /// base fee per gas
     #[serde(rename = "baseFeePerGas")]
     base_fee_per_gas: Option<U256>,
@@ -136,6 +139,10 @@ impl Block for BlockTrace {
         self.header.gas_limit
     }
 
+    fn gas_used(&self) -> U256 {
+        self.header.gas_used
+    }
+
     fn base_fee_per_gas(&self) -> Option<U256> {
         self.header.base_fee_per_gas
     }
@@ -205,6 +212,10 @@ impl Block for ArchivedBlockTrace {
 
     fn gas_limit(&self) -> U256 {
         self.header.gas_limit
+    }
+
+    fn gas_used(&self) -> U256 {
+        self.header.gas_used
     }
 
     fn base_fee_per_gas(&self) -> Option<U256> {
