@@ -8,7 +8,7 @@ use alloy::{
 };
 use std::fmt::Debug;
 use std::sync::Once;
-use zktrie::{ZkMemoryDb, ZkTrieNode};
+use zktrie::ZkMemoryDb;
 
 /// Predeployed contracts
 pub mod predeployed;
