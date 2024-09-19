@@ -155,13 +155,12 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>> {
-        let account: Account = match self
+        let Some(account) = self
             .zktrie
-            .get(address.as_slice())
+            .get::<Account, _>(address)
             .map_err(DatabaseError::zk_trie)?
-        {
-            Some(account) => account,
-            None => return Ok(None),
+        else {
+            return Ok(None);
         };
 
         self.prev_storage_roots

@@ -1,10 +1,9 @@
 use crate::utils;
 use anyhow::bail;
 use clap::Args;
-use sbv::primitives::zk_trie::db::HashMapDb;
 use sbv::{
     core::{ChunkInfo, EvmExecutorBuilder, HardforkConfig},
-    primitives::{types::BlockTrace, Block, B256},
+    primitives::{types::BlockTrace, zk_trie::db::HashMapDb, Block, B256},
 };
 use std::rc::Rc;
 use std::{cell::RefCell, path::PathBuf};
