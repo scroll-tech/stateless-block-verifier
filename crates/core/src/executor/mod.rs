@@ -1,36 +1,48 @@
-use crate::{database::ReadOnlyDB, error::VerificationError, error::ZkTrieError, HardforkConfig};
+use crate::{
+    database::EvmDatabase, error::DatabaseError, error::VerificationError, HardforkConfig,
+};
 use revm::db::AccountState;
 use revm::primitives::{BlockEnv, TxEnv, U256};
 use revm::{
     db::CacheDB,
     primitives::{AccountInfo, Env, SpecId, B256, KECCAK_EMPTY, POSEIDON_EMPTY},
 };
-use sbv_primitives::{zk_trie::ZkMemoryDb, Block, Transaction, TxTrace};
+use sbv_primitives::{
+    zk_trie::{
+        db::KVDatabase,
+        hash::{
+            key_hasher::NoCacheHasher,
+            poseidon::{Poseidon, PoseidonError},
+        },
+        trie::{ZkTrie, ZkTrieError},
+    },
+    Block, Transaction, TxTrace,
+};
 use std::fmt::Debug;
-use std::rc::Rc;
 
 mod builder;
 pub use builder::EvmExecutorBuilder;
+use sbv_primitives::zk_trie::scroll_types::Account;
 
 /// Execute hooks
 pub mod hooks;
 
 /// EVM executor that handles the block.
-pub struct EvmExecutor<'a> {
+pub struct EvmExecutor<'a, CodeDb, ZkDb> {
     hardfork_config: HardforkConfig,
-    db: CacheDB<ReadOnlyDB>,
+    db: CacheDB<EvmDatabase<CodeDb, ZkDb>>,
     spec_id: SpecId,
-    hooks: hooks::ExecuteHooks<'a>,
+    hooks: hooks::ExecuteHooks<'a, CodeDb, ZkDb>,
 }
 
-impl EvmExecutor<'_> {
+impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, CodeDb, ZkDb> {
     /// Get reference to the DB
-    pub fn db(&self) -> &CacheDB<ReadOnlyDB> {
+    pub fn db(&self) -> &CacheDB<EvmDatabase<CodeDb, ZkDb>> {
         &self.db
     }
 
     /// Update the DB
-    pub fn update_db<T: Block>(&mut self, l2_trace: &T) -> Result<(), ZkTrieError> {
+    pub fn update_db<T: Block>(&mut self, l2_trace: &T) -> Result<(), DatabaseError> {
         self.db.db.invalidate_storage_root_caches(
             self.db
                 .accounts
@@ -158,17 +170,27 @@ impl EvmExecutor<'_> {
     }
 
     /// Commit pending changes in cache db to zktrie
-    pub fn commit_changes(&mut self, zktrie_db: &Rc<ZkMemoryDb>) -> B256 {
+    pub fn commit_changes(&mut self, zktrie_db: ZkDb) -> Result<B256, DatabaseError> {
         measure_duration_histogram!(
             commit_changes_duration_microseconds,
-            cycle_track!(self.commit_changes_inner(zktrie_db), "commit_changes")
+            cycle_track!(
+                self.commit_changes_inner(zktrie_db)
+                    .map_err(DatabaseError::zk_trie),
+                "commit_changes"
+            )
         )
     }
 
-    fn commit_changes_inner(&mut self, zktrie_db: &Rc<ZkMemoryDb>) -> B256 {
-        let mut zktrie = zktrie_db
-            .new_trie(&self.db.db.committed_zktrie_root())
-            .expect("infallible");
+    fn commit_changes_inner(
+        &mut self,
+        zktrie_db: ZkDb,
+    ) -> Result<B256, ZkTrieError<PoseidonError, ZkDb::Error>> {
+        let mut zktrie = ZkTrie::<Poseidon, ZkDb>::new_with_root(
+            zktrie_db.clone(),
+            NoCacheHasher,
+            self.db.db.committed_zktrie_root(),
+        )
+        .expect("infallible");
 
         #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
         let mut debug_recorder = sbv_utils::DebugRecorder::new();
@@ -178,7 +200,7 @@ impl EvmExecutor<'_> {
             if db_acc.account_state == AccountState::None {
                 continue;
             }
-            let Some(info): Option<AccountInfo> = db_acc.info() else {
+            let Some(mut info): Option<AccountInfo> = db_acc.info() else {
                 continue;
             };
             if info.is_empty() {
@@ -188,30 +210,28 @@ impl EvmExecutor<'_> {
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
             cycle_tracker_start!("commit account {}", addr);
 
-            let mut code_size = 0;
             let mut storage_root = self.db.db.prev_storage_root(addr);
-            let mut code_hash = B256::ZERO;
-            let mut poseidon_code_hash = B256::ZERO;
 
             if !db_acc.storage.is_empty() {
                 // get current storage root
                 let storage_root_before = storage_root;
                 // get storage tire
                 cycle_tracker_start!("update storage_tire");
-                let mut storage_trie = zktrie_db
-                    .new_trie(storage_root_before.as_ref())
-                    .expect("unable to get storage trie");
+                let mut storage_trie = ZkTrie::<Poseidon, ZkDb>::new_with_root(
+                    zktrie_db.clone(),
+                    NoCacheHasher,
+                    storage_root_before,
+                )
+                .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {
                     if !value.is_zero() {
                         cycle_track!(
-                            storage_trie
-                                .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
-                                .expect("failed to update storage"),
+                            storage_trie.update(key.to_be_bytes::<32>(), value)?,
                             "Zktrie::update_store"
                         );
                     } else {
                         cycle_track!(
-                            storage_trie.delete(&key.to_be_bytes::<32>()),
+                            storage_trie.delete(key.to_be_bytes::<32>())?,
                             "Zktrie::delete"
                         );
                     }
@@ -220,12 +240,10 @@ impl EvmExecutor<'_> {
                     debug_recorder.record_storage(*addr, *key, *value);
                 }
 
-                if storage_trie.is_trie_dirty() {
-                    storage_trie.prepare_root();
-                }
+                storage_trie.commit()?;
 
                 cycle_tracker_end!("update storage_tire");
-                storage_root = storage_trie.root().into();
+                storage_root = *storage_trie.root().unwrap_ref();
 
                 #[cfg(feature = "debug-storage")]
                 debug_recorder.record_storage_root(*addr, storage_root);
@@ -236,41 +254,27 @@ impl EvmExecutor<'_> {
                 // if account not exist, all fields will be zero.
                 // but if account exist, code_hash will be empty hash if code is empty
                 if info.is_empty_code_hash() {
-                    code_hash = KECCAK_EMPTY.0.into();
-                    poseidon_code_hash = POSEIDON_EMPTY.0.into();
+                    info.code_hash = KECCAK_EMPTY.0.into();
+                    info.poseidon_code_hash = POSEIDON_EMPTY.0.into();
                 } else {
                     assert_ne!(
                         info.poseidon_code_hash,
                         B256::ZERO,
                         "revm didn't update poseidon_code_hash, revm: {info:?}",
                     );
-                    code_size = info.code_size as u64;
-                    code_hash = info.code_hash.0.into();
-                    poseidon_code_hash = info.poseidon_code_hash.0.into();
                 }
+            } else {
+                info.code_hash = B256::ZERO;
+                info.poseidon_code_hash = B256::ZERO;
             }
 
             #[cfg(feature = "debug-account")]
-            debug_recorder.record_account(
-                *addr,
-                info.nonce,
-                info.balance,
-                code_hash,
-                poseidon_code_hash,
-                code_size,
-                storage_root,
-            );
+            debug_recorder.record_account(*addr, info.clone(), storage_root);
 
-            let acc_data = [
-                U256::from_limbs([info.nonce, code_size, 0, 0]).to_be_bytes(),
-                info.balance.to_be_bytes(),
-                storage_root.0,
-                code_hash.0,
-                poseidon_code_hash.0,
-            ];
+            let acc_data = Account::from_revm_account_with_storage_root(info, storage_root);
             cycle_track!(
                 zktrie
-                    .update_account(addr.as_slice(), &acc_data)
+                    .update(addr, acc_data)
                     .expect("failed to update account"),
                 "Zktrie::update_account"
             );
@@ -278,19 +282,17 @@ impl EvmExecutor<'_> {
             cycle_tracker_end!("commit account {}", addr);
         }
 
-        if zktrie.is_trie_dirty() {
-            zktrie.prepare_root();
-        }
+        zktrie.commit()?;
 
-        let root_after = zktrie.root();
+        let root_after = *zktrie.root().unwrap_ref();
 
-        self.db.db.updated_committed_zktrie_root(root_after.into());
+        self.db.db.updated_committed_zktrie_root(root_after);
 
-        B256::from(root_after)
+        Ok(B256::from(root_after))
     }
 }
 
-impl Debug for EvmExecutor<'_> {
+impl<CodeDb, ZkDb> Debug for EvmExecutor<'_, CodeDb, ZkDb> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EvmExecutor")
             .field("db", &self.db)

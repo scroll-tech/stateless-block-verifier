@@ -81,7 +81,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb07629a5d0645d29f68d2fb6f4d0cf15c89ec0965be915f303967180929743f"
 dependencies = [
  "num_enum",
- "strum 0.26.3",
+ "strum",
 ]
 
 [[package]]
@@ -410,7 +410,7 @@ checksum = "71c4d842beb7a6686d04125603bc57614d5ed78bf95e4753274db3db4ba95214"
 dependencies = [
  "alloy-sol-macro-input 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "const-hex",
- "heck 0.5.0",
+ "heck",
  "indexmap 2.5.0",
  "proc-macro-error",
  "proc-macro2",
@@ -427,7 +427,7 @@ source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.0#3c8299a45f
 dependencies = [
  "alloy-sol-macro-input 0.8.0 (git+https://github.com/scroll-tech/alloy-core?branch=v0.8.0)",
  "const-hex",
- "heck 0.5.0",
+ "heck",
  "indexmap 2.5.0",
  "proc-macro-error",
  "proc-macro2",
@@ -445,7 +445,7 @@ checksum = "1306e8d3c9e6e6ecf7a39ffaf7291e73a5f655a2defd366ee92c2efebcdf7fee"
 dependencies = [
  "const-hex",
  "dunce",
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.77",
@@ -459,7 +459,7 @@ source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.0#3c8299a45f
 dependencies = [
  "const-hex",
  "dunce",
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.77",
@@ -1043,7 +1043,7 @@ version = "4.5.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "501d359d5f3dcaf6ecdeee48833ae73ec6e42723a1e52419c79abf9507eec0a0"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 2.0.77",
@@ -1648,14 +1648,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
-name = "gobuild"
-version = "0.1.0-alpha.2"
-source = "git+https://github.com/scroll-tech/gobuild.git#24935c2b8f677841f22acd6710957621bb294e0e"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "group"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1704,12 +1696,6 @@ dependencies = [
  "allocator-api2",
  "serde",
 ]
-
-[[package]]
-name = "heck"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95505c38b4572b2d910cecb0281560f54b440a19336cbbcb27bf6ce6adc6f5a8"
 
 [[package]]
 name = "heck"
@@ -2233,13 +2219,13 @@ checksum = "51d515d32fb182ee37cda2ccdcb92950d6a3c2893aa280e540671c2cd0f3b1d9"
 
 [[package]]
 name = "num-derive"
-version = "0.3.3"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "876a53fff98e03a936a674b29568b0e605f06b29372c2489ff4de23f1949743d"
+checksum = "ed3955f1a9c7c0c15e092f9c887db08b1fc683305fdf6eb6684f22555355e202"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.77",
 ]
 
 [[package]]
@@ -3163,11 +3149,12 @@ dependencies = [
  "alloy",
  "poseidon-bn254",
  "rkyv",
+ "sbv-utils",
  "serde",
  "serde_json",
  "serde_with",
  "tiny-keccak",
- "zktrie",
+ "zktrie-ng",
 ]
 
 [[package]]
@@ -3512,30 +3499,11 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "strum"
-version = "0.24.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "063e6045c0e62079840579a7e47a355ae92f60eb74daaf156fb1e84ba164e63f"
-
-[[package]]
-name = "strum"
 version = "0.26.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fec0f0aef304996cf250b31b5a10dee7980c85da9d759361292b8bca5a18f06"
 dependencies = [
- "strum_macros 0.26.4",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.24.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e385be0d24f186b4ce2f9982191e7101bb737312ad61c1f2f984f34bcf85d59"
-dependencies = [
- "heck 0.4.1",
- "proc-macro2",
- "quote",
- "rustversion",
- "syn 1.0.109",
+ "strum_macros",
 ]
 
 [[package]]
@@ -3544,7 +3512,7 @@ version = "0.26.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c6bee85a5a24955dc440386795aa378cd9cf82acd5f764469152d2270e581be"
 dependencies = [
- "heck 0.5.0",
+ "heck",
  "proc-macro2",
  "quote",
  "rustversion",
@@ -4370,25 +4338,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "zktrie"
-version = "0.3.0"
-source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#1a1da01f0e3a4c3f3361b25f829a38173538953a"
+name = "zktrie-ng"
+version = "0.1.0"
+source = "git+https://github.com/scroll-tech/zktrie-ng?branch=master#74b91ce8d0887fa4cd3c495846f0138a842a3768"
 dependencies = [
- "gobuild",
- "zktrie_rust",
-]
-
-[[package]]
-name = "zktrie_rust"
-version = "0.3.0"
-source = "git+https://github.com/scroll-tech/zktrie.git?branch=main#1a1da01f0e3a4c3f3361b25f829a38173538953a"
-dependencies = [
+ "alloy-primitives",
+ "hashbrown 0.14.5",
  "hex",
- "lazy_static",
- "log",
- "num",
  "num-derive",
  "num-traits",
- "strum 0.24.1",
- "strum_macros 0.24.3",
+ "once_cell",
+ "poseidon-bn254",
+ "revm-primitives",
+ "strum",
+ "thiserror",
+ "tracing",
 ]

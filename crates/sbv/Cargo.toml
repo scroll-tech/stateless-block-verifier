@@ -17,7 +17,7 @@ sbv-utils.workspace = true
 [features]
 debug-account = ["sbv-core/debug-account", "sbv-utils/debug-account"]
 debug-storage = ["sbv-core/debug-storage", "sbv-utils/debug-storage"]
-dev = ["sbv-core/dev", "sbv-utils/dev"]
+dev = ["sbv-core/dev", "sbv-utils/dev", "sbv-primitives/dev"]
 metrics = ["sbv-core/metrics", "sbv-utils/metrics"]
 
 # sp1 related
