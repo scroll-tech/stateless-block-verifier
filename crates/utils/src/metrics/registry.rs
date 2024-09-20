@@ -77,7 +77,7 @@ pub(super) fn init() -> Registry {
         update_db_duration_milliseconds.clone(),
     );
 
-    let zktrie_get_duration_microseconds = Histogram::new(linear_buckets(0.1, 1.0, 10));
+    let zktrie_get_duration_microseconds = Histogram::new(linear_buckets(50.0, 500.0, 10));
     registry.register(
         "zktrie_get_duration",
         "Duration of zktrie_get in microseconds",
