@@ -121,7 +121,7 @@ impl ReadOnlyDB {
 
     /// Update the database with a new block trace.
     pub fn update<T: Block>(&mut self, l2_trace: T) -> Result<()> {
-        measure_duration_histogram!(update_db_duration_microseconds, self.update_inner(l2_trace))
+        measure_duration_millis!(update_db_duration_milliseconds, self.update_inner(l2_trace))
     }
 
     fn update_inner<T: Block>(&mut self, l2_trace: T) -> Result<()> {
@@ -162,41 +162,42 @@ impl DatabaseRef for ReadOnlyDB {
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        Ok(self
-            .zktrie_db_ref
-            .get_account(address.as_slice())
-            .map(|account_data| {
-                let code_size =
-                    u64::from_be_bytes((&account_data[0][16..24]).try_into().unwrap()) as usize;
-                let nonce = u64::from_be_bytes((&account_data[0][24..]).try_into().unwrap());
-                let balance = U256::from_be_bytes(account_data[1]);
-                let code_hash = B256::from(account_data[3]);
-                let poseidon_code_hash = B256::from(account_data[4]);
+        Ok(measure_duration_micros!(
+            zktrie_get_duration_microseconds,
+            self.zktrie_db_ref.get_account(address.as_slice())
+        )
+        .map(|account_data| {
+            let code_size =
+                u64::from_be_bytes((&account_data[0][16..24]).try_into().unwrap()) as usize;
+            let nonce = u64::from_be_bytes((&account_data[0][24..]).try_into().unwrap());
+            let balance = U256::from_be_bytes(account_data[1]);
+            let code_hash = B256::from(account_data[3]);
+            let poseidon_code_hash = B256::from(account_data[4]);
 
-                let storage_root = B256::from(account_data[2]);
-                self.prev_storage_roots
-                    .borrow_mut()
-                    .entry(address)
-                    .or_insert(storage_root.0.into());
+            let storage_root = B256::from(account_data[2]);
+            self.prev_storage_roots
+                .borrow_mut()
+                .entry(address)
+                .or_insert(storage_root.0.into());
 
-                let zktrie_db = self.zktrie_db.clone();
-                self.storage_trie_refs.borrow_mut().insert(
-                    address,
-                    Lazy::new(Box::new(move || {
-                        zktrie_db
-                            .new_ref_trie(&storage_root.0)
-                            .expect("storage trie associated with account not found")
-                    })),
-                );
-                AccountInfo {
-                    balance,
-                    nonce,
-                    code_size,
-                    code_hash,
-                    poseidon_code_hash,
-                    code: self.code_db.get(&code_hash).cloned(),
-                }
-            }))
+            let zktrie_db = self.zktrie_db.clone();
+            self.storage_trie_refs.borrow_mut().insert(
+                address,
+                Lazy::new(Box::new(move || {
+                    zktrie_db
+                        .new_ref_trie(&storage_root.0)
+                        .expect("storage trie associated with account not found")
+                })),
+            );
+            AccountInfo {
+                balance,
+                nonce,
+                code_size,
+                code_hash,
+                poseidon_code_hash,
+                code: self.code_db.get(&code_hash).cloned(),
+            }
+        }))
     }
 
     /// Get account code by its code hash.
@@ -220,11 +221,12 @@ impl DatabaseRef for ReadOnlyDB {
         let trie = storage_trie_refs
             .entry(address)
             .or_insert_with_key(|address| {
-                let storage_root = self
-                    .zktrie_db_ref
-                    .get_account(address.as_slice())
-                    .map(|account_data| B256::from(account_data[2]))
-                    .unwrap_or_default();
+                let storage_root = measure_duration_micros!(
+                    zktrie_get_duration_microseconds,
+                    self.zktrie_db_ref.get_account(address.as_slice())
+                )
+                .map(|account_data| B256::from(account_data[2]))
+                .unwrap_or_default();
                 let zktrie_db = self.zktrie_db.clone();
                 Lazy::new(Box::new(move || {
                     zktrie_db
@@ -234,10 +236,12 @@ impl DatabaseRef for ReadOnlyDB {
                 }))
             });
 
-        Ok(trie
-            .get_store(&index.to_be_bytes::<32>())
-            .map(|store_data| U256::from_be_bytes(store_data))
-            .unwrap_or_default())
+        Ok(measure_duration_micros!(
+            zktrie_get_duration_microseconds,
+            trie.get_store(&index.to_be_bytes::<32>())
+        )
+        .map(|store_data| U256::from_be_bytes(store_data))
+        .unwrap_or_default())
     }
 
     /// Get block hash by block number.
