@@ -9,8 +9,8 @@ pub fn verify<T: Block + Clone>(
     l2_trace: T,
     fork_config: &HardforkConfig,
 ) -> Result<(), VerificationError> {
-    measure_duration_histogram!(
-        total_block_verification_duration_microseconds,
+    measure_duration_millis!(
+        total_block_verification_duration_milliseconds,
         verify_inner(l2_trace, fork_config)
     )
 }
@@ -40,8 +40,8 @@ fn verify_inner<T: Block + Clone>(
     let zktrie_db = cycle_track!(
         {
             let mut zktrie_db = ZkMemoryDb::new();
-            measure_duration_histogram!(
-                build_zktrie_db_duration_microseconds,
+            measure_duration_millis!(
+                build_zktrie_db_duration_milliseconds,
                 l2_trace.build_zktrie_db(&mut zktrie_db)
             );
             Rc::new(zktrie_db)

@@ -43,8 +43,8 @@ impl EvmExecutor<'_> {
 
     /// Handle a block.
     pub fn handle_block<T: Block>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
-        measure_duration_histogram!(
-            handle_block_duration_microseconds,
+        measure_duration_millis!(
+            handle_block_duration_milliseconds,
             self.handle_block_inner(l2_trace)
         )?;
 
@@ -139,13 +139,15 @@ impl EvmExecutor<'_> {
 
                 dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
-                let _result =
+                let _result = measure_duration_millis!(
+                    transact_commit_duration_milliseconds,
                     cycle_track!(revm.transact_commit(), "transact_commit").map_err(|e| {
                         VerificationError::EvmExecution {
                             tx_hash: *tx.tx_hash(),
                             source: e,
                         }
-                    })?;
+                    })?
+                );
 
                 dev_trace!("{_result:#?}");
             }
@@ -159,8 +161,8 @@ impl EvmExecutor<'_> {
 
     /// Commit pending changes in cache db to zktrie
     pub fn commit_changes(&mut self, zktrie_db: &Rc<ZkMemoryDb>) -> B256 {
-        measure_duration_histogram!(
-            commit_changes_duration_microseconds,
+        measure_duration_millis!(
+            commit_changes_duration_milliseconds,
             cycle_track!(self.commit_changes_inner(zktrie_db), "commit_changes")
         )
     }
@@ -203,16 +205,22 @@ impl EvmExecutor<'_> {
                     .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {
                     if !value.is_zero() {
-                        cycle_track!(
-                            storage_trie
-                                .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
-                                .expect("failed to update storage"),
-                            "Zktrie::update_store"
+                        measure_duration_micros!(
+                            zktrie_update_duration_microseconds,
+                            cycle_track!(
+                                storage_trie
+                                    .update_store(&key.to_be_bytes::<32>(), &value.to_be_bytes())
+                                    .expect("failed to update storage"),
+                                "Zktrie::update_store"
+                            )
                         );
                     } else {
-                        cycle_track!(
-                            storage_trie.delete(&key.to_be_bytes::<32>()),
-                            "Zktrie::delete"
+                        measure_duration_micros!(
+                            zktrie_delete_duration_microseconds,
+                            cycle_track!(
+                                storage_trie.delete(&key.to_be_bytes::<32>()),
+                                "Zktrie::delete"
+                            )
                         );
                     }
 
@@ -220,9 +228,12 @@ impl EvmExecutor<'_> {
                     debug_recorder.record_storage(*addr, *key, *value);
                 }
 
-                if storage_trie.is_trie_dirty() {
-                    storage_trie.prepare_root();
-                }
+                measure_duration_micros!(
+                    zktrie_commit_duration_microseconds,
+                    if storage_trie.is_trie_dirty() {
+                        storage_trie.prepare_root();
+                    }
+                );
 
                 cycle_tracker_end!("update storage_tire");
                 storage_root = storage_trie.root().into();
@@ -268,19 +279,25 @@ impl EvmExecutor<'_> {
                 code_hash.0,
                 poseidon_code_hash.0,
             ];
-            cycle_track!(
-                zktrie
-                    .update_account(addr.as_slice(), &acc_data)
-                    .expect("failed to update account"),
-                "Zktrie::update_account"
+            measure_duration_micros!(
+                zktrie_update_duration_microseconds,
+                cycle_track!(
+                    zktrie
+                        .update_account(addr.as_slice(), &acc_data)
+                        .expect("failed to update account"),
+                    "Zktrie::update_account"
+                )
             );
 
             cycle_tracker_end!("commit account {}", addr);
         }
 
-        if zktrie.is_trie_dirty() {
-            zktrie.prepare_root();
-        }
+        measure_duration_micros!(
+            zktrie_commit_duration_microseconds,
+            if zktrie.is_trie_dirty() {
+                zktrie.prepare_root();
+            }
+        );
 
         let root_after = zktrie.root();
 
