@@ -42,8 +42,8 @@ impl ChunkInfo {
 
         let mut zktrie_db = HashMapDb::default();
         for trace in traces.iter() {
-            measure_duration_histogram!(
-                build_zktrie_db_duration_microseconds,
+            measure_duration_millis!(
+                build_zktrie_db_duration_milliseconds,
                 trace.build_zktrie_db(&mut zktrie_db).unwrap()
             );
         }

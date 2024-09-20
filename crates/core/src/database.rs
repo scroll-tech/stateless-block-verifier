@@ -111,7 +111,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmDatabase<CodeDb,
 
     /// Update the database with a new block trace.
     pub fn update<T: Block>(&mut self, l2_trace: T) -> Result<()> {
-        measure_duration_histogram!(update_db_duration_microseconds, self.update_inner(l2_trace))
+        measure_duration_millis!(update_db_duration_milliseconds, self.update_inner(l2_trace))
     }
 
     fn update_inner<T: Block>(&mut self, l2_trace: T) -> Result<()> {
@@ -155,10 +155,11 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>> {
-        let Some(account) = self
-            .zktrie
-            .get::<Account, _>(address)
-            .map_err(DatabaseError::zk_trie)?
+        let Some(account) = measure_duration_micros!(
+            zktrie_get_duration_microseconds,
+            self.zktrie.get::<Account, _>(address)
+        )
+        .map_err(DatabaseError::zk_trie)?
         else {
             return Ok(None);
         };
@@ -214,12 +215,13 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
         let trie = storage_trie_refs
             .entry(address)
             .or_insert_with_key(|address| {
-                let storage_root = self
-                    .zktrie
-                    .get::<Account, _>(address)
-                    .expect("unexpected zktrie error")
-                    .map(|acc| acc.storage_root)
-                    .unwrap_or_default();
+                let storage_root = measure_duration_micros!(
+                    zktrie_get_duration_microseconds,
+                    self.zktrie.get::<Account, _>(address)
+                )
+                .expect("unexpected zktrie error")
+                .map(|acc| acc.storage_root)
+                .unwrap_or_default();
                 dev_debug!("storage root of {:?} is {:?}", address, storage_root);
 
                 let zktrie_db = self.zktrie_db.clone();
