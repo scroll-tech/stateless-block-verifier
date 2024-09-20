@@ -243,10 +243,12 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
             assert_eq!(*current_root, expected_root);
         }
 
-        Ok(trie
-            .get::<U256, _>(index.to_be_bytes::<32>())
-            .map_err(DatabaseError::zk_trie)?
-            .unwrap_or_default())
+        Ok(measure_duration_micros!(
+            zktrie_get_duration_microseconds,
+            trie.get::<U256, _>(index.to_be_bytes::<32>())
+        )
+        .map_err(DatabaseError::zk_trie)?
+        .unwrap_or_default())
     }
 
     /// Get block hash by block number.
