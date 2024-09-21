@@ -262,6 +262,78 @@ impl Block for ArchivedBlockTrace {
     }
 }
 
+impl Block for alloy::rpc::types::Block<alloy::rpc::types::Transaction, alloy::rpc::types::Header> {
+    type Tx = alloy::rpc::types::Transaction;
+
+    fn number(&self) -> u64 {
+        self.header.number
+    }
+
+    fn block_hash(&self) -> B256 {
+        self.header.hash
+    }
+
+    fn chain_id(&self) -> u64 {
+        0
+    }
+
+    fn coinbase(&self) -> Address {
+        self.header.miner
+    }
+
+    fn timestamp(&self) -> U256 {
+        U256::from_limbs([self.header.timestamp, 0, 0, 0])
+    }
+
+    fn gas_limit(&self) -> U256 {
+        U256::from(self.header.gas_limit)
+    }
+
+    fn gas_used(&self) -> U256 {
+        U256::from(self.header.gas_used)
+    }
+
+    fn base_fee_per_gas(&self) -> Option<U256> {
+        self.header.base_fee_per_gas.map(U256::from)
+    }
+
+    fn difficulty(&self) -> U256 {
+        self.header.difficulty
+    }
+
+    fn prevrandao(&self) -> Option<B256> {
+        self.header.mix_hash
+    }
+
+    fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
+        self.transactions.txns()
+    }
+
+    fn root_before(&self) -> B256 {
+        unimplemented!()
+    }
+
+    fn root_after(&self) -> B256 {
+        unimplemented!()
+    }
+
+    fn withdraw_root(&self) -> B256 {
+        self.header.withdrawals_root.unwrap_or_default()
+    }
+
+    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]> {
+        [].into_iter()
+    }
+
+    fn start_l1_queue_index(&self) -> u64 {
+        unimplemented!()
+    }
+
+    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])> {
+        [].into_iter()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

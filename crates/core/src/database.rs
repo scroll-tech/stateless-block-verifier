@@ -48,18 +48,11 @@ impl<CodeDb, Db> fmt::Debug for EvmDatabase<CodeDb, Db> {
 
 impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmDatabase<CodeDb, ZkDb> {
     /// Initialize an EVM database from a block trace.
-    pub fn new<T: Block>(l2_trace: T, mut code_db: CodeDb, zktrie_db: ZkDb) -> Result<Self> {
-        cycle_tracker_start!("insert CodeDB");
-        for code in l2_trace.codes() {
-            let hash = revm::primitives::keccak256(code);
-            code_db
-                .or_put(hash.as_slice(), code)
-                .map_err(DatabaseError::code_db)?;
-        }
-        cycle_tracker_end!("insert CodeDB");
-
-        let committed_zktrie_root = l2_trace.root_before();
-
+    pub fn new_with_root(
+        committed_zktrie_root: B256,
+        code_db: CodeDb,
+        zktrie_db: ZkDb,
+    ) -> Result<Self> {
         let zktrie = ZkTrie::new_with_root(zktrie_db.clone(), NoCacheHasher, committed_zktrie_root)
             .map_err(DatabaseError::zk_trie)?;
 
@@ -71,6 +64,24 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmDatabase<CodeDb,
             zktrie_db,
             zktrie,
         })
+    }
+
+    /// Initialize an EVM database from a block trace.
+    pub fn new_from_trace<T: Block>(
+        l2_trace: T,
+        mut code_db: CodeDb,
+        zktrie_db: ZkDb,
+    ) -> Result<Self> {
+        cycle_tracker_start!("insert CodeDB");
+        for code in l2_trace.codes() {
+            let hash = revm::primitives::keccak256(code);
+            code_db
+                .or_put(hash.as_slice(), code)
+                .map_err(DatabaseError::code_db)?;
+        }
+        cycle_tracker_end!("insert CodeDB");
+
+        Self::new_with_root(l2_trace.root_before(), code_db, zktrie_db)
     }
 
     /// Set the previous storage root of an account.

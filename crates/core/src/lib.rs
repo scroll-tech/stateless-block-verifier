@@ -2,6 +2,7 @@
 
 #[macro_use]
 extern crate sbv_utils;
+extern crate core;
 
 mod chunk;
 pub use chunk::ChunkInfo;
@@ -14,6 +15,9 @@ pub use error::VerificationError;
 
 mod executor;
 pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
+
+mod genesis;
+pub use genesis::GenesisConfig;
 
 mod hardfork;
 pub use hardfork::HardforkConfig;

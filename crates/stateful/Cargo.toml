@@ -1,0 +1,30 @@
+[package]
+name = "stateful-block-verifier"
+homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/bin"
+
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+alloy = { workspace = true, features = ["provider-http", "transport-http"] }
+anyhow.workspace = true
+clap = { workspace = true, features = ["derive"] }
+sled.workspace = true
+tokio = { workspace = true, features = ["fs", "io-util", "macros", "rt-multi-thread", "sync", "time"] }
+url.workspace = true
+
+sbv = { workspace = true, features = ["sled"]}
+
+tracing-subscriber = { workspace = true, optional = true }
+
+[features]
+default = ["dev"]
+dev = ["sbv/dev", "dep:tracing-subscriber"]
+
+[lints]
+workspace = true
+
