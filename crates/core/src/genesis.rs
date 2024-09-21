@@ -60,6 +60,8 @@ impl GenesisConfig {
             code_db.put(code_hash.as_ref(), acc.code.as_ref())?;
         }
 
+        code_db.put(KECCAK_EMPTY.as_ref(), &[])?;
+
         Ok(())
     }
 

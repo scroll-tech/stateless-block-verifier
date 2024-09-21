@@ -16,6 +16,8 @@ use sbv::{
 use std::path::PathBuf;
 use url::Url;
 
+use sbv::primitives::types::BlockTrace;
+use sbv::primitives::Block;
 #[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
 
@@ -55,13 +57,28 @@ async fn main() -> anyhow::Result<()> {
     genesis_config.init_code_db(&mut code_db)?;
     genesis_config.init_zktrie(&mut zktrie)?;
 
-    for i in 0..10u64 {
-        let mut block = provider.get_block_by_number(i.into(), true).await?.unwrap();
-        if let BlockTransactions::Full(ref mut txs) = block.transactions {
-            for tx in txs.iter_mut() {
-                tx.chain_id = Some(chain_id);
-            }
-        }
+    for i in 1..100000u64 {
+        let l2_trace = provider
+            .raw_request::<_, BlockTrace>(
+                "scroll_getBlockTraceByNumberOrHash".into(),
+                (
+                    format!("0x{:x}", i),
+                    serde_json::json!({
+                        "ExcludeExecutionResults": true,
+                        "ExcludeTxStorageTraces": true,
+                        "StorageProofFormat": "flatten",
+                        "FlattenProofsOnly": true
+                    }),
+                ),
+            )
+            .await?;
+
+        let block = provider.get_block_by_number(i.into(), true).await?.unwrap();
+        // if let BlockTransactions::Full(ref mut txs) = block.transactions {
+        //     for tx in txs.iter_mut() {
+        //         tx.chain_id = Some(chain_id);
+        //     }
+        // }
 
         let mut evm = EvmExecutorBuilder::new()
             .chain_id(chain_id)
@@ -75,6 +92,9 @@ async fn main() -> anyhow::Result<()> {
 
         evm.handle_block(&block)?;
         let new_root = evm.commit_changes(code_db.clone(), zktrie_db.clone())?;
+        assert_eq!(new_root, l2_trace.root_after());
+
+        zktrie.gc()?;
 
         zktrie = ZkTrie::new_with_root(zktrie_db.clone(), NoCacheHasher, new_root)?;
     }

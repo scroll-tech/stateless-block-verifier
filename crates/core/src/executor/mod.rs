@@ -94,6 +94,8 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
 
             dev_trace!("handle {idx}th tx");
 
+            let caller = unsafe { tx.get_from_unchecked() };
+
             let tx = tx
                 .try_build_typed_tx()
                 .map_err(|e| VerificationError::InvalidSignature {
@@ -104,12 +106,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
             dev_trace!("{tx:#?}");
             let mut env = env.clone();
             env.tx = TxEnv {
-                caller: tx.get_or_recover_signer().map_err(|e| {
-                    VerificationError::InvalidSignature {
-                        tx_hash: *tx.tx_hash(),
-                        source: e,
-                    }
-                })?,
+                caller,
                 gas_limit: tx.gas_limit() as u64,
                 gas_price: tx
                     .effective_gas_price(l2_trace.base_fee_per_gas().unwrap_or_default().to())

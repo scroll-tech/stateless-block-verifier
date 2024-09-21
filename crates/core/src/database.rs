@@ -174,6 +174,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
         else {
             return Ok(None);
         };
+        dev_trace!("get account {:?}", account);
 
         self.prev_storage_roots
             .borrow_mut()
@@ -196,6 +197,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
             .get(&account.code_hash)
             .map_err(DatabaseError::code_db)?
             .map(|v| Bytecode::new_legacy(v.into_bytes().into()));
+        dev_trace!("get account info {:?}", info);
 
         Ok(Some(info))
     }

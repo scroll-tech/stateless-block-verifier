@@ -3585,6 +3585,7 @@ dependencies = [
  "anyhow",
  "clap",
  "sbv",
+ "serde_json",
  "sled",
  "tokio",
  "tracing-subscriber",
