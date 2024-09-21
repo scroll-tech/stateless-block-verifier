@@ -181,7 +181,7 @@ pub trait TxTrace {
     fn to(&self) -> TxKind;
 
     /// Get `chain_id`.
-    fn chain_id(&self) -> ChainId;
+    fn chain_id(&self) -> Option<ChainId>;
 
     /// Get `value`.
     fn value(&self) -> U256;
@@ -202,12 +202,10 @@ pub trait TxTrace {
 
     /// Try to build a typed transaction
     fn try_build_typed_tx(&self) -> Result<TypedTransaction, SignatureError> {
-        let chain_id = self.chain_id();
-
         let tx = match self.ty() {
             0x0 => {
                 let tx = TxLegacy {
-                    chain_id: if chain_id >= 35 { Some(chain_id) } else { None },
+                    chain_id: self.chain_id(),
                     nonce: self.nonce(),
                     gas_price: self.gas_price(),
                     gas_limit: self.gas_limit(),
@@ -220,7 +218,7 @@ pub trait TxTrace {
             }
             0x1 => {
                 let tx = TxEip2930 {
-                    chain_id,
+                    chain_id: self.chain_id().unwrap(),
                     nonce: self.nonce(),
                     gas_price: self.gas_price(),
                     gas_limit: self.gas_limit(),
@@ -234,7 +232,7 @@ pub trait TxTrace {
             }
             0x02 => {
                 let tx = TxEip1559 {
-                    chain_id,
+                    chain_id: self.chain_id().unwrap(),
                     nonce: self.nonce(),
                     max_fee_per_gas: self.max_fee_per_gas(),
                     max_priority_fee_per_gas: self.max_priority_fee_per_gas(),
@@ -376,7 +374,7 @@ impl<T: TxTrace> TxTrace for &T {
         (*self).to()
     }
 
-    fn chain_id(&self) -> ChainId {
+    fn chain_id(&self) -> Option<ChainId> {
         (*self).chain_id()
     }
 

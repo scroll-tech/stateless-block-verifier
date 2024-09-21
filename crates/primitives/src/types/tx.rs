@@ -1,3 +1,4 @@
+use crate::alloy_consensus::{SignableTransaction, TxLegacy};
 use crate::TxTrace;
 use alloy::{
     consensus::{Transaction, TxEnvelope, TxType},
@@ -150,8 +151,13 @@ impl TxTrace for TransactionTrace {
         }
     }
 
-    fn chain_id(&self) -> ChainId {
-        self.chain_id.to()
+    fn chain_id(&self) -> Option<ChainId> {
+        let chain_id: ChainId = self.chain_id.to();
+        if self.ty == 0 && chain_id < 35 {
+            None
+        } else {
+            Some(chain_id)
+        }
     }
 
     fn value(&self) -> U256 {
@@ -219,8 +225,13 @@ impl TxTrace for ArchivedTransactionTrace {
         }
     }
 
-    fn chain_id(&self) -> ChainId {
-        self.chain_id.to()
+    fn chain_id(&self) -> Option<ChainId> {
+        let chain_id: ChainId = self.chain_id.to();
+        if self.ty == 0 && chain_id < 35 {
+            None
+        } else {
+            Some(chain_id)
+        }
     }
 
     fn value(&self) -> U256 {
@@ -238,6 +249,68 @@ impl TxTrace for ArchivedTransactionTrace {
 
     fn signature(&self) -> Result<Signature, SignatureError> {
         Signature::from_rs_and_parity(self.r, self.s, self.v)
+    }
+}
+
+impl TxTrace for alloy::rpc::types::Transaction {
+    fn tx_hash(&self) -> B256 {
+        self.hash
+    }
+
+    fn ty(&self) -> u8 {
+        self.transaction_type.unwrap_or(0)
+    }
+
+    fn nonce(&self) -> u64 {
+        self.nonce
+    }
+
+    fn gas_limit(&self) -> u128 {
+        self.gas
+    }
+
+    fn gas_price(&self) -> u128 {
+        self.gas_price.unwrap_or(0)
+    }
+
+    fn max_fee_per_gas(&self) -> u128 {
+        self.max_fee_per_gas.unwrap_or(0)
+    }
+
+    fn max_priority_fee_per_gas(&self) -> u128 {
+        self.max_priority_fee_per_gas.unwrap_or(0)
+    }
+
+    unsafe fn get_from_unchecked(&self) -> Address {
+        self.from
+    }
+
+    fn to(&self) -> TxKind {
+        match self.to {
+            Some(addr) => TxKind::Call(addr),
+            None => TxKind::Create,
+        }
+    }
+
+    fn chain_id(&self) -> Option<ChainId> {
+        self.chain_id
+    }
+
+    fn value(&self) -> U256 {
+        self.value
+    }
+
+    fn data(&self) -> Bytes {
+        self.input.clone()
+    }
+
+    fn access_list(&self) -> AccessList {
+        self.access_list.clone().unwrap_or_default()
+    }
+
+    fn signature(&self) -> Result<Signature, SignatureError> {
+        let sig = self.signature.unwrap();
+        Signature::from_rs_and_parity(sig.r, sig.s, sig.v.to::<u64>())
     }
 }
 

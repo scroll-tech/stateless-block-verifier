@@ -19,6 +19,7 @@ debug-account = ["sbv-core/debug-account", "sbv-utils/debug-account"]
 debug-storage = ["sbv-core/debug-storage", "sbv-utils/debug-storage"]
 dev = ["sbv-core/dev", "sbv-utils/dev", "sbv-primitives/dev"]
 metrics = ["sbv-core/metrics", "sbv-utils/metrics"]
+sled = ["sbv-primitives/sled"]
 
 # sp1 related
 sp1 = ["sbv-core/sp1"]

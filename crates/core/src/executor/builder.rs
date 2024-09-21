@@ -1,102 +1,118 @@
 use crate::error::DatabaseError;
 use crate::{executor::hooks::ExecuteHooks, EvmDatabase, EvmExecutor, HardforkConfig};
 use revm::db::CacheDB;
+use revm::primitives::alloy_primitives::ChainId;
 use sbv_primitives::zk_trie::db::KVDatabase;
-use sbv_primitives::Block;
+use sbv_primitives::{Block, B256};
 use std::fmt::{self, Debug};
 
 /// Builder for EVM executor.
-pub struct EvmExecutorBuilder<H, CodeDb, ZkDb> {
+pub struct EvmExecutorBuilder<H, EvmDb, C> {
     hardfork_config: H,
-    code_db: CodeDb,
-    zktrie_db: ZkDb,
+    evm_db: EvmDb,
+    chain_id: C,
 }
 
-impl<H: Debug, CodeDb, ZkDb> Debug for EvmExecutorBuilder<H, CodeDb, ZkDb> {
+impl<H: Debug, EvmDb, C: Debug> Debug for EvmExecutorBuilder<H, EvmDb, C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("EvmExecutorBuilder")
             .field("hardfork_config", &self.hardfork_config)
-            .field("code_db", &"...")
-            .field("zktrie_db", &"...")
+            .field("chain_id", &self.chain_id)
             .finish()
     }
 }
 
-impl<CodeDb, ZkDb> EvmExecutorBuilder<(), CodeDb, ZkDb> {
+impl EvmExecutorBuilder<(), (), ()> {
     /// Create a new builder.
-    pub fn new(code_db: CodeDb, zktrie_db: ZkDb) -> Self {
+    pub fn new() -> Self {
         Self {
             hardfork_config: (),
-            code_db,
-            zktrie_db,
+            evm_db: (),
+            chain_id: (),
         }
     }
 }
 
-impl<H, CodeDb, ZkDb> EvmExecutorBuilder<H, CodeDb, ZkDb> {
+impl<H, EvmDb, C> EvmExecutorBuilder<H, EvmDb, C> {
     /// Set hardfork config.
-    pub fn hardfork_config<H1>(self, hardfork_config: H1) -> EvmExecutorBuilder<H1, CodeDb, ZkDb> {
+    pub fn hardfork_config<H1>(self, hardfork_config: H1) -> EvmExecutorBuilder<H1, EvmDb, C> {
         EvmExecutorBuilder {
             hardfork_config,
-            code_db: self.code_db,
-            zktrie_db: self.zktrie_db,
+            evm_db: self.evm_db,
+            chain_id: self.chain_id,
         }
     }
 
-    /// Set code db.
-    pub fn code_db<CodeDb1>(self, code_db: CodeDb1) -> EvmExecutorBuilder<H, CodeDb1, ZkDb> {
+    /// Set evm db.
+    pub fn evm_db<EvmDb1>(self, evm_db: EvmDb1) -> EvmExecutorBuilder<H, EvmDb1, C> {
         EvmExecutorBuilder {
             hardfork_config: self.hardfork_config,
-            code_db,
-            zktrie_db: self.zktrie_db,
+            evm_db,
+            chain_id: self.chain_id,
         }
     }
 
-    /// Set zktrie db.
-    pub fn zktrie_db<ZkDb1>(self, zktrie_db: ZkDb1) -> EvmExecutorBuilder<H, CodeDb, ZkDb1> {
+    /// Build evm executor from a block trace.
+    pub fn evm_db_from_trace<T: Block, CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static>(
+        self,
+        l2_trace: &T,
+        code_db: CodeDb,
+        zktrie_db: ZkDb,
+    ) -> Result<EvmExecutorBuilder<H, EvmDatabase<CodeDb, ZkDb>, C>, DatabaseError> {
+        Ok(EvmExecutorBuilder {
+            hardfork_config: self.hardfork_config,
+            evm_db: EvmDatabase::new_from_trace(l2_trace, code_db, zktrie_db)?,
+            chain_id: self.chain_id,
+        })
+    }
+
+    /// Build evm executor from a block trace.
+    pub fn evm_db_from_root<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static>(
+        self,
+        committed_zktrie_root: B256,
+        code_db: CodeDb,
+        zktrie_db: ZkDb,
+    ) -> Result<EvmExecutorBuilder<H, EvmDatabase<CodeDb, ZkDb>, C>, DatabaseError> {
+        Ok(EvmExecutorBuilder {
+            hardfork_config: self.hardfork_config,
+            evm_db: EvmDatabase::new_with_root(committed_zktrie_root, code_db, zktrie_db)?,
+            chain_id: self.chain_id,
+        })
+    }
+
+    /// Set chain id.
+    pub fn chain_id<C1>(self, chain_id: C1) -> EvmExecutorBuilder<H, EvmDb, C1> {
         EvmExecutorBuilder {
             hardfork_config: self.hardfork_config,
-            code_db: self.code_db,
-            zktrie_db,
+            evm_db: self.evm_db,
+            chain_id,
         }
     }
 }
 
 impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static>
-    EvmExecutorBuilder<HardforkConfig, CodeDb, ZkDb>
+    EvmExecutorBuilder<HardforkConfig, EvmDatabase<CodeDb, ZkDb>, ChainId>
 {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn with_hooks<'e, T: Block, F: FnOnce(&mut ExecuteHooks<'e, CodeDb, ZkDb>)>(
+    pub fn with_hooks<'e, F: FnOnce(&mut ExecuteHooks<'e, CodeDb, ZkDb>)>(
         self,
-        l2_trace: &T,
         with_execute_hooks: F,
-    ) -> Result<EvmExecutor<'e, CodeDb, ZkDb>, DatabaseError> {
+    ) -> EvmExecutor<'e, CodeDb, ZkDb> {
         let mut execute_hooks = ExecuteHooks::new();
         with_execute_hooks(&mut execute_hooks);
 
-        let block_number = l2_trace.number();
-        let spec_id = self.hardfork_config.get_spec_id(block_number);
+        let db = CacheDB::new(self.evm_db);
 
-        dev_trace!("use spec id {:?}", spec_id);
-
-        let db = cycle_track!(
-            CacheDB::new(EvmDatabase::new(l2_trace, self.code_db, self.zktrie_db)?),
-            "build ReadOnlyDB"
-        );
-
-        Ok(EvmExecutor {
+        EvmExecutor {
+            chain_id: self.chain_id,
             hardfork_config: self.hardfork_config,
             db,
-            spec_id,
             hooks: execute_hooks,
-        })
+        }
     }
 
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn build<'e, T: Block>(
-        self,
-        l2_trace: &T,
-    ) -> Result<EvmExecutor<'e, CodeDb, ZkDb>, DatabaseError> {
-        self.with_hooks(l2_trace, |_| {})
+    pub fn build<'e>(self) -> EvmExecutor<'e, CodeDb, ZkDb> {
+        self.with_hooks(|_| {})
     }
 }
