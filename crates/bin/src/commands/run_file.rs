@@ -3,8 +3,9 @@ use anyhow::bail;
 use clap::Args;
 use sbv::{
     core::{ChunkInfo, EvmExecutorBuilder, HardforkConfig},
-    primitives::{types::BlockTrace, Block, B256},
+    primitives::{types::BlockTrace, zk_trie::db::HashMapDb, Block, B256},
 };
+use std::rc::Rc;
 use std::{cell::RefCell, path::PathBuf};
 use tiny_keccak::{Hasher, Keccak};
 use tokio::task::JoinSet;
@@ -75,17 +76,17 @@ impl RunFileCommand {
 
         let fork_config = fork_config(traces[0].chain_id());
         let (chunk_info, zktrie_db) = ChunkInfo::from_block_traces(&traces);
+        let zktrie_db = Rc::new(RefCell::new(zktrie_db));
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
-        let mut executor = EvmExecutorBuilder::new(zktrie_db.clone())
+        let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), zktrie_db.clone())
             .hardfork_config(fork_config)
-            .with_execute_hooks(|hooks| {
+            .with_hooks(&traces[0], |hooks| {
                 hooks.add_tx_rlp_handler(|_, rlp| {
                     tx_bytes_hasher.borrow_mut().update(rlp);
                 });
-            })
-            .build(&traces[0])?;
+            })?;
         executor.handle_block(&traces[0])?;
 
         for trace in traces[1..].iter() {
@@ -93,7 +94,7 @@ impl RunFileCommand {
             executor.handle_block(trace)?;
         }
 
-        let post_state_root = executor.commit_changes(&zktrie_db);
+        let post_state_root = executor.commit_changes(zktrie_db.clone())?;
         if post_state_root != chunk_info.post_state_root() {
             bail!("post state root mismatch");
         }

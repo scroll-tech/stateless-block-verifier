@@ -7,7 +7,7 @@ mod chunk;
 pub use chunk::ChunkInfo;
 
 mod database;
-pub use database::ReadOnlyDB;
+pub use database::EvmDatabase;
 
 mod error;
 pub use error::VerificationError;
