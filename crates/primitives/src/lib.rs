@@ -1,4 +1,6 @@
 //! Stateless Block Verifier primitives library.
+#[macro_use]
+extern crate sbv_utils;
 
 use crate::types::{TxL1Msg, TypedTransaction};
 use alloy::{
@@ -7,8 +9,11 @@ use alloy::{
     primitives::{Bytes, ChainId, Signature, SignatureError, TxKind},
 };
 use std::fmt::Debug;
-use std::sync::Once;
-use zktrie::ZkMemoryDb;
+use zktrie_ng::{
+    db::KVDatabase,
+    hash::poseidon::Poseidon,
+    trie::{Node, MAGIC_NODE_BYTES},
+};
 
 /// Predeployed contracts
 pub mod predeployed;
@@ -19,21 +24,7 @@ pub use alloy::consensus as alloy_consensus;
 pub use alloy::consensus::Transaction;
 pub use alloy::primitives as alloy_primitives;
 pub use alloy::primitives::{Address, B256, U256};
-pub use zktrie as zk_trie;
-
-/// Initialize the hash scheme for zkTrie.
-pub fn init_hash_scheme() {
-    static INIT: Once = Once::new();
-    INIT.call_once(|| {
-        zktrie::init_hash_scheme_simple(|a: &[u8; 32], b: &[u8; 32], domain: &[u8; 32]| {
-            use poseidon_bn254::{hash_with_domain, Fr, PrimeField};
-            let a = Fr::from_bytes(a).into_option()?;
-            let b = Fr::from_bytes(b).into_option()?;
-            let domain = Fr::from_bytes(domain).into_option()?;
-            Some(hash_with_domain(&[a, b], domain).to_repr())
-        });
-    });
-}
+pub use zktrie_ng as zk_trie;
 
 /// Blanket trait for block trace extensions.
 pub trait Block: Debug {
@@ -89,10 +80,18 @@ pub trait Block: Debug {
 
     /// Update zktrie state from trace
     #[inline]
-    fn build_zktrie_db(&self, zktrie_db: &mut ZkMemoryDb) {
-        for (_, bytes) in self.flatten_proofs() {
-            zktrie_db.add_node_bytes(bytes, None).unwrap();
+    fn build_zktrie_db<Db: KVDatabase>(&self, db: &mut Db) -> Result<(), Db::Error> {
+        for (k, bytes) in self.flatten_proofs() {
+            if bytes == MAGIC_NODE_BYTES {
+                continue;
+            }
+            let node = Node::<Poseidon>::try_from(bytes).expect("invalid node");
+            let node_hash = node.get_or_calculate_node_hash().expect("infallible");
+            debug_assert_eq!(k.as_slice(), node_hash.as_slice());
+            dev_trace!("put zktrie node: {:?}", node);
+            db.put_owned(node_hash.as_slice(), node.canonical_value(false))?;
         }
+        Ok(())
     }
 
     /// Number of l1 transactions

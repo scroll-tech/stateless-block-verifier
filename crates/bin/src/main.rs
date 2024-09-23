@@ -5,7 +5,6 @@ extern crate sbv;
 
 use clap::Parser;
 use sbv::core::HardforkConfig;
-use sbv::primitives::init_hash_scheme;
 
 #[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
@@ -42,8 +41,6 @@ async fn main() -> anyhow::Result<()> {
             EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .init();
-
-    init_hash_scheme();
 
     let cmd = Cli::parse();
 
