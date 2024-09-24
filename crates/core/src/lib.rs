@@ -10,7 +10,7 @@ mod database;
 pub use database::EvmDatabase;
 
 mod error;
-pub use error::VerificationError;
+pub use error::{DatabaseError, VerificationError};
 
 mod executor;
 pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
