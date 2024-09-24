@@ -54,8 +54,9 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
     }
 
     /// Handle a block.
-    pub fn handle_block<T: Block>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
-        measure_duration_millis!(
+    pub fn handle_block<T: Block>(&mut self, l2_trace: &T) -> Result<u64, VerificationError> {
+        #[allow(clippy::let_and_return)]
+        let gas_used = measure_duration_millis!(
             handle_block_duration_milliseconds,
             self.handle_block_inner(l2_trace)
         )?;
@@ -63,11 +64,11 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
         #[cfg(feature = "metrics")]
         sbv_utils::metrics::REGISTRY.block_counter.inc();
 
-        Ok(())
+        Ok(gas_used)
     }
 
     #[inline(always)]
-    fn handle_block_inner<T: Block>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
+    fn handle_block_inner<T: Block>(&mut self, l2_trace: &T) -> Result<u64, VerificationError> {
         self.hardfork_config
             .migrate(l2_trace.number(), &mut self.db)
             .unwrap();
@@ -85,6 +86,8 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
             prevrandao: l2_trace.prevrandao(),
             blob_excess_gas_and_price: None,
         };
+
+        let mut gas_used = 0;
 
         for (idx, tx) in l2_trace.transactions().enumerate() {
             cycle_tracker_start!("handle tx {}", idx);
@@ -151,7 +154,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
 
                 dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
-                let _result = measure_duration_millis!(
+                let result = measure_duration_millis!(
                     transact_commit_duration_milliseconds,
                     cycle_track!(revm.transact_commit(), "transact_commit").map_err(|e| {
                         VerificationError::EvmExecution {
@@ -161,14 +164,16 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
                     })?
                 );
 
-                dev_trace!("{_result:#?}");
+                gas_used += result.gas_used();
+
+                dev_trace!("{result:#?}");
             }
             self.hooks.post_tx_execution(self, idx);
 
             dev_debug!("handle {idx}th tx done");
             cycle_tracker_end!("handle tx {}", idx);
         }
-        Ok(())
+        Ok(gas_used)
     }
 
     /// Commit pending changes in cache db to zktrie
