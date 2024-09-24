@@ -65,47 +65,47 @@ pub struct TxL1Msg {
 pub struct TransactionTrace {
     /// tx hash
     #[serde(default, rename = "txHash")]
-    pub(crate) tx_hash: B256,
+    pub tx_hash: B256,
     /// tx type (in raw from)
     #[serde(rename = "type")]
-    pub(crate) ty: u8,
+    pub ty: u8,
     /// nonce
-    pub(crate) nonce: u64,
+    pub nonce: u64,
     /// gas limit
-    pub(crate) gas: u64,
+    pub gas: u64,
     #[serde(rename = "gasPrice")]
     /// gas price
-    pub(crate) gas_price: U256,
+    pub gas_price: U256,
     #[serde(rename = "gasTipCap")]
     /// gas tip cap
-    pub(crate) gas_tip_cap: Option<U256>,
+    pub gas_tip_cap: Option<U256>,
     #[serde(rename = "gasFeeCap")]
     /// gas fee cap
-    pub(crate) gas_fee_cap: Option<U256>,
+    pub gas_fee_cap: Option<U256>,
     /// from
-    pub(crate) from: Address,
+    pub from: Address,
     /// to, NONE for creation (0 addr)
-    pub(crate) to: Option<Address>,
+    pub to: Option<Address>,
     /// chain id
     #[serde(rename = "chainId")]
-    pub(crate) chain_id: U64,
+    pub chain_id: U64,
     /// value amount
-    pub(crate) value: U256,
+    pub value: U256,
     /// call data
-    pub(crate) data: Bytes,
+    pub data: Bytes,
     /// is creation
     #[serde(rename = "isCreate")]
-    pub(crate) is_create: bool,
+    pub is_create: bool,
     /// access list
     #[serde(rename = "accessList")]
     #[serde_as(as = "DefaultOnNull")]
-    pub(crate) access_list: AccessList,
+    pub access_list: AccessList,
     /// signature v
-    pub(crate) v: U64,
+    pub v: U64,
     /// signature r
-    pub(crate) r: U256,
+    pub r: U256,
     /// signature s
-    pub(crate) s: U256,
+    pub s: U256,
 }
 
 impl TxTrace for TransactionTrace {
