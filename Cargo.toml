@@ -21,8 +21,7 @@ tiny-keccak = "2.0"
 
 # dependencies from scroll-tech
 poseidon-bn254 = { git = "https://github.com/scroll-tech/poseidon-bn254", branch = "master", features = ["bn254"] }
-#zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "master", features = ["scroll"] }
-zktrie-ng = { path = "../zktrie-ng", features = ["scroll"] }
+zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "master", features = ["scroll"] }
 
 # binary dependencies
 anyhow = "1.0"
