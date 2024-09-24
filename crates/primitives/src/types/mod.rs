@@ -12,27 +12,27 @@ pub use tx::{ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransacti
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
-struct BlockHeader {
+pub struct BlockHeader {
     /// block number
-    number: U256,
+    pub number: U256,
     /// block hash
-    hash: B256,
+    pub hash: B256,
     /// timestamp
-    timestamp: U256,
+    pub timestamp: U256,
     /// gas limit
     #[serde(rename = "gasLimit")]
-    gas_limit: U256,
+    pub gas_limit: U256,
     /// gas used
     #[serde(rename = "gasUsed")]
-    gas_used: U256,
+    pub gas_used: U256,
     /// base fee per gas
     #[serde(rename = "baseFeePerGas")]
-    base_fee_per_gas: Option<U256>,
+    pub base_fee_per_gas: Option<U256>,
     /// difficulty
-    difficulty: U256,
+    pub difficulty: U256,
     /// mix hash
     #[serde(rename = "mixHash")]
-    mix_hash: Option<B256>,
+    pub mix_hash: Option<B256>,
 }
 
 /// Coinbase
@@ -41,9 +41,9 @@ struct BlockHeader {
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
-struct Coinbase {
+pub struct Coinbase {
     /// address of coinbase
-    address: Address,
+    pub address: Address,
 }
 
 /// Bytecode trace
@@ -52,9 +52,9 @@ struct Coinbase {
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
-struct BytecodeTrace {
+pub struct BytecodeTrace {
     /// bytecode
-    code: Bytes,
+    pub code: Bytes,
 }
 
 /// storage trace
@@ -73,17 +73,17 @@ struct BytecodeTrace {
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
-struct StorageTrace {
+pub struct StorageTrace {
     /// root before
     #[serde(rename = "rootBefore")]
-    root_before: B256,
+    pub root_before: B256,
     /// root after
     #[serde(rename = "rootAfter")]
-    root_after: B256,
+    pub root_after: B256,
     /// proofs
     #[serde(rename = "flattenProofs")]
     #[serde_as(as = "Map<_, _>")]
-    flatten_proofs: Vec<(B256, Bytes)>,
+    pub flatten_proofs: Vec<(B256, Bytes)>,
 }
 
 /// Block trace format
@@ -97,23 +97,23 @@ struct StorageTrace {
 pub struct BlockTrace {
     /// chain id
     #[serde(rename = "chainID", default)]
-    chain_id: u64,
+    pub chain_id: u64,
     /// coinbase
-    coinbase: Coinbase,
+    pub coinbase: Coinbase,
     /// block
-    header: BlockHeader,
+    pub header: BlockHeader,
     /// txs
-    transactions: Vec<TransactionTrace>,
+    pub transactions: Vec<TransactionTrace>,
     /// bytecodes
-    codes: Vec<BytecodeTrace>,
+    pub codes: Vec<BytecodeTrace>,
     /// storage trace BEFORE execution
     #[serde(rename = "storageTrace")]
-    storage_trace: StorageTrace,
+    pub storage_trace: StorageTrace,
     /// l1 tx queue
     #[serde(rename = "startL1QueueIndex", default)]
-    start_l1_queue_index: u64,
+    pub start_l1_queue_index: u64,
     /// Withdraw root
-    withdraw_trie_root: B256,
+    pub withdraw_trie_root: B256,
 }
 
 impl Block for BlockTrace {
