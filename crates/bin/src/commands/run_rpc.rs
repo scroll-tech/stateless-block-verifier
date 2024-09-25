@@ -2,6 +2,7 @@ use crate::utils;
 use alloy::providers::{Provider, ProviderBuilder};
 use clap::Args;
 use futures::future::OptionFuture;
+use sbv::primitives::types::LegacyStorageTrace;
 use sbv::{
     core::HardforkConfig,
     primitives::{types::BlockTrace, Block},
@@ -19,6 +20,9 @@ pub struct RunRpcCommand {
     /// RPC URL
     #[arg(short, long, default_value = "http://localhost:8545")]
     url: Url,
+    /// Legacy rpc
+    #[arg(short, long)]
+    legacy: bool,
     /// Start Block number
     #[arg(short, long, default_value = "latest")]
     start_block: StartBlockSpec,
@@ -49,7 +53,11 @@ pub enum StartBlockSpec {
 
 impl RunRpcCommand {
     pub async fn run(self, fork_config: impl Fn(u64) -> HardforkConfig) -> anyhow::Result<()> {
-        dev_info!("Running RPC command with url: {}", self.url);
+        dev_info!(
+            "Running RPC command with url: {}, legacy support: {}",
+            self.url,
+            self.legacy
+        );
         let provider = ProviderBuilder::new().on_http(self.url);
 
         let chain_id = provider.get_chain_id().await?;
@@ -75,21 +83,32 @@ impl RunRpcCommand {
             let rx = rx.clone();
             handles.spawn(async move {
                 while let Ok(block_number) = rx.recv().await {
-                    let l2_trace = _provider
-                        .raw_request::<_, BlockTrace>(
-                            "scroll_getBlockTraceByNumberOrHash".into(),
-                            (
-                                format!("0x{:x}", block_number),
-                                serde_json::json!({
-                                    "ExcludeExecutionResults": true,
-                                    "ExcludeTxStorageTraces": true,
-                                    "StorageProofFormat": "flatten",
-                                    "FlattenProofsOnly": true
-                                }),
-                            ),
-                        )
-                        .await
-                        .map_err(|e| (block_number, e.into()))?;
+                    let l2_trace: BlockTrace = if self.legacy {
+                        let trace = _provider
+                            .raw_request::<_, BlockTrace<LegacyStorageTrace>>(
+                                "scroll_getBlockTraceByNumberOrHash".into(),
+                                (format!("0x{:x}", block_number),),
+                            )
+                            .await
+                            .map_err(|e| (block_number, e.into()))?;
+                        trace.into()
+                    } else {
+                        _provider
+                            .raw_request::<_, BlockTrace>(
+                                "scroll_getBlockTraceByNumberOrHash".into(),
+                                (
+                                    format!("0x{:x}", block_number),
+                                    serde_json::json!({
+                                        "ExcludeExecutionResults": true,
+                                        "ExcludeTxStorageTraces": true,
+                                        "StorageProofFormat": "flatten",
+                                        "FlattenProofsOnly": true
+                                    }),
+                                ),
+                            )
+                            .await
+                            .map_err(|e| (block_number, e.into()))?
+                    };
 
                     dev_info!(
                         "worker#{_idx}: load trace for block #{block_number}({})",

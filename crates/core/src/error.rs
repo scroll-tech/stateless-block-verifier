@@ -4,8 +4,10 @@ use std::error::Error;
 /// Error variants encountered during manipulation of a zkTrie.
 #[derive(Debug, thiserror::Error)]
 pub enum DatabaseError {
+    /// Error encountered from code db.
     #[error("error encountered from code db: {0}")]
     CodeDb(Box<dyn Error + Send + Sync>),
+    /// Error encountered from zkTrie.
     #[error("error encountered from zkTrie: {0}")]
     ZkTrie(Box<dyn Error + Send + Sync>),
 }
