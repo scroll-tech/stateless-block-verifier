@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add a new struct `LegacyStorageTrace` to support legacy storage trace support
+  ([#58](https://github.com/scroll-tech/stateless-block-verifier/pull/58))
+- Add a cli flag `--legacy` to enable support of legacy rpc node
+  ([#58](https://github.com/scroll-tech/stateless-block-verifier/pull/58))
+
+### Changed
+
+- `flatten_proofs` in `StorageTrace` is changed from `Vec<(B256, Bytes)` to `Vec<Bytes>`
+  since the node hash will be recalculated when adding to zktrie
+  ([#58](https://github.com/scroll-tech/stateless-block-verifier/pull/58))
+- `BlockTrace` now has a generic parameter `S` for the storage trace type, default to `StorageTrace`
+  ([#58](https://github.com/scroll-tech/stateless-block-verifier/pull/58))
+
+
 ## [2.0.0] - 2024-09-04
 
 ### Added
