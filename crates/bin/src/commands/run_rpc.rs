@@ -20,9 +20,9 @@ pub struct RunRpcCommand {
     /// RPC URL
     #[arg(short, long, default_value = "http://localhost:8545")]
     url: Url,
-    /// Legacy rpc
+    /// Enable flatten proofs
     #[arg(short, long)]
-    legacy: bool,
+    flatten_proofs: bool,
     /// Start Block number
     #[arg(short, long, default_value = "latest")]
     start_block: StartBlockSpec,
@@ -54,9 +54,9 @@ pub enum StartBlockSpec {
 impl RunRpcCommand {
     pub async fn run(self, fork_config: impl Fn(u64) -> HardforkConfig) -> anyhow::Result<()> {
         dev_info!(
-            "Running RPC command with url: {}, legacy support: {}",
+            "Running RPC command with url: {}, flatten proofs support: {}",
             self.url,
-            self.legacy
+            self.flatten_proofs
         );
         let provider = ProviderBuilder::new().on_http(self.url);
 
@@ -83,7 +83,7 @@ impl RunRpcCommand {
             let rx = rx.clone();
             handles.spawn(async move {
                 while let Ok(block_number) = rx.recv().await {
-                    let l2_trace: BlockTrace = if self.legacy {
+                    let l2_trace: BlockTrace = if !self.flatten_proofs {
                         let trace = _provider
                             .raw_request::<_, BlockTrace<LegacyStorageTrace>>(
                                 "scroll_getBlockTraceByNumberOrHash".into(),
