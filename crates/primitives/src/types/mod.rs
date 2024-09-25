@@ -1,7 +1,11 @@
 use crate::Block;
 use alloy::primitives::{Address, Bytes, B256, U256};
-use serde::{Deserialize, Serialize};
+use rkyv::Archive;
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_with::{serde_as, Map};
+use std::collections::{BTreeSet, HashMap};
+use std::fmt::Debug;
+use std::hash::Hash;
 
 mod tx;
 pub use tx::{ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransaction};
@@ -58,16 +62,15 @@ pub struct BytecodeTrace {
 }
 
 /// storage trace
-#[serde_as]
 #[derive(
     rkyv::Archive,
     rkyv::Serialize,
     rkyv::Deserialize,
     Serialize,
-    Deserialize,
     Default,
     Debug,
     Clone,
+    Hash,
     Eq,
     PartialEq,
 )]
@@ -82,8 +85,45 @@ pub struct StorageTrace {
     pub root_after: B256,
     /// proofs
     #[serde(rename = "flattenProofs")]
+    pub flatten_proofs: Vec<Bytes>,
+}
+
+/// legacy storage trace
+#[serde_as]
+#[derive(
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    Serialize,
+    Deserialize,
+    Default,
+    Debug,
+    Clone,
+    Hash,
+    Eq,
+    PartialEq,
+)]
+#[archive(check_bytes)]
+#[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
+#[allow(clippy::type_complexity)]
+pub struct LegacyStorageTrace {
+    /// root before
+    #[serde(rename = "rootBefore")]
+    pub root_before: B256,
+    /// root after
+    #[serde(rename = "rootAfter")]
+    pub root_after: B256,
+    /// account proofs
+    #[serde(default)]
     #[serde_as(as = "Map<_, _>")]
-    pub flatten_proofs: Vec<(B256, Bytes)>,
+    pub proofs: Vec<(Address, Vec<Bytes>)>,
+    #[serde(rename = "storageProofs", default)]
+    #[serde_as(as = "Map<_, Map<_, _>>")]
+    /// storage proofs for each account
+    pub storage_proofs: Vec<(Address, Vec<(B256, Vec<Bytes>)>)>,
+    #[serde(rename = "deletionProofs", default)]
+    /// additional deletion proofs
+    pub deletion_proofs: Vec<Bytes>,
 }
 
 /// Block trace format
@@ -94,7 +134,11 @@ pub struct StorageTrace {
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
-pub struct BlockTrace {
+pub struct BlockTrace<S = StorageTrace>
+where
+    S: Archive,
+    <S as Archive>::Archived: Debug + Hash + PartialEq + Eq,
+{
     /// chain id
     #[serde(rename = "chainID", default)]
     pub chain_id: u64,
@@ -108,12 +152,84 @@ pub struct BlockTrace {
     pub codes: Vec<BytecodeTrace>,
     /// storage trace BEFORE execution
     #[serde(rename = "storageTrace")]
-    pub storage_trace: StorageTrace,
+    pub storage_trace: S,
     /// l1 tx queue
     #[serde(rename = "startL1QueueIndex", default)]
     pub start_l1_queue_index: u64,
     /// Withdraw root
     pub withdraw_trie_root: B256,
+}
+
+impl<'de> Deserialize<'de> for StorageTrace {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum FlattenProofs {
+            Map(HashMap<B256, Bytes>),
+            Vec(Vec<Bytes>),
+        }
+        #[derive(Deserialize)]
+        struct StorageTraceDe {
+            #[serde(rename = "rootBefore")]
+            pub root_before: B256,
+            #[serde(rename = "rootAfter")]
+            pub root_after: B256,
+            #[serde(rename = "flattenProofs")]
+            pub flatten_proofs: FlattenProofs,
+        }
+
+        let de = StorageTraceDe::deserialize(deserializer)?;
+        let mut flatten_proofs = match de.flatten_proofs {
+            FlattenProofs::Map(map) => map.into_values().collect(),
+            FlattenProofs::Vec(vec) => vec,
+        };
+        flatten_proofs.sort();
+
+        Ok(StorageTrace {
+            root_before: de.root_before,
+            root_after: de.root_after,
+            flatten_proofs,
+        })
+    }
+}
+
+impl From<LegacyStorageTrace> for StorageTrace {
+    fn from(trace: LegacyStorageTrace) -> Self {
+        let mut flatten_proofs = BTreeSet::new();
+        for (_, proofs) in trace.proofs {
+            flatten_proofs.extend(proofs);
+        }
+        for (_, proofs) in trace.storage_proofs {
+            for (_, proofs) in proofs {
+                flatten_proofs.extend(proofs);
+            }
+        }
+        flatten_proofs.extend(trace.deletion_proofs);
+
+        StorageTrace {
+            root_before: trace.root_before,
+            root_after: trace.root_after,
+            flatten_proofs: flatten_proofs.into_iter().collect(),
+        }
+    }
+}
+
+impl From<BlockTrace<LegacyStorageTrace>> for BlockTrace {
+    fn from(trace: BlockTrace<LegacyStorageTrace>) -> Self {
+        BlockTrace {
+            chain_id: trace.chain_id,
+            coinbase: trace.coinbase,
+            header: trace.header,
+            transactions: trace.transactions,
+            codes: trace.codes,
+            storage_trace: trace.storage_trace.into(),
+            start_l1_queue_index: trace.start_l1_queue_index,
+            withdraw_trie_root: trace.withdraw_trie_root,
+        }
+    }
 }
 
 impl Block for BlockTrace {
@@ -179,11 +295,8 @@ impl Block for BlockTrace {
         self.start_l1_queue_index
     }
 
-    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])> {
-        self.storage_trace
-            .flatten_proofs
-            .iter()
-            .map(|(k, v)| (k, v.as_ref()))
+    fn flatten_proofs(&self) -> impl Iterator<Item = &[u8]> {
+        self.storage_trace.flatten_proofs.iter().map(|v| v.as_ref())
     }
 }
 
@@ -254,11 +367,8 @@ impl Block for ArchivedBlockTrace {
         self.start_l1_queue_index
     }
 
-    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])> {
-        self.storage_trace
-            .flatten_proofs
-            .iter()
-            .map(|(k, v)| (k, v.as_ref()))
+    fn flatten_proofs(&self) -> impl Iterator<Item = &[u8]> {
+        self.storage_trace.flatten_proofs.iter().map(|v| v.as_ref())
     }
 }
 
@@ -404,8 +514,7 @@ mod tests {
             .iter()
             .zip(archived_block.storage_trace.flatten_proofs.iter())
         {
-            assert_eq!(proof.0, archived_proof.0);
-            assert_eq!(proof.1.as_ref(), archived_proof.1.as_ref());
+            assert_eq!(proof.as_ref(), archived_proof.as_ref());
         }
 
         assert_eq!(

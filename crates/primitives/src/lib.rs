@@ -76,18 +76,17 @@ pub trait Block: Debug {
     fn start_l1_queue_index(&self) -> u64;
 
     /// flatten proofs
-    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])>;
+    fn flatten_proofs(&self) -> impl Iterator<Item = &[u8]>;
 
     /// Update zktrie state from trace
     #[inline]
     fn build_zktrie_db<Db: KVDatabase>(&self, db: &mut Db) -> Result<(), Db::Error> {
-        for (k, bytes) in self.flatten_proofs() {
+        for bytes in self.flatten_proofs() {
             if bytes == MAGIC_NODE_BYTES {
                 continue;
             }
             let node = Node::<Poseidon>::try_from(bytes).expect("invalid node");
             let node_hash = node.get_or_calculate_node_hash().expect("infallible");
-            debug_assert_eq!(k.as_slice(), node_hash.as_slice());
             dev_trace!("put zktrie node: {:?}", node);
             db.put_owned(node_hash.as_slice(), node.canonical_value(false))?;
         }
@@ -334,7 +333,7 @@ impl<T: Block> Block for &T {
         (*self).start_l1_queue_index()
     }
 
-    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])> {
+    fn flatten_proofs(&self) -> impl Iterator<Item = &[u8]> {
         (*self).flatten_proofs()
     }
 }
