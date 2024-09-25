@@ -105,6 +105,7 @@ pub struct StorageTrace {
 )]
 #[archive(check_bytes)]
 #[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
+#[allow(clippy::type_complexity)]
 pub struct LegacyStorageTrace {
     /// root before
     #[serde(rename = "rootBefore")]
@@ -182,7 +183,7 @@ impl<'de> Deserialize<'de> for StorageTrace {
 
         let de = StorageTraceDe::deserialize(deserializer)?;
         let mut flatten_proofs = match de.flatten_proofs {
-            FlattenProofs::Map(map) => map.into_iter().map(|(_, v)| v).collect(),
+            FlattenProofs::Map(map) => map.into_values().collect(),
             FlattenProofs::Vec(vec) => vec,
         };
         flatten_proofs.sort();
