@@ -93,8 +93,9 @@ pub trait Block: Debug {
             )
             .expect("infallible");
             dev_trace!("put zktrie node: {:?}", node);
+            let node_bytes = cycle_track!(node.canonical_value(false), "Node::canonical_value");
             cycle_track!(
-                db.put_owned(node_hash.as_slice(), node.canonical_value(false))?,
+                db.put_owned(node_hash.as_slice(), node_bytes)?,
                 "KVDatabase::put_owned"
             );
         }
