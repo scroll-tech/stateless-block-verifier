@@ -43,13 +43,6 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
 
     /// Update the DB
     pub fn update_db<T: Block>(&mut self, l2_trace: &T) -> Result<(), DatabaseError> {
-        self.db.db.invalidate_storage_root_caches(
-            self.db
-                .accounts
-                .iter()
-                .map(|(addr, acc)| (*addr, acc.account_state.clone())),
-        );
-
         self.db.db.update(l2_trace)
     }
 
@@ -58,7 +51,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
         #[allow(clippy::let_and_return)]
         let gas_used = measure_duration_millis!(
             handle_block_duration_milliseconds,
-            self.handle_block_inner(l2_trace)
+            cycle_track!(self.handle_block_inner(l2_trace), "handle_block")
         )?;
 
         #[cfg(feature = "metrics")]
@@ -90,7 +83,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
         let mut gas_used = 0;
 
         for (idx, tx) in l2_trace.transactions().enumerate() {
-            cycle_tracker_start!("handle tx {}", idx);
+            cycle_tracker_start!("handle tx");
 
             dev_trace!("handle {idx}th tx");
 
@@ -171,7 +164,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
             self.hooks.post_tx_execution(self, idx);
 
             dev_debug!("handle {idx}th tx done");
-            cycle_tracker_end!("handle tx {}", idx);
+            cycle_tracker_end!("handle tx");
         }
         Ok(gas_used)
     }
@@ -215,7 +208,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
             }
 
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
-            cycle_tracker_start!("commit account {}", addr);
+            cycle_tracker_start!("commit account");
 
             let mut storage_root = self.db.db.prev_storage_root(addr);
 
@@ -224,10 +217,13 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
                 let storage_root_before = storage_root;
                 // get storage tire
                 cycle_tracker_start!("update storage_tire");
-                let mut storage_trie = ZkTrie::<Poseidon, ZkDb>::new_with_root(
-                    zktrie_db.clone(),
-                    NoCacheHasher,
-                    storage_root_before,
+                let mut storage_trie = cycle_track!(
+                    ZkTrie::<Poseidon, ZkDb>::new_with_root(
+                        zktrie_db.clone(),
+                        NoCacheHasher,
+                        storage_root_before,
+                    ),
+                    "Zktrie::new_with_root"
                 )
                 .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {
@@ -255,7 +251,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
 
                 measure_duration_micros!(
                     zktrie_commit_duration_microseconds,
-                    storage_trie.commit()?
+                    cycle_track!(storage_trie.commit()?, "Zktrie::commit")
                 );
 
                 cycle_tracker_end!("update storage_tire");
@@ -298,10 +294,13 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
                 )
             );
 
-            cycle_tracker_end!("commit account {}", addr);
+            cycle_tracker_end!("commit account");
         }
 
-        measure_duration_micros!(zktrie_commit_duration_microseconds, zktrie.commit()?);
+        measure_duration_micros!(
+            zktrie_commit_duration_microseconds,
+            cycle_track!(zktrie.commit()?, "Zktrie::commit")
+        );
 
         let root_after = *zktrie.root().unwrap_ref();
 

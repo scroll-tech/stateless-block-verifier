@@ -85,10 +85,18 @@ pub trait Block: Debug {
             if bytes == MAGIC_NODE_BYTES {
                 continue;
             }
-            let node = Node::<Poseidon>::try_from(bytes).expect("invalid node");
-            let node_hash = node.get_or_calculate_node_hash().expect("infallible");
+            let node = cycle_track!(Node::<Poseidon>::try_from(bytes), "Node::try_from")
+                .expect("invalid node");
+            let node_hash = cycle_track!(
+                node.get_or_calculate_node_hash(),
+                "Node::get_or_calculate_node_hash"
+            )
+            .expect("infallible");
             dev_trace!("put zktrie node: {:?}", node);
-            db.put_owned(node_hash.as_slice(), node.canonical_value(false))?;
+            cycle_track!(
+                db.put_owned(node_hash.as_slice(), node.canonical_value(false))?,
+                "KVDatabase::put_owned"
+            );
         }
         Ok(())
     }

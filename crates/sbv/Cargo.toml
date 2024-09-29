@@ -21,6 +21,6 @@ dev = ["sbv-core/dev", "sbv-utils/dev", "sbv-primitives/dev"]
 metrics = ["sbv-core/metrics", "sbv-utils/metrics"]
 
 # sp1 related
-sp1 = ["sbv-core/sp1"]
-cycle-tracker = ["sbv-core/cycle-tracker"]
+sp1 = ["sbv-core/sp1", "sbv-primitives/sp1"]
+cycle-tracker = ["sbv-core/cycle-tracker", "sbv-primitives/cycle-tracker"]
 ordered-db = ["sbv-core/ordered-db"]
