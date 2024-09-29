@@ -1,7 +1,7 @@
 use crate::error::DatabaseError;
 use once_cell::sync::Lazy;
 use revm::{
-    db::{AccountState, DatabaseRef},
+    db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
 };
 use sbv_primitives::{
@@ -124,27 +124,17 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmDatabase<CodeDb,
         }
         cycle_tracker_end!("insert CodeDB");
 
-        self.zktrie = ZkTrie::new_with_root(
-            self.zktrie_db.clone(),
-            NoCacheHasher,
-            l2_trace.root_before(),
+        self.zktrie = cycle_track!(
+            ZkTrie::new_with_root(
+                self.zktrie_db.clone(),
+                NoCacheHasher,
+                l2_trace.root_before(),
+            ),
+            "ZkTrie::new_with_root"
         )
         .map_err(DatabaseError::zk_trie)?;
 
         Ok(())
-    }
-
-    /// Invalidate internal cache for any account touched by EVM.
-    pub(crate) fn invalidate_storage_root_caches(
-        &mut self,
-        account_states: impl Iterator<Item = (Address, AccountState)>,
-    ) {
-        let mut storage_trie_refs = self.storage_trie_refs.borrow_mut();
-        for (address, account_state) in account_states {
-            if account_state != AccountState::None {
-                storage_trie_refs.remove(&address);
-            }
-        }
     }
 }
 
