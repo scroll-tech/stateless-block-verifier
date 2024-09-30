@@ -1,18 +1,19 @@
 use crate::error::DatabaseError;
 use crate::{executor::hooks::ExecuteHooks, EvmDatabase, EvmExecutor, HardforkConfig};
 use revm::db::CacheDB;
-use sbv_primitives::zk_trie::db::KVDatabase;
+use sbv_primitives::zk_trie::db::kv::KVDatabase;
+use sbv_primitives::zk_trie::db::NodeDb;
 use sbv_primitives::Block;
 use std::fmt::{self, Debug};
 
 /// Builder for EVM executor.
-pub struct EvmExecutorBuilder<H, CodeDb, ZkDb> {
+pub struct EvmExecutorBuilder<'a, H, CodeDb, ZkDb> {
     hardfork_config: H,
     code_db: CodeDb,
-    zktrie_db: ZkDb,
+    zktrie_db: &'a mut NodeDb<ZkDb>,
 }
 
-impl<H: Debug, CodeDb, ZkDb> Debug for EvmExecutorBuilder<H, CodeDb, ZkDb> {
+impl<H: Debug, CodeDb, ZkDb> Debug for EvmExecutorBuilder<'_, H, CodeDb, ZkDb> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("EvmExecutorBuilder")
             .field("hardfork_config", &self.hardfork_config)
@@ -22,9 +23,9 @@ impl<H: Debug, CodeDb, ZkDb> Debug for EvmExecutorBuilder<H, CodeDb, ZkDb> {
     }
 }
 
-impl<CodeDb, ZkDb> EvmExecutorBuilder<(), CodeDb, ZkDb> {
+impl<'a, CodeDb, ZkDb> EvmExecutorBuilder<'a, (), CodeDb, ZkDb> {
     /// Create a new builder.
-    pub fn new(code_db: CodeDb, zktrie_db: ZkDb) -> Self {
+    pub fn new(code_db: CodeDb, zktrie_db: &'a mut NodeDb<ZkDb>) -> Self {
         Self {
             hardfork_config: (),
             code_db,
@@ -33,9 +34,12 @@ impl<CodeDb, ZkDb> EvmExecutorBuilder<(), CodeDb, ZkDb> {
     }
 }
 
-impl<H, CodeDb, ZkDb> EvmExecutorBuilder<H, CodeDb, ZkDb> {
+impl<'a, H, CodeDb, ZkDb> EvmExecutorBuilder<'a, H, CodeDb, ZkDb> {
     /// Set hardfork config.
-    pub fn hardfork_config<H1>(self, hardfork_config: H1) -> EvmExecutorBuilder<H1, CodeDb, ZkDb> {
+    pub fn hardfork_config<H1>(
+        self,
+        hardfork_config: H1,
+    ) -> EvmExecutorBuilder<'a, H1, CodeDb, ZkDb> {
         EvmExecutorBuilder {
             hardfork_config,
             code_db: self.code_db,
@@ -44,7 +48,7 @@ impl<H, CodeDb, ZkDb> EvmExecutorBuilder<H, CodeDb, ZkDb> {
     }
 
     /// Set code db.
-    pub fn code_db<CodeDb1>(self, code_db: CodeDb1) -> EvmExecutorBuilder<H, CodeDb1, ZkDb> {
+    pub fn code_db<CodeDb1>(self, code_db: CodeDb1) -> EvmExecutorBuilder<'a, H, CodeDb1, ZkDb> {
         EvmExecutorBuilder {
             hardfork_config: self.hardfork_config,
             code_db,
@@ -53,7 +57,10 @@ impl<H, CodeDb, ZkDb> EvmExecutorBuilder<H, CodeDb, ZkDb> {
     }
 
     /// Set zktrie db.
-    pub fn zktrie_db<ZkDb1>(self, zktrie_db: ZkDb1) -> EvmExecutorBuilder<H, CodeDb, ZkDb1> {
+    pub fn zktrie_db<'b, ZkDb1>(
+        self,
+        zktrie_db: &'b mut NodeDb<ZkDb1>,
+    ) -> EvmExecutorBuilder<'b, H, CodeDb, ZkDb1> {
         EvmExecutorBuilder {
             hardfork_config: self.hardfork_config,
             code_db: self.code_db,
@@ -62,15 +69,15 @@ impl<H, CodeDb, ZkDb> EvmExecutorBuilder<H, CodeDb, ZkDb> {
     }
 }
 
-impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static>
-    EvmExecutorBuilder<HardforkConfig, CodeDb, ZkDb>
+impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static>
+    EvmExecutorBuilder<'a, HardforkConfig, CodeDb, ZkDb>
 {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn with_hooks<'e, T: Block, F: FnOnce(&mut ExecuteHooks<'e, CodeDb, ZkDb>)>(
+    pub fn with_hooks<'h, T: Block, F: FnOnce(&mut ExecuteHooks<'h, CodeDb, ZkDb>)>(
         self,
         l2_trace: &T,
         with_execute_hooks: F,
-    ) -> Result<EvmExecutor<'e, CodeDb, ZkDb>, DatabaseError> {
+    ) -> Result<EvmExecutor<'a, 'h, CodeDb, ZkDb>, DatabaseError> {
         let mut execute_hooks = ExecuteHooks::new();
         with_execute_hooks(&mut execute_hooks);
 
@@ -96,7 +103,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static>
     pub fn build<'e, T: Block>(
         self,
         l2_trace: &T,
-    ) -> Result<EvmExecutor<'e, CodeDb, ZkDb>, DatabaseError> {
+    ) -> Result<EvmExecutor<'a, 'e, CodeDb, ZkDb>, DatabaseError> {
         self.with_hooks(l2_trace, |_| {})
     }
 }

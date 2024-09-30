@@ -1,5 +1,6 @@
 use revm::primitives::B256;
-use sbv_primitives::{zk_trie::db::HashMapDb, Block};
+use sbv_primitives::zk_trie::db::NodeDb;
+use sbv_primitives::{zk_trie::db::kv::HashMapDb, Block};
 use tiny_keccak::{Hasher, Keccak};
 
 /// A chunk is a set of continuous blocks.
@@ -21,7 +22,7 @@ pub struct ChunkInfo {
 
 impl ChunkInfo {
     /// Construct by block traces
-    pub fn from_block_traces<T: Block>(traces: &[T]) -> (Self, HashMapDb) {
+    pub fn from_block_traces<T: Block>(traces: &[T]) -> (Self, NodeDb<HashMapDb>) {
         let chain_id = traces.first().unwrap().chain_id();
         let prev_state_root = traces
             .first()
@@ -40,7 +41,7 @@ impl ChunkInfo {
         let mut data_hash = B256::ZERO;
         data_hasher.finalize(&mut data_hash.0);
 
-        let mut zktrie_db = HashMapDb::default();
+        let mut zktrie_db = NodeDb::new(HashMapDb::default());
         for trace in traces.iter() {
             measure_duration_millis!(
                 build_zktrie_db_duration_milliseconds,
