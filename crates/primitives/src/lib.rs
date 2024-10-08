@@ -10,7 +10,7 @@ use alloy::{
 };
 use std::fmt::Debug;
 use zktrie_ng::{
-    db::KVDatabase,
+    db::kv::KVDatabase,
     hash::poseidon::Poseidon,
     trie::{Node, MAGIC_NODE_BYTES},
 };
@@ -25,6 +25,7 @@ pub use alloy::consensus::Transaction;
 pub use alloy::primitives as alloy_primitives;
 pub use alloy::primitives::{Address, B256, U256};
 pub use zktrie_ng as zk_trie;
+use zktrie_ng::db::NodeDb;
 
 /// Blanket trait for block trace extensions.
 pub trait Block: Debug {
@@ -80,24 +81,20 @@ pub trait Block: Debug {
 
     /// Update zktrie state from trace
     #[inline]
-    fn build_zktrie_db<Db: KVDatabase>(&self, db: &mut Db) -> Result<(), Db::Error> {
+    fn build_zktrie_db<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error> {
         for bytes in self.flatten_proofs() {
             if bytes == MAGIC_NODE_BYTES {
                 continue;
             }
             let node = cycle_track!(Node::<Poseidon>::try_from(bytes), "Node::try_from")
                 .expect("invalid node");
-            let node_hash = cycle_track!(
+            cycle_track!(
                 node.get_or_calculate_node_hash(),
                 "Node::get_or_calculate_node_hash"
             )
             .expect("infallible");
             dev_trace!("put zktrie node: {:?}", node);
-            let node_bytes = cycle_track!(node.canonical_value(false), "Node::canonical_value");
-            cycle_track!(
-                db.put_owned(node_hash.as_slice(), node_bytes)?,
-                "KVDatabase::put_owned"
-            );
+            cycle_track!(db.put_node(&node)?, "NodeDb::put_node");
         }
         Ok(())
     }
