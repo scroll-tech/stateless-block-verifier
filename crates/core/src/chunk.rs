@@ -117,7 +117,6 @@ mod tests {
     use revm::primitives::b256;
     use sbv_primitives::types::BlockTrace;
     use std::cell::RefCell;
-    use std::rc::Rc;
 
     const TRACES_STR: [&str; 4] = [
         include_str!("../../../testdata/mainnet_blocks/8370400.json"),
@@ -139,12 +138,11 @@ mod tests {
         });
 
         let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id());
-        let (chunk_info, zktrie_db) = ChunkInfo::from_block_traces(&traces);
-        let zktrie_db = Rc::new(RefCell::new(zktrie_db));
+        let (chunk_info, mut zktrie_db) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
-        let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), zktrie_db.clone())
+        let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), &mut zktrie_db)
             .hardfork_config(fork_config)
             .with_hooks(&traces[0], |hooks| {
                 hooks.add_tx_rlp_handler(|_, rlp| {
@@ -159,7 +157,7 @@ mod tests {
             executor.handle_block(trace).unwrap();
         }
 
-        let post_state_root = executor.commit_changes(zktrie_db.clone()).unwrap();
+        let post_state_root = executor.commit_changes().unwrap();
         assert_eq!(post_state_root, chunk_info.post_state_root);
         drop(executor); // drop executor to release Rc<Keccek>
 
