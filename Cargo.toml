@@ -59,7 +59,7 @@ sbv-utils = { path = "crates/utils" }
 
 [workspace.dependencies.revm] # v42
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/feat/v42/sp1"
+branch = "scroll-evm-executor/v42"
 default-features = false
 features = [
     "scroll-default-handler",
@@ -70,7 +70,7 @@ features = [
 
 [workspace.dependencies.revm-primitives] # v42
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/feat/v42/sp1"
+branch = "scroll-evm-executor/v42"
 default-features = false
 features = [
     "scroll-default-handler",
