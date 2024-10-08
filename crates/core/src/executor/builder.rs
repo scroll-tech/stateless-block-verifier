@@ -57,10 +57,10 @@ impl<'a, H, CodeDb, ZkDb> EvmExecutorBuilder<'a, H, CodeDb, ZkDb> {
     }
 
     /// Set zktrie db.
-    pub fn zktrie_db<'b, ZkDb1>(
+    pub fn zktrie_db<ZkDb1>(
         self,
-        zktrie_db: &'b mut NodeDb<ZkDb1>,
-    ) -> EvmExecutorBuilder<'b, H, CodeDb, ZkDb1> {
+        zktrie_db: &mut NodeDb<ZkDb1>,
+    ) -> EvmExecutorBuilder<H, CodeDb, ZkDb1> {
         EvmExecutorBuilder {
             hardfork_config: self.hardfork_config,
             code_db: self.code_db,
