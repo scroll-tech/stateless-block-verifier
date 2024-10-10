@@ -22,23 +22,31 @@ pub use tx::{ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransacti
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BlockHeader {
     /// block number
+    #[rkyv(attr(doc = "block number"))]
     pub number: U256,
     /// block hash
+    #[rkyv(attr(doc = "block hash"))]
     pub hash: B256,
     /// timestamp
+    #[rkyv(attr(doc = "timestamp"))]
     pub timestamp: U256,
     /// gas limit
     #[serde(rename = "gasLimit")]
+    #[rkyv(attr(doc = "gas limit"))]
     pub gas_limit: U256,
     /// gas used
     #[serde(rename = "gasUsed")]
+    #[rkyv(attr(doc = "gas used"))]
     pub gas_used: U256,
     /// base fee per gas
     #[serde(rename = "baseFeePerGas")]
+    #[rkyv(attr(doc = "base fee per gas"))]
     pub base_fee_per_gas: Option<U256>,
     /// difficulty
+    #[rkyv(attr(doc = "difficulty"))]
     pub difficulty: U256,
     /// mix hash
+    #[rkyv(attr(doc = "mix hash"))]
     #[serde(rename = "mixHash")]
     pub mix_hash: Option<B256>,
 }
@@ -50,6 +58,7 @@ pub struct BlockHeader {
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct Coinbase {
     /// address of coinbase
+    #[rkyv(attr(doc = "address of coinbase"))]
     pub address: Address,
 }
 
@@ -60,6 +69,7 @@ pub struct Coinbase {
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BytecodeTrace {
     /// bytecode
+    #[rkyv(attr(doc = "bytecode"))]
     pub code: Bytes,
 }
 
@@ -84,13 +94,16 @@ where
     <Vec<N> as Archive>::Archived: Debug + Hash + PartialEq + Eq,
 {
     /// root before
+    #[rkyv(attr(doc = "root before"))]
     #[serde(rename = "rootBefore")]
     pub root_before: B256,
     /// root after
+    #[rkyv(attr(doc = "root after"))]
     #[serde(rename = "rootAfter")]
     pub root_after: B256,
     /// proofs
     #[serde(rename = "flattenProofs")]
+    #[rkyv(attr(doc = "proofs"))]
     pub flatten_proofs: Vec<N>,
 }
 
@@ -119,21 +132,26 @@ pub struct ArchivedNodeBytes(Vec<u8>);
 #[allow(clippy::type_complexity)]
 pub struct LegacyStorageTrace {
     /// root before
+    #[rkyv(attr(doc = "root before"))]
     #[serde(rename = "rootBefore")]
     pub root_before: B256,
     /// root after
+    #[rkyv(attr(doc = "root after"))]
     #[serde(rename = "rootAfter")]
     pub root_after: B256,
     /// account proofs
+    #[rkyv(attr(doc = "account proofs"))]
     #[serde(default)]
     #[serde_as(as = "Map<_, _>")]
     pub proofs: Vec<(Address, Vec<Bytes>)>,
+    /// storage proofs for each account
+    #[rkyv(attr(doc = "storage proofs for each account"))]
     #[serde(rename = "storageProofs", default)]
     #[serde_as(as = "Map<_, Map<_, _>>")]
-    /// storage proofs for each account
     pub storage_proofs: Vec<(Address, Vec<(B256, Vec<Bytes>)>)>,
-    #[serde(rename = "deletionProofs", default)]
     /// additional deletion proofs
+    #[rkyv(attr(doc = "additional deletion proofs"))]
+    #[serde(rename = "deletionProofs", default)]
     pub deletion_proofs: Vec<Bytes>,
 }
 
@@ -150,23 +168,31 @@ where
     <S as Archive>::Archived: Debug + Hash + PartialEq + Eq,
 {
     /// chain id
+    #[rkyv(attr(doc = "chain id"))]
     #[serde(rename = "chainID", default)]
     pub chain_id: u64,
     /// coinbase
+    #[rkyv(attr(doc = "coinbase"))]
     pub coinbase: Coinbase,
     /// block
+    #[rkyv(attr(doc = "block"))]
     pub header: BlockHeader,
     /// txs
+    #[rkyv(attr(doc = "txs"))]
     pub transactions: Vec<TransactionTrace>,
     /// bytecodes
+    #[rkyv(attr(doc = "bytecodes"))]
     pub codes: Vec<BytecodeTrace>,
     /// storage trace BEFORE execution
+    #[rkyv(attr(doc = "storage trace BEFORE execution"))]
     #[serde(rename = "storageTrace")]
     pub storage_trace: S,
     /// l1 tx queue
+    #[rkyv(attr(doc = "l1 tx queue"))]
     #[serde(rename = "startL1QueueIndex", default)]
     pub start_l1_queue_index: u64,
-    /// Withdraw root
+    /// withdraw root
+    #[rkyv(attr(doc = "withdraw root"))]
     pub withdraw_trie_root: B256,
 }
 

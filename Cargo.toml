@@ -79,7 +79,7 @@ features = [
 ]
 
 [workspace.lints.rust]
-#missing-docs = "deny"
+missing-docs = "deny"
 missing-debug-implementations = "deny"
 
 [patch.crates-io]

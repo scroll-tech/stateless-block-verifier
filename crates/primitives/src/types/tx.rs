@@ -65,47 +65,64 @@ pub struct TxL1Msg {
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct TransactionTrace {
     /// tx hash
+    #[rkyv(attr(doc = "tx hash"))]
     #[serde(default, rename = "txHash")]
     pub tx_hash: B256,
     /// tx type (in raw from)
+    #[rkyv(attr(doc = "tx type (in raw from)"))]
     #[serde(rename = "type")]
     pub ty: u8,
     /// nonce
+    #[rkyv(attr(doc = "nonce"))]
     pub nonce: u64,
     /// gas limit
+    #[rkyv(attr(doc = "gas limit"))]
     pub gas: u64,
-    #[serde(rename = "gasPrice")]
     /// gas price
+    #[rkyv(attr(doc = "gas price"))]
+    #[serde(rename = "gasPrice")]
     pub gas_price: U256,
-    #[serde(rename = "gasTipCap")]
     /// gas tip cap
+    #[rkyv(attr(doc = "gas tip cap"))]
+    #[serde(rename = "gasTipCap")]
     pub gas_tip_cap: Option<U256>,
-    #[serde(rename = "gasFeeCap")]
     /// gas fee cap
+    #[rkyv(attr(doc = "gas fee cap"))]
+    #[serde(rename = "gasFeeCap")]
     pub gas_fee_cap: Option<U256>,
     /// from
+    #[rkyv(attr(doc = "from"))]
     pub from: Address,
     /// to, NONE for creation (0 addr)
+    #[rkyv(attr(doc = "to, NONE for creation (0 addr)"))]
     pub to: Option<Address>,
     /// chain id
+    #[rkyv(attr(doc = "chain id"))]
     #[serde(rename = "chainId")]
     pub chain_id: U64,
     /// value amount
+    #[rkyv(attr(doc = "value amount"))]
     pub value: U256,
     /// call data
+    #[rkyv(attr(doc = "call data"))]
     pub data: Bytes,
     /// is creation
+    #[rkyv(attr(doc = "is creation"))]
     #[serde(rename = "isCreate")]
     pub is_create: bool,
     /// access list
+    #[rkyv(attr(doc = "access list"))]
     #[serde(rename = "accessList")]
     #[serde_as(as = "DefaultOnNull")]
     pub access_list: AccessList,
     /// signature v
+    #[rkyv(attr(doc = "signature v"))]
     pub v: U64,
     /// signature r
+    #[rkyv(attr(doc = "signature r"))]
     pub r: U256,
     /// signature s
+    #[rkyv(attr(doc = "signature s"))]
     pub s: U256,
 }
 
