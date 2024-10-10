@@ -6,6 +6,7 @@ use alloy::{
     primitives::{Address, Bytes, ChainId, Signature, SignatureError, TxKind, B256, U256, U64},
     rlp::{BufMut, BytesMut, Encodable, Header},
 };
+use rkyv::rancor;
 use serde_with::{serde_as, DefaultOnNull};
 
 /// Wrapped Ethereum Transaction
@@ -60,8 +61,8 @@ pub struct TxL1Msg {
     Debug,
     Clone,
 )]
-#[archive(check_bytes)]
-#[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
+#[rkyv(attr(doc = "Archived `TransactionTrace`"))]
+#[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct TransactionTrace {
     /// tx hash
     #[serde(default, rename = "txHash")]
@@ -173,7 +174,7 @@ impl TxTrace for TransactionTrace {
 
 impl TxTrace for ArchivedTransactionTrace {
     fn tx_hash(&self) -> B256 {
-        self.tx_hash
+        self.tx_hash.into()
     }
 
     fn ty(&self) -> u8 {
@@ -181,50 +182,59 @@ impl TxTrace for ArchivedTransactionTrace {
     }
 
     fn nonce(&self) -> u64 {
-        self.nonce
+        self.nonce.into()
     }
 
     fn gas_limit(&self) -> u128 {
-        self.gas as u128
+        u64::from(self.gas) as u128
     }
 
     fn gas_price(&self) -> u128 {
-        self.gas_price.to()
+        let gas_price: U256 = self.gas_price.into();
+        gas_price.to()
     }
 
     fn max_fee_per_gas(&self) -> u128 {
         self.gas_fee_cap
             .as_ref()
-            .map(|v| v.to())
+            .map(|g| {
+                let gas_fee_cap: U256 = g.into();
+                gas_fee_cap.to()
+            })
             .unwrap_or_default()
     }
 
     fn max_priority_fee_per_gas(&self) -> u128 {
         self.gas_tip_cap
             .as_ref()
-            .map(|v| v.to())
+            .map(|g| {
+                let gas_tip_cap: U256 = g.into();
+                gas_tip_cap.to()
+            })
             .unwrap_or_default()
     }
 
     unsafe fn get_from_unchecked(&self) -> Address {
-        self.from
+        self.from.into()
     }
 
     fn to(&self) -> TxKind {
         if self.is_create {
             TxKind::Create
         } else {
-            debug_assert!(self.to.as_ref().map(|a| !a.is_zero()).unwrap_or(false));
-            TxKind::Call(*self.to.as_ref().expect("to address must be present"))
+            let to: Address = self.to.as_ref().expect("to address must be present").into();
+            debug_assert!(!to.is_zero());
+            TxKind::Call(to)
         }
     }
 
     fn chain_id(&self) -> ChainId {
-        self.chain_id.to()
+        let chain_id: U64 = self.chain_id.into();
+        chain_id.to()
     }
 
     fn value(&self) -> U256 {
-        self.value
+        self.value.into()
     }
 
     fn data(&self) -> Bytes {
@@ -232,12 +242,12 @@ impl TxTrace for ArchivedTransactionTrace {
     }
 
     fn access_list(&self) -> AccessList {
-        rkyv::Deserialize::<AccessList, _>::deserialize(&self.access_list, &mut rkyv::Infallible)
-            .unwrap()
+        rkyv::deserialize::<_, rancor::Error>(&self.access_list).unwrap()
     }
 
     fn signature(&self) -> Result<Signature, SignatureError> {
-        Signature::from_rs_and_parity(self.r, self.s, self.v)
+        let v: U64 = self.v.into();
+        Signature::from_rs_and_parity(self.r.into(), self.s.into(), v)
     }
 }
 
