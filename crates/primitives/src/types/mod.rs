@@ -689,23 +689,42 @@ mod tests {
     fn test_rkyv() {
         let trace = serde_json::from_str::<serde_json::Value>(TRACE).unwrap()["result"].clone();
         let block: BlockTrace = serde_json::from_value(trace).unwrap();
-        let archived_bytes = rkyv::to_bytes::<_, 4096>(&block).unwrap();
+        let archived_bytes = rkyv::to_bytes::<rancor::Error>(&block).unwrap();
         let archived_block =
-            rkyv::check_archived_root::<BlockTrace>(archived_bytes.as_ref()).unwrap();
+            rkyv::access::<ArchivedBlockTrace, rancor::Error>(archived_bytes.as_ref()).unwrap();
 
         assert_eq!(block.chain_id, archived_block.chain_id);
-        assert_eq!(block.coinbase.address, archived_block.coinbase.address);
+        assert_eq!(
+            block.coinbase.address,
+            Address::from(archived_block.coinbase.address)
+        );
 
-        assert_eq!(block.header.number, archived_block.header.number);
-        assert_eq!(block.header.hash, archived_block.header.hash);
-        assert_eq!(block.header.timestamp, archived_block.header.timestamp);
-        assert_eq!(block.header.gas_limit, archived_block.header.gas_limit);
+        assert_eq!(block.header.number, archived_block.header.number.into());
+        assert_eq!(block.header.hash, B256::from(archived_block.header.hash));
+        assert_eq!(
+            block.header.timestamp,
+            archived_block.header.timestamp.into()
+        );
+        assert_eq!(
+            block.header.gas_limit,
+            archived_block.header.gas_limit.into()
+        );
         assert_eq!(
             block.header.base_fee_per_gas,
-            archived_block.header.base_fee_per_gas
+            archived_block
+                .header
+                .base_fee_per_gas
+                .as_ref()
+                .map(|p| p.into())
         );
-        assert_eq!(block.header.difficulty, archived_block.header.difficulty);
-        assert_eq!(block.header.mix_hash, archived_block.header.mix_hash);
+        assert_eq!(
+            block.header.difficulty,
+            archived_block.header.difficulty.into()
+        );
+        assert_eq!(
+            block.header.mix_hash,
+            archived_block.header.mix_hash.as_ref().map(|p| p.into())
+        );
 
         let txs = block
             .transactions
@@ -725,11 +744,11 @@ mod tests {
 
         assert_eq!(
             block.storage_trace.root_before,
-            archived_block.storage_trace.root_before
+            B256::from(archived_block.storage_trace.root_before)
         );
         assert_eq!(
             block.storage_trace.root_after,
-            archived_block.storage_trace.root_after
+            B256::from(archived_block.storage_trace.root_after)
         );
         for (proof, archived_proof) in block
             .storage_trace
