@@ -9,11 +9,7 @@ use alloy::{
     primitives::{Bytes, ChainId, Signature, SignatureError, TxKind},
 };
 use std::fmt::Debug;
-use zktrie_ng::{
-    db::kv::KVDatabase,
-    hash::poseidon::Poseidon,
-    trie::{Node, MAGIC_NODE_BYTES},
-};
+use zktrie_ng::db::kv::KVDatabase;
 
 /// Predeployed contracts
 pub mod predeployed;
@@ -27,8 +23,16 @@ pub use alloy::primitives::{Address, B256, U256};
 pub use zktrie_ng as zk_trie;
 use zktrie_ng::db::NodeDb;
 
+/// Node proof trait
+pub trait NodeProof {
+    /// Import itself into zktrie db
+    fn import_node<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error>;
+}
+
 /// Blanket trait for block trace extensions.
 pub trait Block: Debug {
+    /// Node proof type
+    type Node: NodeProof;
     /// transaction type
     type Tx: TxTrace;
 
@@ -76,25 +80,14 @@ pub trait Block: Debug {
     /// start l1 queue index
     fn start_l1_queue_index(&self) -> u64;
 
-    /// flatten proofs
-    fn flatten_proofs(&self) -> impl Iterator<Item = &[u8]>;
+    /// node proofs
+    fn node_proofs(&self) -> impl Iterator<Item = &Self::Node>;
 
     /// Update zktrie state from trace
     #[inline]
     fn build_zktrie_db<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error> {
-        for bytes in self.flatten_proofs() {
-            if bytes == MAGIC_NODE_BYTES {
-                continue;
-            }
-            let node = cycle_track!(Node::<Poseidon>::try_from(bytes), "Node::try_from")
-                .expect("invalid node");
-            cycle_track!(
-                node.get_or_calculate_node_hash(),
-                "Node::get_or_calculate_node_hash"
-            )
-            .expect("infallible");
-            dev_trace!("put zktrie node: {:?}", node);
-            cycle_track!(db.put_node(&node)?, "NodeDb::put_node");
+        for node in self.node_proofs() {
+            node.import_node(db)?;
         }
         Ok(())
     }
@@ -273,6 +266,7 @@ pub trait TxTrace {
 }
 
 impl<T: Block> Block for &T {
+    type Node = <T as Block>::Node;
     type Tx = <T as Block>::Tx;
 
     fn number(&self) -> u64 {
@@ -339,8 +333,8 @@ impl<T: Block> Block for &T {
         (*self).start_l1_queue_index()
     }
 
-    fn flatten_proofs(&self) -> impl Iterator<Item = &[u8]> {
-        (*self).flatten_proofs()
+    fn node_proofs(&self) -> impl Iterator<Item = &Self::Node> {
+        (*self).node_proofs()
     }
 }
 

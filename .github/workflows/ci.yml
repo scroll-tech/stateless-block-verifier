@@ -83,7 +83,7 @@ jobs:
       matrix:
         network: [ "mainnet" ]
         hardfork: [ "pre-bernoulli", "bernoulli", "curie", "darwin" ]
-        rust: [ "1.75", "nightly-2024-07-07" ]
+        rust: [ "1.81", "nightly-2024-07-07" ]
 
     steps:
       - uses: actions/checkout@v4
