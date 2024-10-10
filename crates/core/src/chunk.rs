@@ -31,6 +31,7 @@ impl ChunkInfo {
         let post_state_root = traces.last().expect("at least 1 block needed").root_after();
         let withdraw_root = traces.last().unwrap().withdraw_root();
 
+        cycle_tracker_start!("Keccak::v256");
         let mut data_hasher = Keccak::v256();
         for trace in traces.iter() {
             trace.hash_da_header(&mut data_hasher);
@@ -40,14 +41,17 @@ impl ChunkInfo {
         }
         let mut data_hash = B256::ZERO;
         data_hasher.finalize(&mut data_hash.0);
+        cycle_tracker_end!("Keccak::v256");
 
         let mut zktrie_db = NodeDb::new(HashMapDb::default());
+        cycle_tracker_start!("Block::build_zktrie_db");
         for trace in traces.iter() {
             measure_duration_millis!(
                 build_zktrie_db_duration_milliseconds,
                 trace.build_zktrie_db(&mut zktrie_db).unwrap()
             );
         }
+        cycle_tracker_end!("Block::build_zktrie_db");
 
         let info = ChunkInfo {
             chain_id,
