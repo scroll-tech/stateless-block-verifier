@@ -190,6 +190,9 @@ pub trait TxTrace {
     /// Get `access_list`.
     fn access_list(&self) -> AccessList;
 
+    /// Get `v`.
+    fn v(&self) -> u64;
+
     /// Get `signature`.
     fn signature(&self) -> Result<Signature, SignatureError>;
 
@@ -205,7 +208,7 @@ pub trait TxTrace {
         let tx = match self.ty() {
             0x0 => {
                 let tx = TxLegacy {
-                    chain_id: if chain_id >= 35 { Some(chain_id) } else { None },
+                    chain_id: if self.v() >= 35 { Some(chain_id) } else { None },
                     nonce: self.nonce(),
                     gas_price: self.gas_price(),
                     gas_limit: self.gas_limit(),
@@ -389,6 +392,10 @@ impl<T: TxTrace> TxTrace for &T {
 
     fn access_list(&self) -> AccessList {
         (*self).access_list()
+    }
+
+    fn v(&self) -> u64 {
+        (*self).v()
     }
 
     fn signature(&self) -> Result<Signature, SignatureError> {
