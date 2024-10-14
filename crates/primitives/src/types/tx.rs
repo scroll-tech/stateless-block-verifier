@@ -184,6 +184,10 @@ impl TxTrace for TransactionTrace {
         self.access_list.clone()
     }
 
+    fn v(&self) -> u64 {
+        self.v.to()
+    }
+
     fn signature(&self) -> Result<Signature, SignatureError> {
         Signature::from_rs_and_parity(self.r, self.s, self.v)
     }
@@ -260,6 +264,11 @@ impl TxTrace for ArchivedTransactionTrace {
 
     fn access_list(&self) -> AccessList {
         rkyv::deserialize::<_, rancor::Error>(&self.access_list).unwrap()
+    }
+
+    fn v(&self) -> u64 {
+        let v: U64 = self.v.into();
+        v.to()
     }
 
     fn signature(&self) -> Result<Signature, SignatureError> {
