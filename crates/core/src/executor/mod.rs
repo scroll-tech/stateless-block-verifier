@@ -262,6 +262,11 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
 
                 #[cfg(feature = "debug-storage")]
                 debug_recorder.record_storage_root(*addr, storage_root);
+            } else if db_acc.account_state.is_storage_cleared() {
+                // previous storage root might not be zero, and evm cleared the storage
+                // e.g. create storage collision
+                // not something could happen in real world
+                storage_root = B256::ZERO;
             }
             if !info.is_empty() {
                 // if account not exist, all fields will be zero.
@@ -285,6 +290,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
             debug_recorder.record_account(*addr, info.clone(), storage_root);
 
             let acc_data = Account::from_revm_account_with_storage_root(info, storage_root);
+            dev_trace!("committing account {addr}: {acc_data:?}");
             measure_duration_micros!(
                 zktrie_update_duration_microseconds,
                 cycle_track!(

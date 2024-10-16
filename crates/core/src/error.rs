@@ -10,6 +10,9 @@ pub enum DatabaseError {
     /// Error encountered from zkTrie.
     #[error("error encountered from zkTrie: {0}")]
     ZkTrie(Box<dyn Error + Send + Sync>),
+    /// Error when try to load un-included account/storage.
+    #[error("account/storage not included in zkTrie")]
+    NotIncluded,
 }
 
 /// Error variants encountered during verification of transactions in a L2 block.

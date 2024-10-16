@@ -839,12 +839,13 @@ dependencies = [
 [[package]]
 name = "bn254"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/bn254#3653980f712ad44d4e079fa8f0199c5678104ef4"
+source = "git+https://github.com/scroll-tech/bn254.git?branch=master#db67681f5e9ae1736565a48ec294a6d0dacb4e0d"
 dependencies = [
  "ff",
  "getrandom",
  "rand",
  "rand_core",
+ "sp1-intrinsics",
  "subtle",
 ]
 
@@ -2468,10 +2469,11 @@ checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
 [[package]]
 name = "poseidon-bn254"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/poseidon-bn254?branch=master#526a64a81419bcab6bd8280a8a3f9808189e0373"
+source = "git+https://github.com/scroll-tech/poseidon-bn254?branch=master#a96ba028dd00987551451d8f4bd65b7ea5469a44"
 dependencies = [
  "bn254",
  "itertools 0.13.0",
+ "sp1-intrinsics",
 ]
 
 [[package]]
@@ -2812,7 +2814,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "14.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v42#f7f0745a46b16097a274c2def9d1334cbdd9da26"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v42#df2fc95185c1f24c5d3ebabb0067a864d8cfc754"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -2826,7 +2828,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "10.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v42#f7f0745a46b16097a274c2def9d1334cbdd9da26"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v42#df2fc95185c1f24c5d3ebabb0067a864d8cfc754"
 dependencies = [
  "cfg-if",
  "revm-primitives",
@@ -2836,7 +2838,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "11.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v42#f7f0745a46b16097a274c2def9d1334cbdd9da26"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v42#df2fc95185c1f24c5d3ebabb0067a864d8cfc754"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -2853,7 +2855,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "9.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v42#f7f0745a46b16097a274c2def9d1334cbdd9da26"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/v42#df2fc95185c1f24c5d3ebabb0067a864d8cfc754"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -3403,6 +3405,14 @@ checksum = "ce305eb0b4296696835b71df73eb912e0f1ffd2556a501fcede6e0c50349191c"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "sp1-intrinsics"
+version = "0.0.0"
+source = "git+https://github.com/scroll-tech/sp1-intrinsics.git?branch=master#7e038e60db0b2e847f6d8f49e148ccac8c6fc394"
+dependencies = [
+ "cfg-if",
 ]
 
 [[package]]
