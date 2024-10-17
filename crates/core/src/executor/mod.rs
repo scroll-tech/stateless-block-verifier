@@ -10,11 +10,12 @@ use revm::{
 };
 use sbv_primitives::{
     zk_trie::{
-        db::KVDatabase,
+        db::kv::KVDatabase,
         hash::{
             key_hasher::NoCacheHasher,
             poseidon::{Poseidon, PoseidonError},
         },
+        scroll_types::Account,
         trie::{ZkTrie, ZkTrieError},
     },
     Block, Transaction, TxTrace,
@@ -23,20 +24,19 @@ use std::fmt::Debug;
 
 mod builder;
 pub use builder::EvmExecutorBuilder;
-use sbv_primitives::zk_trie::scroll_types::Account;
 
 /// Execute hooks
 pub mod hooks;
 
 /// EVM executor that handles the block.
-pub struct EvmExecutor<'a, CodeDb, ZkDb> {
+pub struct EvmExecutor<'db, 'h, CodeDb, ZkDb> {
     chain_id: ChainId,
     hardfork_config: HardforkConfig,
-    db: CacheDB<EvmDatabase<CodeDb, ZkDb>>,
-    hooks: hooks::ExecuteHooks<'a, CodeDb, ZkDb>,
+    db: CacheDB<EvmDatabase<'db, CodeDb, ZkDb>>,
+    hooks: hooks::ExecuteHooks<'h, CodeDb, ZkDb>,
 }
 
-impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, CodeDb, ZkDb> {
+impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb, ZkDb> {
     /// Get reference to the DB
     pub fn db(&self) -> &CacheDB<EvmDatabase<CodeDb, ZkDb>> {
         &self.db
@@ -44,31 +44,25 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
 
     /// Update the DB
     pub fn update_db<T: Block>(&mut self, l2_trace: &T) -> Result<(), DatabaseError> {
-        self.db.db.invalidate_storage_root_caches(
-            self.db
-                .accounts
-                .iter()
-                .map(|(addr, acc)| (*addr, acc.account_state.clone())),
-        );
-
         self.db.db.update(l2_trace)
     }
 
     /// Handle a block.
-    pub fn handle_block<T: Block>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
-        measure_duration_millis!(
+    pub fn handle_block<T: Block>(&mut self, l2_trace: &T) -> Result<u64, VerificationError> {
+        #[allow(clippy::let_and_return)]
+        let gas_used = measure_duration_millis!(
             handle_block_duration_milliseconds,
-            self.handle_block_inner(l2_trace)
+            cycle_track!(self.handle_block_inner(l2_trace), "handle_block")
         )?;
 
         #[cfg(feature = "metrics")]
         sbv_utils::metrics::REGISTRY.block_counter.inc();
 
-        Ok(())
+        Ok(gas_used)
     }
 
     #[inline(always)]
-    fn handle_block_inner<T: Block>(&mut self, l2_trace: &T) -> Result<(), VerificationError> {
+    fn handle_block_inner<T: Block>(&mut self, l2_trace: &T) -> Result<u64, VerificationError> {
         let spec_id = self.hardfork_config.get_spec_id(l2_trace.number());
         dev_trace!("use spec id {spec_id:?}",);
         self.hardfork_config
@@ -89,8 +83,10 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
             blob_excess_gas_and_price: None,
         };
 
+        let mut gas_used = 0;
+
         for (idx, tx) in l2_trace.transactions().enumerate() {
-            cycle_tracker_start!("handle tx {}", idx);
+            cycle_tracker_start!("handle tx");
 
             dev_trace!("handle {idx}th tx");
 
@@ -151,7 +147,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
 
                 dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
-                let _result = measure_duration_millis!(
+                let result = measure_duration_millis!(
                     transact_commit_duration_milliseconds,
                     cycle_track!(revm.transact_commit(), "transact_commit").map_err(|e| {
                         VerificationError::EvmExecution {
@@ -161,39 +157,32 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
                     })?
                 );
 
-                dev_trace!("{_result:#?}");
+                gas_used += result.gas_used();
+
+                dev_trace!("{result:#?}");
             }
             self.hooks.post_tx_execution(self, idx);
 
             dev_debug!("handle {idx}th tx done");
-            cycle_tracker_end!("handle tx {}", idx);
+            cycle_tracker_end!("handle tx");
         }
-        Ok(())
+        Ok(gas_used)
     }
 
     /// Commit pending changes in cache db to zktrie
-    pub fn commit_changes(
-        &mut self,
-        code_db: CodeDb,
-        zktrie_db: ZkDb,
-    ) -> Result<B256, DatabaseError> {
+    pub fn commit_changes(&mut self) -> Result<B256, DatabaseError> {
         measure_duration_millis!(
             commit_changes_duration_milliseconds,
             cycle_track!(
-                self.commit_changes_inner(code_db, zktrie_db)
-                    .map_err(DatabaseError::zk_trie),
+                self.commit_changes_inner().map_err(DatabaseError::zk_trie),
                 "commit_changes"
             )
         )
     }
 
-    fn commit_changes_inner(
-        &mut self,
-        mut code_db: CodeDb,
-        zktrie_db: ZkDb,
-    ) -> Result<B256, ZkTrieError<PoseidonError, ZkDb::Error>> {
-        let mut zktrie = ZkTrie::<Poseidon, ZkDb>::new_with_root(
-            zktrie_db.clone(),
+    fn commit_changes_inner(&mut self) -> Result<B256, ZkTrieError<PoseidonError, ZkDb::Error>> {
+        let mut zktrie = ZkTrie::<Poseidon>::new_with_root(
+            self.db.db.zktrie_db,
             NoCacheHasher,
             self.db.db.committed_zktrie_root(),
         )
@@ -220,7 +209,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
             }
 
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
-            cycle_tracker_start!("commit account {}", addr);
+            cycle_tracker_start!("commit account");
 
             let mut storage_root = self.db.db.prev_storage_root(addr);
 
@@ -229,10 +218,13 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
                 let storage_root_before = storage_root;
                 // get storage tire
                 cycle_tracker_start!("update storage_tire");
-                let mut storage_trie = ZkTrie::<Poseidon, ZkDb>::new_with_root(
-                    zktrie_db.clone(),
-                    NoCacheHasher,
-                    storage_root_before,
+                let mut storage_trie = cycle_track!(
+                    ZkTrie::<Poseidon>::new_with_root(
+                        self.db.db.zktrie_db,
+                        NoCacheHasher,
+                        storage_root_before,
+                    ),
+                    "Zktrie::new_with_root"
                 )
                 .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {
@@ -240,7 +232,11 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
                         measure_duration_micros!(
                             zktrie_update_duration_microseconds,
                             cycle_track!(
-                                storage_trie.update(key.to_be_bytes::<32>(), value)?,
+                                storage_trie.update(
+                                    self.db.db.zktrie_db,
+                                    key.to_be_bytes::<32>(),
+                                    value
+                                )?,
                                 "Zktrie::update_store"
                             )
                         );
@@ -248,7 +244,8 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
                         measure_duration_micros!(
                             zktrie_delete_duration_microseconds,
                             cycle_track!(
-                                storage_trie.delete(key.to_be_bytes::<32>())?,
+                                storage_trie
+                                    .delete(self.db.db.zktrie_db, key.to_be_bytes::<32>())?,
                                 "Zktrie::delete"
                             )
                         );
@@ -260,16 +257,16 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
 
                 measure_duration_micros!(
                     zktrie_commit_duration_microseconds,
-                    storage_trie.commit()?
+                    cycle_track!(storage_trie.commit(self.db.db.zktrie_db)?, "Zktrie::commit")
                 );
 
                 cycle_tracker_end!("update storage_tire");
                 storage_root = *storage_trie.root().unwrap_ref();
 
+                self.db.db.update_storage_root_cache(*addr, storage_trie);
+
                 #[cfg(feature = "debug-storage")]
                 debug_recorder.record_storage_root(*addr, storage_root);
-
-                self.db.db.set_prev_storage_root(*addr, storage_root);
             }
             if !info.is_empty() {
                 // if account not exist, all fields will be zero.
@@ -293,20 +290,24 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
             debug_recorder.record_account(*addr, info.clone(), storage_root);
 
             let acc_data = Account::from_revm_account_with_storage_root(info, storage_root);
+            dev_trace!("committing account {addr}: {acc_data:?}");
             measure_duration_micros!(
                 zktrie_update_duration_microseconds,
                 cycle_track!(
                     zktrie
-                        .update(addr, acc_data)
+                        .update(self.db.db.zktrie_db, addr, acc_data)
                         .expect("failed to update account"),
                     "Zktrie::update_account"
                 )
             );
 
-            cycle_tracker_end!("commit account {}", addr);
+            cycle_tracker_end!("commit account");
         }
 
-        measure_duration_micros!(zktrie_commit_duration_microseconds, zktrie.commit()?);
+        measure_duration_micros!(
+            zktrie_commit_duration_microseconds,
+            cycle_track!(zktrie.commit(self.db.db.zktrie_db)?, "Zktrie::commit")
+        );
 
         let root_after = *zktrie.root().unwrap_ref();
 
@@ -316,7 +317,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmExecutor<'_, Cod
     }
 }
 
-impl<CodeDb, ZkDb> Debug for EvmExecutor<'_, CodeDb, ZkDb> {
+impl<CodeDb, ZkDb> Debug for EvmExecutor<'_, '_, CodeDb, ZkDb> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EvmExecutor").field("db", &self.db).finish()
     }

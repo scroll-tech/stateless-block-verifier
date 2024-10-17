@@ -1,5 +1,6 @@
 use revm::primitives::B256;
-use sbv_primitives::{zk_trie::db::HashMapDb, Block};
+use sbv_primitives::zk_trie::db::NodeDb;
+use sbv_primitives::{zk_trie::db::kv::HashMapDb, Block};
 use tiny_keccak::{Hasher, Keccak};
 
 /// A chunk is a set of continuous blocks.
@@ -21,7 +22,7 @@ pub struct ChunkInfo {
 
 impl ChunkInfo {
     /// Construct by block traces
-    pub fn from_block_traces<T: Block>(traces: &[T]) -> (Self, HashMapDb) {
+    pub fn from_block_traces<T: Block>(traces: &[T]) -> (Self, NodeDb<HashMapDb>) {
         let chain_id = traces.first().unwrap().chain_id();
         let prev_state_root = traces
             .first()
@@ -30,6 +31,7 @@ impl ChunkInfo {
         let post_state_root = traces.last().expect("at least 1 block needed").root_after();
         let withdraw_root = traces.last().unwrap().withdraw_root();
 
+        cycle_tracker_start!("Keccak::v256");
         let mut data_hasher = Keccak::v256();
         for trace in traces.iter() {
             trace.hash_da_header(&mut data_hasher);
@@ -39,14 +41,17 @@ impl ChunkInfo {
         }
         let mut data_hash = B256::ZERO;
         data_hasher.finalize(&mut data_hash.0);
+        cycle_tracker_end!("Keccak::v256");
 
-        let mut zktrie_db = HashMapDb::default();
+        let mut zktrie_db = NodeDb::new(HashMapDb::default());
+        cycle_tracker_start!("Block::build_zktrie_db");
         for trace in traces.iter() {
             measure_duration_millis!(
                 build_zktrie_db_duration_milliseconds,
                 trace.build_zktrie_db(&mut zktrie_db).unwrap()
             );
         }
+        cycle_tracker_end!("Block::build_zktrie_db");
 
         let info = ChunkInfo {
             chain_id,
@@ -116,7 +121,6 @@ mod tests {
     use revm::primitives::b256;
     use sbv_primitives::types::BlockTrace;
     use std::cell::RefCell;
-    use std::rc::Rc;
 
     const TRACES_STR: [&str; 4] = [
         include_str!("../../../testdata/mainnet_blocks/8370400.json"),
@@ -138,12 +142,11 @@ mod tests {
         });
 
         let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id());
-        let (chunk_info, zktrie_db) = ChunkInfo::from_block_traces(&traces);
-        let zktrie_db = Rc::new(RefCell::new(zktrie_db));
+        let (chunk_info, mut zktrie_db) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
-        let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), zktrie_db.clone())
+        let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), &mut zktrie_db)
             .hardfork_config(fork_config)
             .with_hooks(&traces[0], |hooks| {
                 hooks.add_tx_rlp_handler(|_, rlp| {
@@ -158,7 +161,7 @@ mod tests {
             executor.handle_block(trace).unwrap();
         }
 
-        let post_state_root = executor.commit_changes(zktrie_db.clone()).unwrap();
+        let post_state_root = executor.commit_changes().unwrap();
         assert_eq!(post_state_root, chunk_info.post_state_root);
         drop(executor); // drop executor to release Rc<Keccek>
 

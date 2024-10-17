@@ -7,6 +7,7 @@ use alloy::{
     primitives::{Address, Bytes, ChainId, Signature, SignatureError, TxKind, B256, U256, U64},
     rlp::{BufMut, BytesMut, Encodable, Header},
 };
+use rkyv::rancor;
 use serde_with::{serde_as, DefaultOnNull};
 
 /// Wrapped Ethereum Transaction
@@ -61,52 +62,69 @@ pub struct TxL1Msg {
     Debug,
     Clone,
 )]
-#[archive(check_bytes)]
-#[archive_attr(derive(Debug, Hash, PartialEq, Eq))]
+#[rkyv(attr(doc = "Archived `TransactionTrace`"))]
+#[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct TransactionTrace {
     /// tx hash
+    #[rkyv(attr(doc = "tx hash"))]
     #[serde(default, rename = "txHash")]
-    pub(crate) tx_hash: B256,
+    pub tx_hash: B256,
     /// tx type (in raw from)
+    #[rkyv(attr(doc = "tx type (in raw from)"))]
     #[serde(rename = "type")]
-    pub(crate) ty: u8,
+    pub ty: u8,
     /// nonce
-    pub(crate) nonce: u64,
+    #[rkyv(attr(doc = "nonce"))]
+    pub nonce: u64,
     /// gas limit
-    pub(crate) gas: u64,
-    #[serde(rename = "gasPrice")]
+    #[rkyv(attr(doc = "gas limit"))]
+    pub gas: u64,
     /// gas price
-    pub(crate) gas_price: U256,
-    #[serde(rename = "gasTipCap")]
+    #[rkyv(attr(doc = "gas price"))]
+    #[serde(rename = "gasPrice")]
+    pub gas_price: U256,
     /// gas tip cap
-    pub(crate) gas_tip_cap: Option<U256>,
-    #[serde(rename = "gasFeeCap")]
+    #[rkyv(attr(doc = "gas tip cap"))]
+    #[serde(rename = "gasTipCap")]
+    pub gas_tip_cap: Option<U256>,
     /// gas fee cap
-    pub(crate) gas_fee_cap: Option<U256>,
+    #[rkyv(attr(doc = "gas fee cap"))]
+    #[serde(rename = "gasFeeCap")]
+    pub gas_fee_cap: Option<U256>,
     /// from
-    pub(crate) from: Address,
+    #[rkyv(attr(doc = "from"))]
+    pub from: Address,
     /// to, NONE for creation (0 addr)
-    pub(crate) to: Option<Address>,
+    #[rkyv(attr(doc = "to, NONE for creation (0 addr)"))]
+    pub to: Option<Address>,
     /// chain id
+    #[rkyv(attr(doc = "chain id"))]
     #[serde(rename = "chainId")]
-    pub(crate) chain_id: U64,
+    pub chain_id: U64,
     /// value amount
-    pub(crate) value: U256,
+    #[rkyv(attr(doc = "value amount"))]
+    pub value: U256,
     /// call data
-    pub(crate) data: Bytes,
+    #[rkyv(attr(doc = "call data"))]
+    pub data: Bytes,
     /// is creation
+    #[rkyv(attr(doc = "is creation"))]
     #[serde(rename = "isCreate")]
-    pub(crate) is_create: bool,
+    pub is_create: bool,
     /// access list
+    #[rkyv(attr(doc = "access list"))]
     #[serde(rename = "accessList")]
     #[serde_as(as = "DefaultOnNull")]
-    pub(crate) access_list: AccessList,
+    pub access_list: AccessList,
     /// signature v
-    pub(crate) v: U64,
+    #[rkyv(attr(doc = "signature v"))]
+    pub v: U64,
     /// signature r
-    pub(crate) r: U256,
+    #[rkyv(attr(doc = "signature r"))]
+    pub r: U256,
     /// signature s
-    pub(crate) s: U256,
+    #[rkyv(attr(doc = "signature s"))]
+    pub s: U256,
 }
 
 impl TxTrace for TransactionTrace {
@@ -172,6 +190,10 @@ impl TxTrace for TransactionTrace {
         self.access_list.clone()
     }
 
+    fn v(&self) -> u64 {
+        self.v.to()
+    }
+
     fn signature(&self) -> Result<Signature, SignatureError> {
         Signature::from_rs_and_parity(self.r, self.s, self.v)
     }
@@ -179,7 +201,7 @@ impl TxTrace for TransactionTrace {
 
 impl TxTrace for ArchivedTransactionTrace {
     fn tx_hash(&self) -> B256 {
-        self.tx_hash
+        self.tx_hash.into()
     }
 
     fn ty(&self) -> u8 {
@@ -187,47 +209,55 @@ impl TxTrace for ArchivedTransactionTrace {
     }
 
     fn nonce(&self) -> u64 {
-        self.nonce
+        self.nonce.into()
     }
 
     fn gas_limit(&self) -> u128 {
-        self.gas as u128
+        u64::from(self.gas) as u128
     }
 
     fn gas_price(&self) -> u128 {
-        self.gas_price.to()
+        let gas_price: U256 = self.gas_price.into();
+        gas_price.to()
     }
 
     fn max_fee_per_gas(&self) -> u128 {
         self.gas_fee_cap
             .as_ref()
-            .map(|v| v.to())
+            .map(|g| {
+                let gas_fee_cap: U256 = g.into();
+                gas_fee_cap.to()
+            })
             .unwrap_or_default()
     }
 
     fn max_priority_fee_per_gas(&self) -> u128 {
         self.gas_tip_cap
             .as_ref()
-            .map(|v| v.to())
+            .map(|g| {
+                let gas_tip_cap: U256 = g.into();
+                gas_tip_cap.to()
+            })
             .unwrap_or_default()
     }
 
     unsafe fn get_from_unchecked(&self) -> Address {
-        self.from
+        self.from.into()
     }
 
     fn to(&self) -> TxKind {
         if self.is_create {
             TxKind::Create
         } else {
-            debug_assert!(self.to.as_ref().map(|a| !a.is_zero()).unwrap_or(false));
-            TxKind::Call(*self.to.as_ref().expect("to address must be present"))
+            let to: Address = self.to.as_ref().expect("to address must be present").into();
+            debug_assert!(!to.is_zero());
+            TxKind::Call(to)
         }
     }
 
     fn chain_id(&self) -> Option<ChainId> {
         let chain_id: ChainId = self.chain_id.to();
-        if self.ty == 0 && chain_id < 35 {
+        if self.ty == 0 && self.v() < 35 {
             None
         } else {
             Some(chain_id)
@@ -235,7 +265,7 @@ impl TxTrace for ArchivedTransactionTrace {
     }
 
     fn value(&self) -> U256 {
-        self.value
+        self.value.into()
     }
 
     fn data(&self) -> Bytes {
@@ -243,12 +273,17 @@ impl TxTrace for ArchivedTransactionTrace {
     }
 
     fn access_list(&self) -> AccessList {
-        rkyv::Deserialize::<AccessList, _>::deserialize(&self.access_list, &mut rkyv::Infallible)
-            .unwrap()
+        rkyv::deserialize::<_, rancor::Error>(&self.access_list).unwrap()
+    }
+
+    fn v(&self) -> u64 {
+        let v: U64 = self.v.into();
+        v.to()
     }
 
     fn signature(&self) -> Result<Signature, SignatureError> {
-        Signature::from_rs_and_parity(self.r, self.s, self.v)
+        let v: U64 = self.v.into();
+        Signature::from_rs_and_parity(self.r.into(), self.s.into(), v)
     }
 }
 

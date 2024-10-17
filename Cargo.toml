@@ -5,7 +5,7 @@ resolver = "2"
 [workspace.package]
 version = "2.0.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.81"
 authors = ["Scroll developers"]
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/scroll-tech/stateless-block-verifier"
@@ -15,14 +15,13 @@ repository = "https://github.com/scroll-tech/stateless-block-verifier"
 alloy = "0.3"
 hex = "0.4"
 once_cell = "1.19"
-rkyv = { version = "0.7", features = ["validation"] }
+rkyv = "0.8"
 thiserror = "1.0"
 tiny-keccak = "2.0"
 
 # dependencies from scroll-tech
 poseidon-bn254 = { git = "https://github.com/scroll-tech/poseidon-bn254", branch = "master", features = ["bn254"] }
-#zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "master", features = ["scroll"] }
-zktrie-ng = { path = "../zktrie-ng", features = ["scroll"] }
+zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "master", features = ["scroll"] }
 
 # binary dependencies
 anyhow = "1.0"
@@ -81,13 +80,13 @@ features = [
 ]
 
 [workspace.lints.rust]
-#missing-docs = "deny"
+missing-docs = "deny"
 missing-debug-implementations = "deny"
 
 [patch.crates-io]
 ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
 
-# patched add rkyv support & MSRV 1.75
+# patched add rkyv support & MSRV 1.77
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 
 alloy = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.3.0" }
@@ -96,8 +95,9 @@ alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.3.
 alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.1.0" }
 alloy-eip7702 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.1.0" }
 
-alloy-core = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0"}
-alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0"}
+alloy-core = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0" }
+alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0" }
+alloy-sol-types = {git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0" }
 
 # for local development
 # [patch."https://github.com/scroll-tech/revm"]

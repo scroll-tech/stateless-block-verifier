@@ -1,118 +1,116 @@
 use crate::error::DatabaseError;
 use crate::{executor::hooks::ExecuteHooks, EvmDatabase, EvmExecutor, HardforkConfig};
 use revm::db::CacheDB;
-use revm::primitives::alloy_primitives::ChainId;
-use sbv_primitives::zk_trie::db::KVDatabase;
-use sbv_primitives::{Block, B256};
+use sbv_primitives::zk_trie::db::kv::KVDatabase;
+use sbv_primitives::zk_trie::db::NodeDb;
+use sbv_primitives::Block;
 use std::fmt::{self, Debug};
+use sbv_primitives::alloy_primitives::ChainId;
 
 /// Builder for EVM executor.
-pub struct EvmExecutorBuilder<H, EvmDb, C> {
+pub struct EvmExecutorBuilder<'a, H, C, CodeDb, ZkDb> {
     hardfork_config: H,
-    evm_db: EvmDb,
     chain_id: C,
+    code_db: CodeDb,
+    zktrie_db: &'a mut NodeDb<ZkDb>,
 }
 
-impl<H: Debug, EvmDb, C: Debug> Debug for EvmExecutorBuilder<H, EvmDb, C> {
+impl<H: Debug, C: Debug, CodeDb, ZkDb> Debug for EvmExecutorBuilder<'_, H, C, CodeDb, ZkDb> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("EvmExecutorBuilder")
             .field("hardfork_config", &self.hardfork_config)
             .field("chain_id", &self.chain_id)
+            .field("code_db", &"...")
+            .field("zktrie_db", &"...")
             .finish()
     }
 }
 
-impl EvmExecutorBuilder<(), (), ()> {
+impl<'a, CodeDb, ZkDb> EvmExecutorBuilder<'a, (), (), CodeDb, ZkDb> {
     /// Create a new builder.
-    pub fn new() -> Self {
+    pub fn new(code_db: CodeDb, zktrie_db: &'a mut NodeDb<ZkDb>) -> Self {
         Self {
             hardfork_config: (),
-            evm_db: (),
             chain_id: (),
+            code_db,
+            zktrie_db,
         }
     }
 }
 
-impl<H, EvmDb, C> EvmExecutorBuilder<H, EvmDb, C> {
+impl<'a, H, C, CodeDb, ZkDb> EvmExecutorBuilder<'a, H, C, CodeDb, ZkDb> {
     /// Set hardfork config.
-    pub fn hardfork_config<H1>(self, hardfork_config: H1) -> EvmExecutorBuilder<H1, EvmDb, C> {
+    pub fn hardfork_config<H1>(
+        self,
+        hardfork_config: H1,
+    ) -> EvmExecutorBuilder<'a, H1, C, CodeDb, ZkDb> {
         EvmExecutorBuilder {
             hardfork_config,
-            evm_db: self.evm_db,
             chain_id: self.chain_id,
+            code_db: self.code_db,
+            zktrie_db: self.zktrie_db,
         }
     }
 
-    /// Set evm db.
-    pub fn evm_db<EvmDb1>(self, evm_db: EvmDb1) -> EvmExecutorBuilder<H, EvmDb1, C> {
+    /// Set code db.
+    pub fn code_db<CodeDb1>(self, code_db: CodeDb1) -> EvmExecutorBuilder<'a, H, C, CodeDb1, ZkDb> {
         EvmExecutorBuilder {
             hardfork_config: self.hardfork_config,
-            evm_db,
             chain_id: self.chain_id,
+            code_db,
+            zktrie_db: self.zktrie_db,
         }
     }
 
-    /// Build evm executor from a block trace.
-    pub fn evm_db_from_trace<T: Block, CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static>(
+    /// Set zktrie db.
+    pub fn zktrie_db<ZkDb1>(
         self,
-        l2_trace: &T,
-        code_db: CodeDb,
-        zktrie_db: ZkDb,
-    ) -> Result<EvmExecutorBuilder<H, EvmDatabase<CodeDb, ZkDb>, C>, DatabaseError> {
-        Ok(EvmExecutorBuilder {
-            hardfork_config: self.hardfork_config,
-            evm_db: EvmDatabase::new_from_trace(l2_trace, code_db, zktrie_db)?,
-            chain_id: self.chain_id,
-        })
-    }
-
-    /// Build evm executor from a block trace.
-    pub fn evm_db_from_root<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static>(
-        self,
-        committed_zktrie_root: B256,
-        code_db: CodeDb,
-        zktrie_db: ZkDb,
-    ) -> Result<EvmExecutorBuilder<H, EvmDatabase<CodeDb, ZkDb>, C>, DatabaseError> {
-        Ok(EvmExecutorBuilder {
-            hardfork_config: self.hardfork_config,
-            evm_db: EvmDatabase::new_with_root(committed_zktrie_root, code_db, zktrie_db)?,
-            chain_id: self.chain_id,
-        })
-    }
-
-    /// Set chain id.
-    pub fn chain_id<C1>(self, chain_id: C1) -> EvmExecutorBuilder<H, EvmDb, C1> {
+        zktrie_db: &mut NodeDb<ZkDb1>,
+    ) -> EvmExecutorBuilder<H, C, CodeDb, ZkDb1> {
         EvmExecutorBuilder {
             hardfork_config: self.hardfork_config,
-            evm_db: self.evm_db,
-            chain_id,
+            chain_id: self.chain_id,
+            code_db: self.code_db,
+            zktrie_db,
         }
     }
 }
 
-impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static>
-    EvmExecutorBuilder<HardforkConfig, EvmDatabase<CodeDb, ZkDb>, ChainId>
+impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static>
+    EvmExecutorBuilder<'a, HardforkConfig, ChainId, CodeDb, ZkDb>
 {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn with_hooks<'e, F: FnOnce(&mut ExecuteHooks<'e, CodeDb, ZkDb>)>(
+    pub fn with_hooks<'h, T: Block, F: FnOnce(&mut ExecuteHooks<'h, CodeDb, ZkDb>)>(
         self,
+        l2_trace: &T,
         with_execute_hooks: F,
-    ) -> EvmExecutor<'e, CodeDb, ZkDb> {
+    ) -> Result<EvmExecutor<'a, 'h, CodeDb, ZkDb>, DatabaseError> {
         let mut execute_hooks = ExecuteHooks::new();
         with_execute_hooks(&mut execute_hooks);
 
-        let db = CacheDB::new(self.evm_db);
+        let block_number = l2_trace.number();
+        let spec_id = self.hardfork_config.get_spec_id(block_number);
 
-        EvmExecutor {
-            chain_id: self.chain_id,
+        dev_trace!("use spec id {:?}", spec_id);
+
+        let db = cycle_track!(
+            CacheDB::new(EvmDatabase::new(l2_trace, self.code_db, self.zktrie_db)?),
+            "build ReadOnlyDB"
+        );
+
+        Ok(EvmExecutor {
             hardfork_config: self.hardfork_config,
+            chain_id: self.chain_id,
             db,
             hooks: execute_hooks,
-        }
+        })
     }
 
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn build<'e>(self) -> EvmExecutor<'e, CodeDb, ZkDb> {
-        self.with_hooks(|_| {})
+    pub fn build<'e, T: Block>(
+        self,
+        l2_trace: &T,
+    ) -> Result<EvmExecutor<'a, 'e, CodeDb, ZkDb>, DatabaseError> {
+        self.with_hooks(l2_trace, |_| {})
     }
 }

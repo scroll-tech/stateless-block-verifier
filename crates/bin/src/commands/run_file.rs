@@ -1,11 +1,12 @@
 use crate::utils;
-use anyhow::bail;
+use anyhow::{anyhow, bail};
 use clap::Args;
+use sbv::primitives::types::LegacyStorageTrace;
 use sbv::{
     core::{ChunkInfo, EvmExecutorBuilder, HardforkConfig},
-    primitives::{types::BlockTrace, zk_trie::db::HashMapDb, Block, B256},
+    primitives::{types::BlockTrace, zk_trie::db::kv::HashMapDb, Block, B256},
 };
-use std::rc::Rc;
+use std::panic::catch_unwind;
 use std::{cell::RefCell, path::PathBuf};
 use tiny_keccak::{Hasher, Keccak};
 use tokio::task::JoinSet;
@@ -44,7 +45,7 @@ impl RunFileCommand {
 
         while let Some(task) = tasks.join_next().await {
             if let Err(err) = task? {
-                bail!("{:?}", err);
+                dev_error!("{:?}", err);
             }
         }
 
@@ -75,12 +76,11 @@ impl RunFileCommand {
         }
 
         let fork_config = fork_config(traces[0].chain_id());
-        let (chunk_info, zktrie_db) = ChunkInfo::from_block_traces(&traces);
-        let zktrie_db = Rc::new(RefCell::new(zktrie_db));
+        let (chunk_info, mut zktrie_db) = ChunkInfo::from_block_traces(&traces);
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
-        let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), zktrie_db.clone())
+        let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), &mut zktrie_db)
             .hardfork_config(fork_config)
             .with_hooks(&traces[0], |hooks| {
                 hooks.add_tx_rlp_handler(|_, rlp| {
@@ -94,7 +94,7 @@ impl RunFileCommand {
             executor.handle_block(trace)?;
         }
 
-        let post_state_root = executor.commit_changes(zktrie_db.clone())?;
+        let post_state_root = executor.commit_changes()?;
         if post_state_root != chunk_info.post_state_root() {
             bail!("post state root mismatch");
         }
@@ -116,19 +116,21 @@ async fn read_block_trace(path: &PathBuf) -> anyhow::Result<BlockTrace> {
 }
 
 fn deserialize_block_trace(trace: &str) -> anyhow::Result<BlockTrace> {
+    // Try to deserialize `BlockTrace` from JSON. In case of failure, try to
+    // deserialize `BlockTrace` from a JSON-RPC response that has the actual block
+    // trace nested in the value of the key "result".
     Ok(
-        // Try to deserialize `BlockTrace` from JSON. In case of failure, try to
-        // deserialize `BlockTrace` from a JSON-RPC response that has the actual block
-        // trace nested in the value of the key "result".
-        serde_json::from_str::<BlockTrace>(trace).or_else(|_| {
-            #[derive(serde::Deserialize, Default, Debug, Clone)]
-            pub struct BlockTraceJsonRpcResult {
-                pub result: BlockTrace,
-            }
-            Ok::<_, serde_json::Error>(
-                serde_json::from_str::<BlockTraceJsonRpcResult>(trace)?.result,
-            )
-        })?,
+        serde_json::from_str::<BlockTrace<LegacyStorageTrace>>(trace)
+            .or_else(|_| {
+                #[derive(serde::Deserialize, Default, Debug, Clone)]
+                pub struct BlockTraceJsonRpcResult {
+                    pub result: BlockTrace<LegacyStorageTrace>,
+                }
+                Ok::<_, serde_json::Error>(
+                    serde_json::from_str::<BlockTraceJsonRpcResult>(trace)?.result,
+                )
+            })?
+            .into(),
     )
 }
 
@@ -138,6 +140,26 @@ async fn run_trace(
 ) -> anyhow::Result<()> {
     let trace = read_block_trace(&path).await?;
     let fork_config = fork_config(trace.chain_id());
-    tokio::task::spawn_blocking(move || utils::verify(&trace, &fork_config)).await??;
+    if let Err(e) =
+        tokio::task::spawn_blocking(move || catch_unwind(|| utils::verify(&trace, &fork_config)))
+            .await?
+            .map_err(|e| {
+                e.downcast_ref::<&str>()
+                    .map(|s| anyhow!("task panics with: {s}"))
+                    .or_else(|| {
+                        e.downcast_ref::<String>()
+                            .map(|s| anyhow!("task panics with: {s}"))
+                    })
+                    .unwrap_or_else(|| anyhow!("task panics"))
+            })
+            .and_then(|r| r.map_err(anyhow::Error::from))
+    {
+        dev_error!(
+            "Error occurs when verifying block ({}): {:?}",
+            path.display(),
+            e
+        );
+        return Err(e);
+    }
     Ok(())
 }

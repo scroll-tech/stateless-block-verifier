@@ -1,12 +1,13 @@
 use crate::error::DatabaseError;
-use once_cell::sync::Lazy;
 use revm::{
-    db::{AccountState, DatabaseRef},
+    db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
 };
+use sbv_primitives::zk_trie::db::NodeDb;
+use sbv_primitives::zk_trie::hash::ZkHash;
 use sbv_primitives::{
     zk_trie::{
-        db::{KVDatabase, KVDatabaseItem},
+        db::kv::{KVDatabase, KVDatabaseItem},
         hash::{key_hasher::NoCacheHasher, poseidon::Poseidon},
         scroll_types::Account,
         trie::ZkTrie,
@@ -17,28 +18,24 @@ use std::{cell::RefCell, collections::HashMap, fmt};
 
 type Result<T, E = DatabaseError> = std::result::Result<T, E>;
 
-type StorageTrieLazyFn<Db> = Box<dyn FnOnce() -> ZkTrie<Poseidon, Db>>;
-type LazyStorageTrie<Db> = Lazy<ZkTrie<Poseidon, Db>, StorageTrieLazyFn<Db>>;
-
 /// A database that consists of account and storage information.
-pub struct EvmDatabase<CodeDb, ZkDb> {
+pub struct EvmDatabase<'a, CodeDb, ZkDb> {
     /// Map of code hash to bytecode.
     code_db: CodeDb,
-    /// The initial storage roots of accounts, used for after commit.
-    /// Need to be updated after zkTrie commit.
-    prev_storage_roots: RefCell<HashMap<Address, B256>>,
+    /// Storage root cache, avoid re-query account when storage root is needed
+    storage_root_caches: RefCell<HashMap<Address, ZkHash>>,
     /// Storage trie cache, avoid re-creating trie for the same account.
-    /// Need to invalidate before `update`, otherwise the trie root may be outdated.
-    storage_trie_refs: RefCell<HashMap<Address, LazyStorageTrie<ZkDb>>>,
+    /// Need to invalidate before `update`, otherwise the trie root may be outdated
+    storage_trie_caches: RefCell<HashMap<ZkHash, Option<ZkTrie<Poseidon>>>>,
     /// Current uncommitted zkTrie root based on the block trace.
     committed_zktrie_root: B256,
     /// The underlying zkTrie database.
-    zktrie_db: ZkDb,
+    pub(crate) zktrie_db: &'a mut NodeDb<ZkDb>,
     /// Current view of zkTrie database.
-    zktrie: ZkTrie<Poseidon, ZkDb>,
+    zktrie: ZkTrie<Poseidon>,
 }
 
-impl<CodeDb, Db> fmt::Debug for EvmDatabase<CodeDb, Db> {
+impl<CodeDb, Db> fmt::Debug for EvmDatabase<'_, CodeDb, Db> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("EvmDatabase")
             .field("committed_zktrie_root", &self.committed_zktrie_root)
@@ -46,31 +43,12 @@ impl<CodeDb, Db> fmt::Debug for EvmDatabase<CodeDb, Db> {
     }
 }
 
-impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmDatabase<CodeDb, ZkDb> {
+impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb, ZkDb> {
     /// Initialize an EVM database from a block trace.
-    pub fn new_with_root(
-        committed_zktrie_root: B256,
-        code_db: CodeDb,
-        zktrie_db: ZkDb,
-    ) -> Result<Self> {
-        let zktrie = ZkTrie::new_with_root(zktrie_db.clone(), NoCacheHasher, committed_zktrie_root)
-            .map_err(DatabaseError::zk_trie)?;
-
-        Ok(EvmDatabase {
-            code_db,
-            prev_storage_roots: Default::default(),
-            storage_trie_refs: Default::default(),
-            committed_zktrie_root,
-            zktrie_db,
-            zktrie,
-        })
-    }
-
-    /// Initialize an EVM database from a block trace.
-    pub fn new_from_trace<T: Block>(
+    pub fn new<T: Block>(
         l2_trace: T,
         mut code_db: CodeDb,
-        zktrie_db: ZkDb,
+        zktrie_db: &'a mut NodeDb<ZkDb>,
     ) -> Result<Self> {
         cycle_tracker_start!("insert CodeDB");
         for code in l2_trace.codes() {
@@ -81,31 +59,45 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmDatabase<CodeDb,
         }
         cycle_tracker_end!("insert CodeDB");
 
-        Self::new_with_root(l2_trace.root_before(), code_db, zktrie_db)
-    }
+        let committed_zktrie_root = l2_trace.root_before();
 
-    /// Set the previous storage root of an account.
-    ///
-    /// Should be updated after commit.
-    #[inline]
-    pub(crate) fn set_prev_storage_root(
-        &self,
-        address: Address,
-        storage_root: B256,
-    ) -> Option<B256> {
-        self.prev_storage_roots
-            .borrow_mut()
-            .insert(address, storage_root)
+        let zktrie = ZkTrie::new_with_root(zktrie_db, NoCacheHasher, committed_zktrie_root)
+            .map_err(DatabaseError::zk_trie)?;
+
+        Ok(EvmDatabase {
+            code_db,
+            storage_root_caches: Default::default(),
+            storage_trie_caches: Default::default(),
+            committed_zktrie_root,
+            zktrie_db,
+            zktrie,
+        })
     }
 
     /// Get the previous storage root of an account.
     #[inline]
     pub(crate) fn prev_storage_root(&self, address: &Address) -> B256 {
-        self.prev_storage_roots
+        self.storage_root_caches
             .borrow()
             .get(address)
             .copied()
             .unwrap_or_default()
+    }
+
+    #[inline]
+    pub(crate) fn update_storage_root_cache(&self, address: Address, storage_root: ZkTrie) {
+        let new_root = *storage_root.root().unwrap_ref();
+        let old = self
+            .storage_root_caches
+            .borrow_mut()
+            .insert(address, new_root);
+
+        let mut storage_trie_caches = self.storage_trie_caches.borrow_mut();
+        if let Some(old) = old {
+            storage_trie_caches.remove(&old);
+        }
+
+        storage_trie_caches.insert(new_root, Some(storage_root));
     }
 
     /// Get the committed zkTrie root.
@@ -135,61 +127,33 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> EvmDatabase<CodeDb,
         }
         cycle_tracker_end!("insert CodeDB");
 
-        self.zktrie = ZkTrie::new_with_root(
-            self.zktrie_db.clone(),
-            NoCacheHasher,
-            l2_trace.root_before(),
+        self.zktrie = cycle_track!(
+            ZkTrie::new_with_root(self.zktrie_db, NoCacheHasher, l2_trace.root_before(),),
+            "ZkTrie::new_with_root"
         )
         .map_err(DatabaseError::zk_trie)?;
 
         Ok(())
     }
-
-    /// Invalidate internal cache for any account touched by EVM.
-    pub(crate) fn invalidate_storage_root_caches(
-        &mut self,
-        account_states: impl Iterator<Item = (Address, AccountState)>,
-    ) {
-        let mut storage_trie_refs = self.storage_trie_refs.borrow_mut();
-        for (address, account_state) in account_states {
-            if account_state != AccountState::None {
-                storage_trie_refs.remove(&address);
-            }
-        }
-    }
 }
 
-impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
-    for EvmDatabase<CodeDb, ZkDb>
-{
+impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> DatabaseRef for EvmDatabase<'_, CodeDb, ZkDb> {
     type Error = DatabaseError;
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>> {
         let Some(account) = measure_duration_micros!(
             zktrie_get_duration_microseconds,
-            self.zktrie.get::<Account, _>(address)
+            self.zktrie.get::<_, Account, _>(self.zktrie_db, address)
         )
         .map_err(DatabaseError::zk_trie)?
         else {
             return Ok(None);
         };
-        dev_trace!("get account {:?}", account);
 
-        self.prev_storage_roots
+        self.storage_root_caches
             .borrow_mut()
-            .entry(address)
-            .or_insert(account.storage_root);
-        let zktrie_db = self.zktrie_db.clone();
-        self.storage_trie_refs
-            .borrow_mut()
-            .entry(address)
-            .or_insert_with(|| {
-                Lazy::new(Box::new(move || {
-                    ZkTrie::new_with_root(zktrie_db.clone(), NoCacheHasher, account.storage_root)
-                        .expect("storage trie associated with account not found")
-                }))
-            });
+            .insert(address, account.storage_root);
 
         let mut info = AccountInfo::from(account);
         info.code = self
@@ -197,7 +161,6 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
             .get(&account.code_hash)
             .map_err(DatabaseError::code_db)?
             .map(|v| Bytecode::new_legacy(v.into_bytes().into()));
-        dev_trace!("get account info {:?}", info);
 
         Ok(Some(info))
     }
@@ -224,32 +187,42 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
     /// Get storage value of address at index.
     fn storage_ref(&self, address: Address, index: U256) -> Result<U256> {
         dev_trace!("get storage of {:?} at index {:?}", address, index);
-        let mut storage_trie_refs = self.storage_trie_refs.borrow_mut();
-        let trie = storage_trie_refs
+        let storage_root = *self
+            .storage_root_caches
+            .borrow_mut()
             .entry(address)
             .or_insert_with_key(|address| {
-                let storage_root = measure_duration_micros!(
-                    zktrie_get_duration_microseconds,
-                    self.zktrie.get::<Account, _>(address)
-                )
-                .expect("unexpected zktrie error")
-                .map(|acc| acc.storage_root)
-                .unwrap_or_default();
+                self.zktrie
+                    .get::<_, Account, _>(self.zktrie_db, address)
+                    .expect("unexpected zktrie error")
+                    .map(|acc| acc.storage_root)
+                    .unwrap_or_default()
+            });
+
+        let mut storage_trie_caches = self.storage_trie_caches.borrow_mut();
+
+        let trie = storage_trie_caches
+            .entry(storage_root)
+            .or_insert_with_key(|storage_root| {
                 dev_debug!("storage root of {:?} is {:?}", address, storage_root);
 
-                let zktrie_db = self.zktrie_db.clone();
-                Lazy::new(Box::new(move || {
-                    ZkTrie::new_with_root(zktrie_db.clone(), NoCacheHasher, storage_root)
-                        .expect("storage trie associated with account not found")
-                }))
+                ZkTrie::new_with_root(self.zktrie_db, NoCacheHasher, *storage_root)
+                    .inspect_err(|e| {
+                        dev_warn!("storage trie associated with account({address}) not found: {e}")
+                    })
+                    .ok()
             });
+        if trie.is_none() {
+            return Err(DatabaseError::NotIncluded);
+        }
+        let trie = trie.as_mut().unwrap();
 
         #[cfg(debug_assertions)]
         {
             let current_root = trie.root().unwrap_ref();
             let expected_root = self
                 .zktrie
-                .get::<Account, _>(address)
+                .get::<_, Account, _>(self.zktrie_db, address)
                 .expect("unexpected zktrie error")
                 .map(|acc| acc.storage_root)
                 .unwrap_or_default();
@@ -258,7 +231,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + Clone + 'static> DatabaseRef
 
         Ok(measure_duration_micros!(
             zktrie_get_duration_microseconds,
-            trie.get::<U256, _>(index.to_be_bytes::<32>())
+            trie.get::<_, U256, _>(self.zktrie_db, index.to_be_bytes::<32>())
         )
         .map_err(DatabaseError::zk_trie)?
         .unwrap_or_default())
