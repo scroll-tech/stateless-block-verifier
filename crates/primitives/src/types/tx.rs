@@ -1,4 +1,3 @@
-use crate::alloy_consensus::{SignableTransaction, TxLegacy};
 use crate::TxTrace;
 use alloy::{
     consensus::{Transaction, TxEnvelope, TxType},
@@ -256,11 +255,11 @@ impl TxTrace for ArchivedTransactionTrace {
     }
 
     fn chain_id(&self) -> Option<ChainId> {
-        let chain_id: ChainId = self.chain_id.to();
+        let chain_id: U64 = self.chain_id.into();
         if self.ty == 0 && self.v() < 35 {
             None
         } else {
-            Some(chain_id)
+            Some(chain_id.to())
         }
     }
 
@@ -341,6 +340,10 @@ impl TxTrace for alloy::rpc::types::Transaction {
 
     fn access_list(&self) -> AccessList {
         self.access_list.clone().unwrap_or_default()
+    }
+
+    fn v(&self) -> u64 {
+        self.signature.unwrap().v.to()
     }
 
     fn signature(&self) -> Result<Signature, SignatureError> {

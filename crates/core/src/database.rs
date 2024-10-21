@@ -3,12 +3,13 @@ use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
 };
-use sbv_primitives::zk_trie::db::NodeDb;
-use sbv_primitives::zk_trie::hash::ZkHash;
 use sbv_primitives::{
     zk_trie::{
-        db::kv::{KVDatabase, KVDatabaseItem},
-        hash::{key_hasher::NoCacheHasher, poseidon::Poseidon},
+        db::{
+            kv::{KVDatabase, KVDatabaseItem},
+            NodeDb,
+        },
+        hash::{key_hasher::NoCacheHasher, poseidon::Poseidon, ZkHash},
         scroll_types::Account,
         trie::ZkTrie,
     },
@@ -21,7 +22,7 @@ type Result<T, E = DatabaseError> = std::result::Result<T, E>;
 /// A database that consists of account and storage information.
 pub struct EvmDatabase<'a, CodeDb, ZkDb> {
     /// Map of code hash to bytecode.
-    code_db: CodeDb,
+    pub(crate) code_db: &'a mut CodeDb,
     /// Storage root cache, avoid re-query account when storage root is needed
     storage_root_caches: RefCell<HashMap<Address, ZkHash>>,
     /// Storage trie cache, avoid re-creating trie for the same account.
@@ -44,23 +45,12 @@ impl<CodeDb, Db> fmt::Debug for EvmDatabase<'_, CodeDb, Db> {
 }
 
 impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb, ZkDb> {
-    /// Initialize an EVM database from a block trace.
-    pub fn new<T: Block>(
-        l2_trace: T,
-        mut code_db: CodeDb,
+    /// Initialize an EVM database from a zkTrie root.
+    pub fn new_from_root(
+        committed_zktrie_root: B256,
+        code_db: &'a mut CodeDb,
         zktrie_db: &'a mut NodeDb<ZkDb>,
     ) -> Result<Self> {
-        cycle_tracker_start!("insert CodeDB");
-        for code in l2_trace.codes() {
-            let hash = revm::primitives::keccak256(code);
-            code_db
-                .or_put(hash.as_slice(), code)
-                .map_err(DatabaseError::code_db)?;
-        }
-        cycle_tracker_end!("insert CodeDB");
-
-        let committed_zktrie_root = l2_trace.root_before();
-
         let zktrie = ZkTrie::new_with_root(zktrie_db, NoCacheHasher, committed_zktrie_root)
             .map_err(DatabaseError::zk_trie)?;
 
@@ -113,11 +103,14 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb,
     }
 
     /// Update the database with a new block trace.
-    pub fn update<T: Block>(&mut self, l2_trace: T) -> Result<()> {
-        measure_duration_millis!(update_db_duration_milliseconds, self.update_inner(l2_trace))
+    pub fn insert_codes<T: Block>(&mut self, l2_trace: T) -> Result<()> {
+        measure_duration_millis!(
+            update_db_duration_milliseconds,
+            self.insert_codes_inner(l2_trace)
+        )
     }
 
-    fn update_inner<T: Block>(&mut self, l2_trace: T) -> Result<()> {
+    fn insert_codes_inner<T: Block>(&mut self, l2_trace: T) -> Result<()> {
         cycle_tracker_start!("insert CodeDB");
         for code in l2_trace.codes() {
             let hash = revm::primitives::keccak256(code);
@@ -126,13 +119,6 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb,
                 .map_err(DatabaseError::code_db)?;
         }
         cycle_tracker_end!("insert CodeDB");
-
-        self.zktrie = cycle_track!(
-            ZkTrie::new_with_root(self.zktrie_db, NoCacheHasher, l2_trace.root_before(),),
-            "ZkTrie::new_with_root"
-        )
-        .map_err(DatabaseError::zk_trie)?;
-
         Ok(())
     }
 }
@@ -208,7 +194,9 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> DatabaseRef for EvmDatabase
 
                 ZkTrie::new_with_root(self.zktrie_db, NoCacheHasher, *storage_root)
                     .inspect_err(|e| {
-                        dev_warn!("storage trie associated with account({address}) not found: {e}")
+                        let backtrace = std::backtrace::Backtrace::force_capture();
+                        dev_warn!("storage trie associated with account({address}) not found: {e}\n{backtrace}");
+
                     })
                     .ok()
             });

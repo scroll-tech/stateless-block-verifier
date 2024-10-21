@@ -622,6 +622,8 @@ impl NodeProof for ArchivedArchivedNodeBytes {
 }
 
 impl Block for alloy::rpc::types::Block<alloy::rpc::types::Transaction, alloy::rpc::types::Header> {
+    type Node = Bytes;
+
     type Tx = alloy::rpc::types::Transaction;
 
     fn number(&self) -> u64 {
@@ -688,7 +690,7 @@ impl Block for alloy::rpc::types::Block<alloy::rpc::types::Transaction, alloy::r
         unimplemented!()
     }
 
-    fn flatten_proofs(&self) -> impl Iterator<Item = (&B256, &[u8])> {
+    fn node_proofs(&self) -> impl Iterator<Item = &Self::Node> {
         [].into_iter()
     }
 }

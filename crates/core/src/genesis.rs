@@ -1,10 +1,11 @@
 use crate::hardfork::{SCROLL_MAINNET_CHAIN_ID, SCROLL_TESTNET_CHAIN_ID};
 use once_cell::sync::Lazy;
 use revm::primitives::{poseidon, KECCAK_EMPTY, POSEIDON_EMPTY};
+use sbv_primitives::zk_trie::db::NodeDb;
 use sbv_primitives::{
     alloy_primitives::{keccak256, Bytes, ChainId, U64},
     zk_trie::{
-        db::KVDatabase,
+        db::kv::KVDatabase,
         hash::{key_hasher::KeyHasher, HashScheme},
         scroll_types::Account,
         trie::{ZkTrie, ZkTrieError},
@@ -30,6 +31,7 @@ pub struct GenesisConfig {
 }
 
 impl GenesisConfig {
+    /// Create a new genesis configuration from the given chain ID.
     pub fn default_from_chain_id(chain_id: u64) -> Self {
         match chain_id {
             SCROLL_MAINNET_CHAIN_ID => Self::mainnet(),
@@ -38,18 +40,21 @@ impl GenesisConfig {
         }
     }
 
+    /// Create a new mainnet genesis configuration.
     pub fn mainnet() -> Self {
         Self {
             config: Cow::Borrowed(&*SCROLL_MAINNET_GENESIS),
         }
     }
 
+    /// Create a new testnet genesis configuration.
     pub fn testnet() -> Self {
         Self {
             config: Cow::Borrowed(&*SCROLL_TESTNET_GENESIS),
         }
     }
 
+    /// Initialize the code database with the code of the accounts.
     pub fn init_code_db<Db: KVDatabase>(&self, code_db: &mut Db) -> Result<(), Db::Error> {
         for acc in self.config.alloc.values() {
             if acc.code.is_empty() {
@@ -65,23 +70,27 @@ impl GenesisConfig {
         Ok(())
     }
 
-    pub fn init_zktrie<H: HashScheme, ZkDb: KVDatabase + Clone, K: KeyHasher<H> + Clone>(
+    /// Initialize the zkTrie with the accounts.
+    pub fn init_zktrie<H: HashScheme, ZkDb: KVDatabase, K: KeyHasher<H> + Clone>(
         &self,
-        trie: &mut ZkTrie<H, ZkDb, K>,
-    ) -> Result<(), ZkTrieError<H::Error, ZkDb::Error>> {
+        db: &mut NodeDb<ZkDb>,
+        key_hasher: K,
+    ) -> Result<ZkTrie<H, K>, ZkTrieError<H::Error, ZkDb::Error>> {
+        let mut zktrie = ZkTrie::<H, _>::new(key_hasher.clone());
         for (addr, acc) in self.config.alloc.iter() {
             let storage_root = if !acc.storage.is_empty() {
-                let mut storage_trie = ZkTrie::new(trie.db().clone(), trie.key_hasher().clone());
+                let mut storage_trie = ZkTrie::<H, _>::new(key_hasher.clone());
                 for (key, value) in acc.storage.iter() {
-                    storage_trie.update(key.to_be_bytes::<32>(), value)?;
+                    storage_trie.update(db, key.to_be_bytes::<32>(), value)?;
                 }
-                storage_trie.commit()?;
+                storage_trie.commit(db)?;
                 *storage_trie.root().unwrap_ref()
             } else {
                 B256::ZERO
             };
 
-            trie.update(
+            zktrie.update(
+                db,
                 addr,
                 Account {
                     nonce: 0,
@@ -101,9 +110,9 @@ impl GenesisConfig {
                 },
             )?;
         }
-        trie.commit()?;
+        zktrie.commit(db)?;
 
-        Ok(())
+        Ok(zktrie)
     }
 }
 
