@@ -285,6 +285,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
             debug_recorder.record_account(*addr, info.clone(), storage_root);
 
             let acc_data = Account::from_revm_account_with_storage_root(info, storage_root);
+            dev_trace!("committing account {addr}: {acc_data:?}");
             measure_duration_micros!(
                 zktrie_update_duration_microseconds,
                 cycle_track!(

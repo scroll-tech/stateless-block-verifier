@@ -39,8 +39,8 @@ macro_rules! cycle_tracker_end {
 #[macro_export]
 macro_rules! dev_trace {
     ($($arg:tt)*) => {
-        #[cfg(any(feature = "dev", test))]
         {
+            #[cfg(any(feature = "dev", test))]
             $crate::tracing::trace!($($arg)*);
         }
     };
@@ -50,8 +50,8 @@ macro_rules! dev_trace {
 #[macro_export]
 macro_rules! dev_info {
     ($($arg:tt)*) => {
-        #[cfg(any(feature = "dev", test))]
         {
+            #[cfg(any(feature = "dev", test))]
             $crate::tracing::info!($($arg)*);
         }
     };
@@ -61,8 +61,8 @@ macro_rules! dev_info {
 #[macro_export]
 macro_rules! dev_error {
     ($($arg:tt)*) => {
-        #[cfg(any(feature = "dev", test))]
         {
+            #[cfg(any(feature = "dev", test))]
             $crate::tracing::error!($($arg)*);
         }
     };
@@ -72,8 +72,8 @@ macro_rules! dev_error {
 #[macro_export]
 macro_rules! dev_debug {
     ($($arg:tt)*) => {
-        #[cfg(any(feature = "dev", test))]
         {
+            #[cfg(any(feature = "dev", test))]
             $crate::tracing::debug!($($arg)*);
         }
     };
@@ -83,8 +83,8 @@ macro_rules! dev_debug {
 #[macro_export]
 macro_rules! dev_warn {
     ($($arg:tt)*) => {
-        #[cfg(any(feature = "dev", test))]
         {
+            #[cfg(any(feature = "dev", test))]
             $crate::tracing::warn!($($arg)*);
         }
     };

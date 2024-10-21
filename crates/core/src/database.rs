@@ -26,7 +26,7 @@ pub struct EvmDatabase<'a, CodeDb, ZkDb> {
     storage_root_caches: RefCell<HashMap<Address, ZkHash>>,
     /// Storage trie cache, avoid re-creating trie for the same account.
     /// Need to invalidate before `update`, otherwise the trie root may be outdated
-    storage_trie_caches: RefCell<HashMap<ZkHash, ZkTrie<Poseidon>>>,
+    storage_trie_caches: RefCell<HashMap<ZkHash, Option<ZkTrie<Poseidon>>>>,
     /// Current uncommitted zkTrie root based on the block trace.
     committed_zktrie_root: B256,
     /// The underlying zkTrie database.
@@ -97,7 +97,7 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb,
             storage_trie_caches.remove(&old);
         }
 
-        storage_trie_caches.insert(new_root, storage_root);
+        storage_trie_caches.insert(new_root, Some(storage_root));
     }
 
     /// Get the committed zkTrie root.
@@ -207,8 +207,15 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> DatabaseRef for EvmDatabase
                 dev_debug!("storage root of {:?} is {:?}", address, storage_root);
 
                 ZkTrie::new_with_root(self.zktrie_db, NoCacheHasher, *storage_root)
-                    .expect("storage trie associated with account not found")
+                    .inspect_err(|e| {
+                        dev_warn!("storage trie associated with account({address}) not found: {e}")
+                    })
+                    .ok()
             });
+        if trie.is_none() {
+            return Err(DatabaseError::NotIncluded);
+        }
+        let trie = trie.as_mut().unwrap();
 
         #[cfg(debug_assertions)]
         {
