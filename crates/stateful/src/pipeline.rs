@@ -2,13 +2,13 @@ use crate::utils::patch_fix_block;
 use crate::{retry_if_transport_error, Error, Result};
 use alloy::providers::{Provider, ReqwestProvider};
 use alloy::rpc::types::Block;
-use sbv::primitives::alloy_primitives::ChainId;
-use sbv::primitives::types::AlloyTransaction;
-use sbv::primitives::Address;
+use sbv::primitives::{alloy_primitives::ChainId, types::AlloyTransaction, Address};
 use std::collections::BinaryHeap;
 use std::fmt::Debug;
-use std::sync::atomic::{AtomicBool, AtomicU64};
-use std::sync::Arc;
+use std::sync::{
+    atomic::{AtomicBool, AtomicU64},
+    Arc,
+};
 use tokio::sync::Mutex;
 
 struct OrderedQueue {
@@ -19,6 +19,7 @@ struct OrderedQueue {
 /// Fetcher to fetch blocks from the provider.
 #[derive(Clone, Debug)]
 pub struct Fetcher {
+    count: usize,
     provider: ReqwestProvider,
     coinbase: Address,
     chain_id: ChainId,
@@ -50,6 +51,7 @@ impl Fetcher {
         };
 
         let fetcher = Fetcher {
+            count,
             provider,
             coinbase,
             chain_id,
@@ -95,16 +97,24 @@ impl Fetcher {
                 ))?;
             patch_fix_block(&mut block, self.coinbase, self.chain_id);
 
-            let mut queue = self.queue.lock().await;
             dev_trace!(
-                "block#{} block fetched, state root: {}, queue size: {}",
+                "block#{} block fetched, state root: {}",
                 block.header.number,
-                block.header.state_root,
-                queue.queue.len()
+                block.header.state_root
             );
 
-            queue.queue.push(FetchedBlock(block));
+            loop {
+                let mut queue = self.queue.lock().await;
+                // back pressure
+                if queue.queue.len() >= self.count {
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+                queue.queue.push(FetchedBlock(block));
+                break;
+            }
 
+            let mut queue = self.queue.lock().await;
             while queue
                 .queue
                 .peek()

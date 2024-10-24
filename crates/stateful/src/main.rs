@@ -35,7 +35,9 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::select! {
         _ = executor.run() => {}
-        _ = tokio::signal::ctrl_c() => {}
+        _ = tokio::signal::ctrl_c() => {
+            executor.shutdown();
+        }
     }
 
     Ok(())

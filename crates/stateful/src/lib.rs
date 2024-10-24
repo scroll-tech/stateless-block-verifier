@@ -5,14 +5,17 @@ extern crate sbv;
 use crate::pipeline::Fetcher;
 use alloy::providers::{Provider, ReqwestProvider};
 use alloy::rpc::types::Block;
-use sbv::core::{EvmExecutorBuilder, GenesisConfig, HardforkConfig};
-use sbv::primitives::alloy_primitives::ChainId;
-use sbv::primitives::types::AlloyTransaction;
-use sbv::primitives::zk_trie::db::kv::SledDb;
-use sbv::primitives::zk_trie::db::NodeDb;
-use sbv::primitives::zk_trie::hash::key_hasher::NoCacheHasher;
-use sbv::primitives::zk_trie::hash::poseidon::Poseidon;
-use sbv::primitives::zk_trie::hash::ZkHash;
+use sbv::{
+    core::{EvmExecutorBuilder, GenesisConfig, HardforkConfig},
+    primitives::{
+        alloy_primitives::ChainId,
+        types::AlloyTransaction,
+        zk_trie::{
+            db::{kv::SledDb, NodeDb},
+            hash::{key_hasher::NoCacheHasher, poseidon::Poseidon, ZkHash},
+        },
+    },
+};
 use sled::Tree;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
@@ -168,11 +171,17 @@ impl StatefulBlockExecutor {
                             if last_time.elapsed() > std::time::Duration::from_secs(10) {
                                 let elapsed = last_time.elapsed();
                                 last_time = std::time::Instant::now();
-
+                                let blocks_per_sec = blocks_handled as f64 / elapsed.as_secs_f64();
                                 dev_info!(
                                     "handled {blocks_handled} blocks in {elapsed:.2?}, {blocks_per_sec:.2} blocks/s, latest block: {block_number}",
-                                    blocks_per_sec = blocks_handled as f64 / elapsed.as_secs_f64(),
                                 );
+                                if let Ok(latest) = self.provider.get_block_number().await {
+                                    let estimate_hours = (latest - block_number) as f64
+                                        / blocks_per_sec
+                                        / 60.0
+                                        / 60.0;
+                                    dev_info!("estimate time to catch up: {estimate_hours:.2?}h",);
+                                }
 
                                 blocks_handled = 0;
                             }
@@ -191,6 +200,13 @@ impl StatefulBlockExecutor {
                 }
             }
         }
+    }
+
+    /// Shutdown the executor
+    #[inline(always)]
+    pub fn shutdown(&self) {
+        self.shutdown
+            .store(true, std::sync::atomic::Ordering::SeqCst);
     }
 
     /// Get the sled db
