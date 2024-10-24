@@ -187,7 +187,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
 
         #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
         let mut debug_recorder = sbv_utils::DebugRecorder::new(
-            type_name_of_val(&self),
+            std::any::type_name_of_val(&self),
             self.db.db.committed_zktrie_root(),
         );
 
