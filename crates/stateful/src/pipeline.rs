@@ -107,11 +107,13 @@ impl Fetcher {
                 let mut queue = self.queue.lock().await;
                 // back pressure
                 if queue.queue.len() >= self.count {
+                    drop(queue);
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                     continue;
+                } else {
+                    queue.queue.push(FetchedBlock(block));
+                    break;
                 }
-                queue.queue.push(FetchedBlock(block));
-                break;
             }
 
             let mut queue = self.queue.lock().await;
