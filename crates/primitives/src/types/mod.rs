@@ -13,7 +13,9 @@ use zktrie_ng::hash::poseidon::Poseidon;
 use zktrie_ng::trie::{ArchivedNode, Node, MAGIC_NODE_BYTES};
 
 mod tx;
-pub use tx::{ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransaction};
+pub use tx::{
+    AlloyTransaction, ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransaction,
+};
 
 /// Block header
 #[derive(
@@ -618,6 +620,80 @@ impl NodeProof for ArchivedNodeBytes {
 impl NodeProof for ArchivedArchivedNodeBytes {
     fn import_node<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error> {
         import_archived_node(&self.0, db)
+    }
+}
+
+impl Block for alloy::rpc::types::Block<AlloyTransaction, alloy::rpc::types::Header> {
+    type Node = Bytes;
+
+    type Tx = AlloyTransaction;
+
+    fn number(&self) -> u64 {
+        self.header.number
+    }
+
+    fn block_hash(&self) -> B256 {
+        self.header.hash
+    }
+
+    fn chain_id(&self) -> u64 {
+        0
+    }
+
+    fn coinbase(&self) -> Address {
+        self.header.miner
+    }
+
+    fn timestamp(&self) -> U256 {
+        U256::from_limbs([self.header.timestamp, 0, 0, 0])
+    }
+
+    fn gas_limit(&self) -> U256 {
+        U256::from(self.header.gas_limit)
+    }
+
+    fn gas_used(&self) -> U256 {
+        U256::from(self.header.gas_used)
+    }
+
+    fn base_fee_per_gas(&self) -> Option<U256> {
+        self.header.base_fee_per_gas.map(U256::from)
+    }
+
+    fn difficulty(&self) -> U256 {
+        self.header.difficulty
+    }
+
+    fn prevrandao(&self) -> Option<B256> {
+        self.header.mix_hash
+    }
+
+    fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
+        self.transactions.txns()
+    }
+
+    fn root_before(&self) -> B256 {
+        unimplemented!()
+    }
+
+    fn root_after(&self) -> B256 {
+        unimplemented!()
+    }
+
+    fn withdraw_root(&self) -> B256 {
+        self.header.withdrawals_root.unwrap_or_default()
+    }
+
+    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]> {
+        [].into_iter()
+    }
+
+    fn start_l1_queue_index(&self) -> u64 {
+        unimplemented!()
+    }
+
+    fn node_proofs(&self) -> impl Iterator<Item = &Self::Node> {
+        [].into_iter()
     }
 }
 

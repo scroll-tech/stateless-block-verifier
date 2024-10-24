@@ -6,6 +6,7 @@ use sbv::{
     core::{ChunkInfo, EvmExecutorBuilder, HardforkConfig},
     primitives::{types::BlockTrace, zk_trie::db::kv::HashMapDb, Block, B256},
 };
+use serde::Deserialize;
 use std::panic::catch_unwind;
 use std::{cell::RefCell, path::PathBuf};
 use tiny_keccak::{Hasher, Keccak};
@@ -77,20 +78,23 @@ impl RunFileCommand {
 
         let fork_config = fork_config(traces[0].chain_id());
         let (chunk_info, mut zktrie_db) = ChunkInfo::from_block_traces(&traces);
+        let mut code_db = HashMapDb::default();
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
-        let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), &mut zktrie_db)
+        let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
             .hardfork_config(fork_config)
-            .with_hooks(&traces[0], |hooks| {
+            .chain_id(traces[0].chain_id())
+            .with_hooks(traces[0].root_before(), |hooks| {
                 hooks.add_tx_rlp_handler(|_, rlp| {
                     tx_bytes_hasher.borrow_mut().update(rlp);
                 });
             })?;
-        executor.handle_block(&traces[0])?;
+        for trace in traces.iter() {
+            executor.insert_codes(trace)?;
+        }
 
-        for trace in traces[1..].iter() {
-            executor.update_db(trace)?;
+        for trace in traces.iter() {
             executor.handle_block(trace)?;
         }
 
@@ -116,22 +120,27 @@ async fn read_block_trace(path: &PathBuf) -> anyhow::Result<BlockTrace> {
 }
 
 fn deserialize_block_trace(trace: &str) -> anyhow::Result<BlockTrace> {
+    let block_trace = deserialize_may_wrapped::<BlockTrace>(trace)?;
+    if block_trace.storage_trace.flatten_proofs.is_empty() {
+        dev_warn!("Storage trace is empty, try to deserialize as legacy storage trace");
+        let legacy_trace = deserialize_may_wrapped::<BlockTrace<LegacyStorageTrace>>(trace)?;
+        return Ok(legacy_trace.into());
+    }
+    Ok(block_trace)
+}
+fn deserialize_may_wrapped<'de, T: Deserialize<'de>>(trace: &'de str) -> anyhow::Result<T> {
     // Try to deserialize `BlockTrace` from JSON. In case of failure, try to
     // deserialize `BlockTrace` from a JSON-RPC response that has the actual block
     // trace nested in the value of the key "result".
-    Ok(
-        serde_json::from_str::<BlockTrace<LegacyStorageTrace>>(trace)
-            .or_else(|_| {
-                #[derive(serde::Deserialize, Default, Debug, Clone)]
-                pub struct BlockTraceJsonRpcResult {
-                    pub result: BlockTrace<LegacyStorageTrace>,
-                }
-                Ok::<_, serde_json::Error>(
-                    serde_json::from_str::<BlockTraceJsonRpcResult>(trace)?.result,
-                )
-            })?
-            .into(),
-    )
+    Ok(serde_json::from_str::<T>(trace).or_else(|_| {
+        #[derive(serde::Deserialize, Default, Debug, Clone)]
+        pub struct BlockTraceJsonRpcResult<T> {
+            pub result: T,
+        }
+        Ok::<_, serde_json::Error>(
+            serde_json::from_str::<BlockTraceJsonRpcResult<T>>(trace)?.result,
+        )
+    })?)
 }
 
 async fn run_trace(

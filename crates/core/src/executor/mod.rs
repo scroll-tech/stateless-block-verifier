@@ -2,20 +2,18 @@ use crate::{
     database::EvmDatabase, error::DatabaseError, error::VerificationError, HardforkConfig,
 };
 use revm::db::AccountState;
+use revm::primitives::alloy_primitives::ChainId;
 use revm::primitives::{BlockEnv, TxEnv, U256};
 use revm::{
     db::CacheDB,
-    primitives::{AccountInfo, Env, SpecId, B256, KECCAK_EMPTY, POSEIDON_EMPTY},
+    primitives::{AccountInfo, Env, B256, KECCAK_EMPTY, POSEIDON_EMPTY},
 };
 use sbv_primitives::{
     zk_trie::{
         db::kv::KVDatabase,
-        hash::{
-            key_hasher::NoCacheHasher,
-            poseidon::{Poseidon, PoseidonError},
-        },
+        hash::{key_hasher::NoCacheHasher, poseidon::Poseidon},
         scroll_types::Account,
-        trie::{ZkTrie, ZkTrieError},
+        trie::ZkTrie,
     },
     Block, Transaction, TxTrace,
 };
@@ -29,9 +27,9 @@ pub mod hooks;
 
 /// EVM executor that handles the block.
 pub struct EvmExecutor<'db, 'h, CodeDb, ZkDb> {
+    chain_id: ChainId,
     hardfork_config: HardforkConfig,
     db: CacheDB<EvmDatabase<'db, CodeDb, ZkDb>>,
-    spec_id: SpecId,
     hooks: hooks::ExecuteHooks<'h, CodeDb, ZkDb>,
 }
 
@@ -41,9 +39,9 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
         &self.db
     }
 
-    /// Update the DB
-    pub fn update_db<T: Block>(&mut self, l2_trace: &T) -> Result<(), DatabaseError> {
-        self.db.db.update(l2_trace)
+    /// Insert codes from trace into CodeDB
+    pub fn insert_codes<T: Block>(&mut self, l2_trace: &T) -> Result<(), DatabaseError> {
+        self.db.db.insert_codes(l2_trace)
     }
 
     /// Handle a block.
@@ -62,13 +60,15 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
 
     #[inline(always)]
     fn handle_block_inner<T: Block>(&mut self, l2_trace: &T) -> Result<u64, VerificationError> {
+        let spec_id = self.hardfork_config.get_spec_id(l2_trace.number());
+        dev_trace!("use spec id {spec_id:?}",);
         self.hardfork_config
             .migrate(l2_trace.number(), &mut self.db)
             .unwrap();
 
         dev_debug!("handle block {:?}", l2_trace.number());
         let mut env = Box::<Env>::default();
-        env.cfg.chain_id = l2_trace.chain_id();
+        env.cfg.chain_id = self.chain_id;
         env.block = BlockEnv {
             number: U256::from_limbs([l2_trace.number(), 0, 0, 0]),
             coinbase: l2_trace.coinbase(),
@@ -136,7 +136,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
             {
                 let mut revm = cycle_track!(
                     revm::Evm::builder()
-                        .with_spec_id(self.spec_id)
+                        .with_spec_id(spec_id)
                         .with_db(&mut self.db)
                         .with_env(env)
                         // .with_external_context(CustomPrintTracer::default())
@@ -173,14 +173,11 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
     pub fn commit_changes(&mut self) -> Result<B256, DatabaseError> {
         measure_duration_millis!(
             commit_changes_duration_milliseconds,
-            cycle_track!(
-                self.commit_changes_inner().map_err(DatabaseError::zk_trie),
-                "commit_changes"
-            )
+            cycle_track!(self.commit_changes_inner(), "commit_changes")
         )
     }
 
-    fn commit_changes_inner(&mut self) -> Result<B256, ZkTrieError<PoseidonError, ZkDb::Error>> {
+    fn commit_changes_inner(&mut self) -> Result<B256, DatabaseError> {
         let mut zktrie = ZkTrie::<Poseidon>::new_with_root(
             self.db.db.zktrie_db,
             NoCacheHasher,
@@ -189,7 +186,10 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
         .expect("infallible");
 
         #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
-        let mut debug_recorder = sbv_utils::DebugRecorder::new();
+        let mut debug_recorder = sbv_utils::DebugRecorder::new(
+            std::any::type_name_of_val(&self),
+            self.db.db.committed_zktrie_root(),
+        );
 
         for (addr, db_acc) in self.db.accounts.iter() {
             // If EVM didn't touch the account, we don't need to update it
@@ -201,6 +201,25 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
             };
             if info.is_empty() {
                 continue;
+            }
+            if let Some(ref code) = info.code {
+                self.db
+                    .db
+                    .code_db
+                    .or_put(info.code_hash.as_slice(), code.original_byte_slice())
+                    .unwrap();
+                debug_assert_eq!(
+                    info.code_hash,
+                    code.hash_slow(),
+                    "code hash mismatch for account {addr:?}",
+                );
+                assert_eq!(
+                    info.code_size,
+                    code.original_bytes().len(),
+                    "code size mismatch for account {addr:?}",
+                );
+                #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
+                debug_recorder.record_code(info.code_hash, code.bytecode().as_ref());
             }
 
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
@@ -227,11 +246,9 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
                         measure_duration_micros!(
                             zktrie_update_duration_microseconds,
                             cycle_track!(
-                                storage_trie.update(
-                                    self.db.db.zktrie_db,
-                                    key.to_be_bytes::<32>(),
-                                    value
-                                )?,
+                                storage_trie
+                                    .update(self.db.db.zktrie_db, key.to_be_bytes::<32>(), value)
+                                    .map_err(DatabaseError::zk_trie)?,
                                 "Zktrie::update_store"
                             )
                         );
@@ -240,7 +257,8 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
                             zktrie_delete_duration_microseconds,
                             cycle_track!(
                                 storage_trie
-                                    .delete(self.db.db.zktrie_db, key.to_be_bytes::<32>())?,
+                                    .delete(self.db.db.zktrie_db, key.to_be_bytes::<32>())
+                                    .map_err(DatabaseError::zk_trie)?,
                                 "Zktrie::delete"
                             )
                         );
@@ -252,7 +270,12 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
 
                 measure_duration_micros!(
                     zktrie_commit_duration_microseconds,
-                    cycle_track!(storage_trie.commit(self.db.db.zktrie_db)?, "Zktrie::commit")
+                    cycle_track!(
+                        storage_trie
+                            .commit(self.db.db.zktrie_db)
+                            .map_err(DatabaseError::zk_trie)?,
+                        "Zktrie::commit"
+                    )
                 );
 
                 cycle_tracker_end!("update storage_tire");
@@ -301,12 +324,22 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
 
         measure_duration_micros!(
             zktrie_commit_duration_microseconds,
-            cycle_track!(zktrie.commit(self.db.db.zktrie_db)?, "Zktrie::commit")
+            cycle_track!(
+                zktrie
+                    .commit(self.db.db.zktrie_db)
+                    .map_err(DatabaseError::zk_trie)?,
+                "Zktrie::commit"
+            )
         );
 
         let root_after = *zktrie.root().unwrap_ref();
 
         self.db.db.updated_committed_zktrie_root(root_after);
+
+        self.db.accounts.clear();
+        self.db.contracts.clear();
+        self.db.block_hashes.clear();
+        self.db.logs.clear();
 
         Ok(B256::from(root_after))
     }
@@ -314,9 +347,6 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
 
 impl<CodeDb, ZkDb> Debug for EvmExecutor<'_, '_, CodeDb, ZkDb> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("EvmExecutor")
-            .field("db", &self.db)
-            .field("spec_id", &self.spec_id)
-            .finish()
+        f.debug_struct("EvmExecutor").field("db", &self.db).finish()
     }
 }

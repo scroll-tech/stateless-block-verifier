@@ -1,3 +1,4 @@
+use crate::alloy_primitives::{BlockHash, TxHash};
 use crate::TxTrace;
 use alloy::{
     consensus::{Transaction, TxEnvelope, TxType},
@@ -7,6 +8,7 @@ use alloy::{
     rlp::{BufMut, BytesMut, Encodable, Header},
 };
 use rkyv::rancor;
+use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnNull};
 
 /// Wrapped Ethereum Transaction
@@ -163,13 +165,17 @@ impl TxTrace for TransactionTrace {
         if self.is_create {
             TxKind::Create
         } else {
-            debug_assert!(self.to.map(|a| !a.is_zero()).unwrap_or(false));
             TxKind::Call(self.to.expect("to address must be present"))
         }
     }
 
-    fn chain_id(&self) -> ChainId {
-        self.chain_id.to()
+    fn chain_id(&self) -> Option<ChainId> {
+        let chain_id: ChainId = self.chain_id.to();
+        if self.ty == 0 && chain_id < 35 {
+            None
+        } else {
+            Some(chain_id)
+        }
     }
 
     fn value(&self) -> U256 {
@@ -249,9 +255,13 @@ impl TxTrace for ArchivedTransactionTrace {
         }
     }
 
-    fn chain_id(&self) -> ChainId {
+    fn chain_id(&self) -> Option<ChainId> {
         let chain_id: U64 = self.chain_id.into();
-        chain_id.to()
+        if self.ty == 0 && self.v() < 35 {
+            None
+        } else {
+            Some(chain_id.to())
+        }
     }
 
     fn value(&self) -> U256 {
@@ -274,6 +284,180 @@ impl TxTrace for ArchivedTransactionTrace {
     fn signature(&self) -> Result<Signature, SignatureError> {
         let v: U64 = self.v.into();
         Signature::from_rs_and_parity(self.r.into(), self.s.into(), v)
+    }
+}
+
+/// Transaction object used in RPC
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AlloyTransaction {
+    /// Hash
+    pub hash: TxHash,
+    /// Nonce
+    #[serde(with = "alloy::serde::quantity")]
+    pub nonce: u64,
+    /// Block hash
+    #[serde(default)]
+    pub block_hash: Option<BlockHash>,
+    /// Block number
+    #[serde(default, with = "alloy::serde::quantity::opt")]
+    pub block_number: Option<u64>,
+    /// Transaction Index
+    #[serde(default, with = "alloy::serde::quantity::opt")]
+    pub transaction_index: Option<u64>,
+    /// Sender
+    pub from: Address,
+    /// Recipient
+    pub to: Option<Address>,
+    /// Transferred value
+    pub value: U256,
+    /// Gas Price
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "alloy::serde::quantity::opt"
+    )]
+    pub gas_price: Option<u128>,
+    /// Gas amount
+    #[serde(with = "alloy::serde::quantity")]
+    pub gas: u128,
+    /// Max BaseFeePerGas the user is willing to pay.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "alloy::serde::quantity::opt"
+    )]
+    pub max_fee_per_gas: Option<u128>,
+    /// The miner's tip.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "alloy::serde::quantity::opt"
+    )]
+    pub max_priority_fee_per_gas: Option<u128>,
+    /// Configured max fee per blob gas for eip-4844 transactions
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "alloy::serde::quantity::opt"
+    )]
+    pub max_fee_per_blob_gas: Option<u128>,
+    /// Data
+    pub input: Bytes,
+    /// All _flattened_ fields of the transaction signature.
+    ///
+    /// Note: this is an option so special transaction types without a signature (e.g. <https://github.com/ethereum-optimism/optimism/blob/0bf643c4147b43cd6f25a759d331ef3a2a61a2a3/specs/deposits.md#the-deposited-transaction-type>) can be supported.
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub signature: Option<alloy::rpc::types::Signature>,
+    /// The chain id of the transaction, if any.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "alloy::serde::quantity::opt"
+    )]
+    pub chain_id: Option<ChainId>,
+    /// Contains the blob hashes for eip-4844 transactions.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blob_versioned_hashes: Option<Vec<B256>>,
+    /// EIP2930
+    ///
+    /// Pre-pay to warm storage access.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub access_list: Option<AccessList>,
+    /// EIP2718
+    ///
+    /// Transaction type,
+    /// Some(4) for EIP-7702 transaction, Some(3) for EIP-4844 transaction, Some(2) for EIP-1559
+    /// transaction, Some(1) for AccessList transaction, None or Some(0) for Legacy
+    #[serde(
+        default,
+        rename = "type",
+        skip_serializing_if = "Option::is_none",
+        with = "alloy::serde::quantity::opt"
+    )]
+    #[doc(alias = "tx_type")]
+    pub transaction_type: Option<u8>,
+    /// The signed authorization list is a list of tuples that store the address to code which the
+    /// signer desires to execute in the context of their EOA and their signature.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authorization_list: Option<Vec<SignedAuthorization>>,
+
+    /// L1Msg queueIndex
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "alloy::serde::quantity::opt"
+    )]
+    pub queue_index: Option<u64>,
+}
+
+impl TxTrace for AlloyTransaction {
+    fn tx_hash(&self) -> B256 {
+        self.hash
+    }
+
+    fn ty(&self) -> u8 {
+        self.transaction_type.unwrap_or(0)
+    }
+
+    fn nonce(&self) -> u64 {
+        if self.ty() != 0x7e {
+            self.nonce
+        } else {
+            self.queue_index.unwrap()
+        }
+    }
+
+    fn gas_limit(&self) -> u128 {
+        self.gas
+    }
+
+    fn gas_price(&self) -> u128 {
+        self.gas_price.unwrap_or(0)
+    }
+
+    fn max_fee_per_gas(&self) -> u128 {
+        self.max_fee_per_gas.unwrap_or(0)
+    }
+
+    fn max_priority_fee_per_gas(&self) -> u128 {
+        self.max_priority_fee_per_gas.unwrap_or(0)
+    }
+
+    unsafe fn get_from_unchecked(&self) -> Address {
+        self.from
+    }
+
+    fn to(&self) -> TxKind {
+        match self.to {
+            Some(addr) => TxKind::Call(addr),
+            None => TxKind::Create,
+        }
+    }
+
+    fn chain_id(&self) -> Option<ChainId> {
+        self.chain_id
+    }
+
+    fn value(&self) -> U256 {
+        self.value
+    }
+
+    fn data(&self) -> Bytes {
+        self.input.clone()
+    }
+
+    fn access_list(&self) -> AccessList {
+        self.access_list.clone().unwrap_or_default()
+    }
+
+    fn v(&self) -> u64 {
+        self.signature.unwrap().v.to()
+    }
+
+    fn signature(&self) -> Result<Signature, SignatureError> {
+        let sig = self.signature.unwrap();
+        Signature::from_rs_and_parity(sig.r, sig.s, sig.v.to::<u64>())
     }
 }
 

@@ -19,6 +19,7 @@ fn verify_inner<T: Block + Clone>(
     fork_config: &HardforkConfig,
 ) -> Result<(), VerificationError> {
     dev_trace!("{l2_trace:#?}");
+    let root_before = l2_trace.root_before();
     let root_after = l2_trace.root_after();
 
     // or with v2 trace
@@ -47,10 +48,14 @@ fn verify_inner<T: Block + Clone>(
         },
         "build ZktrieState"
     );
+    let mut code_db = HashMapDb::default();
 
-    let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), &mut zktrie_db)
+    let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
         .hardfork_config(*fork_config)
-        .build(&l2_trace)?;
+        .chain_id(l2_trace.chain_id())
+        .build(root_before)?;
+
+    executor.insert_codes(&l2_trace)?;
 
     // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76
     #[allow(clippy::map_identity)]
