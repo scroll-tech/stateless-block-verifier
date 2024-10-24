@@ -147,6 +147,18 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> DatabaseRef for EvmDatabase
             .get(&account.code_hash)
             .map_err(DatabaseError::code_db)?
             .map(|v| Bytecode::new_legacy(v.into_bytes().into()));
+        if let Some(ref code) = info.code {
+            debug_assert_eq!(
+                info.code_hash,
+                code.hash_slow(),
+                "code hash mismatch for account {address:?}",
+            );
+            assert_eq!(
+                info.code_size,
+                code.original_bytes().len(),
+                "code size mismatch for account {address:?}",
+            );
+        }
 
         Ok(Some(info))
     }

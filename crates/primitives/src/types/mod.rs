@@ -13,7 +13,9 @@ use zktrie_ng::hash::poseidon::Poseidon;
 use zktrie_ng::trie::{ArchivedNode, Node, MAGIC_NODE_BYTES};
 
 mod tx;
-pub use tx::{ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransaction};
+pub use tx::{
+    AlloyTransaction, ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransaction,
+};
 
 /// Block header
 #[derive(
@@ -621,10 +623,10 @@ impl NodeProof for ArchivedArchivedNodeBytes {
     }
 }
 
-impl Block for alloy::rpc::types::Block<alloy::rpc::types::Transaction, alloy::rpc::types::Header> {
+impl Block for alloy::rpc::types::Block<AlloyTransaction, alloy::rpc::types::Header> {
     type Node = Bytes;
 
-    type Tx = alloy::rpc::types::Transaction;
+    type Tx = AlloyTransaction;
 
     fn number(&self) -> u64 {
         self.header.number

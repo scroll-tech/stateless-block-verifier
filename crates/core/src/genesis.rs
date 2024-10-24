@@ -1,11 +1,10 @@
 use crate::hardfork::{SCROLL_MAINNET_CHAIN_ID, SCROLL_TESTNET_CHAIN_ID};
 use once_cell::sync::Lazy;
 use revm::primitives::{poseidon, KECCAK_EMPTY, POSEIDON_EMPTY};
-use sbv_primitives::zk_trie::db::NodeDb;
 use sbv_primitives::{
-    alloy_primitives::{keccak256, Bytes, ChainId, U64},
+    alloy_primitives::{keccak256, Bytes},
     zk_trie::{
-        db::kv::KVDatabase,
+        db::{kv::KVDatabase, NodeDb},
         hash::{key_hasher::KeyHasher, HashScheme},
         scroll_types::Account,
         trie::{ZkTrie, ZkTrieError},
@@ -114,42 +113,48 @@ impl GenesisConfig {
 
         Ok(zktrie)
     }
+
+    /// Get the genesis coinbase configuration.
+    #[inline(always)]
+    pub fn coinbase(&self) -> Address {
+        self.config.config.scroll.fee_vault_address
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GethGenesisConfig {
     pub config: GethGenesisBaseConfig,
-    pub timestamp: U256,
-    pub extra_data: Bytes,
-    pub gas_limit: U256,
-    pub coinbase: Address,
+    // pub timestamp: U256,
+    // pub extra_data: Bytes,
+    // pub gas_limit: U256,
+    // pub coinbase: Address,
     pub alloc: HashMap<Address, AllocAccount>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GethGenesisBaseConfig {
-    pub chain_id: ChainId,
+    // pub chain_id: ChainId,
     pub scroll: ScrollGenesisConfig,
 }
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScrollGenesisConfig {
-    pub max_tx_per_block: usize,
-    pub max_tx_payload_bytes_per_block: usize,
+    // pub max_tx_per_block: usize,
+    // pub max_tx_payload_bytes_per_block: usize,
     pub fee_vault_address: Address,
-    pub l1_config: ScrollL1Config,
+    // pub l1_config: ScrollL1Config,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ScrollL1Config {
-    pub l1_chain_id: U64,
-    pub l1_message_queue_address: Address,
-    pub num_l1_messages_per_block: U64,
-}
+// #[derive(Clone, Debug, Deserialize)]
+// #[serde(rename_all = "camelCase")]
+// pub struct ScrollL1Config {
+//     pub l1_chain_id: U64,
+//     pub l1_message_queue_address: Address,
+//     pub num_l1_messages_per_block: U64,
+// }
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]

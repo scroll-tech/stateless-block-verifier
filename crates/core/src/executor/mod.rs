@@ -186,7 +186,10 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
         .expect("infallible");
 
         #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
-        let mut debug_recorder = sbv_utils::DebugRecorder::new();
+        let mut debug_recorder = sbv_utils::DebugRecorder::new(
+            type_name_of_val(&self),
+            self.db.db.committed_zktrie_root(),
+        );
 
         for (addr, db_acc) in self.db.accounts.iter() {
             // If EVM didn't touch the account, we don't need to update it
@@ -203,8 +206,20 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
                 self.db
                     .db
                     .code_db
-                    .or_put(info.code_hash.as_slice(), code.bytecode().as_ref())
+                    .or_put(info.code_hash.as_slice(), code.original_byte_slice())
                     .unwrap();
+                debug_assert_eq!(
+                    info.code_hash,
+                    code.hash_slow(),
+                    "code hash mismatch for account {addr:?}",
+                );
+                assert_eq!(
+                    info.code_size,
+                    code.original_bytes().len(),
+                    "code size mismatch for account {addr:?}",
+                );
+                #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
+                debug_recorder.record_code(info.code_hash, code.bytecode().as_ref());
             }
 
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
