@@ -75,6 +75,17 @@ impl Fetcher {
 
     async fn run(self) -> Result<()> {
         while !self.shutdown.load(std::sync::atomic::Ordering::SeqCst) {
+            loop {
+                let queue = self.queue.lock().await;
+                // back pressure
+                if queue.queue.len() >= self.count {
+                    drop(queue);
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    continue;
+                }
+                break;
+            }
+
             let block_number = self
                 .fetcher_index
                 .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
@@ -103,20 +114,8 @@ impl Fetcher {
                 block.header.state_root
             );
 
-            loop {
-                let mut queue = self.queue.lock().await;
-                // back pressure
-                if queue.queue.len() >= self.count {
-                    drop(queue);
-                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-                    continue;
-                } else {
-                    queue.queue.push(FetchedBlock(block));
-                    break;
-                }
-            }
-
             let mut queue = self.queue.lock().await;
+            queue.queue.push(FetchedBlock(block));
             while queue
                 .queue
                 .peek()
