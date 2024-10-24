@@ -126,7 +126,7 @@ pub async fn check_stateless(
         assert_eq!(root_after, revm_root_after);
         dev_info!("block#{block_number} stateless check ok");
     }
-    assert_equal(&l2_trace, &block);
+    assert_equal(&l2_trace, block);
 
     Ok(root_after)
 }
