@@ -1,5 +1,7 @@
-use revm::primitives::{AccountInfo, Address, B256, U256};
+use revm::primitives::{hex, AccountInfo, Address, B256, U256};
 use std::collections::BTreeMap;
+use std::io::Write;
+use std::path::PathBuf;
 
 #[derive(Debug, serde::Serialize)]
 struct StorageOps {
@@ -20,20 +22,30 @@ struct AccountData {
 }
 
 /// Debug recorder for recording account and storage data.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct DebugRecorder {
+    base_dir: PathBuf,
     accounts: BTreeMap<Address, AccountData>,
     storages_roots: BTreeMap<Address, B256>,
     storages: BTreeMap<Address, BTreeMap<U256, StorageOps>>,
+    codes: BTreeMap<B256, Vec<u8>>,
 }
 
 impl DebugRecorder {
     /// Create a new debug recorder.
-    pub fn new() -> Self {
-        #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
-        std::fs::create_dir_all("/tmp/sbv-debug").expect("failed to create debug dir");
+    pub fn new(prefix: &str, prev_root: B256) -> Self {
+        let base_dir = PathBuf::from(format!("/tmp/sbv-debug/{prefix}/{prev_root:?}"));
 
-        Self::default()
+        #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
+        std::fs::create_dir_all(&base_dir).expect("failed to create debug dir");
+
+        Self {
+            base_dir,
+            accounts: BTreeMap::new(),
+            storages_roots: BTreeMap::new(),
+            storages: BTreeMap::new(),
+            codes: BTreeMap::new(),
+        }
     }
 
     /// Record the account data.
@@ -84,18 +96,34 @@ impl DebugRecorder {
             );
         }
     }
+
+    /// Record the code
+    #[cfg(feature = "debug-account")]
+    pub fn record_code(&mut self, code_hash: B256, code: &[u8]) {
+        self.codes.insert(code_hash, code.to_owned());
+    }
 }
 
 impl Drop for DebugRecorder {
     fn drop(&mut self) {
         #[cfg(feature = "debug-account")]
         {
-            let output = std::fs::File::create("/tmp/sbv-debug/accounts.csv")
+            let output = std::fs::File::create(self.base_dir.join("accounts.csv"))
                 .expect("failed to create debug file");
             let mut wtr = csv::Writer::from_writer(output);
 
             for (_, acc) in self.accounts.iter() {
                 wtr.serialize(acc).expect("failed to write record");
+            }
+
+            for (code_hash, code) in self.codes.iter() {
+                let mut output =
+                    std::fs::File::create(self.base_dir.join(format!("code_{code_hash:?}.txt")))
+                        .expect("failed to create debug file");
+                let code = hex::encode(code);
+                output
+                    .write_all(code.as_bytes())
+                    .expect("failed to write code");
             }
         }
 
@@ -103,10 +131,10 @@ impl Drop for DebugRecorder {
         {
             for (addr, storages) in self.storages.iter() {
                 let storage_root = self.storages_roots.get(addr).copied().unwrap_or_default();
-                let output = std::fs::File::create(format!(
-                    "/tmp/sbv-debug/storage_{:?}_{:?}.csv",
-                    addr, storage_root
-                ))
+                let output = std::fs::File::create(
+                    self.base_dir
+                        .join(format!("storage_{addr:?}_{storage_root:?}.csv")),
+                )
                 .expect("failed to create debug file");
                 let mut wtr = csv::Writer::from_writer(output);
                 for ops in storages.values() {

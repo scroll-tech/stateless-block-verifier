@@ -143,21 +143,24 @@ mod tests {
 
         let fork_config = HardforkConfig::default_from_chain_id(traces[0].chain_id());
         let (chunk_info, mut zktrie_db) = ChunkInfo::from_block_traces(&traces);
+        let mut code_db = HashMapDb::default();
 
         let tx_bytes_hasher = RefCell::new(Keccak::v256());
 
-        let mut executor = EvmExecutorBuilder::new(HashMapDb::default(), &mut zktrie_db)
+        let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
             .hardfork_config(fork_config)
-            .with_hooks(&traces[0], |hooks| {
+            .chain_id(traces[0].chain_id())
+            .with_hooks(traces[0].root_before(), |hooks| {
                 hooks.add_tx_rlp_handler(|_, rlp| {
                     tx_bytes_hasher.borrow_mut().update(rlp);
                 });
             })
             .unwrap();
-        executor.handle_block(&traces[0]).unwrap();
+        for trace in traces.iter() {
+            executor.insert_codes(trace).unwrap();
+        }
 
-        for trace in traces[1..].iter() {
-            executor.update_db(trace).unwrap();
+        for trace in traces.iter() {
             executor.handle_block(trace).unwrap();
         }
 
