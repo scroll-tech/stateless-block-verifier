@@ -171,7 +171,7 @@ impl TxTrace for TransactionTrace {
 
     fn chain_id(&self) -> Option<ChainId> {
         let chain_id: ChainId = self.chain_id.to();
-        if self.ty == 0 && chain_id < 35 {
+        if self.ty == 0 && self.v() < 35 {
             None
         } else {
             Some(chain_id)
