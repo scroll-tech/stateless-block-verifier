@@ -34,7 +34,7 @@ pub struct TxL1Msg {
     /// this transaction. This is paid up-front, before any
     /// computation is done and may not be increased
     /// later; formally Tg.
-    pub gas_limit: u128,
+    pub gas_limit: u64,
     /// The 160-bit address of the message call’s recipient or, for a contract creation
     /// transaction, ∅, used here to denote the only member of B0 ; formally Tt.
     pub to: TxKind,
@@ -141,8 +141,8 @@ impl TxTrace for TransactionTrace {
         self.nonce
     }
 
-    fn gas_limit(&self) -> u128 {
-        self.gas as u128
+    fn gas_limit(&self) -> u64 {
+        self.gas
     }
 
     fn gas_price(&self) -> u128 {
@@ -212,8 +212,8 @@ impl TxTrace for ArchivedTransactionTrace {
         self.nonce.into()
     }
 
-    fn gas_limit(&self) -> u128 {
-        u64::from(self.gas) as u128
+    fn gas_limit(&self) -> u64 {
+        u64::from(self.gas)
     }
 
     fn gas_price(&self) -> u128 {
@@ -320,7 +320,7 @@ pub struct AlloyTransaction {
     pub gas_price: Option<u128>,
     /// Gas amount
     #[serde(with = "alloy::serde::quantity")]
-    pub gas: u128,
+    pub gas: u64,
     /// Max BaseFeePerGas the user is willing to pay.
     #[serde(
         default,
@@ -408,7 +408,7 @@ impl TxTrace for AlloyTransaction {
         }
     }
 
-    fn gas_limit(&self) -> u128 {
+    fn gas_limit(&self) -> u64 {
         self.gas
     }
 
@@ -476,7 +476,7 @@ impl Transaction for TypedTransaction {
         }
     }
 
-    fn gas_limit(&self) -> u128 {
+    fn gas_limit(&self) -> u64 {
         match self {
             TypedTransaction::Enveloped(tx) => tx.gas_limit(),
             TypedTransaction::L1Msg(tx) => tx.gas_limit(),
@@ -518,10 +518,10 @@ impl Transaction for TypedTransaction {
         }
     }
 
-    fn to(&self) -> TxKind {
+    fn kind(&self) -> TxKind {
         match self {
-            TypedTransaction::Enveloped(tx) => tx.to(),
-            TypedTransaction::L1Msg(tx) => tx.to(),
+            TypedTransaction::Enveloped(tx) => tx.kind(),
+            TypedTransaction::L1Msg(tx) => tx.kind(),
         }
     }
 
@@ -532,7 +532,7 @@ impl Transaction for TypedTransaction {
         }
     }
 
-    fn input(&self) -> &[u8] {
+    fn input(&self) -> &Bytes {
         match self {
             TypedTransaction::Enveloped(tx) => tx.input(),
             TypedTransaction::L1Msg(tx) => tx.input(),
@@ -592,7 +592,7 @@ impl Transaction for TxL1Msg {
         self.nonce
     }
 
-    fn gas_limit(&self) -> u128 {
+    fn gas_limit(&self) -> u64 {
         self.gas_limit
     }
 
@@ -616,7 +616,7 @@ impl Transaction for TxL1Msg {
         0
     }
 
-    fn to(&self) -> TxKind {
+    fn kind(&self) -> TxKind {
         self.to
     }
 
@@ -624,8 +624,8 @@ impl Transaction for TxL1Msg {
         self.value
     }
 
-    fn input(&self) -> &[u8] {
-        self.input.as_ref()
+    fn input(&self) -> &Bytes {
+        &self.input
     }
 
     fn ty(&self) -> u8 {
