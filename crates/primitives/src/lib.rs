@@ -157,7 +157,7 @@ pub trait TxTrace {
     fn nonce(&self) -> u64;
 
     /// Get `gas_limit`.
-    fn gas_limit(&self) -> u128;
+    fn gas_limit(&self) -> u64;
 
     /// Get `gas_price`
     fn gas_price(&self) -> u128;
@@ -352,7 +352,7 @@ impl<T: TxTrace> TxTrace for &T {
         (*self).nonce()
     }
 
-    fn gas_limit(&self) -> u128 {
+    fn gas_limit(&self) -> u64 {
         (*self).gas_limit()
     }
 

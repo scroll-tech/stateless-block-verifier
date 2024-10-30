@@ -12,7 +12,7 @@ homepage = "https://github.com/scroll-tech/stateless-block-verifier"
 repository = "https://github.com/scroll-tech/stateless-block-verifier"
 
 [workspace.dependencies]
-alloy = "0.3"
+alloy = "0.5"
 hex = "0.4"
 once_cell = "1.19"
 rkyv = "0.8"
@@ -60,7 +60,7 @@ sbv-utils = { path = "crates/utils" }
 
 [workspace.dependencies.revm] # v42
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v42"
+branch = "scroll-evm-executor/v49"
 default-features = false
 features = [
     "scroll-default-handler",
@@ -71,7 +71,7 @@ features = [
 
 [workspace.dependencies.revm-primitives] # v42
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v42"
+branch = "scroll-evm-executor/v49"
 default-features = false
 features = [
     "scroll-default-handler",
@@ -90,20 +90,21 @@ ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
 # patched add rkyv support & MSRV 1.77
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 
-alloy = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.3.0" }
-alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.3.0" }
-alloy-serde = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.3.0" }
+alloy = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.5.4" }
+alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.5.4" }
+alloy-serde = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.5.4" }
 
-alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.1.0" }
-alloy-eip7702 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.1.0" }
+alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.3.2" }
+alloy-eip7702 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.3.2" }
 
-alloy-core = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0" }
-alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0" }
-alloy-sol-types = {git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.0" }
+alloy-core = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
+alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
+alloy-sol-types = {git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
 
 # for local development
 # [patch."https://github.com/scroll-tech/revm"]
 # revm = { path = "../revm/crates/revm" }
+# revm-primitives = { path = "../revm/crates/primitives" }
 
 #[profile.release]
 #debug-assertions = true

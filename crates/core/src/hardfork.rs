@@ -1,6 +1,8 @@
 use once_cell::sync::Lazy;
 use revm::{
-    primitives::{Account, AccountStatus, Address, Bytecode, Bytes, EvmStorageSlot, SpecId, U256},
+    primitives::{
+        Account, AccountStatus, Address, Bytecode, Bytes, EvmStorage, EvmStorageSlot, SpecId, U256,
+    },
     Database, DatabaseCommit,
 };
 use sbv_primitives::predeployed::l1_gas_price_oracle;
@@ -102,7 +104,7 @@ impl HardforkConfig {
 
         let l1_gas_price_oracle_acc = Account {
             info: l1_gas_price_oracle_info,
-            storage: HashMap::from([
+            storage: EvmStorage::from_iter([
                 (
                     l1_gas_price_oracle::IS_CURIE_SLOT,
                     EvmStorageSlot::new(U256::from(1)),
@@ -123,7 +125,7 @@ impl HardforkConfig {
             status: AccountStatus::Touched,
         };
 
-        db.commit(HashMap::from([(
+        db.commit(revm::primitives::HashMap::from_iter([(
             l1_gas_price_oracle_addr,
             l1_gas_price_oracle_acc,
         )]));

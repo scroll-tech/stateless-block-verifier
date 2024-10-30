@@ -110,7 +110,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
                     .ok_or_else(|| VerificationError::InvalidGasPrice {
                         tx_hash: *tx.tx_hash(),
                     })?,
-                transact_to: tx.to(),
+                transact_to: tx.kind(),
                 value: tx.value(),
                 data: tx.data(),
                 nonce: if !tx.is_l1_msg() {
