@@ -103,7 +103,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
                         source: e,
                     }
                 })?,
-                gas_limit: tx.gas_limit() as u64,
+                gas_limit: tx.gas_limit(),
                 gas_price: tx
                     .effective_gas_price(l2_trace.base_fee_per_gas().unwrap_or_default().to())
                     .map(U256::from)
