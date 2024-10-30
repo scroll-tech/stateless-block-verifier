@@ -205,10 +205,11 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> DatabaseRef for EvmDatabase
                 dev_debug!("storage root of {:?} is {:?}", address, storage_root);
 
                 ZkTrie::new_with_root(self.zktrie_db, NoCacheHasher, *storage_root)
-                    .inspect_err(|e| {
-                        let backtrace = std::backtrace::Backtrace::force_capture();
-                        dev_warn!("storage trie associated with account({address}) not found: {e}\n{backtrace}");
-
+                    .inspect_err(|_e| {
+                        dev_warn!(
+                            "storage trie associated with account({address}) not found: {_e}\n{}",
+                            std::backtrace::Backtrace::force_capture()
+                        );
                     })
                     .ok()
             });
