@@ -859,7 +859,7 @@ dependencies = [
 [[package]]
 name = "bn254"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/bn254.git?branch=master#db67681f5e9ae1736565a48ec294a6d0dacb4e0d"
+source = "git+https://github.com/scroll-tech/bn254.git?branch=master#81e1dcc92ee9a2798b13b84b24de182e9c42256e"
 dependencies = [
  "ff",
  "getrandom",
@@ -2589,7 +2589,7 @@ checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
 [[package]]
 name = "poseidon-bn254"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/poseidon-bn254?branch=master#a96ba028dd00987551451d8f4bd65b7ea5469a44"
+source = "git+https://github.com/scroll-tech/poseidon-bn254?branch=master#254baa0e3e85c0975c16fe6f33042b1fa9ae0a44"
 dependencies = [
  "bn254",
  "itertools 0.13.0",
