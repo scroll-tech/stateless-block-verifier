@@ -860,7 +860,7 @@ name = "bn254"
 version = "0.1.0"
 source = "git+https://github.com/scroll-tech/bn254#3653980f712ad44d4e079fa8f0199c5678104ef4"
 dependencies = [
- "ff",
+ "ff 0.13.0 (git+https://github.com/scroll-tech/ff?branch=feat/sp1)",
  "getrandom",
  "rand",
  "rand_core",
@@ -1335,7 +1335,7 @@ dependencies = [
  "base16ct",
  "crypto-bigint",
  "digest 0.10.7",
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "generic-array",
  "group",
  "pkcs8",
@@ -1417,6 +1417,16 @@ dependencies = [
  "arrayvec",
  "auto_impl",
  "bytes",
+]
+
+[[package]]
+name = "ff"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ded41244b729663b1e574f1b4fb731469f69f79c17667b5d776b16cda0479449"
+dependencies = [
+ "rand_core",
+ "subtle",
 ]
 
 [[package]]
@@ -1649,7 +1659,7 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0f9ef7462f7c099f518d754361858f86d8a07af53ba9af0fe635bbccb151a63"
 dependencies = [
- "ff",
+ "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_core",
  "subtle",
 ]
