@@ -18,6 +18,7 @@ use sbv_primitives::{
     Block, Transaction, TxTrace,
 };
 use std::fmt::Debug;
+use std::mem::ManuallyDrop;
 
 mod builder;
 pub use builder::EvmExecutorBuilder;
@@ -93,6 +94,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
                     tx_hash: tx.tx_hash(),
                     source: e,
                 })?;
+            let tx = ManuallyDrop::new(tx);
 
             dev_trace!("{tx:#?}");
             let mut env = env.clone();
@@ -134,7 +136,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
 
             dev_trace!("{env:#?}");
             {
-                let mut revm = cycle_track!(
+                let revm = cycle_track!(
                     revm::Evm::builder()
                         .with_spec_id(spec_id)
                         .with_db(&mut self.db)
@@ -144,6 +146,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
                         .build(),
                     "build Evm"
                 );
+                let mut revm = ManuallyDrop::new(revm);
 
                 dev_trace!("handler cfg: {:?}", revm.handler.cfg);
 
