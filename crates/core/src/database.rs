@@ -1,4 +1,5 @@
 use crate::error::DatabaseError;
+use revm::interpreter::analysis::to_analysed;
 use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, B256, U256},
@@ -23,6 +24,8 @@ type Result<T, E = DatabaseError> = std::result::Result<T, E>;
 pub struct EvmDatabase<'a, CodeDb, ZkDb> {
     /// Map of code hash to bytecode.
     pub(crate) code_db: &'a mut CodeDb,
+    /// Cache of analyzed code
+    analyzed_code_cache: RefCell<HashMap<B256, Option<Bytecode>>>,
     /// Storage root cache, avoid re-query account when storage root is needed
     storage_root_caches: RefCell<HashMap<Address, ZkHash>>,
     /// Storage trie cache, avoid re-creating trie for the same account.
@@ -56,6 +59,7 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb,
 
         Ok(EvmDatabase {
             code_db,
+            analyzed_code_cache: Default::default(),
             storage_root_caches: Default::default(),
             storage_trie_caches: Default::default(),
             committed_zktrie_root,
@@ -121,6 +125,21 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb,
         cycle_tracker_end!("insert CodeDB");
         Ok(())
     }
+
+    fn load_code(&self, hash: B256) -> Result<Option<Bytecode>> {
+        let mut code_cache = self.analyzed_code_cache.borrow_mut();
+        if let Some(code) = code_cache.get(&hash) {
+            Ok(code.clone())
+        } else {
+            let code = self
+                .code_db
+                .get(&hash)
+                .map_err(DatabaseError::code_db)?
+                .map(|v| to_analysed(Bytecode::new_legacy(v.into_bytes().into())));
+            code_cache.insert(hash, code.clone());
+            Ok(code)
+        }
+    }
 }
 
 impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> DatabaseRef for EvmDatabase<'_, CodeDb, ZkDb> {
@@ -142,11 +161,8 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> DatabaseRef for EvmDatabase
             .insert(address, account.storage_root);
 
         let mut info = AccountInfo::from(account);
-        info.code = self
-            .code_db
-            .get(&account.code_hash)
-            .map_err(DatabaseError::code_db)?
-            .map(|v| Bytecode::new_legacy(v.into_bytes().into()));
+        info.code = self.load_code(account.code_hash)?;
+
         if let Some(ref code) = info.code {
             debug_assert_eq!(
                 info.code_hash,
@@ -170,16 +186,12 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> DatabaseRef for EvmDatabase
         // then the upcoming trace contains code (meaning the code is used in this new block),
         // we can't directly update the CacheDB, so we offer the code by hash here.
         // However, if the code still cannot be found, this is an error.
-        self.code_db
-            .get(&hash)
-            .map_err(DatabaseError::code_db)?
-            .map(|v| Bytecode::new_legacy(v.into_bytes().into()))
-            .ok_or_else(|| {
-                unreachable!(
-                    "Code is either loaded or not needed (like EXTCODESIZE), code hash: {:?}",
-                    hash
-                );
-            })
+        self.load_code(hash)?.ok_or_else(|| {
+            unreachable!(
+                "Code is either loaded or not needed (like EXTCODESIZE), code hash: {:?}",
+                hash
+            );
+        })
     }
 
     /// Get storage value of address at index.
