@@ -14,7 +14,7 @@ mod error;
 pub use error::{DatabaseError, VerificationError};
 
 mod executor;
-pub use executor::{hooks, EvmExecutor, EvmExecutorBuilder};
+pub use executor::{BlockExecutionResult, EvmExecutor, EvmExecutorBuilder};
 
 mod genesis;
 pub use genesis::GenesisConfig;
