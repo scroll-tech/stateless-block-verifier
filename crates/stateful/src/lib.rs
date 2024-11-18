@@ -48,6 +48,7 @@ pub struct StatefulBlockExecutor {
 
     metadata: Metadata,
 
+    block_db: BlockDb,
     poseidon_history_db: HistoryDb,
     keccak_history_db: HistoryDb,
     code_db: SledDb,
@@ -70,6 +71,7 @@ impl StatefulBlockExecutor {
         dev_info!("hardfork_config: {hardfork_config:?}");
 
         let metadata = Metadata::open(&db, chain_id)?;
+        let block_db = metadata.open_block_db(&db)?;
         let poseidon_history_db = metadata.open_history_db(&db, HashSchemeKind::Poseidon)?;
         let keccak_history_db = metadata.open_history_db(&db, HashSchemeKind::Keccak)?;
 
@@ -107,6 +109,7 @@ impl StatefulBlockExecutor {
             genesis_config,
             hardfork_config,
             metadata,
+            block_db,
             poseidon_history_db,
             keccak_history_db,
             code_db,
@@ -124,6 +127,8 @@ impl StatefulBlockExecutor {
         }
 
         let block_number = block.header.number;
+
+        self.block_db.set_block(block_number, block)?;
 
         let storage_root_after = {
             let storage_root_before = self
@@ -347,6 +352,14 @@ impl Metadata {
         ))
     }
 
+    /// Open the block db
+    #[inline(always)]
+    pub fn open_block_db(&self, db: &sled::Db) -> Result<BlockDb> {
+        Ok(BlockDb {
+            db: db.open_tree(format!("block_db_chain_{}", self.chain_id))?,
+        })
+    }
+
     /// Open the zktrie db
     #[inline(always)]
     pub fn open_zktrie_db(
@@ -397,5 +410,31 @@ impl HistoryDb {
             .db
             .get(block_number.to_le_bytes())?
             .map(|v| ZkHash::from_slice(v.as_ref())))
+    }
+}
+
+/// Block database
+#[derive(Debug)]
+pub struct BlockDb {
+    db: Tree,
+}
+
+impl BlockDb {
+    /// Set the block
+    #[inline(always)]
+    pub fn set_block(&self, block_number: u64, block: &Block<AlloyTransaction>) -> Result<()> {
+        self.db
+            .insert(block_number.to_le_bytes(), serde_json::to_vec(block)?)?;
+        Ok(())
+    }
+
+    /// Get the block
+    #[inline(always)]
+    pub fn get_block(&self, block_number: u64) -> Result<Option<Block<AlloyTransaction>>> {
+        Ok(self
+            .db
+            .get(block_number.to_le_bytes())?
+            .map(|v| serde_json::from_slice(v.as_ref()))
+            .transpose()?)
     }
 }

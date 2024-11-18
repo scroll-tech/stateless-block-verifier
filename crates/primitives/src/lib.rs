@@ -10,6 +10,7 @@ use alloy::{
 };
 use std::fmt::Debug;
 use zktrie_ng::db::kv::KVDatabase;
+use zktrie_ng::db::NodeDb;
 
 /// Predeployed contracts
 pub mod predeployed;
@@ -21,7 +22,6 @@ pub use alloy::consensus::Transaction;
 pub use alloy::primitives as alloy_primitives;
 pub use alloy::primitives::{Address, B256, U256};
 pub use zktrie_ng as zk_trie;
-use zktrie_ng::db::NodeDb;
 
 /// Node proof trait
 pub trait NodeProof {
@@ -166,10 +166,10 @@ pub trait TxTrace {
     fn gas_price(&self) -> u128;
 
     /// Get `max_fee_per_gas`
-    fn max_fee_per_gas(&self) -> u128;
+    fn max_fee_per_gas(&self) -> Option<u128>;
 
     /// Get `max_priority_fee_per_gas`
-    fn max_priority_fee_per_gas(&self) -> u128;
+    fn max_priority_fee_per_gas(&self) -> Option<u128>;
 
     /// Get `from` without checking
     ///
@@ -238,8 +238,8 @@ pub trait TxTrace {
                 let tx = TxEip1559 {
                     chain_id: self.chain_id().unwrap(),
                     nonce: self.nonce(),
-                    max_fee_per_gas: self.max_fee_per_gas(),
-                    max_priority_fee_per_gas: self.max_priority_fee_per_gas(),
+                    max_fee_per_gas: self.max_fee_per_gas().unwrap_or_default(),
+                    max_priority_fee_per_gas: self.max_priority_fee_per_gas().unwrap_or_default(),
                     gas_limit: self.gas_limit(),
                     to: self.to(),
                     value: self.value(),
@@ -367,11 +367,11 @@ impl<T: TxTrace> TxTrace for &T {
         (*self).gas_price()
     }
 
-    fn max_fee_per_gas(&self) -> u128 {
+    fn max_fee_per_gas(&self) -> Option<u128> {
         (*self).max_fee_per_gas()
     }
 
-    fn max_priority_fee_per_gas(&self) -> u128 {
+    fn max_priority_fee_per_gas(&self) -> Option<u128> {
         (*self).max_priority_fee_per_gas()
     }
 

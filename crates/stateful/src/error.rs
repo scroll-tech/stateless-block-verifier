@@ -16,6 +16,12 @@ pub enum Error {
     /// Json error
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+    /// Bincode error
+    #[error(transparent)]
+    BincodeEncode(#[from] bincode::error::EncodeError),
+    /// Bincode error
+    #[error(transparent)]
+    BincodeDecode(#[from] bincode::error::DecodeError),
     /// Zktrie error
     #[error(transparent)]
     PoseidonZktrie(#[from] ZkTrieError<PoseidonError, sled::Error>),

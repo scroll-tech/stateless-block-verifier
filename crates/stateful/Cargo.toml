@@ -9,10 +9,19 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "stateful-block-verifier"
+path = "src/bin/verifier.rs"
+
+[[bin]]
+name = "stateful-block-tracer"
+path = "src/bin/tracer.rs"
+
 [dependencies]
 alloy = { workspace = true, features = ["provider-http", "serde", "transport-http"] }
 anyhow.workspace = true
 clap = { workspace = true, features = ["derive"] }
+bincode.workspace = true
 revm.workspace = true
 sled.workspace = true
 serde = { workspace = true, features = ["derive"] }

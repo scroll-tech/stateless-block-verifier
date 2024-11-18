@@ -149,12 +149,12 @@ impl TxTrace for TransactionTrace {
         self.gas_price.to()
     }
 
-    fn max_fee_per_gas(&self) -> u128 {
-        self.gas_fee_cap.map(|v| v.to()).unwrap_or_default()
+    fn max_fee_per_gas(&self) -> Option<u128> {
+        self.gas_fee_cap.map(|v| v.to())
     }
 
-    fn max_priority_fee_per_gas(&self) -> u128 {
-        self.gas_tip_cap.map(|v| v.to()).unwrap_or_default()
+    fn max_priority_fee_per_gas(&self) -> Option<u128> {
+        self.gas_tip_cap.map(|v| v.to())
     }
 
     unsafe fn get_from_unchecked(&self) -> Address {
@@ -221,24 +221,18 @@ impl TxTrace for ArchivedTransactionTrace {
         gas_price.to()
     }
 
-    fn max_fee_per_gas(&self) -> u128 {
-        self.gas_fee_cap
-            .as_ref()
-            .map(|g| {
-                let gas_fee_cap: U256 = g.into();
-                gas_fee_cap.to()
-            })
-            .unwrap_or_default()
+    fn max_fee_per_gas(&self) -> Option<u128> {
+        self.gas_fee_cap.as_ref().map(|g| {
+            let gas_fee_cap: U256 = g.into();
+            gas_fee_cap.to()
+        })
     }
 
-    fn max_priority_fee_per_gas(&self) -> u128 {
-        self.gas_tip_cap
-            .as_ref()
-            .map(|g| {
-                let gas_tip_cap: U256 = g.into();
-                gas_tip_cap.to()
-            })
-            .unwrap_or_default()
+    fn max_priority_fee_per_gas(&self) -> Option<u128> {
+        self.gas_tip_cap.as_ref().map(|g| {
+            let gas_tip_cap: U256 = g.into();
+            gas_tip_cap.to()
+        })
     }
 
     unsafe fn get_from_unchecked(&self) -> Address {
@@ -413,15 +407,15 @@ impl TxTrace for AlloyTransaction {
     }
 
     fn gas_price(&self) -> u128 {
-        self.gas_price.unwrap_or(0)
+        self.gas_price.unwrap_or_default()
     }
 
-    fn max_fee_per_gas(&self) -> u128 {
-        self.max_fee_per_gas.unwrap_or(0)
+    fn max_fee_per_gas(&self) -> Option<u128> {
+        self.max_fee_per_gas
     }
 
-    fn max_priority_fee_per_gas(&self) -> u128 {
-        self.max_priority_fee_per_gas.unwrap_or(0)
+    fn max_priority_fee_per_gas(&self) -> Option<u128> {
+        self.max_priority_fee_per_gas
     }
 
     unsafe fn get_from_unchecked(&self) -> Address {
