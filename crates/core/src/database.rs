@@ -10,7 +10,7 @@ use sbv_primitives::{
             kv::{KVDatabase, KVDatabaseItem},
             NodeDb,
         },
-        hash::{key_hasher::NoCacheHasher, poseidon::Poseidon, ZkHash},
+        hash::{key_hasher::NoCacheHasher, HashScheme, ZkHash},
         scroll_types::Account,
         trie::ZkTrie,
     },
@@ -21,7 +21,7 @@ use std::{cell::RefCell, collections::HashMap, fmt};
 type Result<T, E = DatabaseError> = std::result::Result<T, E>;
 
 /// A database that consists of account and storage information.
-pub struct EvmDatabase<'a, CodeDb, ZkDb> {
+pub struct EvmDatabase<'a, CodeDb, ZkDb, H> {
     /// Map of code hash to bytecode.
     pub(crate) code_db: &'a mut CodeDb,
     /// Cache of analyzed code
@@ -30,16 +30,16 @@ pub struct EvmDatabase<'a, CodeDb, ZkDb> {
     storage_root_caches: RefCell<HashMap<Address, ZkHash>>,
     /// Storage trie cache, avoid re-creating trie for the same account.
     /// Need to invalidate before `update`, otherwise the trie root may be outdated
-    storage_trie_caches: RefCell<HashMap<ZkHash, Option<ZkTrie<Poseidon>>>>,
+    storage_trie_caches: RefCell<HashMap<ZkHash, Option<ZkTrie<H>>>>,
     /// Current uncommitted zkTrie root based on the block trace.
     committed_zktrie_root: B256,
     /// The underlying zkTrie database.
     pub(crate) zktrie_db: &'a mut NodeDb<ZkDb>,
     /// Current view of zkTrie database.
-    zktrie: ZkTrie<Poseidon>,
+    zktrie: ZkTrie<H>,
 }
 
-impl<CodeDb, Db> fmt::Debug for EvmDatabase<'_, CodeDb, Db> {
+impl<CodeDb, Db, HashScheme> fmt::Debug for EvmDatabase<'_, CodeDb, Db, HashScheme> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("EvmDatabase")
             .field("committed_zktrie_root", &self.committed_zktrie_root)
@@ -47,7 +47,9 @@ impl<CodeDb, Db> fmt::Debug for EvmDatabase<'_, CodeDb, Db> {
     }
 }
 
-impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb, ZkDb> {
+impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static, H: HashScheme>
+    EvmDatabase<'a, CodeDb, ZkDb, H>
+{
     /// Initialize an EVM database from a zkTrie root.
     pub fn new_from_root(
         committed_zktrie_root: B256,
@@ -79,7 +81,7 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb,
     }
 
     #[inline]
-    pub(crate) fn update_storage_root_cache(&self, address: Address, storage_root: ZkTrie) {
+    pub(crate) fn update_storage_root_cache(&self, address: Address, storage_root: ZkTrie<H>) {
         let new_root = *storage_root.root().unwrap_ref();
         let old = self
             .storage_root_caches
@@ -142,7 +144,9 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb,
     }
 }
 
-impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> DatabaseRef for EvmDatabase<'_, CodeDb, ZkDb> {
+impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static, H: HashScheme> DatabaseRef
+    for EvmDatabase<'_, CodeDb, ZkDb, H>
+{
     type Error = DatabaseError;
 
     /// Get basic account information.

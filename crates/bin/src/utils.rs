@@ -1,7 +1,7 @@
 use sbv::primitives::zk_trie::db::NodeDb;
 use sbv::{
     core::{EvmExecutorBuilder, HardforkConfig, VerificationError},
-    primitives::{zk_trie::db::kv::HashMapDb, Block},
+    primitives::{zk_trie::db::kv::HashMapDb, zk_trie::hash::poseidon::Poseidon, Block},
 };
 
 pub fn verify<T: Block + Clone>(
@@ -53,6 +53,7 @@ fn verify_inner<T: Block + Clone>(
     let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
         .hardfork_config(*fork_config)
         .chain_id(l2_trace.chain_id())
+        .hash_scheme(Poseidon)
         .build(root_before)?;
 
     executor.insert_codes(&l2_trace)?;

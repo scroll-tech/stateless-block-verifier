@@ -21,8 +21,9 @@ thiserror.workspace = true
 tokio = { workspace = true, features = ["fs", "io-util", "macros", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-retry.workspace = true
 url.workspace = true
+zktrie-ng = { workspace = true, features = ["clap", "serde"] }
 
-sbv = { workspace = true, features = ["sled"]}
+sbv = { workspace = true, features = ["sled"] }
 
 tracing-subscriber = { workspace = true, optional = true }
 

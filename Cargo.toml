@@ -21,7 +21,7 @@ tiny-keccak = "2.0"
 
 # dependencies from scroll-tech
 poseidon-bn254 = { git = "https://github.com/scroll-tech/poseidon-bn254", branch = "master", features = ["bn254"] }
-zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "master", features = ["scroll"] }
+zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "feat/keccak", features = ["scroll"] }
 
 # binary dependencies
 anyhow = "1.0"
@@ -102,9 +102,9 @@ alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch =
 alloy-sol-types = {git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
 
 # for local development
-# [patch."https://github.com/scroll-tech/revm"]
-# revm = { path = "../revm/crates/revm" }
-# revm-primitives = { path = "../revm/crates/primitives" }
+#[patch."https://github.com/scroll-tech/revm"]
+#revm = { path = "../revm/crates/revm" }
+#revm-primitives = { path = "../revm/crates/primitives" }
 
 #[profile.release]
 #debug-assertions = true

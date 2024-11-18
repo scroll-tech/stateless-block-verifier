@@ -12,7 +12,7 @@ use sbv_primitives::{
     alloy_primitives::Bytes,
     zk_trie::{
         db::kv::KVDatabase,
-        hash::{key_hasher::NoCacheHasher, poseidon::Poseidon},
+        hash::{key_hasher::NoCacheHasher, HashScheme},
         scroll_types::Account,
         trie::ZkTrie,
     },
@@ -24,10 +24,10 @@ mod builder;
 pub use builder::EvmExecutorBuilder;
 
 /// EVM executor that handles the block.
-pub struct EvmExecutor<'db, CodeDb, ZkDb> {
+pub struct EvmExecutor<'db, CodeDb, ZkDb, H> {
     chain_id: ChainId,
     hardfork_config: HardforkConfig,
-    db: CacheDB<EvmDatabase<'db, CodeDb, ZkDb>>,
+    db: CacheDB<EvmDatabase<'db, CodeDb, ZkDb, H>>,
 }
 
 /// Block execution result
@@ -39,9 +39,11 @@ pub struct BlockExecutionResult {
     pub tx_rlps: Vec<Bytes>,
 }
 
-impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkDb> {
+impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static, H: HashScheme>
+    EvmExecutor<'_, CodeDb, ZkDb, H>
+{
     /// Get reference to the DB
-    pub fn db(&self) -> &CacheDB<EvmDatabase<CodeDb, ZkDb>> {
+    pub fn db(&self) -> &CacheDB<EvmDatabase<CodeDb, ZkDb, H>> {
         &self.db
     }
 
@@ -190,7 +192,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkD
     }
 
     fn commit_changes_inner(&mut self) -> Result<B256, DatabaseError> {
-        let mut zktrie = ZkTrie::<Poseidon>::new_with_root(
+        let mut zktrie = ZkTrie::<H>::new_with_root(
             self.db.db.zktrie_db,
             NoCacheHasher,
             self.db.db.committed_zktrie_root(),
@@ -245,7 +247,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkD
                 // get storage tire
                 cycle_tracker_start!("update storage_tire");
                 let mut storage_trie = cycle_track!(
-                    ZkTrie::<Poseidon>::new_with_root(
+                    ZkTrie::<H>::new_with_root(
                         self.db.db.zktrie_db,
                         NoCacheHasher,
                         storage_root_before,
@@ -357,7 +359,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkD
     }
 }
 
-impl<CodeDb, ZkDb> Debug for EvmExecutor<'_, CodeDb, ZkDb> {
+impl<CodeDb, ZkDb, H> Debug for EvmExecutor<'_, CodeDb, ZkDb, H> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EvmExecutor").field("db", &self.db).finish()
     }
