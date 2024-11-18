@@ -297,6 +297,8 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkD
 
                 #[cfg(feature = "debug-storage")]
                 debug_recorder.record_storage_root(*addr, storage_root);
+            } else {
+                storage_root = B256::ZERO;
             }
             if !info.is_empty() {
                 // if account not exist, all fields will be zero.
