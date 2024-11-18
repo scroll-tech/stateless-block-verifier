@@ -117,10 +117,9 @@ impl ChunkInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{EvmExecutorBuilder, HardforkConfig};
+    use crate::{BlockExecutionResult, EvmExecutorBuilder, HardforkConfig};
     use revm::primitives::b256;
     use sbv_primitives::types::BlockTrace;
-    use std::cell::RefCell;
 
     const TRACES_STR: [&str; 4] = [
         include_str!("../../../testdata/mainnet_blocks/8370400.json"),
@@ -145,23 +144,22 @@ mod tests {
         let (chunk_info, mut zktrie_db) = ChunkInfo::from_block_traces(&traces);
         let mut code_db = HashMapDb::default();
 
-        let tx_bytes_hasher = RefCell::new(Keccak::v256());
+        let mut tx_bytes_hasher = Keccak::v256();
 
         let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
             .hardfork_config(fork_config)
             .chain_id(traces[0].chain_id())
-            .with_hooks(traces[0].root_before(), |hooks| {
-                hooks.add_tx_rlp_handler(|_, rlp| {
-                    tx_bytes_hasher.borrow_mut().update(rlp);
-                });
-            })
+            .build(traces[0].root_before())
             .unwrap();
         for trace in traces.iter() {
             executor.insert_codes(trace).unwrap();
         }
 
         for trace in traces.iter() {
-            executor.handle_block(trace).unwrap();
+            let BlockExecutionResult { tx_rlps, .. } = executor.handle_block(trace).unwrap();
+            for tx_rlp in tx_rlps {
+                tx_bytes_hasher.update(&tx_rlp);
+            }
         }
 
         let post_state_root = executor.commit_changes().unwrap();
@@ -169,7 +167,7 @@ mod tests {
         drop(executor); // drop executor to release Rc<Keccek>
 
         let mut tx_bytes_hash = B256::ZERO;
-        tx_bytes_hasher.into_inner().finalize(&mut tx_bytes_hash.0);
+        tx_bytes_hasher.finalize(&mut tx_bytes_hash.0);
         let public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
         assert_eq!(
             public_input_hash,

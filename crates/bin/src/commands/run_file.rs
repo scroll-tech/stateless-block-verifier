@@ -1,14 +1,17 @@
 use crate::utils;
 use anyhow::{anyhow, bail};
 use clap::Args;
-use sbv::primitives::types::LegacyStorageTrace;
 use sbv::{
-    core::{ChunkInfo, EvmExecutorBuilder, HardforkConfig},
-    primitives::{types::BlockTrace, zk_trie::db::kv::HashMapDb, Block, B256},
+    core::{BlockExecutionResult, ChunkInfo, EvmExecutorBuilder, HardforkConfig},
+    primitives::{
+        types::{BlockTrace, LegacyStorageTrace},
+        zk_trie::db::kv::HashMapDb,
+        Block, B256,
+    },
 };
 use serde::Deserialize;
 use std::panic::catch_unwind;
-use std::{cell::RefCell, path::PathBuf};
+use std::path::PathBuf;
 use tiny_keccak::{Hasher, Keccak};
 use tokio::task::JoinSet;
 
@@ -80,22 +83,21 @@ impl RunFileCommand {
         let (chunk_info, mut zktrie_db) = ChunkInfo::from_block_traces(&traces);
         let mut code_db = HashMapDb::default();
 
-        let tx_bytes_hasher = RefCell::new(Keccak::v256());
+        let mut tx_bytes_hasher = Keccak::v256();
 
         let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
             .hardfork_config(fork_config)
             .chain_id(traces[0].chain_id())
-            .with_hooks(traces[0].root_before(), |hooks| {
-                hooks.add_tx_rlp_handler(|_, rlp| {
-                    tx_bytes_hasher.borrow_mut().update(rlp);
-                });
-            })?;
+            .build(traces[0].root_before())?;
         for trace in traces.iter() {
             executor.insert_codes(trace)?;
         }
 
         for trace in traces.iter() {
-            executor.handle_block(trace)?;
+            let BlockExecutionResult { tx_rlps, .. } = executor.handle_block(trace)?;
+            for tx_rlp in tx_rlps {
+                tx_bytes_hasher.update(&tx_rlp);
+            }
         }
 
         let post_state_root = executor.commit_changes()?;
@@ -105,7 +107,7 @@ impl RunFileCommand {
         drop(executor);
 
         let mut tx_bytes_hash = B256::ZERO;
-        tx_bytes_hasher.into_inner().finalize(&mut tx_bytes_hash.0);
+        tx_bytes_hasher.finalize(&mut tx_bytes_hash.0);
         let _public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
 
         dev_info!("[chunk mode] public input hash: {:?}", _public_input_hash);

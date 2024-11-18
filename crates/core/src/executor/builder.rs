@@ -1,10 +1,8 @@
-use crate::error::DatabaseError;
-use crate::{executor::hooks::ExecuteHooks, EvmDatabase, EvmExecutor, HardforkConfig};
+use crate::{error::DatabaseError, EvmDatabase, EvmExecutor, HardforkConfig};
 use revm::db::CacheDB;
-use sbv_primitives::alloy_primitives::ChainId;
-use sbv_primitives::zk_trie::db::kv::KVDatabase;
-use sbv_primitives::zk_trie::db::NodeDb;
-use sbv_primitives::B256;
+use sbv_primitives::{
+    alloy_primitives::ChainId, zk_trie::db::kv::KVDatabase, zk_trie::db::NodeDb, B256,
+};
 use std::fmt::{self, Debug};
 
 /// Builder for EVM executor.
@@ -93,14 +91,7 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static>
     EvmExecutorBuilder<'a, HardforkConfig, ChainId, CodeDb, ZkDb>
 {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn with_hooks<'h, F: FnOnce(&mut ExecuteHooks<'h, CodeDb, ZkDb>)>(
-        self,
-        root: B256,
-        with_execute_hooks: F,
-    ) -> Result<EvmExecutor<'a, 'h, CodeDb, ZkDb>, DatabaseError> {
-        let mut execute_hooks = ExecuteHooks::new();
-        with_execute_hooks(&mut execute_hooks);
-
+    pub fn build(self, root: B256) -> Result<EvmExecutor<'a, CodeDb, ZkDb>, DatabaseError> {
         let db = cycle_track!(
             CacheDB::new(EvmDatabase::new_from_root(
                 root,
@@ -114,12 +105,6 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static>
             hardfork_config: self.hardfork_config,
             chain_id: self.chain_id,
             db,
-            hooks: execute_hooks,
         })
-    }
-
-    /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn build<'e>(self, root: B256) -> Result<EvmExecutor<'a, 'e, CodeDb, ZkDb>, DatabaseError> {
-        self.with_hooks(root, |_| {})
     }
 }
