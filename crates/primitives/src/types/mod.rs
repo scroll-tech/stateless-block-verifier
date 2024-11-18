@@ -380,6 +380,10 @@ where
         self.transactions.iter()
     }
 
+    fn num_txs(&self) -> usize {
+        self.transactions.len()
+    }
+
     fn root_before(&self) -> B256 {
         self.storage_trace.root_before()
     }
@@ -457,6 +461,10 @@ where
 
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
         self.transactions.iter()
+    }
+
+    fn num_txs(&self) -> usize {
+        self.transactions.len()
     }
 
     fn root_before(&self) -> B256 {
@@ -670,6 +678,10 @@ impl Block for alloy::rpc::types::Block<AlloyTransaction, alloy::rpc::types::Hea
 
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
         self.transactions.txns()
+    }
+
+    fn num_txs(&self) -> usize {
+        self.transactions.len()
     }
 
     fn root_before(&self) -> B256 {

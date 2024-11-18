@@ -20,15 +20,27 @@ static HARDFORK_HEIGHTS: Lazy<HashMap<u64, HashMap<SpecId, u64>>> = Lazy::new(||
     let mut map = HashMap::new();
     map.insert(
         SCROLL_DEVNET_CHAIN_ID,
-        HashMap::from([(SpecId::BERNOULLI, 0), (SpecId::CURIE, 5)]),
+        HashMap::from([
+            (SpecId::BERNOULLI, 0),
+            (SpecId::CURIE, 5),
+            (SpecId::EUCLID, u64::MAX),
+        ]),
     );
     map.insert(
         SCROLL_TESTNET_CHAIN_ID,
-        HashMap::from([(SpecId::BERNOULLI, 3747132), (SpecId::CURIE, 4740239)]),
+        HashMap::from([
+            (SpecId::BERNOULLI, 3747132),
+            (SpecId::CURIE, 4740239),
+            (SpecId::EUCLID, u64::MAX),
+        ]),
     );
     map.insert(
         SCROLL_MAINNET_CHAIN_ID,
-        HashMap::from([(SpecId::BERNOULLI, 5220340), (SpecId::CURIE, 7096836)]),
+        HashMap::from([
+            (SpecId::BERNOULLI, 5220340),
+            (SpecId::CURIE, 7096836),
+            (SpecId::EUCLID, u64::MAX),
+        ]),
     );
 
     map
@@ -39,6 +51,7 @@ static HARDFORK_HEIGHTS: Lazy<HashMap<u64, HashMap<SpecId, u64>>> = Lazy::new(||
 pub struct HardforkConfig {
     bernoulli_block: u64,
     curie_block: u64,
+    euclid_block: u64,
 }
 
 impl HardforkConfig {
@@ -48,6 +61,7 @@ impl HardforkConfig {
             Self {
                 bernoulli_block: heights.get(&SpecId::BERNOULLI).copied().unwrap_or(0),
                 curie_block: heights.get(&SpecId::CURIE).copied().unwrap_or(0),
+                euclid_block: heights.get(&SpecId::EUCLID).copied().unwrap_or(0),
             }
         } else {
             dev_warn!(
@@ -75,7 +89,8 @@ impl HardforkConfig {
         match block_number {
             n if n < self.bernoulli_block => SpecId::PRE_BERNOULLI,
             n if n < self.curie_block => SpecId::BERNOULLI,
-            _ => SpecId::CURIE,
+            n if n < self.euclid_block => SpecId::CURIE,
+            _ => SpecId::EUCLID,
         }
     }
 

@@ -9,6 +9,7 @@ use revm::{
     primitives::{AccountInfo, Env, B256, KECCAK_EMPTY, POSEIDON_EMPTY},
 };
 use sbv_primitives::{
+    alloy_primitives::Bytes,
     zk_trie::{
         db::kv::KVDatabase,
         hash::{key_hasher::NoCacheHasher, poseidon::Poseidon},
@@ -23,18 +24,23 @@ use std::mem::ManuallyDrop;
 mod builder;
 pub use builder::EvmExecutorBuilder;
 
-/// Execute hooks
-pub mod hooks;
-
 /// EVM executor that handles the block.
-pub struct EvmExecutor<'db, 'h, CodeDb, ZkDb> {
+pub struct EvmExecutor<'db, CodeDb, ZkDb> {
     chain_id: ChainId,
     hardfork_config: HardforkConfig,
     db: CacheDB<EvmDatabase<'db, CodeDb, ZkDb>>,
-    hooks: hooks::ExecuteHooks<'h, CodeDb, ZkDb>,
 }
 
-impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb, ZkDb> {
+/// Block execution result
+#[derive(Debug, Clone)]
+pub struct BlockExecutionResult {
+    /// Gas used in this block
+    pub gas_used: u64,
+    /// RLP bytes of transactions
+    pub tx_rlps: Vec<Bytes>,
+}
+
+impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkDb> {
     /// Get reference to the DB
     pub fn db(&self) -> &CacheDB<EvmDatabase<CodeDb, ZkDb>> {
         &self.db
@@ -46,7 +52,10 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
     }
 
     /// Handle a block.
-    pub fn handle_block<T: Block>(&mut self, l2_trace: &T) -> Result<u64, VerificationError> {
+    pub fn handle_block<T: Block>(
+        &mut self,
+        l2_trace: &T,
+    ) -> Result<BlockExecutionResult, VerificationError> {
         #[allow(clippy::let_and_return)]
         let gas_used = measure_duration_millis!(
             handle_block_duration_milliseconds,
@@ -60,7 +69,10 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
     }
 
     #[inline(always)]
-    fn handle_block_inner<T: Block>(&mut self, l2_trace: &T) -> Result<u64, VerificationError> {
+    fn handle_block_inner<T: Block>(
+        &mut self,
+        l2_trace: &T,
+    ) -> Result<BlockExecutionResult, VerificationError> {
         let spec_id = self.hardfork_config.get_spec_id(l2_trace.number());
         dev_trace!("use spec id {spec_id:?}",);
         self.hardfork_config
@@ -82,6 +94,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
         };
 
         let mut gas_used = 0;
+        let mut tx_rlps = Vec::with_capacity(l2_trace.num_txs());
 
         for (idx, tx) in l2_trace.transactions().enumerate() {
             cycle_tracker_start!("handle tx");
@@ -131,7 +144,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
             }
             env.tx.scroll.is_l1_msg = tx.is_l1_msg();
             let rlp_bytes = tx.rlp();
-            self.hooks.tx_rlp(self, &rlp_bytes);
+            tx_rlps.push(rlp_bytes.clone());
             env.tx.scroll.rlp_bytes = Some(rlp_bytes);
 
             dev_trace!("{env:#?}");
@@ -164,12 +177,11 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
 
                 dev_trace!("{result:#?}");
             }
-            self.hooks.post_tx_execution(self, idx);
 
             dev_debug!("handle {idx}th tx done");
             cycle_tracker_end!("handle tx");
         }
-        Ok(gas_used)
+        Ok(BlockExecutionResult { gas_used, tx_rlps })
     }
 
     /// Commit pending changes in cache db to zktrie
@@ -348,7 +360,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, '_, CodeDb,
     }
 }
 
-impl<CodeDb, ZkDb> Debug for EvmExecutor<'_, '_, CodeDb, ZkDb> {
+impl<CodeDb, ZkDb> Debug for EvmExecutor<'_, CodeDb, ZkDb> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("EvmExecutor").field("db", &self.db).finish()
     }

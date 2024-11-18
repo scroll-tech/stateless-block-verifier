@@ -69,6 +69,9 @@ pub trait Block: Debug {
     /// transactions
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx>;
 
+    /// Number of l1 transactions
+    fn num_txs(&self) -> usize;
+
     /// root before
     fn root_before(&self) -> B256;
     /// root after
@@ -312,6 +315,10 @@ impl<T: Block> Block for &T {
 
     fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
         (*self).transactions()
+    }
+
+    fn num_txs(&self) -> usize {
+        (*self).num_txs()
     }
 
     fn root_before(&self) -> B256 {
