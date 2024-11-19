@@ -1,6 +1,8 @@
 //! trace dumper
 use clap::Parser;
+use rkyv::rancor;
 use sbv::core::{EvmExecutorBuilder, HardforkConfig};
+use sbv::primitives::alloy_primitives::Bytes;
 use sbv::primitives::types::{BlockTrace, BytecodeTrace, StorageTrace};
 use stateful_block_verifier::Metadata;
 use std::path::PathBuf;
@@ -9,6 +11,7 @@ use zktrie_ng::db::NodeDb;
 use zktrie_ng::hash::keccak::Keccak;
 use zktrie_ng::hash::poseidon::Poseidon;
 use zktrie_ng::hash::HashSchemeKind;
+use zktrie_ng::trie::ArchivedNode;
 
 #[derive(Parser)]
 struct Cli {
@@ -103,7 +106,10 @@ fn main() -> anyhow::Result<()> {
                 .into_inner()
                 .take_read_items()
                 .into_iter()
-                .map(|(_, v)| v.into())
+                .map(|(_, v)| {
+                    let node = rkyv::access::<ArchivedNode, rancor::Error>(v.as_ref()).unwrap();
+                    Bytes::from(node.canonical_value(false))
+                })
                 .collect(),
         },
         &block,

@@ -3647,6 +3647,7 @@ dependencies = [
  "bincode",
  "clap",
  "revm",
+ "rkyv",
  "sbv",
  "serde",
  "serde_json",
