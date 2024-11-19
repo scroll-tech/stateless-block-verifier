@@ -320,22 +320,27 @@ impl<'de> Deserialize<'de> for StorageTrace {
     }
 }
 
-impl From<StorageTrace> for StorageTrace<ArchivedNodeBytes> {
-    fn from(trace: StorageTrace) -> Self {
+impl StorageTrace {
+    /// turn the proofs to archived
+    fn to_archived(self, hash_scheme: HashSchemeKind) -> StorageTrace<ArchivedNodeBytes> {
         StorageTrace {
-            root_before: trace.root_before,
-            root_after: trace.root_after,
-            flatten_proofs: trace
+            root_before: self.root_before,
+            root_after: self.root_after,
+            flatten_proofs: self
                 .flatten_proofs
                 .into_iter()
                 .filter(|proof| proof.as_ref() != MAGIC_NODE_BYTES)
                 .map(|proof| {
-                    ArchivedNodeBytes(
-                        Node::<Poseidon>::try_from(proof.as_ref())
+                    ArchivedNodeBytes(match hash_scheme {
+                        HashSchemeKind::Poseidon => Node::<Poseidon>::try_from(proof.as_ref())
                             .expect("invalid node")
                             .archived()
                             .to_vec(),
-                    )
+                        HashSchemeKind::Keccak => Node::<Keccak>::try_from(proof.as_ref())
+                            .expect("invalid node")
+                            .archived()
+                            .to_vec(),
+                    })
                 })
                 .collect(),
         }
@@ -363,17 +368,21 @@ impl From<LegacyStorageTrace> for StorageTrace {
     }
 }
 
-impl From<BlockTrace> for BlockTrace<StorageTrace<ArchivedNodeBytes>> {
-    fn from(trace: BlockTrace) -> Self {
+impl BlockTrace {
+    /// turn the proofs to archived
+    pub fn to_archived_nodes(
+        self: BlockTrace,
+        hash_scheme: HashSchemeKind,
+    ) -> BlockTrace<StorageTrace<ArchivedNodeBytes>> {
         BlockTrace {
-            chain_id: trace.chain_id,
-            coinbase: trace.coinbase,
-            header: trace.header,
-            transactions: trace.transactions,
-            codes: trace.codes,
-            storage_trace: trace.storage_trace.into(),
-            start_l1_queue_index: trace.start_l1_queue_index,
-            withdraw_trie_root: trace.withdraw_trie_root,
+            chain_id: self.chain_id,
+            coinbase: self.coinbase,
+            header: self.header,
+            transactions: self.transactions,
+            codes: self.codes,
+            storage_trace: self.storage_trace.to_archived(hash_scheme),
+            start_l1_queue_index: self.start_l1_queue_index,
+            withdraw_trie_root: self.withdraw_trie_root,
         }
     }
 }
