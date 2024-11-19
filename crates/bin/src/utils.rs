@@ -1,4 +1,5 @@
 use sbv::primitives::zk_trie::db::NodeDb;
+use sbv::primitives::zk_trie::hash::keccak::Keccak;
 use sbv::primitives::zk_trie::hash::HashSchemeKind;
 use sbv::{
     core::{EvmExecutorBuilder, HardforkConfig, VerificationError},
@@ -8,16 +9,18 @@ use sbv::{
 pub fn verify<T: Block + Clone>(
     l2_trace: T,
     fork_config: &HardforkConfig,
+    hash_scheme: HashSchemeKind,
 ) -> Result<(), VerificationError> {
     measure_duration_millis!(
         total_block_verification_duration_milliseconds,
-        verify_inner(l2_trace, fork_config)
+        verify_inner(l2_trace, fork_config, hash_scheme)
     )
 }
 
 fn verify_inner<T: Block + Clone>(
     l2_trace: T,
     fork_config: &HardforkConfig,
+    hash_scheme: HashSchemeKind,
 ) -> Result<(), VerificationError> {
     dev_trace!("{l2_trace:#?}");
     let root_before = l2_trace.root_before();
@@ -44,7 +47,7 @@ fn verify_inner<T: Block + Clone>(
             measure_duration_millis!(
                 build_zktrie_db_duration_milliseconds,
                 l2_trace
-                    .build_zktrie_db(&mut zktrie_db, HashSchemeKind::Poseidon)
+                    .build_zktrie_db(&mut zktrie_db, hash_scheme)
                     .unwrap()
             );
             zktrie_db
@@ -53,28 +56,52 @@ fn verify_inner<T: Block + Clone>(
     );
     let mut code_db = HashMapDb::default();
 
-    let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
+    let builder = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
         .hardfork_config(*fork_config)
-        .chain_id(l2_trace.chain_id())
-        .hash_scheme(Poseidon)
-        .build(root_before)?;
+        .chain_id(l2_trace.chain_id());
 
-    executor.insert_codes(&l2_trace)?;
+    let revm_root_after = match hash_scheme {
+        HashSchemeKind::Poseidon => {
+            let mut executor = builder.hash_scheme(Poseidon).build(root_before)?;
 
-    // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76
-    #[allow(clippy::map_identity)]
-    #[allow(clippy::manual_inspect)]
-    executor.handle_block(&l2_trace).map_err(|e| {
-        dev_error!(
-            "Error occurs when executing block #{}({:?}): {e:?}",
-            l2_trace.number(),
-            l2_trace.block_hash()
-        );
+            executor.insert_codes(&l2_trace)?;
 
-        update_metrics_counter!(verification_error);
-        e
-    })?;
-    let revm_root_after = executor.commit_changes()?;
+            // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76
+            #[allow(clippy::map_identity)]
+            #[allow(clippy::manual_inspect)]
+            executor.handle_block(&l2_trace).map_err(|e| {
+                dev_error!(
+                    "Error occurs when executing block #{}({:?}): {e:?}",
+                    l2_trace.number(),
+                    l2_trace.block_hash()
+                );
+
+                update_metrics_counter!(verification_error);
+                e
+            })?;
+            executor.commit_changes()?
+        }
+        HashSchemeKind::Keccak => {
+            let mut executor = builder.hash_scheme(Keccak).build(root_before)?;
+
+            executor.insert_codes(&l2_trace)?;
+
+            // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76
+            #[allow(clippy::map_identity)]
+            #[allow(clippy::manual_inspect)]
+            executor.handle_block(&l2_trace).map_err(|e| {
+                dev_error!(
+                    "Error occurs when executing block #{}({:?}): {e:?}",
+                    l2_trace.number(),
+                    l2_trace.block_hash()
+                );
+
+                update_metrics_counter!(verification_error);
+                e
+            })?;
+            executor.commit_changes()?
+        }
+    };
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

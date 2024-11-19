@@ -1,6 +1,8 @@
 use crate::utils;
 use anyhow::{anyhow, bail};
 use clap::Args;
+use sbv::primitives::zk_trie::hash::keccak::Keccak;
+use sbv::primitives::zk_trie::hash::HashSchemeKind;
 use sbv::{
     core::{BlockExecutionResult, ChunkInfo, EvmExecutorBuilder, HardforkConfig},
     primitives::{
@@ -12,7 +14,7 @@ use sbv::{
 use serde::Deserialize;
 use std::panic::catch_unwind;
 use std::path::PathBuf;
-use tiny_keccak::{Hasher, Keccak};
+use tiny_keccak::Hasher;
 use tokio::task::JoinSet;
 
 #[derive(Args)]
@@ -23,6 +25,9 @@ pub struct RunFileCommand {
     /// Chunk mode
     #[arg(short, long)]
     chunk_mode: bool,
+    /// Hash scheme
+    #[arg(long, value_enum, default_value_t = HashSchemeKind::Poseidon)]
+    hash_scheme: HashSchemeKind,
 }
 
 impl RunFileCommand {
@@ -44,7 +49,7 @@ impl RunFileCommand {
         let mut tasks = JoinSet::new();
 
         for path in self.path.into_iter() {
-            tasks.spawn(run_trace(path, fork_config));
+            tasks.spawn(run_trace(path, fork_config, self.hash_scheme));
         }
 
         while let Some(task) = tasks.join_next().await {
@@ -80,32 +85,51 @@ impl RunFileCommand {
         }
 
         let fork_config = fork_config(traces[0].chain_id());
-        let (chunk_info, mut zktrie_db) = ChunkInfo::from_block_traces(&traces);
+        let (chunk_info, mut zktrie_db) = ChunkInfo::from_block_traces(&traces, self.hash_scheme);
         let mut code_db = HashMapDb::default();
 
-        let mut tx_bytes_hasher = Keccak::v256();
+        let mut tx_bytes_hasher = tiny_keccak::Keccak::v256();
 
-        let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
+        let builder = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
             .hardfork_config(fork_config)
-            .chain_id(traces[0].chain_id())
-            .hash_scheme(Poseidon)
-            .build(traces[0].root_before())?;
-        for trace in traces.iter() {
-            executor.insert_codes(trace)?;
-        }
+            .chain_id(traces[0].chain_id());
+        let post_state_root = match self.hash_scheme {
+            HashSchemeKind::Poseidon => {
+                let mut executor = builder
+                    .hash_scheme(Poseidon)
+                    .build(traces[0].root_before())?;
+                for trace in traces.iter() {
+                    executor.insert_codes(trace)?;
+                }
 
-        for trace in traces.iter() {
-            let BlockExecutionResult { tx_rlps, .. } = executor.handle_block(trace)?;
-            for tx_rlp in tx_rlps {
-                tx_bytes_hasher.update(&tx_rlp);
+                for trace in traces.iter() {
+                    let BlockExecutionResult { tx_rlps, .. } = executor.handle_block(trace)?;
+                    for tx_rlp in tx_rlps {
+                        tx_bytes_hasher.update(&tx_rlp);
+                    }
+                }
+
+                executor.commit_changes()?
             }
-        }
+            HashSchemeKind::Keccak => {
+                let mut executor = builder.hash_scheme(Keccak).build(traces[0].root_before())?;
+                for trace in traces.iter() {
+                    executor.insert_codes(trace)?;
+                }
 
-        let post_state_root = executor.commit_changes()?;
+                for trace in traces.iter() {
+                    let BlockExecutionResult { tx_rlps, .. } = executor.handle_block(trace)?;
+                    for tx_rlp in tx_rlps {
+                        tx_bytes_hasher.update(&tx_rlp);
+                    }
+                }
+
+                executor.commit_changes()?
+            }
+        };
         if post_state_root != chunk_info.post_state_root() {
             bail!("post state root mismatch");
         }
-        drop(executor);
 
         let mut tx_bytes_hash = B256::ZERO;
         tx_bytes_hasher.finalize(&mut tx_bytes_hash.0);
@@ -149,22 +173,24 @@ fn deserialize_may_wrapped<'de, T: Deserialize<'de>>(trace: &'de str) -> anyhow:
 async fn run_trace(
     path: PathBuf,
     fork_config: impl Fn(u64) -> HardforkConfig,
+    hash_scheme: HashSchemeKind,
 ) -> anyhow::Result<()> {
     let trace = read_block_trace(&path).await?;
     let fork_config = fork_config(trace.chain_id());
-    if let Err(e) =
-        tokio::task::spawn_blocking(move || catch_unwind(|| utils::verify(&trace, &fork_config)))
-            .await?
-            .map_err(|e| {
-                e.downcast_ref::<&str>()
+    if let Err(e) = tokio::task::spawn_blocking(move || {
+        catch_unwind(|| utils::verify(&trace, &fork_config, hash_scheme))
+    })
+    .await?
+    .map_err(|e| {
+        e.downcast_ref::<&str>()
+            .map(|s| anyhow!("task panics with: {s}"))
+            .or_else(|| {
+                e.downcast_ref::<String>()
                     .map(|s| anyhow!("task panics with: {s}"))
-                    .or_else(|| {
-                        e.downcast_ref::<String>()
-                            .map(|s| anyhow!("task panics with: {s}"))
-                    })
-                    .unwrap_or_else(|| anyhow!("task panics"))
             })
-            .and_then(|r| r.map_err(anyhow::Error::from))
+            .unwrap_or_else(|| anyhow!("task panics"))
+    })
+    .and_then(|r| r.map_err(anyhow::Error::from))
     {
         dev_error!(
             "Error occurs when verifying block ({}): {:?}",

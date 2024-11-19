@@ -23,7 +23,10 @@ pub struct ChunkInfo {
 
 impl ChunkInfo {
     /// Construct by block traces
-    pub fn from_block_traces<T: Block>(traces: &[T]) -> (Self, NodeDb<HashMapDb>) {
+    pub fn from_block_traces<T: Block>(
+        traces: &[T],
+        hash_scheme: HashSchemeKind,
+    ) -> (Self, NodeDb<HashMapDb>) {
         let chain_id = traces.first().unwrap().chain_id();
         let prev_state_root = traces
             .first()
@@ -49,9 +52,7 @@ impl ChunkInfo {
         for trace in traces.iter() {
             measure_duration_millis!(
                 build_zktrie_db_duration_milliseconds,
-                trace
-                    .build_zktrie_db(&mut zktrie_db, HashSchemeKind::Poseidon)
-                    .unwrap()
+                trace.build_zktrie_db(&mut zktrie_db, hash_scheme).unwrap()
             );
         }
         cycle_tracker_end!("Block::build_zktrie_db");
