@@ -9,11 +9,21 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "stateful-block-verifier"
+path = "src/bin/verifier.rs"
+
+[[bin]]
+name = "stateful-block-tracer"
+path = "src/bin/tracer.rs"
+
 [dependencies]
 alloy = { workspace = true, features = ["provider-http", "serde", "transport-http"] }
 anyhow.workspace = true
 clap = { workspace = true, features = ["derive"] }
+bincode.workspace = true
 revm.workspace = true
+rkyv.workspace = true
 sled.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
@@ -21,8 +31,9 @@ thiserror.workspace = true
 tokio = { workspace = true, features = ["fs", "io-util", "macros", "rt-multi-thread", "signal", "sync", "time"] }
 tokio-retry.workspace = true
 url.workspace = true
+zktrie-ng = { workspace = true, features = ["clap", "serde"] }
 
-sbv = { workspace = true, features = ["sled"]}
+sbv = { workspace = true, features = ["sled"] }
 
 tracing-subscriber = { workspace = true, optional = true }
 

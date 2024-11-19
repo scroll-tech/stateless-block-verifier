@@ -1,4 +1,4 @@
-use crate::{retry_if_transport_error, Result};
+use crate::{retry_if_transport_error, Error, Result};
 use alloy::primitives::ChainId;
 use alloy::providers::{Provider, ReqwestProvider};
 use revm::primitives::BlockEnv;
@@ -6,7 +6,10 @@ use sbv::{
     core::{EvmExecutorBuilder, HardforkConfig},
     primitives::{
         types::{AlloyTransaction, BlockTrace, LegacyStorageTrace},
-        zk_trie::db::{kv::HashMapDb, NodeDb},
+        zk_trie::{
+            db::{kv::HashMapDb, NodeDb},
+            hash::{poseidon::Poseidon, HashSchemeKind},
+        },
         Block, Transaction, TxTrace, B256, U256,
     },
 };
@@ -115,13 +118,21 @@ pub async fn check_stateless(
     {
         let mut code_db = HashMapDb::default();
         let mut zktrie_db = NodeDb::new(HashMapDb::default());
-        l2_trace.build_zktrie_db(&mut zktrie_db).unwrap();
+        l2_trace
+            .build_zktrie_db(&mut zktrie_db, HashSchemeKind::Poseidon)
+            .unwrap();
         let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
             .hardfork_config(hardfork_config)
             .chain_id(chain_id)
+            .hash_scheme(Poseidon)
             .build(root_before)?;
         executor.insert_codes(&l2_trace)?;
-        executor.handle_block(&l2_trace)?;
+        executor
+            .handle_block(&l2_trace)
+            .map_err(|e| Error::EvmVerification {
+                hash_scheme_kind: HashSchemeKind::Poseidon,
+                source: e,
+            })?;
         let revm_root_after = executor.commit_changes()?;
         assert_eq!(root_after, revm_root_after);
         dev_info!("block#{block_number} stateless check ok");

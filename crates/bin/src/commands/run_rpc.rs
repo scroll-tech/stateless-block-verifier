@@ -3,6 +3,7 @@ use alloy::providers::{Provider, ProviderBuilder};
 use clap::Args;
 use futures::future::OptionFuture;
 use sbv::primitives::types::LegacyStorageTrace;
+use sbv::primitives::zk_trie::hash::HashSchemeKind;
 use sbv::{
     core::HardforkConfig,
     primitives::{types::BlockTrace, Block},
@@ -115,10 +116,12 @@ impl RunRpcCommand {
                         l2_trace.block_hash()
                     );
 
-                    tokio::task::spawn_blocking(move || utils::verify(&l2_trace, &fork_config))
-                        .await
-                        .expect("failed to spawn blocking task")
-                        .map_err(|e| (block_number, e.into()))?;
+                    tokio::task::spawn_blocking(move || {
+                        utils::verify(&l2_trace, &fork_config, HashSchemeKind::Poseidon)
+                    })
+                    .await
+                    .expect("failed to spawn blocking task")
+                    .map_err(|e| (block_number, e.into()))?;
                 }
                 Ok::<_, (u64, anyhow::Error)>(())
             });
