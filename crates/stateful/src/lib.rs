@@ -12,7 +12,10 @@ use sbv::{
         types::AlloyTransaction,
         zk_trie::{
             db::{kv::SledDb, NodeDb},
-            hash::{key_hasher::NoCacheHasher, poseidon::Poseidon, ZkHash},
+            hash::{
+                keccak::Keccak, key_hasher::NoCacheHasher, poseidon::Poseidon, HashSchemeKind,
+                ZkHash,
+            },
         },
     },
 };
@@ -45,9 +48,12 @@ pub struct StatefulBlockExecutor {
 
     metadata: Metadata,
 
-    history_db: HistoryDb,
+    block_db: BlockDb,
+    poseidon_history_db: HistoryDb,
+    keccak_history_db: HistoryDb,
     code_db: SledDb,
-    zktrie_db: NodeDb<SledDb>,
+    poseidon_zktrie_db: NodeDb<SledDb>,
+    keccak_zktrie_db: NodeDb<SledDb>,
 
     pipeline_rx: tokio::sync::mpsc::Receiver<Block<AlloyTransaction>>,
     shutdown: Arc<AtomicBool>,
@@ -65,15 +71,24 @@ impl StatefulBlockExecutor {
         dev_info!("hardfork_config: {hardfork_config:?}");
 
         let metadata = Metadata::open(&db, chain_id)?;
-        let history_db = metadata.open_history_db(&db)?;
+        let block_db = metadata.open_block_db(&db)?;
+        let poseidon_history_db = metadata.open_history_db(&db, HashSchemeKind::Poseidon)?;
+        let keccak_history_db = metadata.open_history_db(&db, HashSchemeKind::Keccak)?;
 
         let mut code_db = metadata.open_code_db(&db)?;
-        let mut zktrie_db = metadata.open_zktrie_db(&db)?;
+        let mut poseidon_zktrie_db = metadata.open_zktrie_db(&db, HashSchemeKind::Poseidon)?;
+        let mut keccak_zktrie_db = metadata.open_zktrie_db(&db, HashSchemeKind::Keccak)?;
         if metadata.needs_init() {
+            dev_info!("initializing db");
             genesis_config.init_code_db(&mut code_db)?;
-            let zktrie =
-                genesis_config.init_zktrie::<Poseidon, _, _>(&mut zktrie_db, NoCacheHasher)?;
-            history_db.set_block_storage_root(0, *zktrie.root().unwrap_ref())?;
+
+            let poseidon_zktrie = genesis_config
+                .init_zktrie::<Poseidon, _, _>(&mut poseidon_zktrie_db, NoCacheHasher)?;
+            poseidon_history_db.set_block_storage_root(0, *poseidon_zktrie.root().unwrap_ref())?;
+
+            let keccak_zktrie =
+                genesis_config.init_zktrie::<Keccak, _, _>(&mut keccak_zktrie_db, NoCacheHasher)?;
+            keccak_history_db.set_block_storage_root(0, *keccak_zktrie.root().unwrap_ref())?;
         }
 
         let shutdown = Arc::new(AtomicBool::new(false));
@@ -94,9 +109,12 @@ impl StatefulBlockExecutor {
             genesis_config,
             hardfork_config,
             metadata,
-            history_db,
+            block_db,
+            poseidon_history_db,
+            keccak_history_db,
             code_db,
-            zktrie_db,
+            poseidon_zktrie_db,
+            keccak_zktrie_db,
             pipeline_rx,
             shutdown,
         })
@@ -109,19 +127,52 @@ impl StatefulBlockExecutor {
         }
 
         let block_number = block.header.number;
-        let storage_root_before = self
-            .history_db
-            .get_block_storage_root(block_number - 1)?
-            .expect("prev block storage root not found");
 
-        let mut evm = EvmExecutorBuilder::new(&mut self.code_db, &mut self.zktrie_db)
-            .chain_id(self.chain_id)
-            .hardfork_config(self.hardfork_config)
-            .build(storage_root_before)?;
-        evm.handle_block(&block)?;
-        let storage_root_after = evm.commit_changes()?;
-        self.history_db
-            .set_block_storage_root(block_number, storage_root_after)?;
+        self.block_db.set_block(block_number, block)?;
+
+        let storage_root_after = {
+            let storage_root_before = self
+                .poseidon_history_db
+                .get_block_storage_root(block_number - 1)?
+                .expect("prev block storage root not found");
+
+            let mut evm = EvmExecutorBuilder::new(&mut self.code_db, &mut self.poseidon_zktrie_db)
+                .chain_id(self.chain_id)
+                .hardfork_config(self.hardfork_config)
+                .hash_scheme(Poseidon)
+                .build(storage_root_before)?;
+            evm.handle_block(&block)
+                .map_err(|e| Error::EvmVerification {
+                    hash_scheme_kind: HashSchemeKind::Poseidon,
+                    source: e,
+                })?;
+            let storage_root_after = evm.commit_changes()?;
+            self.poseidon_history_db
+                .set_block_storage_root(block_number, storage_root_after)?;
+            dev_info!("block#{block_number} poseidon stateful done");
+            storage_root_after
+        };
+
+        {
+            let storage_root_before = self
+                .keccak_history_db
+                .get_block_storage_root(block_number - 1)?
+                .expect("prev block storage root not found");
+            let mut evm = EvmExecutorBuilder::new(&mut self.code_db, &mut self.keccak_zktrie_db)
+                .chain_id(self.chain_id)
+                .hardfork_config(self.hardfork_config)
+                .hash_scheme(Keccak)
+                .build(storage_root_before)?;
+            evm.handle_block(&block)
+                .map_err(|e| Error::EvmVerification {
+                    hash_scheme_kind: HashSchemeKind::Keccak,
+                    source: e,
+                })?;
+            let storage_root_after = evm.commit_changes()?;
+            self.keccak_history_db
+                .set_block_storage_root(block_number, storage_root_after)?;
+            dev_info!("block#{block_number} keccak stateful done");
+        }
 
         if block.header.state_root != storage_root_after {
             return Err(Error::PostStateRootMismatch);
@@ -151,7 +202,7 @@ impl StatefulBlockExecutor {
                             &self.provider,
                             self.chain_id,
                             self.hardfork_config,
-                            self.history_db
+                            self.poseidon_history_db
                                 .get_block_storage_root(block_number - 1)?
                                 .unwrap(),
                             &block,
@@ -244,12 +295,6 @@ impl StatefulBlockExecutor {
     pub fn metadata(&self) -> &Metadata {
         &self.metadata
     }
-
-    /// Get the history db
-    #[inline(always)]
-    pub fn history_db(&self) -> &HistoryDb {
-        &self.history_db
-    }
 }
 
 /// Metadata
@@ -307,20 +352,38 @@ impl Metadata {
         ))
     }
 
+    /// Open the block db
+    #[inline(always)]
+    pub fn open_block_db(&self, db: &sled::Db) -> Result<BlockDb> {
+        Ok(BlockDb {
+            db: db.open_tree(format!("block_db_chain_{}", self.chain_id))?,
+        })
+    }
+
     /// Open the zktrie db
     #[inline(always)]
-    pub fn open_zktrie_db(&self, db: &sled::Db) -> Result<NodeDb<SledDb>> {
+    pub fn open_zktrie_db(
+        &self,
+        db: &sled::Db,
+        hash_scheme: HashSchemeKind,
+    ) -> Result<NodeDb<SledDb>> {
         Ok(NodeDb::new(SledDb::new(
             true,
-            db.open_tree(format!("zktrie_db_chain_{}", self.chain_id))?,
+            db.open_tree(format!(
+                "zktrie_db_chain_{}_hash_{:?}",
+                self.chain_id, hash_scheme
+            ))?,
         )))
     }
 
     /// Open the history db
     #[inline(always)]
-    pub fn open_history_db(&self, db: &sled::Db) -> Result<HistoryDb> {
+    pub fn open_history_db(&self, db: &sled::Db, hash_scheme: HashSchemeKind) -> Result<HistoryDb> {
         Ok(HistoryDb {
-            db: db.open_tree(format!("history_db_chain_{}", self.chain_id))?,
+            db: db.open_tree(format!(
+                "history_db_chain_{}_hash_{:?}",
+                self.chain_id, hash_scheme
+            ))?,
         })
     }
 }
@@ -347,5 +410,31 @@ impl HistoryDb {
             .db
             .get(block_number.to_le_bytes())?
             .map(|v| ZkHash::from_slice(v.as_ref())))
+    }
+}
+
+/// Block database
+#[derive(Debug)]
+pub struct BlockDb {
+    db: Tree,
+}
+
+impl BlockDb {
+    /// Set the block
+    #[inline(always)]
+    pub fn set_block(&self, block_number: u64, block: &Block<AlloyTransaction>) -> Result<()> {
+        self.db
+            .insert(block_number.to_le_bytes(), serde_json::to_vec(block)?)?;
+        Ok(())
+    }
+
+    /// Get the block
+    #[inline(always)]
+    pub fn get_block(&self, block_number: u64) -> Result<Option<Block<AlloyTransaction>>> {
+        Ok(self
+            .db
+            .get(block_number.to_le_bytes())?
+            .map(|v| serde_json::from_slice(v.as_ref()))
+            .transpose()?)
     }
 }

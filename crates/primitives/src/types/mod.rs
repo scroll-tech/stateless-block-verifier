@@ -1,4 +1,4 @@
-use crate::{Block, NodeProof};
+use crate::{Block, NodeProof, TxTrace};
 use alloy::primitives::{Address, Bytes, B256, U256};
 use rkyv::vec::ArchivedVec;
 use rkyv::{rancor, Archive};
@@ -13,6 +13,7 @@ use zktrie_ng::hash::poseidon::Poseidon;
 use zktrie_ng::trie::{ArchivedNode, Node, MAGIC_NODE_BYTES};
 
 mod tx;
+use crate::alloy_primitives::{TxKind, U64};
 pub use tx::{
     AlloyTransaction, ArchivedTransactionTrace, TransactionTrace, TxL1Msg, TypedTransaction,
 };
@@ -196,6 +197,65 @@ where
     /// withdraw root
     #[rkyv(attr(doc = "withdraw root"))]
     pub withdraw_trie_root: B256,
+}
+
+impl BlockTrace {
+    /// Create a new block trace from alloy block
+    pub fn new_from_alloy(
+        chain_id: u64,
+        codes: Vec<BytecodeTrace>,
+        storage_trace: StorageTrace,
+        block: &alloy::rpc::types::Block<AlloyTransaction, alloy::rpc::types::Header>,
+    ) -> BlockTrace {
+        BlockTrace {
+            chain_id,
+            coinbase: Coinbase {
+                address: block.coinbase(),
+            },
+            header: BlockHeader {
+                number: U256::from(block.number()),
+                hash: block.block_hash(),
+                timestamp: block.timestamp(),
+                gas_limit: block.gas_limit(),
+                gas_used: block.gas_used(),
+                base_fee_per_gas: block.base_fee_per_gas(),
+                difficulty: block.difficulty(),
+                mix_hash: block.prevrandao(),
+            },
+            transactions: block
+                .transactions()
+                .map(|tx| {
+                    let sig = tx.signature().unwrap();
+                    TransactionTrace {
+                        tx_hash: tx.tx_hash(),
+                        ty: tx.ty(),
+                        nonce: tx.nonce(),
+                        gas: tx.gas_limit(),
+                        gas_price: U256::from(tx.gas_price()),
+                        gas_tip_cap: tx.max_priority_fee_per_gas().map(U256::from),
+                        gas_fee_cap: tx.max_fee_per_gas().map(U256::from),
+                        from: unsafe { tx.get_from_unchecked() },
+                        to: match tx.to() {
+                            TxKind::Call(to) => Some(to),
+                            TxKind::Create => None,
+                        },
+                        chain_id: U64::from(chain_id),
+                        value: tx.value(),
+                        data: tx.data(),
+                        is_create: tx.to().is_create(),
+                        access_list: tx.access_list(),
+                        v: U64::from(sig.v().to_u64()),
+                        r: sig.r(),
+                        s: sig.s(),
+                    }
+                })
+                .collect(),
+            codes,
+            storage_trace,
+            start_l1_queue_index: 0,
+            withdraw_trie_root: Default::default(),
+        }
+    }
 }
 
 impl Hash for ArchivedNodeBytes {

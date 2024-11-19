@@ -5,7 +5,7 @@ use sbv::{
     core::{BlockExecutionResult, ChunkInfo, EvmExecutorBuilder, HardforkConfig},
     primitives::{
         types::{BlockTrace, LegacyStorageTrace},
-        zk_trie::db::kv::HashMapDb,
+        zk_trie::{db::kv::HashMapDb, hash::poseidon::Poseidon},
         Block, B256,
     },
 };
@@ -88,6 +88,7 @@ impl RunFileCommand {
         let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
             .hardfork_config(fork_config)
             .chain_id(traces[0].chain_id())
+            .hash_scheme(Poseidon)
             .build(traces[0].root_before())?;
         for trace in traces.iter() {
             executor.insert_codes(trace)?;

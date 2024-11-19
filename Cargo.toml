@@ -22,11 +22,12 @@ getrandom = { version = "*", features = ["custom"] } # just for disable
 
 # dependencies from scroll-tech
 poseidon-bn254 = { git = "https://github.com/scroll-tech/poseidon-bn254", branch = "master", features = ["bn254"] }
-zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "master", features = ["scroll"] }
+zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "feat/keccak", features = ["scroll"] }
 
 # binary dependencies
 anyhow = "1.0"
 async-channel = "2.2"
+bincode = { version = "=2.0.0-rc.3", features = ["serde"] }
 clap = "4"
 env_logger = "0.9"
 futures = "0.3"
@@ -105,9 +106,9 @@ revm = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-exec
 revm-primitives = { git = "https://github.com/scroll-tech//revm", branch = "scroll-evm-executor/feat/v49/sp1" }
 
 # for local development
-# [patch."https://github.com/scroll-tech/revm"]
-# revm = { path = "../revm/crates/revm" }
-# revm-primitives = { path = "../revm/crates/primitives" }
+#[patch."https://github.com/scroll-tech/revm"]
+#revm = { path = "../revm/crates/revm" }
+#revm-primitives = { path = "../revm/crates/primitives" }
 
 #[profile.release]
 #debug-assertions = true
