@@ -117,7 +117,7 @@ impl<'a, CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmDatabase<'a, CodeDb,
     fn insert_codes_inner<T: Block>(&mut self, l2_trace: T) -> Result<()> {
         cycle_tracker_start!("insert CodeDB");
         for code in l2_trace.codes() {
-            let hash = revm::primitives::keccak256(code);
+            let hash = cycle_track!(revm::primitives::keccak256(code), "keccak256");
             self.code_db
                 .or_put(hash.as_slice(), code)
                 .map_err(DatabaseError::code_db)?;
