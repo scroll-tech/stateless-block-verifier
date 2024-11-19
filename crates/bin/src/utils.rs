@@ -1,4 +1,5 @@
 use sbv::primitives::zk_trie::db::NodeDb;
+use sbv::primitives::zk_trie::hash::HashSchemeKind;
 use sbv::{
     core::{EvmExecutorBuilder, HardforkConfig, VerificationError},
     primitives::{zk_trie::db::kv::HashMapDb, zk_trie::hash::poseidon::Poseidon, Block},
@@ -42,7 +43,9 @@ fn verify_inner<T: Block + Clone>(
             let mut zktrie_db = NodeDb::new(HashMapDb::default());
             measure_duration_millis!(
                 build_zktrie_db_duration_milliseconds,
-                l2_trace.build_zktrie_db(&mut zktrie_db).unwrap()
+                l2_trace
+                    .build_zktrie_db(&mut zktrie_db, HashSchemeKind::Poseidon)
+                    .unwrap()
             );
             zktrie_db
         },

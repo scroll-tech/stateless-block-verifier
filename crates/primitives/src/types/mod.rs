@@ -9,7 +9,9 @@ use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use zktrie_ng::db::kv::KVDatabase;
 use zktrie_ng::db::NodeDb;
+use zktrie_ng::hash::keccak::Keccak;
 use zktrie_ng::hash::poseidon::Poseidon;
+use zktrie_ng::hash::HashSchemeKind;
 use zktrie_ng::trie::{ArchivedNode, Node, MAGIC_NODE_BYTES};
 
 mod tx;
@@ -629,25 +631,43 @@ impl StorageTraceExt for LegacyStorageTrace {
 fn import_serialized_node<N: AsRef<[u8]>, Db: KVDatabase>(
     node: N,
     db: &mut NodeDb<Db>,
+    hash_scheme: HashSchemeKind,
 ) -> Result<(), Db::Error> {
     let bytes = node.as_ref();
     if bytes == MAGIC_NODE_BYTES {
         return Ok(());
     }
-    let node =
-        cycle_track!(Node::<Poseidon>::try_from(bytes), "Node::try_from").expect("invalid node");
-    cycle_track!(
-        node.get_or_calculate_node_hash(),
-        "Node::get_or_calculate_node_hash"
-    )
-    .expect("infallible");
-    dev_trace!("put zktrie node: {:?}", node);
-    cycle_track!(db.put_node(node), "NodeDb::put_node")
+    match hash_scheme {
+        HashSchemeKind::Poseidon => {
+            let node = cycle_track!(Node::<Poseidon>::try_from(bytes), "Node::try_from")
+                .expect("invalid node");
+            cycle_track!(
+                node.get_or_calculate_node_hash(),
+                "Node::get_or_calculate_node_hash"
+            )
+            .expect("infallible");
+            dev_trace!("put zktrie node: {:?}", node);
+            cycle_track!(db.put_node(node), "NodeDb::put_node")
+        }
+        HashSchemeKind::Keccak => {
+            let node = cycle_track!(Node::<Keccak>::try_from(bytes), "Node::try_from")
+                .expect("invalid node");
+
+            cycle_track!(
+                node.get_or_calculate_node_hash(),
+                "Node::get_or_calculate_node_hash"
+            )
+            .expect("infallible");
+            dev_trace!("put zktrie node: {:?}", node);
+            cycle_track!(db.put_node(node), "NodeDb::put_node")
+        }
+    }
 }
 
 fn import_archived_node<N: AsRef<[u8]>, Db: KVDatabase>(
     node: N,
     db: &mut NodeDb<Db>,
+    hash_scheme: HashSchemeKind,
 ) -> Result<(), Db::Error> {
     let bytes = node.as_ref();
     let node = cycle_track!(
@@ -655,11 +675,18 @@ fn import_archived_node<N: AsRef<[u8]>, Db: KVDatabase>(
         "rkyv::access"
     )
     .expect("invalid node");
-    let node_hash = cycle_track!(
-        node.calculate_node_hash::<Poseidon>(),
-        "Node::calculate_node_hash"
-    )
-    .expect("infallible");
+    let node_hash = match hash_scheme {
+        HashSchemeKind::Poseidon => cycle_track!(
+            node.calculate_node_hash::<Poseidon>(),
+            "Node::calculate_node_hash"
+        )
+        .expect("infallible"),
+        HashSchemeKind::Keccak => cycle_track!(
+            node.calculate_node_hash::<Keccak>(),
+            "Node::calculate_node_hash"
+        )
+        .expect("infallible"),
+    };
     dev_trace!("put zktrie node: {:?}", node);
     cycle_track!(
         unsafe { db.put_archived_node_unchecked(node_hash, bytes.to_owned()) },
@@ -668,26 +695,42 @@ fn import_archived_node<N: AsRef<[u8]>, Db: KVDatabase>(
 }
 
 impl NodeProof for Bytes {
-    fn import_node<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error> {
-        import_serialized_node(self, db)
+    fn import_node<Db: KVDatabase>(
+        &self,
+        db: &mut NodeDb<Db>,
+        hash_scheme: HashSchemeKind,
+    ) -> Result<(), Db::Error> {
+        import_serialized_node(self, db, hash_scheme)
     }
 }
 
 impl NodeProof for ArchivedVec<u8> {
-    fn import_node<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error> {
-        import_serialized_node(self, db)
+    fn import_node<Db: KVDatabase>(
+        &self,
+        db: &mut NodeDb<Db>,
+        hash_scheme: HashSchemeKind,
+    ) -> Result<(), Db::Error> {
+        import_serialized_node(self, db, hash_scheme)
     }
 }
 
 impl NodeProof for ArchivedNodeBytes {
-    fn import_node<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error> {
-        import_archived_node(&self.0, db)
+    fn import_node<Db: KVDatabase>(
+        &self,
+        db: &mut NodeDb<Db>,
+        hash_scheme: HashSchemeKind,
+    ) -> Result<(), Db::Error> {
+        import_archived_node(&self.0, db, hash_scheme)
     }
 }
 
 impl NodeProof for ArchivedArchivedNodeBytes {
-    fn import_node<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error> {
-        import_archived_node(&self.0, db)
+    fn import_node<Db: KVDatabase>(
+        &self,
+        db: &mut NodeDb<Db>,
+        hash_scheme: HashSchemeKind,
+    ) -> Result<(), Db::Error> {
+        import_archived_node(&self.0, db, hash_scheme)
     }
 }
 
