@@ -792,6 +792,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 
 [[package]]
+name = "bincode"
+version = "2.0.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f11ea1a0346b94ef188834a65c068a03aec181c94896d481d7a0a40d85b0ce95"
+dependencies = [
+ "bincode_derive",
+ "serde",
+]
+
+[[package]]
+name = "bincode_derive"
+version = "2.0.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e30759b3b99a1b802a7a3aa21c85c3ded5c28e1c83170d82d70f08bbf7f3e4c"
+dependencies = [
+ "virtue",
+]
+
+[[package]]
 name = "bit-set"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -858,12 +877,13 @@ dependencies = [
 [[package]]
 name = "bn254"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/bn254#3653980f712ad44d4e079fa8f0199c5678104ef4"
+source = "git+https://github.com/scroll-tech/bn254.git?branch=master#81e1dcc92ee9a2798b13b84b24de182e9c42256e"
 dependencies = [
- "ff 0.13.0 (git+https://github.com/scroll-tech/ff?branch=feat/sp1)",
+ "ff",
  "getrandom",
  "rand",
  "rand_core",
+ "sp1-intrinsics",
  "subtle",
 ]
 
@@ -1335,7 +1355,7 @@ dependencies = [
  "base16ct",
  "crypto-bigint",
  "digest 0.10.7",
- "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ff",
  "generic-array",
  "group",
  "pkcs8",
@@ -1424,15 +1444,6 @@ name = "ff"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ded41244b729663b1e574f1b4fb731469f69f79c17667b5d776b16cda0479449"
-dependencies = [
- "rand_core",
- "subtle",
-]
-
-[[package]]
-name = "ff"
-version = "0.13.0"
-source = "git+https://github.com/scroll-tech/ff?branch=feat/sp1#244b1098f6be1d19c5fd3f0ec60117ac2940e6ca"
 dependencies = [
  "bitvec",
  "rand_core",
@@ -1659,7 +1670,7 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0f9ef7462f7c099f518d754361858f86d8a07af53ba9af0fe635bbccb151a63"
 dependencies = [
- "ff 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ff",
  "rand_core",
  "subtle",
 ]
@@ -2597,10 +2608,11 @@ checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
 [[package]]
 name = "poseidon-bn254"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/poseidon-bn254?branch=master#526a64a81419bcab6bd8280a8a3f9808189e0373"
+source = "git+https://github.com/scroll-tech/poseidon-bn254?branch=master#254baa0e3e85c0975c16fe6f33042b1fa9ae0a44"
 dependencies = [
  "bn254",
  "itertools 0.13.0",
+ "sp1-intrinsics",
 ]
 
 [[package]]
@@ -3597,6 +3609,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp1-intrinsics"
+version = "0.0.0"
+source = "git+https://github.com/scroll-tech/sp1-intrinsics.git?branch=master#7e038e60db0b2e847f6d8f49e148ccac8c6fc394"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
 name = "spin"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3624,6 +3644,7 @@ version = "2.0.0"
 dependencies = [
  "alloy",
  "anyhow",
+ "bincode",
  "clap",
  "revm",
  "sbv",
@@ -3635,6 +3656,7 @@ dependencies = [
  "tokio-retry",
  "tracing-subscriber",
  "url",
+ "zktrie-ng",
 ]
 
 [[package]]
@@ -4221,6 +4243,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
+name = "virtue"
+version = "0.0.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9dcc60c0624df774c82a0ef104151231d37da4962957d691c011c852b2473314"
+
+[[package]]
 name = "wait-timeout"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4540,9 +4568,10 @@ dependencies = [
 [[package]]
 name = "zktrie-ng"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/zktrie-ng?branch=master#8ad8038e39f9b88abfe8680e32bba19ac4497a1d"
+source = "git+https://github.com/scroll-tech/zktrie-ng?branch=feat/keccak#7ff68af7b91b58579126bb7cb2ac82c0d5821c66"
 dependencies = [
  "alloy-primitives",
+ "clap",
  "hashbrown 0.14.5",
  "hex",
  "num-derive",
@@ -4551,8 +4580,10 @@ dependencies = [
  "poseidon-bn254",
  "revm-primitives",
  "rkyv",
+ "serde",
  "sled",
  "strum",
  "thiserror",
+ "tiny-keccak",
  "tracing",
 ]
