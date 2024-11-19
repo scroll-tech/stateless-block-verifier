@@ -118,7 +118,9 @@ pub async fn check_stateless(
     {
         let mut code_db = HashMapDb::default();
         let mut zktrie_db = NodeDb::new(HashMapDb::default());
-        l2_trace.build_zktrie_db(&mut zktrie_db).unwrap();
+        l2_trace
+            .build_zktrie_db(&mut zktrie_db, HashSchemeKind::Poseidon)
+            .unwrap();
         let mut executor = EvmExecutorBuilder::new(&mut code_db, &mut zktrie_db)
             .hardfork_config(hardfork_config)
             .chain_id(chain_id)

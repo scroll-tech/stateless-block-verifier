@@ -1,5 +1,6 @@
 use revm::primitives::B256;
 use sbv_primitives::zk_trie::db::NodeDb;
+use sbv_primitives::zk_trie::hash::HashSchemeKind;
 use sbv_primitives::{zk_trie::db::kv::HashMapDb, Block};
 use tiny_keccak::{Hasher, Keccak};
 
@@ -48,7 +49,9 @@ impl ChunkInfo {
         for trace in traces.iter() {
             measure_duration_millis!(
                 build_zktrie_db_duration_milliseconds,
-                trace.build_zktrie_db(&mut zktrie_db).unwrap()
+                trace
+                    .build_zktrie_db(&mut zktrie_db, HashSchemeKind::Poseidon)
+                    .unwrap()
             );
         }
         cycle_tracker_end!("Block::build_zktrie_db");

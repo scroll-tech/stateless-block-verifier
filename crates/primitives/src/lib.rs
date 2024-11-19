@@ -22,11 +22,16 @@ pub use alloy::consensus::Transaction;
 pub use alloy::primitives as alloy_primitives;
 pub use alloy::primitives::{Address, B256, U256};
 pub use zktrie_ng as zk_trie;
+use zktrie_ng::hash::HashSchemeKind;
 
 /// Node proof trait
 pub trait NodeProof {
     /// Import itself into zktrie db
-    fn import_node<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error>;
+    fn import_node<Db: KVDatabase>(
+        &self,
+        db: &mut NodeDb<Db>,
+        hash_scheme: HashSchemeKind,
+    ) -> Result<(), Db::Error>;
 }
 
 /// Blanket trait for block trace extensions.
@@ -88,9 +93,13 @@ pub trait Block: Debug {
 
     /// Update zktrie state from trace
     #[inline]
-    fn build_zktrie_db<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error> {
+    fn build_zktrie_db<Db: KVDatabase>(
+        &self,
+        db: &mut NodeDb<Db>,
+        hash_scheme: HashSchemeKind,
+    ) -> Result<(), Db::Error> {
         for node in self.node_proofs() {
-            node.import_node(db)?;
+            node.import_node(db, hash_scheme)?;
         }
         Ok(())
     }
