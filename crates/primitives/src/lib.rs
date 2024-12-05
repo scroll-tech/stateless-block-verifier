@@ -1,6 +1,7 @@
 //! Stateless Block Verifier primitives library.
 
 /// Predeployed contracts
+#[cfg(feature = "scroll")]
 pub mod predeployed;
 /// Types definition
 pub mod types;
