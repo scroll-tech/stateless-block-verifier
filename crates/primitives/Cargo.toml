@@ -15,10 +15,9 @@ workspace = true
 [dependencies]
 alloy-consensus = { workspace = true, features = ["k256"] }
 alloy-eips.workspace = true
+alloy-rpc-types-debug.workspace = true
 alloy-rpc-types-eth.workspace = true
 alloy-serde.workspace = true
-
-alloy-eip2930 = { workspace = true, features = ["rkyv"] }
 
 alloy-rlp.workspace = true
 
