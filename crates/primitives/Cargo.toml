@@ -13,7 +13,17 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-alloy = { workspace = true, features = ["consensus", "eips", "k256", "rlp", "rkyv", "rpc-types", "serde"] }
+alloy-consensus = { workspace = true, features = ["k256"] }
+alloy-eips.workspace = true
+alloy-rpc-types-eth.workspace = true
+alloy-serde.workspace = true
+
+alloy-eip2930 = { workspace = true, features = ["rkyv"] }
+
+alloy-rlp.workspace = true
+
+alloy-primitives.workspace = true
+
 rkyv.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_with.workspace = true
@@ -21,14 +31,11 @@ tiny-keccak.workspace = true
 
 sbv-utils.workspace = true
 
-poseidon-bn254.workspace = true
-zktrie-ng.workspace = true
-
 [dev-dependencies]
 serde_json.workspace = true
 
 [features]
+scroll = []
 dev = ["sbv-utils/dev"]
 sp1 = []
 cycle-tracker = []
-sled = ["zktrie-ng/sled"]

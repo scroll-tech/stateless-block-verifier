@@ -1,5 +1,11 @@
 [workspace]
-members = ["crates/*"]
+members = [
+    "crates/bin",
+    "crates/core",
+    "crates/primitives",
+    "crates/sbv",
+    "crates/utils",
+]
 resolver = "2"
 
 [workspace.package]
@@ -13,15 +19,23 @@ repository = "https://github.com/scroll-tech/stateless-block-verifier"
 
 [workspace.dependencies]
 alloy = "0.5"
+
+alloy-eips = "0.5"
+alloy-consensus = "0.5"
+alloy-rpc-types-eth = "0.5"
+alloy-serde = "0.5"
+
+alloy-eip2930 = "0.1"
+
+alloy-rlp = "0.3"
+
+alloy-primitives = { version = "0.8", features = ["rkyv"] }
+
 hex = "0.4"
 once_cell = "1.19"
 rkyv = "0.8"
 thiserror = "1.0"
 tiny-keccak = "2.0"
-
-# dependencies from scroll-tech
-poseidon-bn254 = { git = "https://github.com/scroll-tech/poseidon-bn254", branch = "master", features = ["bn254"] }
-zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "master", features = ["scroll"] }
 
 # binary dependencies
 anyhow = "1.0"
@@ -58,20 +72,15 @@ sbv-core = { path = "crates/core" }
 sbv-primitives = { path = "crates/primitives" }
 sbv-utils = { path = "crates/utils" }
 
-[workspace.dependencies.revm] # v42
+[workspace.dependencies.revm]
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v49"
+branch = "scroll-evm-executor/v50"
 default-features = false
-features = [
-    "scroll-default-handler",
-    "scroll-poseidon-codehash",
-    "std",
-    "optional_no_base_fee"
-]
+features = ["std"]
 
-[workspace.dependencies.revm-primitives] # v42
+[workspace.dependencies.revm-primitives]
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v49"
+branch = "scroll-evm-executor/v50"
 default-features = false
 features = [
     "scroll-default-handler",
@@ -90,16 +99,16 @@ ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
 # patched add rkyv support & MSRV 1.77
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 
-alloy = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.5.4" }
-alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.5.4" }
-alloy-serde = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.5.4" }
+alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.4.2" }
 
-alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.3.2" }
-alloy-eip7702 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.3.2" }
+alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.14-transparent" }
 
-alloy-core = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
-alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
-alloy-sol-types = {git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
+alloy-trie = { git = "https://github.com/scroll-tech/alloy-trie", branch = "v0.7.4" }
+
+revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
 
 # for local development
 # [patch."https://github.com/scroll-tech/revm"]
