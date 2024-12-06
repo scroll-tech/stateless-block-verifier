@@ -1,0 +1,20 @@
+[package]
+name = "sbv-kv"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+alloy-trie = { workspace = true, optional = true}
+sled = { workspace = true, optional = true }
+
+[features]
+sled = ["dep:sled"]
+alloy-trie = ["dep:alloy-trie"]
