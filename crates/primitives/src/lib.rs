@@ -12,6 +12,7 @@ pub mod types;
 
 pub use alloy_consensus;
 
+use crate::types::TypedTransaction;
 pub use alloy_primitives;
 pub use alloy_primitives::{Address, BlockHash, B256, U256};
 
@@ -47,6 +48,22 @@ pub trait BlockHeader: fmt::Debug {
     fn base_fee_per_gas(&self) -> Option<u64>;
     /// Withdrawals root hash added by EIP-4895 and is ignored in legacy headers.
     fn withdraw_root(&self) -> B256;
+}
+
+/// BlockWitness trait
+pub trait BlockWitness: fmt::Debug {
+    /// Header
+    fn header(&self) -> &impl BlockHeader;
+    /// Pre-state root
+    fn pre_state_root(&self) -> B256;
+    /// Transactions
+    fn build_typed_transactions(
+        &self,
+    ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>>;
+    /// States
+    fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
+    /// Codes
+    fn codes_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
 }
 
 // #[cfg(feature = "scroll")]

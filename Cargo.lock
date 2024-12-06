@@ -140,11 +140,11 @@ dependencies = [
 [[package]]
 name = "alloy-eip2930"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/alloy-eips?branch=v0.4.2#92b2892d7b5b325c1f2f3e90a5befadbb5e610d4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0069cf0642457f87a01a014f6dc29d5d893cd4fd8fddf0c3cdfad1bb3ebafc41"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
- "rkyv",
  "serde",
 ]
 
@@ -404,6 +404,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "alloy-rpc-types-debug"
+version = "0.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5afe3ab1038f90faf56304aa0adf1e6a8c9844615d8f83967f932f3a70390b1"
+dependencies = [
+ "alloy-primitives",
+ "serde",
+]
+
+[[package]]
 name = "alloy-rpc-types-eth"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -565,8 +575,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-trie"
-version = "0.7.4"
-source = "git+https://github.com/scroll-tech/alloy-trie?branch=v0.7.4#4e37445326e44a32b4a629f7b09aa8310718b909"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a5fd8fea044cc9a8c8a50bb6f28e31f0385d820f116c5b98f6f4e55d6e5590b"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -3850,10 +3861,10 @@ name = "sbv-primitives"
 version = "2.0.0"
 dependencies = [
  "alloy-consensus 0.5.4",
- "alloy-eip2930",
  "alloy-eips 0.5.4",
  "alloy-primitives",
  "alloy-rlp",
+ "alloy-rpc-types-debug",
  "alloy-rpc-types-eth",
  "alloy-serde 0.5.4",
  "rkyv",

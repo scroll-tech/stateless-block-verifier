@@ -23,6 +23,7 @@ alloy = "0.5"
 alloy-eips = "0.5"
 alloy-consensus = "0.5"
 alloy-rpc-types-eth = "0.5"
+alloy-rpc-types-debug = "0.5"
 alloy-serde = "0.5"
 
 alloy-eip2930 = "0.1"
@@ -99,11 +100,7 @@ ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
 # patched add rkyv support & MSRV 1.77
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 
-alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.4.2" }
-
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.14-transparent" }
-
-alloy-trie = { git = "https://github.com/scroll-tech/alloy-trie", branch = "v0.7.4" }
 
 revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
 revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
