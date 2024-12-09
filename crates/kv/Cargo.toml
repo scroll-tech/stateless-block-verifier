@@ -12,9 +12,9 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-alloy-trie = { workspace = true, optional = true}
+alloy-trie = { workspace = true, optional = true }
 sled = { workspace = true, optional = true }
 
 [features]
-sled = ["dep:sled"]
 alloy-trie = ["dep:alloy-trie"]
+sled = ["dep:sled"]

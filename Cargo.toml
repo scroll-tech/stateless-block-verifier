@@ -36,7 +36,7 @@ alloy-trie = "0.7"
 # https://github.com/alloy-rs/core
 alloy-primitives = { version = "0.8", features = ["rkyv"] }
 
-reth-trie-sparse = { git = "https://github.com/paradigmxyz/reth", tag = "v1.1.2" }
+reth-trie-sparse = { git = "https://github.com/paradigmxyz/reth", rev = "cd13bd9" }
 
 hex = "0.4"
 once_cell = "1.19"

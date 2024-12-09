@@ -18,3 +18,8 @@ reth-trie-sparse.workspace = true
 
 sbv-primitives.workspace = true
 sbv-kv = { workspace = true, features = ["alloy-trie"] }
+
+[dev-dependencies]
+alloy-rpc-types-debug.workspace = true
+alloy-rpc-types-eth.workspace = true
+serde_json.workspace = true
