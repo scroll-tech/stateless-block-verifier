@@ -3,23 +3,22 @@
 extern crate core;
 
 use alloy_rlp::{Decodable, Encodable};
-use alloy_trie::{
-    nodes::{TrieNode, CHILD_INDEX_RANGE},
-    Nibbles, TrieAccount, TrieMask, EMPTY_ROOT_HASH,
-};
+use alloy_trie::{nodes::CHILD_INDEX_RANGE, Nibbles, TrieAccount, TrieMask, EMPTY_ROOT_HASH};
 use reth_trie_sparse::RevealedSparseTrie;
 use sbv_kv::{KeyValueStoreGet, KeyValueStoreInsert};
 use sbv_primitives::{keccak256, Address, B256, U256};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+pub use alloy_trie::nodes::TrieNode;
+
 /// Fill a KeyValueStore<B256, TrieNode> from a list of nodes
 pub fn decode_nodes<
     B: AsRef<[u8]>,
-    S: KeyValueStoreInsert<B256, TrieNode>,
+    P: KeyValueStoreInsert<B256, TrieNode>,
     I: Iterator<Item = B>,
 >(
-    store: &mut S,
+    provider: &mut P,
     iter: I,
 ) -> Result<(), alloy_rlp::Error> {
     for byte in iter {
@@ -30,7 +29,7 @@ pub fn decode_nodes<
             buf.is_empty(),
             "the rlp buffer should only contains the node"
         );
-        store.insert(node_hash, node);
+        provider.insert(node_hash, node);
     }
     Ok(())
 }
@@ -47,8 +46,8 @@ pub struct PartialStateTrie {
 
 impl PartialStateTrie {
     /// Open a partial trie from a root node
-    pub fn open<S: KeyValueStoreGet<B256, TrieNode>>(node_store: &S, root: B256) -> Self {
-        let state = PartialTrie::open(node_store, root, |mut value| {
+    pub fn open<P: KeyValueStoreGet<B256, TrieNode>>(nodes_provider: &P, root: B256) -> Self {
+        let state = PartialTrie::open(nodes_provider, root, |mut value| {
             let account = TrieAccount::decode(&mut value).unwrap();
             assert!(
                 value.is_empty(),
@@ -88,9 +87,9 @@ impl PartialStateTrie {
 
     /// Get storage
     #[must_use]
-    pub fn get_storage<S: KeyValueStoreGet<B256, TrieNode>>(
+    pub fn get_storage<P: KeyValueStoreGet<B256, TrieNode>>(
         &self,
-        node_store: &S,
+        nodes_provider: &P,
         address: Address,
         index: U256,
     ) -> Option<U256> {
@@ -100,15 +99,15 @@ impl PartialStateTrie {
         self.storage_tries
             .borrow_mut()
             .entry(address)
-            .or_insert_with(|| PartialTrie::open(node_store, storage_root, U256::from_be_slice))
+            .or_insert_with(|| PartialTrie::open(nodes_provider, storage_root, U256::from_be_slice))
             .get(&path)
             .copied()
     }
 
     /// Update storage
-    pub fn update_storage<S: KeyValueStoreGet<B256, TrieNode>>(
+    pub fn update_storage<P: KeyValueStoreGet<B256, TrieNode>>(
         &mut self,
-        node_store: &S,
+        nodes_provider: &P,
         address: Address,
         index: U256,
         value: U256,
@@ -125,7 +124,9 @@ impl PartialStateTrie {
             .storage_tries
             .get_mut()
             .entry(address)
-            .or_insert_with(|| PartialTrie::open(node_store, storage_root, U256::from_be_slice));
+            .or_insert_with(|| {
+                PartialTrie::open(nodes_provider, storage_root, U256::from_be_slice)
+            });
 
         if value.is_zero() {
             trie.remove_leaf(&path);
@@ -136,9 +137,9 @@ impl PartialStateTrie {
 
     /// Commit storage changes and calculate the new storage root
     #[must_use]
-    pub fn commit_storage<S: KeyValueStoreGet<B256, TrieNode>>(
+    pub fn commit_storage<P: KeyValueStoreGet<B256, TrieNode>>(
         &mut self,
-        node_store: &S,
+        nodes_provider: &P,
         address: Address,
     ) -> B256 {
         let storage_roots = self.storage_roots.get_mut();
@@ -148,7 +149,9 @@ impl PartialStateTrie {
             .storage_tries
             .get_mut()
             .entry(address)
-            .or_insert_with(|| PartialTrie::open(node_store, *storage_root, U256::from_be_slice));
+            .or_insert_with(|| {
+                PartialTrie::open(nodes_provider, *storage_root, U256::from_be_slice)
+            });
 
         *storage_root = trie.trie.root();
         *storage_root
@@ -165,27 +168,28 @@ impl PartialStateTrie {
 #[derive(Debug, Default)]
 struct PartialTrie<T> {
     trie: RevealedSparseTrie,
+    /// FIXME: `RevealedSparseTrie` did not expose API to get the leafs
     leafs: HashMap<Nibbles, T>,
 }
 
 impl<T: Default> PartialTrie<T> {
     /// Open a partial trie from a root node
-    fn open<S: KeyValueStoreGet<B256, TrieNode>, F: FnOnce(&[u8]) -> T + Copy>(
-        node_store: &S,
+    fn open<P: KeyValueStoreGet<B256, TrieNode>, F: FnOnce(&[u8]) -> T + Copy>(
+        nodes_provider: &P,
         root: B256,
         parse_leaf: F,
     ) -> Self {
         if root == EMPTY_ROOT_HASH {
             return Self::default();
         }
-        let root = node_store.get(&root).unwrap().into_owned();
+        let root = nodes_provider.get(&root).unwrap().into_owned();
         let mut state = RevealedSparseTrie::from_root(root.clone(), None, true).unwrap();
         let mut leafs = HashMap::new();
         // traverse the partial trie
         traverse_import_partial_trie(
             &Nibbles::default(),
             &root,
-            node_store,
+            nodes_provider,
             &mut state,
             &mut |path, value| {
                 leafs.insert(path, parse_leaf(value));
@@ -213,12 +217,12 @@ impl<T: Default> PartialTrie<T> {
 }
 
 fn traverse_import_partial_trie<
-    S: KeyValueStoreGet<B256, TrieNode>,
+    P: KeyValueStoreGet<B256, TrieNode>,
     F: FnMut(Nibbles, &Vec<u8>),
 >(
     path: &Nibbles,
     node: &TrieNode,
-    nodes: &S,
+    nodes: &P,
     trie: &mut RevealedSparseTrie,
     store_leaf: &mut F,
 ) -> Option<TrieMask> {
