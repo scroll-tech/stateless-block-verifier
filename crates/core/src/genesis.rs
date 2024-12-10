@@ -1,3 +1,4 @@
+//! FIXME: compatible with optional scroll mode
 use crate::hardfork::{SCROLL_MAINNET_CHAIN_ID, SCROLL_TESTNET_CHAIN_ID};
 use once_cell::sync::Lazy;
 use revm::primitives::{poseidon, KECCAK_EMPTY, POSEIDON_EMPTY};
