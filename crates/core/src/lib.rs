@@ -4,7 +4,9 @@
 extern crate sbv_utils;
 extern crate core;
 
+#[cfg(feature = "scroll")]
 mod chunk;
+#[cfg(feature = "scroll")]
 pub use chunk::ChunkInfo;
 
 mod database;
@@ -16,7 +18,9 @@ pub use error::{DatabaseError, VerificationError};
 mod executor;
 pub use executor::{BlockExecutionResult, EvmExecutor, EvmExecutorBuilder};
 
+#[cfg(feature = "stateful")]
 mod genesis;
+#[cfg(feature = "stateful")]
 pub use genesis::GenesisConfig;
 
 mod hardfork;
