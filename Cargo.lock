@@ -4358,6 +4358,7 @@ name = "sbv-kv"
 version = "2.0.0"
 dependencies = [
  "alloy-trie",
+ "auto_impl",
  "sled",
 ]
 

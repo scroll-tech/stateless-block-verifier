@@ -1,11 +1,13 @@
 //! Abstract KV-Store interface.
 
+use auto_impl::auto_impl;
 use std::borrow::{Borrow, Cow};
 use std::hash::Hash;
 
 mod imps;
 
 /// Value trait
+#[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait Value: ToOwned<Owned = Self> {
     /// Serialize value to bytes
     ///
@@ -24,12 +26,14 @@ pub trait Value: ToOwned<Owned = Self> {
 }
 
 /// Key-Value store insert trait
+#[auto_impl(&mut, Box)]
 pub trait KeyValueStoreInsert<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> {
     /// Insert key-value pair
     fn insert(&mut self, k: K, v: V);
 }
 
 /// Key-Value store trait
+#[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait KeyValueStoreGet<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> {
     /// Get value by key
     fn get<Q: ?Sized>(&self, k: &Q) -> Option<Cow<V>>
@@ -39,6 +43,7 @@ pub trait KeyValueStoreGet<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> {
 }
 
 /// Key-Value store trait
+#[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait KeyValueStore<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value>:
     KeyValueStoreInsert<K, V> + KeyValueStoreGet<K, V>
 {

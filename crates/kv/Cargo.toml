@@ -12,6 +12,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+auto_impl.workspace = true
 alloy-trie = { workspace = true, optional = true }
 sled = { workspace = true, optional = true }
 
