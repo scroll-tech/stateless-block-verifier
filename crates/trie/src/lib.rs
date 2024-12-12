@@ -3,14 +3,14 @@
 extern crate core;
 
 use alloy_rlp::{Decodable, Encodable};
-use alloy_trie::{nodes::CHILD_INDEX_RANGE, Nibbles, TrieAccount, TrieMask, EMPTY_ROOT_HASH};
+use alloy_trie::{nodes::CHILD_INDEX_RANGE, Nibbles, TrieMask, EMPTY_ROOT_HASH};
 use reth_trie_sparse::RevealedSparseTrie;
 use sbv_kv::{KeyValueStoreGet, KeyValueStoreInsert};
 use sbv_primitives::{keccak256, Address, B256, U256};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-pub use alloy_trie::nodes::TrieNode;
+pub use alloy_trie::{nodes::TrieNode, TrieAccount};
 
 /// Fill a KeyValueStore<B256, TrieNode> from a list of nodes
 pub fn decode_nodes<
@@ -133,6 +133,15 @@ impl PartialStateTrie {
         } else {
             trie.update_leaf(path, value, |value| value.to_be_bytes_trimmed_vec());
         }
+    }
+
+    /// Get storage root
+    pub fn storage_root(&self, address: Address) -> B256 {
+        *self
+            .storage_roots
+            .borrow()
+            .get(&address)
+            .unwrap_or(&EMPTY_ROOT_HASH)
     }
 
     /// Commit storage changes and calculate the new storage root
