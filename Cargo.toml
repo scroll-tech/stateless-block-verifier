@@ -22,11 +22,11 @@ repository = "https://github.com/scroll-tech/stateless-block-verifier"
 
 [workspace.dependencies]
 # https://github.com/alloy-rs/alloy
-alloy = "0.5"
-alloy-eips = "0.5"
-alloy-consensus = "0.5"
-alloy-rpc-types-eth = "0.5"
-alloy-rpc-types-debug = "0.5"
+alloy = "0.8"
+alloy-eips = "0.8"
+alloy-consensus = "0.8"
+alloy-rpc-types-eth = "0.8"
+alloy-rpc-types-debug = "0.8"
 alloy-serde = "0.5"
 # https://github.com/alloy-rs/chains
 alloy-chains = "0.1"
@@ -82,6 +82,7 @@ reqwest = "0.12"
 
 # workspace
 sbv = { path = "crates/sbv" }
+sbv-chainspec = { path = "crates/chainspec" }
 sbv-core = { path = "crates/core" }
 sbv-kv = { path = "crates/kv" }
 sbv-primitives = { path = "crates/primitives" }
@@ -98,12 +99,7 @@ features = ["std"]
 git = "https://github.com/scroll-tech/revm"
 branch = "scroll-evm-executor/v50"
 default-features = false
-features = [
-    "scroll-default-handler",
-    "scroll-poseidon-codehash",
-    "std",
-    "optional_no_base_fee"
-]
+features = ["std"]
 
 [workspace.lints.rust]
 missing-docs = "deny"
