@@ -22,7 +22,6 @@ pub struct Registry {
     pub update_db_duration_milliseconds: Histogram,
     pub zktrie_get_duration_microseconds: Histogram,
     pub zktrie_update_duration_microseconds: Histogram,
-    pub zktrie_delete_duration_microseconds: Histogram,
     pub zktrie_commit_duration_microseconds: Histogram,
 
     // executor metrics
@@ -91,13 +90,6 @@ pub(super) fn init() -> Registry {
         zktrie_update_duration_microseconds.clone(),
     );
 
-    let zktrie_delete_duration_microseconds = Histogram::new(linear_buckets(50.0, 500.0, 10));
-    registry.register(
-        "zktrie_delete_duration",
-        "Duration of zktrie_delete in microseconds",
-        zktrie_delete_duration_microseconds.clone(),
-    );
-
     let zktrie_commit_duration_microseconds = Histogram::new(linear_buckets(100.0, 2000.0, 10));
     registry.register(
         "zktrie_commit_duration",
@@ -147,7 +139,6 @@ pub(super) fn init() -> Registry {
         update_db_duration_milliseconds,
         zktrie_get_duration_microseconds,
         zktrie_update_duration_microseconds,
-        zktrie_delete_duration_microseconds,
         zktrie_commit_duration_microseconds,
 
         handle_block_duration_milliseconds,
