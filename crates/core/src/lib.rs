@@ -13,18 +13,10 @@ mod database;
 pub use database::EvmDatabase;
 
 mod error;
-pub use error::{DatabaseError, VerificationError};
+pub use error::VerificationError;
 
 mod executor;
 pub use executor::{BlockExecutionResult, EvmExecutor, EvmExecutorBuilder};
-
-#[cfg(feature = "stateful")]
-mod genesis;
-#[cfg(feature = "stateful")]
-pub use genesis::GenesisConfig;
-
-mod hardfork;
-pub use hardfork::HardforkConfig;
 
 #[cfg(test)]
 #[ctor::ctor]
