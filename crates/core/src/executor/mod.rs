@@ -1,33 +1,24 @@
-use crate::{
-    database::EvmDatabase, error::DatabaseError, error::VerificationError, HardforkConfig,
-};
-use revm::db::AccountState;
-use revm::primitives::alloy_primitives::ChainId;
-use revm::primitives::{BlockEnv, TxEnv, U256};
+use crate::{database::EvmDatabase, error::VerificationError};
+use revm::primitives::{Authorization, SignedAuthorization};
 use revm::{
-    db::CacheDB,
-    primitives::{AccountInfo, Env, B256, KECCAK_EMPTY, POSEIDON_EMPTY},
+    db::{AccountState, CacheDB},
+    primitives::{AccountInfo, BlobExcessGasAndPrice, BlockEnv, Bytes, Env, TxEnv, KECCAK_EMPTY},
 };
-use sbv_primitives::{
-    alloy_primitives::Bytes,
-    zk_trie::{
-        db::kv::KVDatabase,
-        hash::{key_hasher::NoCacheHasher, poseidon::Poseidon},
-        scroll_types::Account,
-        trie::ZkTrie,
-    },
-    Block, Transaction, TxTrace,
-};
+use sbv_chainspec::{revm_spec, ChainSpec, Head};
+use sbv_kv::KeyValueStore;
+use sbv_primitives::{BlockHeader, BlockWitness, B256, U256};
+use sbv_trie::{TrieAccount, TrieNode};
 use std::fmt::Debug;
 
 mod builder;
 pub use builder::EvmExecutorBuilder;
 
 /// EVM executor that handles the block.
-pub struct EvmExecutor<'db, CodeDb, ZkDb> {
-    chain_id: ChainId,
-    hardfork_config: HardforkConfig,
-    db: CacheDB<EvmDatabase<'db, CodeDb, ZkDb>>,
+#[derive(Debug)]
+pub struct EvmExecutor<CodeDb, NodesProvider, Witness> {
+    chain_spec: ChainSpec,
+    db: CacheDB<EvmDatabase<CodeDb, NodesProvider>>,
+    witness: Witness,
 }
 
 /// Block execution result
@@ -39,26 +30,23 @@ pub struct BlockExecutionResult {
     pub tx_rlps: Vec<Bytes>,
 }
 
-impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkDb> {
+impl<
+        CodeDb: KeyValueStore<B256, Bytes>,
+        NodesProvider: KeyValueStore<B256, TrieNode>,
+        Witness: BlockWitness,
+    > EvmExecutor<CodeDb, NodesProvider, Witness>
+{
     /// Get reference to the DB
-    pub fn db(&self) -> &CacheDB<EvmDatabase<CodeDb, ZkDb>> {
+    pub fn db(&self) -> &CacheDB<EvmDatabase<CodeDb, NodesProvider>> {
         &self.db
     }
 
-    /// Insert codes from trace into CodeDB
-    pub fn insert_codes<T: Block>(&mut self, l2_trace: &T) -> Result<(), DatabaseError> {
-        self.db.db.insert_codes(l2_trace)
-    }
-
-    /// Handle a block.
-    pub fn handle_block<T: Block>(
-        &mut self,
-        l2_trace: &T,
-    ) -> Result<BlockExecutionResult, VerificationError> {
+    /// Handle the block with the given witness
+    pub fn handle_block(&mut self) -> Result<BlockExecutionResult, VerificationError> {
         #[allow(clippy::let_and_return)]
         let gas_used = measure_duration_millis!(
             handle_block_duration_milliseconds,
-            cycle_track!(self.handle_block_inner(l2_trace), "handle_block")
+            cycle_track!(self.handle_block_inner(), "handle_block")
         )?;
 
         #[cfg(feature = "metrics")]
@@ -68,84 +56,91 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkD
     }
 
     #[inline(always)]
-    fn handle_block_inner<T: Block>(
-        &mut self,
-        l2_trace: &T,
-    ) -> Result<BlockExecutionResult, VerificationError> {
-        let spec_id = self.hardfork_config.get_spec_id(l2_trace.number());
-        dev_trace!("use spec id {spec_id:?}",);
-        self.hardfork_config
-            .migrate(l2_trace.number(), &mut self.db)
-            .unwrap();
+    fn handle_block_inner(&mut self) -> Result<BlockExecutionResult, VerificationError> {
+        let header = self.witness.header();
+        let block_number = header.number();
+        dev_debug!("handle block #{block_number}");
 
-        dev_debug!("handle block {:?}", l2_trace.number());
+        let spec_id = revm_spec(
+            &self.chain_spec,
+            &Head {
+                number: block_number,
+                hash: header.hash(),
+                timestamp: header.timestamp(),
+                difficulty: header.difficulty(),
+                ..Default::default()
+            },
+        );
+        dev_trace!("use spec id {spec_id:?}");
+
+        // FIXME: scroll needs migrate on curie block
+
         let mut env = Box::<Env>::default();
-        env.cfg.chain_id = self.chain_id;
+        env.cfg.chain_id = self.chain_spec.chain.id();
         env.block = BlockEnv {
-            number: U256::from_limbs([l2_trace.number(), 0, 0, 0]),
-            coinbase: l2_trace.coinbase(),
-            timestamp: l2_trace.timestamp(),
-            gas_limit: l2_trace.gas_limit(),
-            basefee: l2_trace.base_fee_per_gas().unwrap_or_default(),
-            difficulty: l2_trace.difficulty(),
-            prevrandao: l2_trace.prevrandao(),
-            blob_excess_gas_and_price: None,
+            number: U256::from_limbs([block_number, 0, 0, 0]),
+            coinbase: self.chain_spec.genesis.coinbase,
+            timestamp: U256::from_limbs([header.timestamp(), 0, 0, 0]),
+            gas_limit: U256::from_limbs([header.gas_limit(), 0, 0, 0]),
+            basefee: U256::from_limbs([header.base_fee_per_gas().unwrap_or_default(), 0, 0, 0]),
+            difficulty: header.difficulty(),
+            prevrandao: header.prevrandao(),
+            blob_excess_gas_and_price: header.excess_blob_gas().map(BlobExcessGasAndPrice::new),
         };
 
         let mut gas_used = 0;
-        let mut tx_rlps = Vec::with_capacity(l2_trace.num_txs());
+        let mut tx_rlps = Vec::with_capacity(self.witness.num_transactions());
 
-        for (idx, tx) in l2_trace.transactions().enumerate() {
+        for (idx, tx) in self.witness.build_typed_transactions().enumerate() {
             cycle_tracker_start!("handle tx");
 
             dev_trace!("handle {idx}th tx");
 
-            let tx = tx
-                .try_build_typed_tx()
-                .map_err(|e| VerificationError::InvalidSignature {
-                    tx_hash: tx.tx_hash(),
-                    source: e,
-                })?;
+            let tx = tx.map_err(|e| VerificationError::InvalidSignature { idx, source: e })?;
+            let caller = tx
+                .get_or_recover_signer()
+                .map_err(|e| VerificationError::InvalidSignature { idx, source: e })?;
+            let rlp_bytes = tx.rlp();
+            tx_rlps.push(rlp_bytes.clone());
 
             dev_trace!("{tx:#?}");
             let mut env = env.clone();
             env.tx = TxEnv {
-                caller: tx.get_or_recover_signer().map_err(|e| {
-                    VerificationError::InvalidSignature {
-                        tx_hash: *tx.tx_hash(),
-                        source: e,
-                    }
-                })?,
+                caller,
                 gas_limit: tx.gas_limit(),
                 gas_price: tx
-                    .effective_gas_price(l2_trace.base_fee_per_gas().unwrap_or_default().to())
+                    .effective_gas_price(header.base_fee_per_gas().unwrap_or_default())
                     .map(U256::from)
                     .ok_or_else(|| VerificationError::InvalidGasPrice {
                         tx_hash: *tx.tx_hash(),
                     })?,
                 transact_to: tx.kind(),
                 value: tx.value(),
-                data: tx.data(),
-                nonce: if !tx.is_l1_msg() {
-                    Some(tx.nonce())
-                } else {
-                    None
-                },
+                data: tx.input(),
+                nonce: tx.nonce(),
                 chain_id: tx.chain_id(),
                 access_list: tx.access_list().cloned().unwrap_or_default().0,
                 gas_priority_fee: tx.max_priority_fee_per_gas().map(U256::from),
-                ..Default::default()
+                blob_hashes: tx
+                    .blob_versioned_hashes()
+                    .map(|hashes| hashes.to_vec())
+                    .unwrap_or_default(),
+                max_fee_per_blob_gas: tx.max_fee_per_blob_gas().map(U256::from),
+                authorization_list: tx.authorization_list().map(|auths| auths.to_vec().into()),
+                #[cfg(feature = "scroll")]
+                scroll: revm::primitives::ScrollFields {
+                    is_l1_msg: tx.is_l1_msg(),
+                    rlp_bytes: Some(rlp_bytes),
+                },
             };
 
+            #[cfg(feature = "scroll")]
             if tx.is_l1_msg() {
                 env.cfg.disable_base_fee = true; // disable base fee for l1 msg
             }
-            env.tx.scroll.is_l1_msg = tx.is_l1_msg();
-            let rlp_bytes = tx.rlp();
-            tx_rlps.push(rlp_bytes.clone());
-            env.tx.scroll.rlp_bytes = Some(rlp_bytes);
 
             dev_trace!("{env:#?}");
+
             {
                 let mut revm = cycle_track!(
                     revm::Evm::builder()
@@ -182,20 +177,16 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkD
     }
 
     /// Commit pending changes in cache db to zktrie
-    pub fn commit_changes(&mut self) -> Result<B256, DatabaseError> {
+    pub fn commit_changes(self) -> B256 {
         measure_duration_millis!(
             commit_changes_duration_milliseconds,
             cycle_track!(self.commit_changes_inner(), "commit_changes")
         )
     }
 
-    fn commit_changes_inner(&mut self) -> Result<B256, DatabaseError> {
-        let mut zktrie = ZkTrie::<Poseidon>::new_with_root(
-            self.db.db.zktrie_db,
-            NoCacheHasher,
-            self.db.db.committed_zktrie_root(),
-        )
-        .expect("infallible");
+    fn commit_changes_inner(mut self) -> B256 {
+        let provider = &self.db.db.nodes_provider;
+        let state = &mut self.db.db.state;
 
         #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
         let mut debug_recorder = sbv_utils::DebugRecorder::new(
@@ -215,20 +206,14 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkD
                 continue;
             }
             if let Some(ref code) = info.code {
-                self.db
-                    .db
-                    .code_db
-                    .or_put(info.code_hash.as_slice(), code.original_byte_slice())
-                    .unwrap();
+                self.db.db.code_db.or_insert_with(info.code_hash, || {
+                    Bytes::copy_from_slice(code.original_byte_slice())
+                });
+
                 debug_assert_eq!(
                     info.code_hash,
                     code.hash_slow(),
                     "code hash mismatch for account {addr:?}",
-                );
-                assert_eq!(
-                    info.code_size,
-                    code.original_bytes().len(),
-                    "code size mismatch for account {addr:?}",
                 );
                 #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
                 debug_recorder.record_code(info.code_hash, code.bytecode().as_ref());
@@ -237,96 +222,60 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkD
             dev_trace!("committing {addr}, {:?} {db_acc:?}", db_acc.account_state);
             cycle_tracker_start!("commit account");
 
-            let mut storage_root = self.db.db.prev_storage_root(addr);
-
-            if !db_acc.storage.is_empty() {
-                // get current storage root
-                let storage_root_before = storage_root;
-                // get storage tire
+            let storage_root = if !db_acc.storage.is_empty() {
                 cycle_tracker_start!("update storage_tire");
-                let mut storage_trie = cycle_track!(
-                    ZkTrie::<Poseidon>::new_with_root(
-                        self.db.db.zktrie_db,
-                        NoCacheHasher,
-                        storage_root_before,
-                    ),
-                    "Zktrie::new_with_root"
-                )
-                .expect("unable to get storage trie");
                 for (key, value) in db_acc.storage.iter() {
-                    if !value.is_zero() {
-                        measure_duration_micros!(
-                            zktrie_update_duration_microseconds,
-                            cycle_track!(
-                                storage_trie
-                                    .update(self.db.db.zktrie_db, key.to_be_bytes::<32>(), value)
-                                    .map_err(DatabaseError::zk_trie)?,
-                                "Zktrie::update_store"
-                            )
-                        );
-                    } else {
-                        measure_duration_micros!(
-                            zktrie_delete_duration_microseconds,
-                            cycle_track!(
-                                storage_trie
-                                    .delete(self.db.db.zktrie_db, key.to_be_bytes::<32>())
-                                    .map_err(DatabaseError::zk_trie)?,
-                                "Zktrie::delete"
-                            )
-                        );
-                    }
+                    measure_duration_micros!(
+                        zktrie_update_duration_microseconds,
+                        cycle_track!(
+                            state.update_storage(provider, *addr, *key, *value),
+                            "Zktrie::update_store"
+                        )
+                    );
 
                     #[cfg(feature = "debug-storage")]
                     debug_recorder.record_storage(*addr, *key, *value);
                 }
 
-                measure_duration_micros!(
+                let storage_root = measure_duration_micros!(
                     zktrie_commit_duration_microseconds,
-                    cycle_track!(
-                        storage_trie
-                            .commit(self.db.db.zktrie_db)
-                            .map_err(DatabaseError::zk_trie)?,
-                        "Zktrie::commit"
-                    )
+                    cycle_track!(state.commit_storage(provider, *addr), "Zktrie::commit")
                 );
 
                 cycle_tracker_end!("update storage_tire");
-                storage_root = *storage_trie.root().unwrap_ref();
-
-                self.db.db.update_storage_root_cache(*addr, storage_trie);
 
                 #[cfg(feature = "debug-storage")]
                 debug_recorder.record_storage_root(*addr, storage_root);
-            }
+
+                storage_root
+            } else {
+                state.storage_root(*addr)
+            };
+
             if !info.is_empty() {
                 // if account not exist, all fields will be zero.
                 // but if account exist, code_hash will be empty hash if code is empty
                 if info.is_empty_code_hash() {
-                    info.code_hash = KECCAK_EMPTY.0.into();
-                    info.poseidon_code_hash = POSEIDON_EMPTY.0.into();
-                } else {
-                    assert_ne!(
-                        info.poseidon_code_hash,
-                        B256::ZERO,
-                        "revm didn't update poseidon_code_hash, revm: {info:?}",
-                    );
+                    info.code_hash = KECCAK_EMPTY;
                 }
             } else {
                 info.code_hash = B256::ZERO;
-                info.poseidon_code_hash = B256::ZERO;
             }
 
             #[cfg(feature = "debug-account")]
             debug_recorder.record_account(*addr, info.clone(), storage_root);
 
-            let acc_data = Account::from_revm_account_with_storage_root(info, storage_root);
-            dev_trace!("committing account {addr}: {acc_data:?}");
+            let trie_account = TrieAccount {
+                nonce: info.nonce,
+                balance: info.balance,
+                storage_root,
+                code_hash: info.code_hash,
+            };
+            dev_trace!("committing account {addr}: {trie_account:?}");
             measure_duration_micros!(
                 zktrie_update_duration_microseconds,
                 cycle_track!(
-                    zktrie
-                        .update(self.db.db.zktrie_db, addr, acc_data)
-                        .expect("failed to update account"),
+                    state.update_account(*addr, trie_account),
                     "Zktrie::update_account"
                 )
             );
@@ -336,29 +285,7 @@ impl<CodeDb: KVDatabase, ZkDb: KVDatabase + 'static> EvmExecutor<'_, CodeDb, ZkD
 
         measure_duration_micros!(
             zktrie_commit_duration_microseconds,
-            cycle_track!(
-                zktrie
-                    .commit(self.db.db.zktrie_db)
-                    .map_err(DatabaseError::zk_trie)?,
-                "Zktrie::commit"
-            )
-        );
-
-        let root_after = *zktrie.root().unwrap_ref();
-
-        self.db.db.updated_committed_zktrie_root(root_after);
-
-        self.db.accounts.clear();
-        self.db.contracts.clear();
-        self.db.block_hashes.clear();
-        self.db.logs.clear();
-
-        Ok(B256::from(root_after))
-    }
-}
-
-impl<CodeDb, ZkDb> Debug for EvmExecutor<'_, CodeDb, ZkDb> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("EvmExecutor").field("db", &self.db).finish()
+            cycle_track!(state.commit_state(), "Zktrie::commit")
+        )
     }
 }
