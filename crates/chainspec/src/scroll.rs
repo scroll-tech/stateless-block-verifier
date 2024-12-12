@@ -63,7 +63,7 @@ hardfork!(
         Curie,
         /// Euclid update introduces:
         ///   - Support `p256_verify` precompile.
-        Eculid,
+        Euclid,
         /// Cancun.
         Cancun,
         /// Prague: <https://github.com/ethereum/execution-specs/blob/master/network-upgrades/mainnet-upgrades/prague.md>
