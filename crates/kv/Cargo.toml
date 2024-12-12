@@ -14,8 +14,10 @@ workspace = true
 [dependencies]
 auto_impl.workspace = true
 alloy-trie = { workspace = true, optional = true }
+revm-primitives = { workspace = true, optional = true }
 sled = { workspace = true, optional = true }
 
 [features]
 alloy-trie = ["dep:alloy-trie"]
+revm-primitives = ["dep:revm-primitives"]
 sled = ["dep:sled"]

@@ -30,6 +30,8 @@ pub trait Value: ToOwned<Owned = Self> {
 pub trait KeyValueStoreInsert<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> {
     /// Insert key-value pair
     fn insert(&mut self, k: K, v: V);
+    /// Insert key-value pair if key does not exist
+    fn or_insert_with<F: FnOnce() -> V>(&mut self, k: K, default: F);
 }
 
 /// Key-Value store trait
