@@ -1,10 +1,13 @@
 //! The spec of an Ethereum network
-use alloy_chains::{Chain, NamedChain};
-use reth_chainspec::{ChainSpec, ChainSpecProvider};
 use sbv_primitives::BlockHeader;
 use std::sync::Arc;
 
+pub use alloy_chains::{Chain, NamedChain};
+pub use reth_chainspec::{ChainSpec, ChainSpecProvider};
+pub use reth_ethereum_forks::Head;
+
 /// scroll chain spec
+#[cfg(feature = "scroll")]
 pub mod scroll;
 
 /// The name of an Ethereum hardfork.
@@ -57,10 +60,7 @@ pub use reth_evm_ethereum::revm_spec;
 
 /// Map the latest active hardfork at the given block to a revm [`SpecId`](revm_primitives::SpecId).
 #[cfg(feature = "scroll")]
-pub fn revm_spec(
-    chain_spec: &ChainSpec,
-    block: &reth_ethereum_forks::Head,
-) -> revm::primitives::SpecId {
+pub fn revm_spec(chain_spec: &ChainSpec, block: &Head) -> revm::primitives::SpecId {
     use revm::primitives::SpecId::*;
 
     if chain_spec

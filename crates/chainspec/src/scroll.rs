@@ -323,6 +323,7 @@ impl ScrollHardfork {
     // }
 }
 
+// FIXME: curie block
 // fn curie_migrate(
 //     db: &dyn DatabaseRef<Error = Infallible>,
 // ) -> revm::primitives::HashMap<Address, Account> {
