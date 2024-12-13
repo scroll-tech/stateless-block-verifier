@@ -70,7 +70,7 @@ impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256
         let Some(account) = self.state.get_account(address) else {
             return Ok(None);
         };
-        dev_trace!("load trie account of {:?}", address);
+        dev_trace!("load trie account of {address:?}: {account:?}");
 
         let info = AccountInfo {
             balance: account.balance,
