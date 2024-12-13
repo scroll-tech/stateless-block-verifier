@@ -49,7 +49,7 @@ impl<
         )?;
 
         #[cfg(feature = "metrics")]
-        sbv_utils::metrics::REGISTRY.block_counter.inc();
+        sbv_helpers::metrics::REGISTRY.block_counter.inc();
 
         Ok(gas_used)
     }
@@ -188,7 +188,7 @@ impl<
         let state = &mut self.db.db.state;
 
         #[cfg(any(feature = "debug-account", feature = "debug-storage"))]
-        let mut debug_recorder = sbv_utils::DebugRecorder::new(
+        let mut debug_recorder = sbv_helpers::DebugRecorder::new(
             std::any::type_name_of_val(&self),
             self.db.db.committed_zktrie_root(),
         );

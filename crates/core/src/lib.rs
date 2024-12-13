@@ -1,7 +1,7 @@
 //! Stateless Block Verifier core library.
 
 #[macro_use]
-extern crate sbv_utils;
+extern crate sbv_helpers;
 extern crate core;
 
 #[cfg(feature = "scroll")]

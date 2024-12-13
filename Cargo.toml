@@ -7,7 +7,7 @@ members = [
     "crates/primitives",
     "crates/sbv",
     "crates/trie",
-    "crates/utils",
+    "crates/helpers",
 ]
 resolver = "2"
 
@@ -87,7 +87,7 @@ sbv-core = { path = "crates/core" }
 sbv-kv = { path = "crates/kv" }
 sbv-primitives = { path = "crates/primitives" }
 sbv-trie = { path = "crates/trie" }
-sbv-utils = { path = "crates/utils" }
+sbv-helpers = { path = "crates/helpers" }
 
 [workspace.dependencies.revm]
 git = "https://github.com/scroll-tech/revm"

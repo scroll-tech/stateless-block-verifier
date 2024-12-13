@@ -26,13 +26,13 @@ alloy-primitives.workspace = true
 
 rkyv.workspace = true
 
-sbv-utils.workspace = true
+sbv-helpers.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
 
 [features]
 scroll = []
-dev = ["sbv-utils/dev"]
+dev = ["sbv-helpers/dev"]
 sp1 = []
 cycle-tracker = []

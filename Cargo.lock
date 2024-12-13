@@ -4205,9 +4205,12 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 name = "sbv"
 version = "2.0.0"
 dependencies = [
+ "sbv-chainspec",
  "sbv-core",
+ "sbv-helpers",
+ "sbv-kv",
  "sbv-primitives",
- "sbv-utils",
+ "sbv-trie",
 ]
 
 [[package]]
@@ -4230,16 +4233,34 @@ dependencies = [
  "ctor",
  "revm",
  "sbv-chainspec",
+ "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",
  "sbv-trie",
- "sbv-utils",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
  "tiny-keccak",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "sbv-helpers"
+version = "2.0.0"
+dependencies = [
+ "csv",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "once_cell",
+ "prometheus-client",
+ "rand",
+ "reqwest",
+ "revm",
+ "serde",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -4264,7 +4285,7 @@ dependencies = [
  "alloy-rpc-types-eth",
  "auto_impl",
  "rkyv",
- "sbv-utils",
+ "sbv-helpers",
  "serde_json",
 ]
 
@@ -4280,24 +4301,6 @@ dependencies = [
  "sbv-kv",
  "sbv-primitives",
  "serde_json",
-]
-
-[[package]]
-name = "sbv-utils"
-version = "2.0.0"
-dependencies = [
- "csv",
- "http-body-util",
- "hyper",
- "hyper-util",
- "once_cell",
- "prometheus-client",
- "rand",
- "reqwest",
- "revm",
- "serde",
- "tokio",
- "tracing",
 ]
 
 [[package]]
