@@ -8,6 +8,7 @@ use sbv_kv::KeyValueStore;
 use sbv_primitives::{BlockHeader, BlockWitness, B256, U256};
 use sbv_trie::{TrieAccount, TrieNode};
 use std::fmt::Debug;
+use std::sync::Arc;
 
 mod builder;
 pub use builder::EvmExecutorBuilder;
@@ -15,7 +16,7 @@ pub use builder::EvmExecutorBuilder;
 /// EVM executor that handles the block.
 #[derive(Debug)]
 pub struct EvmExecutor<CodeDb, NodesProvider, Witness> {
-    chain_spec: ChainSpec,
+    chain_spec: Arc<ChainSpec>,
     db: CacheDB<EvmDatabase<CodeDb, NodesProvider>>,
     witness: Witness,
 }

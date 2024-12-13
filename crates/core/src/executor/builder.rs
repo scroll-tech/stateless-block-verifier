@@ -4,8 +4,9 @@ use sbv_chainspec::ChainSpec;
 use sbv_kv::KeyValueStore;
 use sbv_primitives::alloy_primitives::Bytes;
 use sbv_primitives::{keccak256, BlockWitness, B256};
-use sbv_trie::TrieNode;
+use sbv_trie::{decode_nodes, TrieNode};
 use std::fmt::{self, Debug};
+use std::sync::Arc;
 
 /// Builder for EVM executor.
 pub struct EvmExecutorBuilder<Spec, CodeDb, NodesProvider, Witness> {
@@ -88,30 +89,32 @@ impl<Spec, CodeDb, NodesProvider, Witness>
 }
 
 impl<
+        Spec: Into<Arc<ChainSpec>>,
         CodeDb: KeyValueStore<B256, Bytes>,
         NodesProvider: KeyValueStore<B256, TrieNode>,
         Witness: BlockWitness,
-    > EvmExecutorBuilder<ChainSpec, CodeDb, NodesProvider, Witness>
+    > EvmExecutorBuilder<Spec, CodeDb, NodesProvider, Witness>
 {
     /// Initialize an EVM executor from a block trace as the initial state.
-    pub fn build(mut self, root: B256) -> EvmExecutor<CodeDb, NodesProvider, Witness> {
+    pub fn build(mut self) -> EvmExecutor<CodeDb, NodesProvider, Witness> {
         for code in self.witness.codes_iter() {
             let code = code.as_ref();
             let code_hash = keccak256(code);
             self.code_db.insert(code_hash, Bytes::copy_from_slice(code))
         }
+        decode_nodes(&mut self.nodes_provider, self.witness.states_iter()).unwrap();
 
         let db = cycle_track!(
             CacheDB::new(EvmDatabase::new_from_root(
                 self.code_db,
-                root,
+                self.witness.pre_state_root(),
                 self.nodes_provider
             )),
             "build ReadOnlyDB"
         );
 
         EvmExecutor {
-            chain_spec: self.chain_spec,
+            chain_spec: self.chain_spec.into(),
             db,
             witness: self.witness,
         }
