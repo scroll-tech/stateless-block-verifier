@@ -1,7 +1,18 @@
 use alloy_primitives::{BlockHash, B256, U256};
 
 /// Block header representation.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
+#[derive(
+    Clone,
+    Debug,
+    Hash,
+    PartialEq,
+    Eq,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BlockHeader {
     /// Hash of the block

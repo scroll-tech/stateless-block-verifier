@@ -25,6 +25,7 @@ alloy-rlp.workspace = true
 alloy-primitives.workspace = true
 
 rkyv.workspace = true
+serde = { workspace = true, features = ["derive"] }
 
 sbv-helpers.workspace = true
 

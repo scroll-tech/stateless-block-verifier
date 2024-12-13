@@ -3,11 +3,12 @@ members = [
     "crates/bin",
     "crates/chainspec",
     "crates/core",
+    "crates/helpers",
     "crates/kv",
     "crates/primitives",
     "crates/sbv",
     "crates/trie",
-    "crates/helpers",
+    "crates/utils",
 ]
 resolver = "2"
 

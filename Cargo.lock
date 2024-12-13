@@ -4286,6 +4286,7 @@ dependencies = [
  "auto_impl",
  "rkyv",
  "sbv-helpers",
+ "serde",
  "serde_json",
 ]
 
@@ -4301,6 +4302,18 @@ dependencies = [
  "sbv-kv",
  "sbv-primitives",
  "serde_json",
+]
+
+[[package]]
+name = "sbv-utils"
+version = "2.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "sbv",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

@@ -3,7 +3,17 @@ use alloy_primitives::{Address, B256};
 /// A list of addresses and storage keys that the transaction plans to access.
 /// Accesses outside the list are possible, but become more expensive.
 #[derive(
-    Clone, Debug, Default, PartialEq, Eq, Hash, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+    Clone,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    Hash,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct AccessListItem {
@@ -17,7 +27,17 @@ pub struct AccessListItem {
 
 /// AccessList as defined in EIP-2930
 #[derive(
-    Clone, Debug, Default, PartialEq, Eq, Hash, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+    Clone,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    Hash,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct AccessList(pub Vec<AccessListItem>);

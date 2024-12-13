@@ -10,7 +10,16 @@ use alloy_primitives::{Address, Bytes, ChainId, SignatureError, TxHash, TxKind, 
 
 /// Transaction object used in RPC
 #[derive(
-    Clone, Debug, Default, PartialEq, Eq, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+    Clone,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct Transaction {

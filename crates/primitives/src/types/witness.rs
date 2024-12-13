@@ -4,7 +4,17 @@ use alloy_rpc_types_debug::ExecutionWitness;
 use alloy_rpc_types_eth::Block;
 
 /// Witness for a block.
-#[derive(Clone, Debug, PartialEq, Eq, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 #[rkyv(derive(Debug, PartialEq, Eq))]
 pub struct BlockWitness {
     /// Block header representation.

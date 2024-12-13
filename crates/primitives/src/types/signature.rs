@@ -2,7 +2,17 @@ use alloy_primitives::{PrimitiveSignature, U256};
 
 /// An Ethereum ECDSA signature.
 #[derive(
-    Copy, Clone, Debug, Default, PartialEq, Eq, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize,
+    Copy,
+    Clone,
+    Debug,
+    Default,
+    PartialEq,
+    Eq,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    serde::Serialize,
+    serde::Deserialize,
 )]
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct Signature {
