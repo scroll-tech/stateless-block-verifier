@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 
 #[derive(Args)]
 pub struct CreateWitnessCommand {
+    #[arg(long, help = "Chain id")]
+    chain_id: u64,
     #[arg(long, help = "Path to file rpc result of `eth_getBlockBy*`")]
     prev_block: PathBuf,
     #[arg(long, help = "Path to file rpc result of `eth_getBlockBy*`")]
@@ -34,12 +36,19 @@ impl CreateWitnessCommand {
         let witness: ExecutionWitness = deserialize(&self.witness)?;
 
         let witness = BlockWitness {
+            chain_id: self.chain_id,
             header: BlockHeader::from(block.header),
             pre_state_root: prev_block.header.state_root,
             transaction: block
                 .transactions
                 .into_transactions()
                 .map(Transaction::from_alloy)
+                .collect(),
+            withdrawals: block
+                .withdrawals
+                .unwrap_or_default()
+                .iter()
+                .map(From::from)
                 .collect(),
             states: witness.state.into_values().collect(),
             codes: witness.codes.into_values().collect(),
