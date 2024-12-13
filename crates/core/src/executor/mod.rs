@@ -5,13 +5,14 @@ use revm::{
 };
 use sbv_chainspec::{revm_spec, ChainSpec, Head};
 use sbv_kv::KeyValueStore;
-use sbv_primitives::{BlockHeader, BlockWitness, B256, U256};
+use sbv_primitives::{BlockHeader, BlockWitness, Withdrawal, B256, U256};
 use sbv_trie::{TrieAccount, TrieNode};
 use std::fmt::Debug;
 use std::sync::Arc;
 
 mod builder;
 pub use builder::EvmExecutorBuilder;
+use sbv_primitives::alloy_consensus::constants::GWEI_TO_WEI;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
@@ -79,7 +80,7 @@ impl<
         env.cfg.chain_id = self.chain_spec.chain.id();
         env.block = BlockEnv {
             number: U256::from_limbs([block_number, 0, 0, 0]),
-            coinbase: self.chain_spec.genesis.coinbase,
+            coinbase: header.beneficiary(),
             timestamp: U256::from_limbs([header.timestamp(), 0, 0, 0]),
             gas_limit: U256::from_limbs([header.gas_limit(), 0, 0, 0]),
             basefee: U256::from_limbs([header.base_fee_per_gas().unwrap_or_default(), 0, 0, 0]),
@@ -281,6 +282,16 @@ impl<
             );
 
             cycle_tracker_end!("commit account");
+        }
+
+        // handle withdrawals
+        for withdrawal in self.witness.withdrawals_iter() {
+            let addr = withdrawal.address();
+            let amount = withdrawal.amount();
+            let mut account = *state.get_account(addr).expect("account not found");
+            account.balance += U256::from(amount) * U256::from(GWEI_TO_WEI);
+            dev_trace!("committing account {addr}: {account:?}");
+            state.update_account(addr, account);
         }
 
         measure_duration_micros!(
