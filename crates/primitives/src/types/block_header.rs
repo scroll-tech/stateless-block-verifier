@@ -25,27 +25,13 @@ pub struct BlockHeader {
     /// Timestamp
     #[rkyv(attr(doc = "Timestamp"))]
     pub timestamp: u64,
-    /// Mix Hash
-    ///
-    /// Before the merge this proves, combined with the nonce, that a sufficient amount of
-    /// computation has been carried out on this block: the Proof-of-Work (PoF).
-    ///
-    /// After the merge this is `prevRandao`: Randomness value for the generated payload.
-    ///
-    /// This is an Option because it is not always set by non-ethereum networks.
-    ///
-    /// See also <https://eips.ethereum.org/EIPS/eip-4399>
-    #[rkyv(attr(doc = r#"Mix Hash
-
-Before the merge this proves, combined with the nonce, that a sufficient amount of
-computation has been carried out on this block: the Proof-of-Work (PoF).
-
-After the merge this is `prevRandao`: Randomness value for the generated payload.
-
-This is an Option because it is not always set by non-ethereum networks.
-
-See also <https://eips.ethereum.org/EIPS/eip-4399>"#))]
-    pub prevrandao: Option<B256>,
+    /// A 256-bit hash which, combined with the
+    /// nonce, proves that a sufficient amount of computation has been carried out on this block;
+    /// formally Hm.
+    #[rkyv(attr(doc = r#"A 256-bit hash which, combined with the
+nonce, proves that a sufficient amount of computation has been carried out on this block;
+formally Hm."#))]
+    pub prevrandao: B256,
     /// Base fee per unit of gas (if past London)
     #[rkyv(attr(doc = "Base fee per unit of gas (if past London)"))]
     pub base_fee_per_gas: Option<u64>,
@@ -54,6 +40,12 @@ See also <https://eips.ethereum.org/EIPS/eip-4399>"#))]
         doc = "Withdrawals root hash added by EIP-4895 and is ignored in legacy headers."
     ))]
     pub withdrawals_root: B256,
+    /// Blob gas used
+    #[rkyv(attr(doc = "Blob gas used"))]
+    pub blob_gas_used: Option<u64>,
+    /// Excess blob gas
+    #[rkyv(attr(doc = "Excess blob gas"))]
+    pub excess_blob_gas: Option<u64>,
 }
 
 impl From<alloy_rpc_types_eth::Header> for BlockHeader {
@@ -71,6 +63,8 @@ impl From<alloy_rpc_types_eth::Header> for BlockHeader {
             withdrawals_root: header
                 .withdrawals_root
                 .expect("legacy headers have no withdrawals"),
+            blob_gas_used: header.blob_gas_used,
+            excess_blob_gas: header.excess_blob_gas,
         }
     }
 }
@@ -104,7 +98,7 @@ impl crate::BlockHeader for BlockHeader {
         self.timestamp
     }
 
-    fn prevrandao(&self) -> Option<B256> {
+    fn prevrandao(&self) -> B256 {
         self.prevrandao
     }
 
@@ -114,6 +108,14 @@ impl crate::BlockHeader for BlockHeader {
 
     fn withdraw_root(&self) -> B256 {
         self.withdrawals_root
+    }
+
+    fn blob_gas_used(&self) -> Option<u64> {
+        self.blob_gas_used
+    }
+
+    fn excess_blob_gas(&self) -> Option<u64> {
+        self.excess_blob_gas
     }
 }
 
@@ -146,8 +148,8 @@ impl crate::BlockHeader for ArchivedBlockHeader {
         self.timestamp.to_native()
     }
 
-    fn prevrandao(&self) -> Option<B256> {
-        self.prevrandao.as_ref().map(|x| B256::from(*x))
+    fn prevrandao(&self) -> B256 {
+        B256::from(self.prevrandao)
     }
 
     fn base_fee_per_gas(&self) -> Option<u64> {
@@ -156,5 +158,13 @@ impl crate::BlockHeader for ArchivedBlockHeader {
 
     fn withdraw_root(&self) -> B256 {
         B256::from(self.withdrawals_root)
+    }
+
+    fn blob_gas_used(&self) -> Option<u64> {
+        self.blob_gas_used.as_ref().map(|x| x.to_native())
+    }
+
+    fn excess_blob_gas(&self) -> Option<u64> {
+        self.excess_blob_gas.as_ref().map(|x| x.to_native())
     }
 }

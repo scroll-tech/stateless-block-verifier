@@ -22,11 +22,11 @@ pub struct AccessListItem {
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct AccessList(pub Vec<AccessListItem>);
 
-impl From<alloy_eips::eip2930::AccessListItem> for AccessListItem {
-    fn from(item: alloy_eips::eip2930::AccessListItem) -> Self {
+impl From<&alloy_eips::eip2930::AccessListItem> for AccessListItem {
+    fn from(item: &alloy_eips::eip2930::AccessListItem) -> Self {
         Self {
             address: item.address,
-            storage_keys: item.storage_keys,
+            storage_keys: item.storage_keys.clone(),
         }
     }
 }
@@ -40,9 +40,9 @@ impl From<AccessListItem> for alloy_eips::eip2930::AccessListItem {
     }
 }
 
-impl From<alloy_eips::eip2930::AccessList> for AccessList {
-    fn from(list: alloy_eips::eip2930::AccessList) -> Self {
-        Self(list.0.into_iter().map(Into::into).collect())
+impl From<&alloy_eips::eip2930::AccessList> for AccessList {
+    fn from(list: &alloy_eips::eip2930::AccessList) -> Self {
+        Self(list.0.iter().map(Into::into).collect())
     }
 }
 

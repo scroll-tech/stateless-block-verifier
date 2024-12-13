@@ -1,8 +1,8 @@
 //! Stateless Block Verifier primitives library.
 
-extern crate core;
-
-use core::fmt;
+use crate::types::TypedTransaction;
+use auto_impl::auto_impl;
+use std::fmt;
 
 /// Predeployed contracts
 #[cfg(feature = "scroll")]
@@ -12,11 +12,13 @@ pub mod types;
 
 pub use alloy_consensus;
 
-use crate::types::TypedTransaction;
 pub use alloy_primitives;
-pub use alloy_primitives::{Address, BlockHash, B256, U256};
+pub use alloy_primitives::{
+    address, b256, keccak256, Address, BlockHash, BlockNumber, ChainId, B256, U256,
+};
 
 /// BlockHeader trait
+#[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockHeader: fmt::Debug {
     /// Hash of the block
     fn hash(&self) -> BlockHash;
@@ -43,19 +45,26 @@ pub trait BlockHeader: fmt::Debug {
     ///
     /// See also <https://eips.ethereum.org/EIPS/eip-4399>
     /// And <https://github.com/ethereum/execution-apis/issues/328>
-    fn prevrandao(&self) -> Option<B256>;
+    fn prevrandao(&self) -> B256;
     /// Base fee per unit of gas (if past London)
     fn base_fee_per_gas(&self) -> Option<u64>;
     /// Withdrawals root hash added by EIP-4895 and is ignored in legacy headers.
     fn withdraw_root(&self) -> B256;
+    /// Blob gas used
+    fn blob_gas_used(&self) -> Option<u64>;
+    /// Excess blob gas
+    fn excess_blob_gas(&self) -> Option<u64>;
 }
 
 /// BlockWitness trait
+#[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockWitness: fmt::Debug {
     /// Header
     fn header(&self) -> &impl BlockHeader;
     /// Pre-state root
     fn pre_state_root(&self) -> B256;
+    /// Number of transactions
+    fn num_transactions(&self) -> usize;
     /// Transactions
     fn build_typed_transactions(
         &self,
@@ -66,6 +75,7 @@ pub trait BlockWitness: fmt::Debug {
     fn codes_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
 }
 
+// FIXME
 // #[cfg(feature = "scroll")]
 // pub trait BlockScrollExt: Block {
 //     /// start l1 queue index

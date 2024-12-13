@@ -1,4 +1,4 @@
-use crate::Transaction;
+use alloy_consensus::Transaction;
 use alloy_eips::{eip2718::Encodable2718, eip2930::AccessList, eip7702::SignedAuthorization};
 use alloy_primitives::{Address, Bytes, ChainId, TxKind, B256, U256};
 use alloy_rlp::{BufMut, Encodable, Header};

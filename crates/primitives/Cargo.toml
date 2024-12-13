@@ -13,20 +13,18 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+auto_impl.workspace = true
+
 alloy-consensus = { workspace = true, features = ["k256"] }
 alloy-eips.workspace = true
 alloy-rpc-types-debug.workspace = true
 alloy-rpc-types-eth.workspace = true
-alloy-serde.workspace = true
 
 alloy-rlp.workspace = true
 
 alloy-primitives.workspace = true
 
 rkyv.workspace = true
-serde = { workspace = true, features = ["derive"] }
-serde_with.workspace = true
-tiny-keccak.workspace = true
 
 sbv-utils.workspace = true
 

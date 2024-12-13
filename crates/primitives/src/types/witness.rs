@@ -52,6 +52,9 @@ impl crate::BlockWitness for BlockWitness {
     fn pre_state_root(&self) -> B256 {
         self.pre_state_root
     }
+    fn num_transactions(&self) -> usize {
+        self.transaction.len()
+    }
     fn build_typed_transactions(
         &self,
     ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>> {
@@ -71,6 +74,9 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     }
     fn pre_state_root(&self) -> B256 {
         self.pre_state_root.into()
+    }
+    fn num_transactions(&self) -> usize {
+        self.transaction.len()
     }
     fn build_typed_transactions(
         &self,
