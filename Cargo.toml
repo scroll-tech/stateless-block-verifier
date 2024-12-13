@@ -28,7 +28,7 @@ alloy-eips = "0.8"
 alloy-consensus = "0.8"
 alloy-rpc-types-eth = "0.8"
 alloy-rpc-types-debug = "0.8"
-alloy-serde = "0.5"
+alloy-serde = "0.8"
 # https://github.com/alloy-rs/chains
 alloy-chains = "0.1"
 # https://github.com/alloy-rs/eips
@@ -62,6 +62,7 @@ tokio-retry = "0.3"
 serde = "1.0"
 serde_json = "1.0"
 serde_with = "3.9"
+serde_path_to_error = "0.1"
 sled = "0.34"
 tokio = { version = "1", default-features = false }
 url = "2.5"
