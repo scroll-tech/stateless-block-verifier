@@ -47,14 +47,7 @@ pub struct PartialStateTrie {
 impl PartialStateTrie {
     /// Open a partial trie from a root node
     pub fn open<P: KeyValueStoreGet<B256, TrieNode>>(nodes_provider: &P, root: B256) -> Self {
-        let state = PartialTrie::open(nodes_provider, root, |mut value| {
-            let account = TrieAccount::decode(&mut value).unwrap();
-            assert!(
-                value.is_empty(),
-                "the leaf should only contains the account"
-            );
-            account
-        });
+        let state = PartialTrie::open(nodes_provider, root, decode_trie_account);
 
         PartialStateTrie {
             state,
@@ -99,7 +92,7 @@ impl PartialStateTrie {
         self.storage_tries
             .borrow_mut()
             .entry(address)
-            .or_insert_with(|| PartialTrie::open(nodes_provider, storage_root, U256::from_be_slice))
+            .or_insert_with(|| PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp))
             .get(&path)
             .copied()
     }
@@ -124,9 +117,7 @@ impl PartialStateTrie {
             .storage_tries
             .get_mut()
             .entry(address)
-            .or_insert_with(|| {
-                PartialTrie::open(nodes_provider, storage_root, U256::from_be_slice)
-            });
+            .or_insert_with(|| PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp));
 
         if value.is_zero() {
             trie.remove_leaf(&path);
@@ -158,9 +149,7 @@ impl PartialStateTrie {
             .storage_tries
             .get_mut()
             .entry(address)
-            .or_insert_with(|| {
-                PartialTrie::open(nodes_provider, *storage_root, U256::from_be_slice)
-            });
+            .or_insert_with(|| PartialTrie::open(nodes_provider, *storage_root, decode_u256_rlp));
 
         *storage_root = trie.trie.root();
         *storage_root
@@ -290,6 +279,18 @@ fn traverse_import_partial_trie<
         .unwrap();
 
     trie_mask
+}
+
+fn decode_trie_account(mut buf: &[u8]) -> TrieAccount {
+    let acc = TrieAccount::decode(&mut buf).unwrap();
+    assert!(buf.is_empty(), "the leaf should only contains the account");
+    acc
+}
+
+fn decode_u256_rlp(mut buf: &[u8]) -> U256 {
+    let value = U256::decode(&mut buf).unwrap();
+    assert!(buf.is_empty(), "the leaf should only contains the value");
+    value
 }
 
 #[cfg(test)]
