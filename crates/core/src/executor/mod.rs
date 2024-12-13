@@ -1,5 +1,4 @@
 use crate::{database::EvmDatabase, error::VerificationError};
-use revm::primitives::{Authorization, SignedAuthorization};
 use revm::{
     db::{AccountState, CacheDB},
     primitives::{AccountInfo, BlobExcessGasAndPrice, BlockEnv, Bytes, Env, TxEnv, KECCAK_EMPTY},
@@ -84,7 +83,7 @@ impl<
             gas_limit: U256::from_limbs([header.gas_limit(), 0, 0, 0]),
             basefee: U256::from_limbs([header.base_fee_per_gas().unwrap_or_default(), 0, 0, 0]),
             difficulty: header.difficulty(),
-            prevrandao: header.prevrandao(),
+            prevrandao: Some(header.prevrandao()),
             blob_excess_gas_and_price: header.excess_blob_gas().map(BlobExcessGasAndPrice::new),
         };
 

@@ -36,7 +36,7 @@ impl<Spec, CodeDb, NodesProvider, Witness>
     EvmExecutorBuilder<Spec, CodeDb, NodesProvider, Witness>
 {
     /// Create a new EVM executor builder.
-    fn new() -> EvmExecutorBuilder<(), (), (), ()> {
+    pub fn new() -> EvmExecutorBuilder<(), (), (), ()> {
         EvmExecutorBuilder::default()
     }
 

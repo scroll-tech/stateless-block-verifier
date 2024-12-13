@@ -1,5 +1,4 @@
 //! The spec of an Ethereum network
-use sbv_primitives::BlockHeader;
 use std::sync::Arc;
 
 pub use alloy_chains::{Chain, NamedChain};
