@@ -1,4 +1,4 @@
-use alloy_primitives::{BlockHash, B256, U256};
+use alloy_primitives::{Address, BlockHash, B256, U256};
 
 /// Block header representation.
 #[derive(
@@ -15,6 +15,13 @@ use alloy_primitives::{BlockHash, B256, U256};
 )]
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct BlockHeader {
+    /// The 160-bit address to which all fees collected from the successful mining of this block
+    /// be transferred; formally Hc.
+    #[rkyv(attr(
+        doc = "The 160-bit address to which all fees collected from the successful mining of this block be transferred; formally Hc."
+    ))]
+    #[serde(rename = "miner", alias = "beneficiary")]
+    pub beneficiary: Address,
     /// Hash of the block
     #[rkyv(attr(doc = "Hash of the block"))]
     pub hash: BlockHash,
@@ -26,15 +33,19 @@ pub struct BlockHeader {
     pub difficulty: U256,
     /// Block number
     #[rkyv(attr(doc = "Block number"))]
+    #[serde(with = "alloy_serde::quantity")]
     pub number: u64,
     /// Gas Limit
     #[rkyv(attr(doc = "Gas Limit"))]
+    #[serde(with = "alloy_serde::quantity")]
     pub gas_limit: u64,
     /// Gas Used
     #[rkyv(attr(doc = "Gas Used"))]
+    #[serde(with = "alloy_serde::quantity")]
     pub gas_used: u64,
     /// Timestamp
     #[rkyv(attr(doc = "Timestamp"))]
+    #[serde(with = "alloy_serde::quantity")]
     pub timestamp: u64,
     /// A 256-bit hash which, combined with the
     /// nonce, proves that a sufficient amount of computation has been carried out on this block;
@@ -45,6 +56,11 @@ formally Hm."#))]
     pub prevrandao: B256,
     /// Base fee per unit of gas (if past London)
     #[rkyv(attr(doc = "Base fee per unit of gas (if past London)"))]
+    #[serde(
+        default,
+        with = "alloy_serde::quantity::opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub base_fee_per_gas: Option<u64>,
     /// Withdrawals root hash added by EIP-4895 and is ignored in legacy headers.
     #[rkyv(attr(
@@ -53,15 +69,26 @@ formally Hm."#))]
     pub withdrawals_root: B256,
     /// Blob gas used
     #[rkyv(attr(doc = "Blob gas used"))]
+    #[serde(
+        default,
+        with = "alloy_serde::quantity::opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub blob_gas_used: Option<u64>,
     /// Excess blob gas
     #[rkyv(attr(doc = "Excess blob gas"))]
+    #[serde(
+        default,
+        with = "alloy_serde::quantity::opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub excess_blob_gas: Option<u64>,
 }
 
 impl From<alloy_rpc_types_eth::Header> for BlockHeader {
     fn from(header: alloy_rpc_types_eth::Header) -> Self {
         Self {
+            beneficiary: header.beneficiary,
             hash: header.hash,
             state_root: header.state_root,
             difficulty: header.difficulty,
@@ -81,6 +108,9 @@ impl From<alloy_rpc_types_eth::Header> for BlockHeader {
 }
 
 impl crate::BlockHeader for BlockHeader {
+    fn beneficiary(&self) -> Address {
+        self.beneficiary
+    }
     fn hash(&self) -> BlockHash {
         self.hash
     }
@@ -131,6 +161,9 @@ impl crate::BlockHeader for BlockHeader {
 }
 
 impl crate::BlockHeader for ArchivedBlockHeader {
+    fn beneficiary(&self) -> Address {
+        self.beneficiary.into()
+    }
     fn hash(&self) -> BlockHash {
         B256::from(self.hash)
     }

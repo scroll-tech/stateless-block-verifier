@@ -14,12 +14,14 @@ pub use alloy_consensus;
 
 pub use alloy_primitives;
 pub use alloy_primitives::{
-    address, b256, keccak256, Address, BlockHash, BlockNumber, ChainId, B256, U256,
+    address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
 };
 
 /// BlockHeader trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockHeader: fmt::Debug {
+    /// Beneficiary
+    fn beneficiary(&self) -> Address;
     /// Hash of the block
     fn hash(&self) -> BlockHash;
     /// State root hash
@@ -59,6 +61,8 @@ pub trait BlockHeader: fmt::Debug {
 /// BlockWitness trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockWitness: fmt::Debug {
+    /// Chain id
+    fn chain_id(&self) -> ChainId;
     /// Header
     fn header(&self) -> &impl BlockHeader;
     /// Pre-state root
@@ -69,12 +73,22 @@ pub trait BlockWitness: fmt::Debug {
     fn build_typed_transactions(
         &self,
     ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>>;
+    /// Withdrawals
+    fn withdrawals_iter(&self) -> impl Iterator<Item = impl Withdrawal>;
     /// States
     fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
     /// Codes
     fn codes_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
 }
 
+/// Withdrawal trait
+#[auto_impl(&, &mut, Box, Rc, Arc)]
+pub trait Withdrawal: fmt::Debug {
+    /// Target address for withdrawn ether.
+    fn address(&self) -> Address;
+    /// Value of the withdrawal in gwei.
+    fn amount(&self) -> u64;
+}
 // FIXME
 // #[cfg(feature = "scroll")]
 // pub trait BlockScrollExt: Block {

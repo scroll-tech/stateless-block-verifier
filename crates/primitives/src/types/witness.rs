@@ -1,5 +1,5 @@
-use crate::types::{BlockHeader, Transaction, TypedTransaction};
-use alloy_primitives::{Bytes, B256};
+use crate::types::{BlockHeader, Transaction, TypedTransaction, Withdrawal};
+use alloy_primitives::{Bytes, ChainId, B256};
 use alloy_rpc_types_debug::ExecutionWitness;
 use alloy_rpc_types_eth::Block;
 
@@ -17,6 +17,9 @@ use alloy_rpc_types_eth::Block;
 )]
 #[rkyv(derive(Debug, PartialEq, Eq))]
 pub struct BlockWitness {
+    /// Chain id
+    #[rkyv(attr(doc = "Chain id"))]
+    pub chain_id: ChainId,
     /// Block header representation.
     #[rkyv(attr(doc = "Block header representation"))]
     pub header: BlockHeader,
@@ -26,6 +29,9 @@ pub struct BlockWitness {
     /// Transactions in the block.
     #[rkyv(attr(doc = "Transactions in the block"))]
     pub transaction: Vec<Transaction>,
+    /// Withdrawals in the block.
+    #[rkyv(attr(doc = "Withdrawals in the block"))]
+    pub withdrawals: Vec<Withdrawal>,
     /// Rlp encoded state trie nodes.
     #[rkyv(attr(doc = "Rlp encoded state trie nodes"))]
     pub states: Vec<Bytes>,
@@ -36,18 +42,31 @@ pub struct BlockWitness {
 
 impl BlockWitness {
     /// Creates a new block witness from a block, pre-state root, execution witness.
-    pub fn new_from_block(block: Block, pre_state_root: B256, witness: ExecutionWitness) -> Self {
+    pub fn new_from_block(
+        chain_id: ChainId,
+        block: Block,
+        pre_state_root: B256,
+        witness: ExecutionWitness,
+    ) -> Self {
         let header = BlockHeader::from(block.header);
         let transaction = block
             .transactions
             .into_transactions()
             .map(|tx| Transaction::from_alloy(tx))
             .collect();
+        let withdrawals = block
+            .withdrawals
+            .unwrap_or_default()
+            .iter()
+            .map(Withdrawal::from)
+            .collect();
         let states = witness.state.into_values().collect();
         let codes = witness.codes.into_values().collect();
         Self {
+            chain_id,
             header,
             transaction,
+            withdrawals,
             pre_state_root,
             states,
             codes,
@@ -56,6 +75,9 @@ impl BlockWitness {
 }
 
 impl crate::BlockWitness for BlockWitness {
+    fn chain_id(&self) -> ChainId {
+        self.chain_id
+    }
     fn header(&self) -> &impl crate::BlockHeader {
         &self.header
     }
@@ -70,6 +92,9 @@ impl crate::BlockWitness for BlockWitness {
     ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>> {
         self.transaction.iter().map(|tx| tx.try_into())
     }
+    fn withdrawals_iter(&self) -> impl Iterator<Item = impl crate::Withdrawal> {
+        self.withdrawals.iter()
+    }
     fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>> {
         self.states.iter().map(|s| s.as_ref())
     }
@@ -79,6 +104,9 @@ impl crate::BlockWitness for BlockWitness {
 }
 
 impl crate::BlockWitness for ArchivedBlockWitness {
+    fn chain_id(&self) -> ChainId {
+        self.chain_id.to_native()
+    }
     fn header(&self) -> &impl crate::BlockHeader {
         &self.header
     }
@@ -92,6 +120,9 @@ impl crate::BlockWitness for ArchivedBlockWitness {
         &self,
     ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>> {
         self.transaction.iter().map(|tx| tx.try_into())
+    }
+    fn withdrawals_iter(&self) -> impl Iterator<Item = impl crate::Withdrawal> {
+        self.withdrawals.iter()
     }
     fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>> {
         self.states.iter().map(|s| s.as_ref())

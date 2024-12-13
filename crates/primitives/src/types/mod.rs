@@ -7,6 +7,7 @@ mod access_list;
 mod block_header;
 mod signature;
 mod transaction;
+mod withdrawal;
 mod witness;
 
 pub use access_list::{AccessList, AccessListItem, ArchivedAccessList, ArchivedAccessListItem};
@@ -15,6 +16,7 @@ pub use alloy_rpc_types_eth::Block as RpcBlock;
 pub use block_header::{ArchivedBlockHeader, BlockHeader};
 pub use signature::{ArchivedSignature, Signature};
 pub use transaction::{ArchivedTransaction, Transaction, TypedTransaction};
+pub use withdrawal::{ArchivedWithdrawal, Withdrawal};
 pub use witness::{ArchivedBlockWitness, BlockWitness};
 
 #[cfg(test)]

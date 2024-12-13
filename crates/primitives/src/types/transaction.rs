@@ -28,6 +28,7 @@ pub struct Transaction {
     pub hash: TxHash,
     /// Nonce
     #[rkyv(attr(doc = ""))]
+    #[serde(with = "alloy_serde::quantity")]
     pub nonce: u64,
     /// Sender
     #[rkyv(attr(doc = ""))]
@@ -40,18 +41,35 @@ pub struct Transaction {
     pub value: U256,
     /// Gas Price
     #[rkyv(attr(doc = ""))]
+    #[serde(
+        default,
+        with = "alloy_serde::quantity::opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub gas_price: Option<u128>,
     /// Gas amount
     #[rkyv(attr(doc = ""))]
+    #[serde(with = "alloy_serde::quantity")]
     pub gas: u64,
     /// Max BaseFeePerGas the user is willing to pay.
     #[rkyv(attr(doc = ""))]
+    #[serde(with = "alloy_serde::quantity")]
     pub max_fee_per_gas: u128,
     /// The miner's tip.
     #[rkyv(attr(doc = ""))]
+    #[serde(
+        default,
+        with = "alloy_serde::quantity::opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub max_priority_fee_per_gas: Option<u128>,
     /// Configured max fee per blob gas for eip-4844 transactions
     #[rkyv(attr(doc = ""))]
+    #[serde(
+        default,
+        with = "alloy_serde::quantity::opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub max_fee_per_blob_gas: Option<u128>,
     /// Data
     #[rkyv(attr(doc = ""))]
@@ -79,6 +97,11 @@ pub struct Transaction {
     /// L1Msg queueIndex
     #[cfg(feature = "scroll")]
     #[rkyv(attr(doc = ""))]
+    #[serde(
+        default,
+        with = "alloy_serde::quantity::opt",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub queue_index: Option<u64>,
 }
 
