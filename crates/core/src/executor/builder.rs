@@ -105,11 +105,11 @@ impl<
         decode_nodes(&mut self.nodes_provider, self.witness.states_iter()).unwrap();
 
         let db = cycle_track!(
-            CacheDB::new(EvmDatabase::new_from_root(
+            EvmDatabase::new_from_root(
                 self.code_db,
                 self.witness.pre_state_root(),
                 self.nodes_provider
-            )),
+            ),
             "build ReadOnlyDB"
         );
 

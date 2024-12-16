@@ -25,6 +25,11 @@ alloy-rlp.workspace = true
 
 alloy-primitives.workspace = true
 
+revm.workspace = true
+reth-chainspec.workspace = true
+reth-evm.workspace = true
+reth-primitives.workspace = true
+
 rkyv.workspace = true
 serde = { workspace = true, features = ["derive"] }
 

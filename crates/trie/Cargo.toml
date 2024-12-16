@@ -14,12 +14,18 @@ workspace = true
 [dependencies]
 alloy-rlp.workspace = true
 alloy-trie.workspace = true
+revm.workspace = true
+reth-trie.workspace = true
 reth-trie-sparse.workspace = true
 
 sbv-primitives.workspace = true
 sbv-kv = { workspace = true, features = ["alloy-trie"] }
+sbv-helpers.workspace = true
 
 [dev-dependencies]
 alloy-rpc-types-debug.workspace = true
 alloy-rpc-types-eth.workspace = true
 serde_json.workspace = true
+
+[features]
+dev = ["sbv-helpers/dev"]

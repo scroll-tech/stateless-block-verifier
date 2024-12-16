@@ -46,10 +46,7 @@ impl CreateWitnessCommand {
                 .collect(),
             withdrawals: block
                 .withdrawals
-                .unwrap_or_default()
-                .iter()
-                .map(From::from)
-                .collect(),
+                .map(|w| w.iter().map(From::from).collect()),
             states: witness.state.into_values().collect(),
             codes: witness.codes.into_values().collect(),
         };

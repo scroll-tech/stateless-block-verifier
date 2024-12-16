@@ -31,7 +31,7 @@ pub struct BlockWitness {
     pub transaction: Vec<Transaction>,
     /// Withdrawals in the block.
     #[rkyv(attr(doc = "Withdrawals in the block"))]
-    pub withdrawals: Vec<Withdrawal>,
+    pub withdrawals: Option<Vec<Withdrawal>>,
     /// Rlp encoded state trie nodes.
     #[rkyv(attr(doc = "Rlp encoded state trie nodes"))]
     pub states: Vec<Bytes>,
@@ -56,10 +56,7 @@ impl BlockWitness {
             .collect();
         let withdrawals = block
             .withdrawals
-            .unwrap_or_default()
-            .iter()
-            .map(Withdrawal::from)
-            .collect();
+            .map(|w| w.iter().map(Withdrawal::from).collect());
         let states = witness.state.into_values().collect();
         let codes = witness.codes.into_values().collect();
         Self {
@@ -92,8 +89,8 @@ impl crate::BlockWitness for BlockWitness {
     ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>> {
         self.transaction.iter().map(|tx| tx.try_into())
     }
-    fn withdrawals_iter(&self) -> impl Iterator<Item = impl crate::Withdrawal> {
-        self.withdrawals.iter()
+    fn withdrawals_iter(&self) -> Option<impl Iterator<Item = impl crate::Withdrawal>> {
+        self.withdrawals.as_ref().map(|w| w.iter())
     }
     fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>> {
         self.states.iter().map(|s| s.as_ref())
@@ -121,8 +118,8 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>> {
         self.transaction.iter().map(|tx| tx.try_into())
     }
-    fn withdrawals_iter(&self) -> impl Iterator<Item = impl crate::Withdrawal> {
-        self.withdrawals.iter()
+    fn withdrawals_iter(&self) -> Option<impl Iterator<Item = impl crate::Withdrawal>> {
+        self.withdrawals.as_ref().map(|w| w.iter())
     }
     fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>> {
         self.states.iter().map(|s| s.as_ref())

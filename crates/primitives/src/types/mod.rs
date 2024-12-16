@@ -11,7 +11,8 @@ mod withdrawal;
 mod witness;
 
 pub use access_list::{AccessList, AccessListItem, ArchivedAccessList, ArchivedAccessListItem};
-pub use alloy_consensus::Header as AlloyHeader;
+pub use alloy_consensus::{Header as AlloyHeader, TypedTransaction as AlloyTypedTransaction};
+pub use alloy_eips::eip4895::{Withdrawal as AlloyWithdrawal, Withdrawals as AlloyWithdrawals};
 pub use alloy_rpc_types_debug::ExecutionWitness;
 pub use alloy_rpc_types_eth::Block as RpcBlock;
 pub use block_header::{ArchivedBlockHeader, BlockHeader};

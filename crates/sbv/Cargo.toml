@@ -21,7 +21,7 @@ sbv-helpers.workspace = true
 scroll = ["sbv-chainspec/scroll", "sbv-core/scroll", "sbv-primitives/scroll"]
 debug-account = ["sbv-core/debug-account", "sbv-helpers/debug-account"]
 debug-storage = ["sbv-core/debug-storage", "sbv-helpers/debug-storage"]
-dev = ["sbv-core/dev", "sbv-helpers/dev", "sbv-primitives/dev"]
+dev = ["sbv-core/dev", "sbv-helpers/dev", "sbv-primitives/dev", "sbv-trie/dev"]
 metrics = ["sbv-core/metrics", "sbv-helpers/metrics"]
 
 # sp1 related

@@ -1,3 +1,4 @@
+use sbv::trie::KeccakKeyHasher;
 use sbv::{
     chainspec::{Chain, ChainSpecProvider, WellKnownChainSpecProvider},
     core::{EvmExecutorBuilder, VerificationError},
@@ -29,27 +30,26 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
     let mut code_db = HashMap::<B256, Bytes>::new();
     let mut nodes_provider = HashMap::<B256, TrieNode>::new();
 
-    let mut executor = EvmExecutorBuilder::default()
+    let mut outcome = EvmExecutorBuilder::default()
         .chain_spec(chain_spec)
         .code_db(&mut code_db)
         .nodes_provider(&mut nodes_provider)
         .witness(&witness)
-        .build();
+        .build()
+        .handle_block()
+        .inspect_err(|e| {
+            dev_error!(
+                "Error occurs when executing block #{}: {e:?}",
+                witness.header().number(),
+            );
 
-    // TODO: change to Result::inspect_err when sp1 toolchain >= 1.76
-    #[allow(clippy::map_identity)]
-    #[allow(clippy::manual_inspect)]
-    executor.handle_block().map_err(|e| {
-        dev_error!(
-            "Error occurs when executing block #{}({:?}): {e:?}",
-            witness.header().number(),
-            witness.header().hash(),
-        );
+            update_metrics_counter!(verification_error);
+        })?;
 
-        update_metrics_counter!(verification_error);
-        e
-    })?;
-    let revm_post_state_root = executor.commit_changes();
+    outcome
+        .state
+        .update(&nodes_provider, outcome.execution_outcome.bundle.state());
+    let revm_post_state_root = outcome.state.commit_state();
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {
@@ -65,9 +65,8 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
 
     if witness.header().state_root() != revm_post_state_root {
         dev_error!(
-            "Block #{}({:?}) root mismatch: root after in trace = {:x}, root after in revm = {:x}",
+            "Block #{} root mismatch: root after in trace = {:x}, root after in revm = {:x}",
             witness.header().number(),
-            witness.header().hash(),
             witness.header().state_root(),
             revm_post_state_root
         );
@@ -79,10 +78,6 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
             root_revm: revm_post_state_root,
         });
     }
-    dev_info!(
-        "Block #{}({}) verified successfully",
-        witness.header().number(),
-        witness.header().hash(),
-    );
+    dev_info!("Block #{} verified successfully", witness.header().number(),);
     Ok(())
 }

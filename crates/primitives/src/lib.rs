@@ -7,10 +7,12 @@ use std::fmt;
 /// Predeployed contracts
 #[cfg(feature = "scroll")]
 pub mod predeployed;
+// pub mod reth;
 /// Types definition
 pub mod types;
 
 pub use alloy_consensus;
+pub use alloy_eips;
 
 pub use alloy_consensus::BlockHeader;
 pub use alloy_primitives;
@@ -34,7 +36,7 @@ pub trait BlockWitness: fmt::Debug {
         &self,
     ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>>;
     /// Withdrawals
-    fn withdrawals_iter(&self) -> impl Iterator<Item = impl Withdrawal>;
+    fn withdrawals_iter(&self) -> Option<impl Iterator<Item = impl Withdrawal>>;
     /// States
     fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
     /// Codes
@@ -44,6 +46,10 @@ pub trait BlockWitness: fmt::Debug {
 /// Withdrawal trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait Withdrawal: fmt::Debug {
+    /// Monotonically increasing identifier issued by consensus layer.
+    fn index(&self) -> u64;
+    /// Index of validator associated with withdrawal.
+    fn validator_index(&self) -> u64;
     /// Target address for withdrawn ether.
     fn address(&self) -> Address;
     /// Value of the withdrawal in gwei.

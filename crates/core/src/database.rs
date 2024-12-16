@@ -20,6 +20,9 @@ pub struct EvmDatabase<CodeDb, NodesProvider> {
     pub(crate) state: PartialStateTrie,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum DatabaseError {}
+
 impl<CodeDb, Db> fmt::Debug for EvmDatabase<CodeDb, Db> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("EvmDatabase").finish()
@@ -63,7 +66,7 @@ impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256
 impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256, TrieNode>>
     DatabaseRef for EvmDatabase<CodeDb, NodesProvider>
 {
-    type Error = Infallible;
+    type Error = DatabaseError;
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
@@ -71,7 +74,8 @@ impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256
             return Ok(None);
         };
         dev_trace!("load trie account of {address:?}: {account:?}");
-
+        let bt = std::backtrace::Backtrace::force_capture();
+        dev_trace!("backtrace: {bt}");
         let info = AccountInfo {
             balance: account.balance,
             nonce: account.nonce,
@@ -119,5 +123,17 @@ impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256
     /// Get block hash by block number.
     fn block_hash_ref(&self, _: u64) -> Result<B256, Self::Error> {
         unreachable!("BLOCKHASH is disabled")
+    }
+}
+
+impl fmt::Display for DatabaseError {
+    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
+        unreachable!()
+    }
+}
+
+impl From<DatabaseError> for reth_storage_errors::provider::ProviderError {
+    fn from(_: DatabaseError) -> Self {
+        unreachable!()
     }
 }

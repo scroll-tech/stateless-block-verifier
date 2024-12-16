@@ -117,7 +117,7 @@ impl ChunkInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{BlockExecutionResult, EvmExecutorBuilder, HardforkConfig};
+    use crate::{BlockExecutionOutcome, EvmExecutorBuilder, HardforkConfig};
     use revm::primitives::b256;
     use sbv_primitives::types::BlockTrace;
 
@@ -156,7 +156,7 @@ mod tests {
         }
 
         for trace in traces.iter() {
-            let BlockExecutionResult { tx_rlps, .. } = executor.handle_block(trace).unwrap();
+            let BlockExecutionOutcome { tx_rlps, .. } = executor.handle_block(trace).unwrap();
             for tx_rlp in tx_rlps {
                 tx_bytes_hasher.update(&tx_rlp);
             }
