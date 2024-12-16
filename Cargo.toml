@@ -43,6 +43,7 @@ alloy-primitives = { version = "0.8", features = ["rkyv"] }
 reth-chainspec = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-ethereum-forks = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
+reth-execution-types = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-trie-sparse = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }

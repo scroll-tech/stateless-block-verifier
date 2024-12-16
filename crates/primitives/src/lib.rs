@@ -12,51 +12,11 @@ pub mod types;
 
 pub use alloy_consensus;
 
+pub use alloy_consensus::BlockHeader;
 pub use alloy_primitives;
 pub use alloy_primitives::{
     address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
 };
-
-/// BlockHeader trait
-#[auto_impl(&, &mut, Box, Rc, Arc)]
-pub trait BlockHeader: fmt::Debug {
-    /// Beneficiary
-    fn beneficiary(&self) -> Address;
-    /// Hash of the block
-    fn hash(&self) -> BlockHash;
-    /// State root hash
-    fn state_root(&self) -> B256;
-    /// Difficulty
-    fn difficulty(&self) -> U256;
-    /// Block number
-    fn number(&self) -> u64;
-    /// Gas Limit
-    fn gas_limit(&self) -> u64;
-    /// Gas Used
-    fn gas_used(&self) -> u64;
-    /// Timestamp
-    fn timestamp(&self) -> u64;
-    /// prevRandao
-    ///
-    /// Before the merge this proves, combined with the nonce, that a sufficient amount of
-    /// computation has been carried out on this block: the Proof-of-Work (PoF).
-    ///
-    /// After the merge this is `prevRandao`: Randomness value for the generated payload.
-    ///
-    /// This is an Option because it is not always set by non-ethereum networks.
-    ///
-    /// See also <https://eips.ethereum.org/EIPS/eip-4399>
-    /// And <https://github.com/ethereum/execution-apis/issues/328>
-    fn prevrandao(&self) -> B256;
-    /// Base fee per unit of gas (if past London)
-    fn base_fee_per_gas(&self) -> Option<u64>;
-    /// Withdrawals root hash added by EIP-4895 and is ignored in legacy headers.
-    fn withdraw_root(&self) -> B256;
-    /// Blob gas used
-    fn blob_gas_used(&self) -> Option<u64>;
-    /// Excess blob gas
-    fn excess_blob_gas(&self) -> Option<u64>;
-}
 
 /// BlockWitness trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
