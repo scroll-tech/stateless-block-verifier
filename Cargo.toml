@@ -40,10 +40,12 @@ alloy-trie = "0.7"
 # https://github.com/alloy-rs/core
 alloy-primitives = { version = "0.8", features = ["rkyv"] }
 
-reth-chainspec = { git = "https://github.com/paradigmxyz/reth", rev = "9be5a78" }
-reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", rev = "9be5a78" }
-reth-ethereum-forks = { git = "https://github.com/paradigmxyz/reth", rev = "9be5a78" }
-reth-trie-sparse = { git = "https://github.com/paradigmxyz/reth", rev = "9be5a78" }
+reth-chainspec = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
+reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
+reth-ethereum-forks = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
+reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
+reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
+reth-trie-sparse = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 
 auto_impl = "1.2"
 hex = "0.4"
