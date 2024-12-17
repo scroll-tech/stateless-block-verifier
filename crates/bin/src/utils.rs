@@ -36,7 +36,7 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
         .nodes_provider(&mut nodes_provider)
         .witness(&witness)
         .build()
-        .handle_block()
+        .execute()
         .inspect_err(|e| {
             dev_error!(
                 "Error occurs when executing block #{}: {e:?}",
@@ -46,10 +46,7 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
             update_metrics_counter!(verification_error);
         })?;
 
-    outcome
-        .state
-        .update(&nodes_provider, outcome.execution_outcome.bundle.state());
-    let revm_post_state_root = outcome.state.commit_state();
+    let revm_post_state_root = outcome.post_state_root;
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

@@ -53,7 +53,7 @@ pub struct PartialStateTrie {
 
 impl PartialStateTrie {
     /// Open a partial trie from a root node
-    pub fn open<P: KeyValueStoreGet<B256, TrieNode>>(nodes_provider: P, root: B256) -> Self {
+    pub fn open<P: KeyValueStoreGet<B256, TrieNode> + Copy>(nodes_provider: P, root: B256) -> Self {
         let state = PartialTrie::open(nodes_provider, root, decode_trie_account);
 
         PartialStateTrie {
@@ -79,7 +79,7 @@ impl PartialStateTrie {
 
     /// Get storage
     #[must_use]
-    pub fn get_storage<P: KeyValueStoreGet<B256, TrieNode>>(
+    pub fn get_storage<P: KeyValueStoreGet<B256, TrieNode> + Copy>(
         &self,
         nodes_provider: P,
         address: Address,
@@ -107,7 +107,7 @@ impl PartialStateTrie {
     pub fn update<'a, P: KeyValueStoreGet<B256, TrieNode> + Copy>(
         &mut self,
         nodes_provider: P,
-        mut post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
+        post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
     ) {
         for (address, account) in post_state.into_iter() {
             dev_trace!("update account: {address} {:?}", account.info);
@@ -119,7 +119,19 @@ impl PartialStateTrie {
                 continue;
             }
 
-            let trie = self.storage_trie_mut(nodes_provider, hashed_address);
+            let trie = self
+                .storage_tries
+                .get_mut()
+                .entry(hashed_address)
+                .or_insert_with(|| {
+                    let storage_root = self
+                        .storage_roots
+                        .get_mut()
+                        .get(&hashed_address)
+                        .copied()
+                        .unwrap_or(EMPTY_ROOT_HASH);
+                    PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp)
+                });
 
             for (key, slot) in account.storage.iter() {
                 let path = Nibbles::unpack(keccak256(key.to_be_bytes::<32>()));
@@ -127,7 +139,7 @@ impl PartialStateTrie {
                 if slot.present_value.is_zero() {
                     trie.remove_leaf(&path);
                 } else {
-                    trie.update_leaf(path, &slot.present_value, |value| {
+                    trie.update_leaf(path, slot.present_value, |value| {
                         self.rlp_buffer.clear();
                         value.encode(&mut self.rlp_buffer);
                         self.rlp_buffer.clone()
@@ -144,7 +156,7 @@ impl PartialStateTrie {
                 code_hash: info.code_hash,
             };
             dev_trace!("update account: {address} {:?}", account);
-            self.update_account(hashed_address, &account);
+            self.update_account(hashed_address, account);
         }
     }
 
@@ -160,34 +172,13 @@ impl PartialStateTrie {
 
     /// Update the account
     #[inline(always)]
-    fn update_account(&mut self, hashed_address: B256, account: &TrieAccount) {
+    fn update_account(&mut self, hashed_address: B256, account: TrieAccount) {
         let account_path = Nibbles::unpack(&hashed_address);
         self.state.update_leaf(account_path, account, |account| {
             self.rlp_buffer.clear();
             account.encode(&mut self.rlp_buffer);
             self.rlp_buffer.clone()
         });
-    }
-
-    /// Get the storage trie with memoization
-    #[inline(always)]
-    fn storage_trie_mut<P: KeyValueStoreGet<B256, TrieNode>>(
-        &mut self,
-        nodes_provider: &P,
-        hashed_address: B256,
-    ) -> &mut PartialTrie<U256> {
-        self.storage_tries
-            .get_mut()
-            .entry(hashed_address)
-            .or_insert_with(|| {
-                let storage_root = self
-                    .storage_roots
-                    .get_mut()
-                    .get(&hashed_address)
-                    .copied()
-                    .unwrap_or(EMPTY_ROOT_HASH);
-                PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp)
-            })
     }
 }
 
@@ -201,8 +192,8 @@ struct PartialTrie<T> {
 
 impl<T: Default> PartialTrie<T> {
     /// Open a partial trie from a root node
-    fn open<P: KeyValueStoreGet<B256, TrieNode>, F: FnOnce(&[u8]) -> T + Copy>(
-        nodes_provider: &P,
+    fn open<P: KeyValueStoreGet<B256, TrieNode> + Copy, F: FnOnce(&[u8]) -> T + Copy>(
+        nodes_provider: P,
         root: B256,
         parse_leaf: F,
     ) -> Self {
@@ -230,9 +221,9 @@ impl<T: Default> PartialTrie<T> {
         self.leafs.get(path)
     }
 
-    fn update_leaf<F: FnMut(&T) -> Vec<u8>>(&mut self, path: Nibbles, value: &T, mut encode: F) {
+    fn update_leaf<F: FnMut(&T) -> Vec<u8>>(&mut self, path: Nibbles, value: T, mut encode: F) {
         self.trie
-            .update_leaf(path.clone(), encode(value))
+            .update_leaf(path.clone(), encode(&value))
             .expect("update leaf");
         self.leafs.insert(path, value);
     }
@@ -244,12 +235,12 @@ impl<T: Default> PartialTrie<T> {
 }
 
 fn traverse_import_partial_trie<
-    P: KeyValueStoreGet<B256, TrieNode>,
+    P: KeyValueStoreGet<B256, TrieNode> + Copy,
     F: FnMut(Nibbles, &Vec<u8>),
 >(
     path: &Nibbles,
     node: &TrieNode,
-    nodes: &P,
+    nodes: P,
     trie: &mut RevealedSparseTrie,
     store_leaf: &mut F,
 ) -> Option<TrieMask> {

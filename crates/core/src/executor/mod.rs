@@ -33,10 +33,8 @@ pub struct EvmExecutor<CodeDb, NodesProvider, Witness> {
 pub struct BlockExecutionOutcome {
     /// Gas used in this block
     pub gas_used: u64,
-    /// State trie before block execution constructed from the witness
-    pub state: PartialStateTrie,
-    /// Represents the outcome of block execution
-    pub execution_outcome: ExecutionOutcome,
+    /// State after
+    pub post_state_root: B256,
     /// RLP bytes of transactions
     #[cfg(feature = "scroll")]
     pub tx_rlps: Vec<Bytes>,
@@ -49,11 +47,11 @@ impl<
     > EvmExecutor<CodeDb, NodesProvider, Witness>
 {
     /// Handle the block with the given witness
-    pub fn handle_block(self) -> Result<BlockExecutionOutcome, VerificationError> {
+    pub fn execute(self) -> Result<BlockExecutionOutcome, VerificationError> {
         #[allow(clippy::let_and_return)]
         let gas_used = measure_duration_millis!(
             handle_block_duration_milliseconds,
-            cycle_track!(self.handle_block_inner(), "handle_block")
+            cycle_track!(self.execute_inner(), "handle_block")
         )?;
 
         #[cfg(feature = "metrics")]
@@ -63,7 +61,7 @@ impl<
     }
 
     #[inline(always)]
-    fn handle_block_inner(self) -> Result<BlockExecutionOutcome, VerificationError> {
+    fn execute_inner(mut self) -> Result<BlockExecutionOutcome, VerificationError> {
         let header = self.witness.header();
         let txs = self
             .witness
@@ -145,12 +143,16 @@ impl<
             .executor(CacheDB::new(&self.db))
             .execute(input)
             .unwrap();
-        let execution_outcome = ExecutionOutcome::new(
-            output.state,
-            Receipts::from(output.receipts),
-            self.witness.header().number(),
-            vec![output.requests],
-        );
+
+        self.db
+            .state
+            .update(&self.db.nodes_provider, output.state.state);
+        let post_state_root = self.db.state.commit_state();
+
+        Ok(BlockExecutionOutcome {
+            gas_used: output.gas_used,
+            post_state_root,
+        })
         // let block_number = header.number();
         // dev_debug!("handle block #{block_number}");
         //
@@ -266,10 +268,5 @@ impl<
         //     dev_debug!("handle {idx}th tx done");
         //     cycle_tracker_end!("handle tx");
         // }
-        Ok(BlockExecutionOutcome {
-            gas_used: output.gas_used,
-            state: self.db.state,
-            execution_outcome,
-        })
     }
 }
