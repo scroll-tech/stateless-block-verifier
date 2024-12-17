@@ -1,5 +1,5 @@
 use sbv::{
-    core::{BlockExecutionOutcome, EvmDatabase, EvmExecutor, VerificationError},
+    core::{EvmDatabase, EvmExecutor, ExecutionOutput, VerificationError},
     primitives::{
         chainspec::{get_chain_spec, Chain},
         BlockWitness, Bytes, B256,
@@ -31,19 +31,19 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
     witness.import_codes(&mut code_db);
     let mut nodes_provider = HashMap::<B256, TrieNode>::new();
     decode_nodes(&mut nodes_provider, witness.states_iter()).unwrap();
-    let db = EvmDatabase::new_from_root(code_db, witness.pre_state_root(), nodes_provider);
+    let mut db = EvmDatabase::new_from_root(code_db, witness.pre_state_root(), &nodes_provider);
 
     let block = witness.build_reth_block()?;
 
-    let BlockExecutionOutcome {
-        post_state_root, ..
-    } = EvmExecutor::new(chain_spec, db, &block)
+    let ExecutionOutput { output, .. } = EvmExecutor::new(chain_spec, &db, &block)
         .execute()
         .inspect_err(|e| {
             dev_error!("Error occurs when executing block #{}: {e:?}", block.number);
 
             update_metrics_counter!(verification_error);
         })?;
+
+    let post_state_root = db.commit_changes(&nodes_provider, output.state.state.iter());
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

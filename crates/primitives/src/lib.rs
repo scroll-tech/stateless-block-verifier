@@ -17,7 +17,7 @@ pub use alloy_primitives;
 pub use alloy_primitives::{
     address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
 };
-pub use reth_primitives::{Block, BlockBody, BlockWithSenders, TransactionSigned};
+pub use reth_primitives::{Block, BlockBody, BlockWithSenders, Receipt, TransactionSigned};
 use sbv_kv::KeyValueStore;
 
 /// The spec of an Ethereum network

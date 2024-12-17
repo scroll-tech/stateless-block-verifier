@@ -1,3 +1,4 @@
+use revm::db::BundleAccount;
 use revm::interpreter::analysis::to_analysed;
 use revm::{
     db::DatabaseRef,
@@ -45,6 +46,16 @@ impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256
             nodes_provider,
             state,
         }
+    }
+
+    /// Commit changes to the database.
+    pub fn commit_changes<'a, P: KeyValueStoreGet<B256, TrieNode> + Copy>(
+        &mut self,
+        nodes_provider: P,
+        post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
+    ) -> B256 {
+        self.state.update(&nodes_provider, post_state);
+        self.state.commit_state()
     }
 
     fn load_code(&self, hash: B256) -> Option<Bytecode> {

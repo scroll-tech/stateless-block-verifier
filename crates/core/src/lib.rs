@@ -16,7 +16,7 @@ mod error;
 pub use error::VerificationError;
 
 mod executor;
-pub use executor::{BlockExecutionOutcome, EvmExecutor};
+pub use executor::{EvmExecutor, ExecutionOutput};
 
 #[cfg(test)]
 #[ctor::ctor]

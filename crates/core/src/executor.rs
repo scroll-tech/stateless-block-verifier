@@ -1,10 +1,10 @@
 use crate::{database::EvmDatabase, error::VerificationError};
 use reth_evm::execute::{BlockExecutorProvider, Executor};
 use reth_evm_ethereum::execute::EthExecutorProvider;
-use reth_execution_types::BlockExecutionInput;
+use reth_execution_types::{BlockExecutionInput, BlockExecutionOutput};
 use revm::db::CacheDB;
-use sbv_kv::KeyValueStore;
-use sbv_primitives::{chainspec::ChainSpec, BlockWithSenders, Bytes, B256};
+use sbv_kv::KeyValueStoreGet;
+use sbv_primitives::{chainspec::ChainSpec, BlockWithSenders, Bytes, Receipt, B256};
 use sbv_trie::TrieNode;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -13,17 +13,15 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct EvmExecutor<'a, CodeDb, NodesProvider> {
     chain_spec: Arc<ChainSpec>,
-    db: EvmDatabase<CodeDb, NodesProvider>,
+    db: &'a EvmDatabase<CodeDb, NodesProvider>,
     block: &'a BlockWithSenders,
 }
 
 /// Block execution result
 #[derive(Debug)]
-pub struct BlockExecutionOutcome {
-    /// Gas used in this block
-    pub gas_used: u64,
-    /// State after
-    pub post_state_root: B256,
+pub struct ExecutionOutput {
+    /// Block execution output
+    pub output: BlockExecutionOutput<Receipt>,
     /// RLP bytes of transactions
     #[cfg(feature = "scroll")]
     pub tx_rlps: Vec<Bytes>,
@@ -33,7 +31,7 @@ impl<'a, CodeDb, NodesProvider> EvmExecutor<'a, CodeDb, NodesProvider> {
     /// Create a new EVM executor
     pub fn new(
         chain_spec: Arc<ChainSpec>,
-        db: EvmDatabase<CodeDb, NodesProvider>,
+        db: &'a EvmDatabase<CodeDb, NodesProvider>,
         block: &'a BlockWithSenders,
     ) -> Self {
         Self {
@@ -44,11 +42,11 @@ impl<'a, CodeDb, NodesProvider> EvmExecutor<'a, CodeDb, NodesProvider> {
     }
 }
 
-impl<CodeDb: KeyValueStore<B256, Bytes>, NodesProvider: KeyValueStore<B256, TrieNode>>
+impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256, TrieNode>>
     EvmExecutor<'_, CodeDb, NodesProvider>
 {
     /// Handle the block with the given witness
-    pub fn execute(self) -> Result<BlockExecutionOutcome, VerificationError> {
+    pub fn execute(self) -> Result<ExecutionOutput, VerificationError> {
         #[allow(clippy::let_and_return)]
         let gas_used = measure_duration_millis!(
             handle_block_duration_milliseconds,
@@ -62,21 +60,13 @@ impl<CodeDb: KeyValueStore<B256, Bytes>, NodesProvider: KeyValueStore<B256, Trie
     }
 
     #[inline(always)]
-    fn execute_inner(mut self) -> Result<BlockExecutionOutcome, VerificationError> {
+    fn execute_inner(self) -> Result<ExecutionOutput, VerificationError> {
         let input = BlockExecutionInput::new(self.block, self.block.header.difficulty);
         let output = EthExecutorProvider::ethereum(self.chain_spec.clone())
-            .executor(CacheDB::new(&self.db))
+            .executor(CacheDB::new(self.db))
             .execute(input)
             .unwrap();
 
-        self.db
-            .state
-            .update(&self.db.nodes_provider, output.state.state.iter());
-        let post_state_root = self.db.state.commit_state();
-
-        Ok(BlockExecutionOutcome {
-            gas_used: output.gas_used,
-            post_state_root,
-        })
+        Ok(ExecutionOutput { output })
     }
 }
