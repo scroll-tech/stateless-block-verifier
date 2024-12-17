@@ -53,7 +53,7 @@ pub struct PartialStateTrie {
 
 impl PartialStateTrie {
     /// Open a partial trie from a root node
-    pub fn open<P: KeyValueStoreGet<B256, TrieNode>>(nodes_provider: &P, root: B256) -> Self {
+    pub fn open<P: KeyValueStoreGet<B256, TrieNode>>(nodes_provider: P, root: B256) -> Self {
         let state = PartialTrie::open(nodes_provider, root, decode_trie_account);
 
         PartialStateTrie {
@@ -61,7 +61,7 @@ impl PartialStateTrie {
             address_hashes: Default::default(),
             storage_roots: Default::default(),
             storage_tries: Default::default(),
-            rlp_buffer: Vec::new(),
+            rlp_buffer: Vec::with_capacity(128), // pre-allocate 128 bytes
         }
     }
 
@@ -81,7 +81,7 @@ impl PartialStateTrie {
     #[must_use]
     pub fn get_storage<P: KeyValueStoreGet<B256, TrieNode>>(
         &self,
-        nodes_provider: &P,
+        nodes_provider: P,
         address: Address,
         index: U256,
     ) -> Option<U256> {
@@ -104,9 +104,9 @@ impl PartialStateTrie {
     }
 
     /// Update the trie with the new state
-    pub fn update<'a, P: KeyValueStoreGet<B256, TrieNode>>(
+    pub fn update<'a, P: KeyValueStoreGet<B256, TrieNode> + Copy>(
         &mut self,
-        nodes_provider: &P,
+        nodes_provider: P,
         mut post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
     ) {
         for (address, account) in post_state.into_iter() {
@@ -148,6 +148,8 @@ impl PartialStateTrie {
         }
     }
 
+    /// Get the hashed address with memoization
+    #[inline(always)]
     fn hashed_address(&self, address: Address) -> B256 {
         *self
             .address_hashes
@@ -156,6 +158,8 @@ impl PartialStateTrie {
             .or_insert_with(|| keccak256(address))
     }
 
+    /// Update the account
+    #[inline(always)]
     fn update_account(&mut self, hashed_address: B256, account: &TrieAccount) {
         let account_path = Nibbles::unpack(&hashed_address);
         self.state.update_leaf(account_path, account, |account| {
@@ -165,6 +169,8 @@ impl PartialStateTrie {
         });
     }
 
+    /// Get the storage trie with memoization
+    #[inline(always)]
     fn storage_trie_mut<P: KeyValueStoreGet<B256, TrieNode>>(
         &mut self,
         nodes_provider: &P,
