@@ -6,6 +6,7 @@ use std::sync::OnceLock;
 #[derive(
     Clone,
     Debug,
+    Default,
     Hash,
     PartialEq,
     Eq,
@@ -189,10 +190,43 @@ pub struct BlockHeader {
 }
 
 #[auto_impl(&, &mut, Box, Rc, Arc)]
-trait FromHelper: crate::BlockHeader {}
+trait FromHelper: alloy_consensus::BlockHeader {}
 
 impl FromHelper for alloy_rpc_types_eth::Header {}
 impl FromHelper for alloy_consensus::Header {}
+
+#[auto_impl(&, &mut, Box, Rc, Arc)]
+pub(crate) trait ToHelper: alloy_consensus::BlockHeader {
+    fn to_alloy(&self) -> alloy_consensus::Header {
+        alloy_consensus::Header {
+            parent_hash: self.parent_hash(),
+            ommers_hash: self.ommers_hash(),
+            beneficiary: self.beneficiary(),
+            state_root: self.state_root(),
+            transactions_root: self.transactions_root(),
+            receipts_root: self.receipts_root(),
+            logs_bloom: self.logs_bloom(),
+            difficulty: self.difficulty(),
+            number: self.number(),
+            gas_limit: self.gas_limit(),
+            gas_used: self.gas_used(),
+            timestamp: self.timestamp(),
+            extra_data: self.extra_data().clone(),
+            mix_hash: self.mix_hash().unwrap(),
+            nonce: self.nonce().unwrap(),
+            base_fee_per_gas: self.base_fee_per_gas(),
+            withdrawals_root: self.withdrawals_root(),
+            blob_gas_used: self.blob_gas_used(),
+            excess_blob_gas: self.excess_blob_gas(),
+            parent_beacon_block_root: self.parent_beacon_block_root(),
+            requests_hash: self.requests_hash(),
+            target_blobs_per_block: self.target_blobs_per_block(),
+        }
+    }
+}
+
+impl ToHelper for BlockHeader {}
+impl ToHelper for ArchivedBlockHeader {}
 
 impl<T: FromHelper> From<T> for BlockHeader {
     fn from(header: T) -> Self {
@@ -223,7 +257,7 @@ impl<T: FromHelper> From<T> for BlockHeader {
     }
 }
 
-impl crate::BlockHeader for BlockHeader {
+impl alloy_consensus::BlockHeader for BlockHeader {
     fn parent_hash(&self) -> B256 {
         self.parent_hash
     }
@@ -313,7 +347,7 @@ impl crate::BlockHeader for BlockHeader {
     }
 }
 
-impl crate::BlockHeader for ArchivedBlockHeader {
+impl alloy_consensus::BlockHeader for ArchivedBlockHeader {
     fn parent_hash(&self) -> B256 {
         self.parent_hash.into()
     }

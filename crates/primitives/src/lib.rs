@@ -14,7 +14,7 @@ pub mod types;
 pub use alloy_consensus;
 pub use alloy_eips;
 
-pub use alloy_consensus::BlockHeader;
+pub use alloy_consensus::Header;
 pub use alloy_primitives;
 pub use alloy_primitives::{
     address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
@@ -26,7 +26,8 @@ pub trait BlockWitness: fmt::Debug {
     /// Chain id
     fn chain_id(&self) -> ChainId;
     /// Header
-    fn header(&self) -> &impl BlockHeader;
+    #[must_use]
+    fn header(&self) -> Header;
     /// Pre-state root
     fn pre_state_root(&self) -> B256;
     /// Number of transactions

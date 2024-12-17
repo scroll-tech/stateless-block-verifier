@@ -1,3 +1,4 @@
+use crate::types::block_header::ToHelper as _;
 use crate::types::{BlockHeader, Transaction, TypedTransaction, Withdrawal};
 use alloy_primitives::{Bytes, ChainId, B256};
 use alloy_rpc_types_debug::ExecutionWitness;
@@ -75,8 +76,8 @@ impl crate::BlockWitness for BlockWitness {
     fn chain_id(&self) -> ChainId {
         self.chain_id
     }
-    fn header(&self) -> &impl crate::BlockHeader {
-        &self.header
+    fn header(&self) -> alloy_consensus::Header {
+        self.header.to_alloy()
     }
     fn pre_state_root(&self) -> B256 {
         self.pre_state_root
@@ -104,8 +105,8 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     fn chain_id(&self) -> ChainId {
         self.chain_id.to_native()
     }
-    fn header(&self) -> &impl crate::BlockHeader {
-        &self.header
+    fn header(&self) -> alloy_consensus::Header {
+        self.header.to_alloy()
     }
     fn pre_state_root(&self) -> B256 {
         self.pre_state_root.into()
