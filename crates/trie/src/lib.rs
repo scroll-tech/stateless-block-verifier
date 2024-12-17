@@ -11,6 +11,7 @@ use sbv_primitives::{keccak256, Address, B256, U256};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+use alloy_trie::nodes::RlpNode;
 pub use alloy_trie::{nodes::TrieNode, TrieAccount};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
 use sbv_helpers::dev_trace;
@@ -92,7 +93,10 @@ impl PartialStateTrie {
         self.storage_tries
             .borrow_mut()
             .entry(hashed_address)
-            .or_insert_with(|| PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp))
+            .or_insert_with(|| {
+                dev_trace!("open storage trie of {address} at {storage_root}");
+                PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp)
+            })
             .get(&path)
             .copied()
     }
@@ -130,11 +134,19 @@ impl PartialStateTrie {
                         .get(&hashed_address)
                         .copied()
                         .unwrap_or(EMPTY_ROOT_HASH);
+                    dev_trace!("open storage trie of {address} at {storage_root}");
                     PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp)
                 });
+            dev_trace!("opened storage trie of {address} at {}", trie.trie.root());
 
             for (key, slot) in account.storage.iter() {
-                let path = Nibbles::unpack(keccak256(key.to_be_bytes::<32>()));
+                let key_hash = keccak256(key.to_be_bytes::<32>());
+                let path = Nibbles::unpack(key_hash);
+
+                dev_trace!(
+                    "update storage of {address}: {key:#064X}={:#064X}, key_hash={key_hash}",
+                    slot.present_value
+                );
 
                 if slot.present_value.is_zero() {
                     trie.remove_leaf(&path);
@@ -148,6 +160,7 @@ impl PartialStateTrie {
             }
 
             let storage_root = trie.trie.root();
+            dev_trace!("new storage root: {storage_root}");
             let info = account.info.as_ref().unwrap();
             let account = TrieAccount {
                 nonce: info.nonce,
@@ -206,7 +219,7 @@ impl<T: Default> PartialTrie<T> {
         // traverse the partial trie
         traverse_import_partial_trie(
             &Nibbles::default(),
-            &root,
+            root,
             nodes_provider,
             &mut state,
             &mut |path, value| {
@@ -239,13 +252,14 @@ fn traverse_import_partial_trie<
     F: FnMut(Nibbles, &Vec<u8>),
 >(
     path: &Nibbles,
-    node: &TrieNode,
+    node: TrieNode,
     nodes: P,
     trie: &mut RevealedSparseTrie,
     store_leaf: &mut F,
 ) -> Option<TrieMask> {
     let trie_mask = match node {
-        TrieNode::Branch(branch) => {
+        TrieNode::EmptyRoot => None,
+        TrieNode::Branch(ref branch) => {
             let mut trie_mask = TrieMask::default();
 
             let mut stack_ptr = branch.as_ref().first_child_index();
@@ -254,49 +268,41 @@ fn traverse_import_partial_trie<
                     trie_mask.set_bit(idx);
                     let mut child_path = path.clone();
                     child_path.push(idx);
-                    let child = &branch.stack[stack_ptr];
+                    let child_node = decode_rlp_node(nodes, &branch.stack[stack_ptr]);
                     stack_ptr += 1;
 
-                    let child_node = if child.len() == B256::len_bytes() + 1 {
-                        let hash = B256::from_slice(&child[1..]);
-
-                        match nodes.get(&hash) {
-                            Some(node) => node.into_owned(),
-                            // the node is not in the witness
-                            None => continue,
-                        }
-                    } else {
-                        let mut buf = child.as_ref();
-                        let child = TrieNode::decode(&mut buf).unwrap();
-                        assert!(buf.is_empty());
-
-                        child
-                    };
-
-                    let mask = traverse_import_partial_trie(
-                        &child_path,
-                        &child_node,
-                        nodes,
-                        trie,
-                        store_leaf,
-                    );
-
-                    trie.reveal_node(child_path, child_node, mask).unwrap();
+                    if let Some(child_node) = child_node {
+                        traverse_import_partial_trie(
+                            &child_path,
+                            child_node,
+                            nodes,
+                            trie,
+                            store_leaf,
+                        );
+                    }
                 }
             }
             Some(trie_mask)
         }
-        TrieNode::Leaf(leaf) => {
+        TrieNode::Leaf(ref leaf) => {
             let mut full = path.clone();
             full.extend_from_slice_unchecked(&leaf.key);
             store_leaf(full, &leaf.value);
             None
         }
-        _ => None,
+        TrieNode::Extension(ref extension) => {
+            let mut child_path = path.clone();
+            child_path.extend_from_slice_unchecked(&extension.key);
+
+            if let Some(child_node) = decode_rlp_node(nodes, &extension.child) {
+                traverse_import_partial_trie(&child_path, child_node, nodes, trie, store_leaf);
+            }
+
+            None
+        }
     };
 
-    trie.reveal_node(path.clone(), node.clone(), trie_mask)
-        .unwrap();
+    trie.reveal_node(path.clone(), node, trie_mask).unwrap();
 
     trie_mask
 }
@@ -311,6 +317,23 @@ fn decode_u256_rlp(mut buf: &[u8]) -> U256 {
     let value = U256::decode(&mut buf).unwrap();
     assert!(buf.is_empty(), "the leaf should only contains the value");
     value
+}
+
+fn decode_rlp_node<P: KeyValueStoreGet<B256, TrieNode>>(
+    nodes_provider: P,
+    node: &RlpNode,
+) -> Option<TrieNode> {
+    if node.len() == B256::len_bytes() + 1 {
+        let hash = B256::from_slice(&node[1..]);
+
+        nodes_provider.get(&hash).map(|node| node.into_owned())
+    } else {
+        let mut buf = node.as_ref();
+        let child = TrieNode::decode(&mut buf).unwrap();
+        assert!(buf.is_empty());
+
+        Some(child)
+    }
 }
 
 #[cfg(test)]
