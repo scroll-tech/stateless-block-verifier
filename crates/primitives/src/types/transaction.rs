@@ -7,6 +7,8 @@ use alloy_eips::eip2718::Encodable2718;
 use alloy_eips::eip7702::SignedAuthorization;
 use alloy_primitives::bytes::BytesMut;
 use alloy_primitives::{Address, Bytes, ChainId, SignatureError, TxHash, TxKind, B256, U256};
+use reth_primitives::transaction::FillTxEnv;
+use revm::primitives::{AuthorizationList, TxEnv};
 
 /// Transaction object used in RPC
 #[derive(
@@ -461,5 +463,38 @@ impl TryFrom<&ArchivedTransaction> for TypedTransaction {
         };
 
         Ok(tx)
+    }
+}
+
+impl FillTxEnv for TypedTransaction {
+    fn fill_tx_env(&self, tx_env: &mut TxEnv, sender: Address) {
+        tx_env.caller = sender;
+        match self {
+            TypedTransaction::Enveloped(tx) => {
+                tx_env.gas_limit = tx.gas_limit();
+                tx_env.gas_price = U256::from(tx.max_fee_per_gas());
+                tx_env.gas_priority_fee = tx.max_priority_fee_per_gas().map(U256::from);
+                tx_env.transact_to = tx.kind();
+                tx_env.value = tx.value();
+                tx_env.data = tx.input().clone();
+                tx_env.chain_id = tx.chain_id();
+                tx_env.nonce = Some(tx.nonce());
+                if let Some(access_list) = tx.access_list() {
+                    tx_env.access_list.clone_from(&access_list.0);
+                } else {
+                    tx_env.clear();
+                }
+                tx_env.blob_hashes.clear();
+                if let Some(blob_versioned_hashes) = tx.blob_versioned_hashes() {
+                    tx_env.blob_hashes.extend_from_slice(blob_versioned_hashes);
+                }
+                tx_env.max_fee_per_blob_gas = tx.max_fee_per_blob_gas().map(U256::from);
+                tx_env.authorization_list = tx
+                    .authorization_list()
+                    .map(|auths| AuthorizationList::Signed(auths.to_vec()));
+            }
+            #[cfg(feature = "scroll")]
+            TypedTransaction::L1Msg(_) => unimplemented!("scroll"),
+        }
     }
 }
