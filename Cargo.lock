@@ -4241,25 +4241,11 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 name = "sbv"
 version = "2.0.0"
 dependencies = [
- "sbv-chainspec",
  "sbv-core",
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",
  "sbv-trie",
-]
-
-[[package]]
-name = "sbv-chainspec"
-version = "2.0.0"
-dependencies = [
- "alloy-chains",
- "reth-chainspec",
- "reth-ethereum-forks",
- "reth-evm-ethereum",
- "revm",
- "sbv-primitives",
- "serde_json",
 ]
 
 [[package]]
@@ -4270,11 +4256,8 @@ dependencies = [
  "reth-evm",
  "reth-evm-ethereum",
  "reth-execution-types",
- "reth-primitives",
- "reth-primitives-traits",
  "reth-storage-errors",
  "revm",
- "sbv-chainspec",
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",
@@ -4322,18 +4305,15 @@ dependencies = [
  "alloy-consensus",
  "alloy-eips",
  "alloy-primitives",
- "alloy-rlp",
  "alloy-rpc-types-debug",
  "alloy-rpc-types-eth",
  "alloy-serde",
  "auto_impl",
  "reth-chainspec",
- "reth-evm",
  "reth-primitives",
- "reth-primitives-traits",
- "revm",
  "rkyv",
  "sbv-helpers",
+ "sbv-kv",
  "serde",
  "serde_json",
 ]

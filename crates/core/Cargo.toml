@@ -17,15 +17,12 @@ revm.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
 reth-execution-types.workspace = true
-reth-primitives.workspace = true
-reth-primitives-traits.workspace = true
 reth-storage-errors.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tiny-keccak.workspace = true
 
-sbv-chainspec.workspace = true
 sbv-primitives.workspace = true
 sbv-helpers.workspace = true
 sbv-kv = { workspace = true, features = ["revm-primitives"] }
@@ -40,7 +37,6 @@ tracing-subscriber.workspace = true
 
 [features]
 scroll = [
-    "sbv-chainspec/scroll",
     "revm/scroll-default-handler",
     "revm/optional_no_base_fee",
 ]

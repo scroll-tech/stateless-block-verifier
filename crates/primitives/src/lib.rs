@@ -17,7 +17,28 @@ pub use alloy_primitives;
 pub use alloy_primitives::{
     address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
 };
-pub use reth_primitives::TransactionSigned;
+pub use reth_primitives::{Block, BlockBody, BlockWithSenders, TransactionSigned};
+use sbv_kv::KeyValueStore;
+
+/// The spec of an Ethereum network
+pub mod chainspec {
+    pub use reth_chainspec::*;
+    use std::sync::Arc;
+
+    /// Get chain spec
+    pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
+        if chain == Chain::from_named(NamedChain::Mainnet) {
+            return Some(MAINNET.clone());
+        }
+        if chain == Chain::from_named(NamedChain::Sepolia) {
+            return Some(SEPOLIA.clone());
+        }
+        if chain == Chain::from_named(NamedChain::Holesky) {
+            return Some(HOLESKY.clone());
+        }
+        None
+    }
+}
 
 /// BlockWitness trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
@@ -42,10 +63,17 @@ pub trait BlockWitness: fmt::Debug {
     /// Codes
     fn codes_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
 
+    /// Import codes into code db
+    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
+        for code in self.codes_iter() {
+            let code = code.as_ref();
+            let code_hash = keccak256(code);
+            code_db.insert(code_hash, Bytes::copy_from_slice(code))
+        }
+    }
+
     /// Build a reth block
-    fn build_reth_block(
-        &self,
-    ) -> Result<reth_primitives::BlockWithSenders, alloy_primitives::SignatureError> {
+    fn build_reth_block(&self) -> Result<BlockWithSenders, alloy_primitives::SignatureError> {
         let header = self.header();
         let transactions = self
             .build_typed_transactions()
@@ -53,7 +81,7 @@ pub trait BlockWitness: fmt::Debug {
         let senders =
             TransactionSigned::recover_signers(&transactions, transactions.len()).unwrap(); // FIXME: proper error handling
 
-        let body = reth_primitives::BlockBody {
+        let body = BlockBody {
             transactions,
             ommers: vec![],
             withdrawals: self.withdrawals_iter().map(|iter| {
@@ -69,8 +97,8 @@ pub trait BlockWitness: fmt::Debug {
             }),
         };
 
-        Ok(reth_primitives::BlockWithSenders::new_unchecked(
-            reth_primitives::Block { header, body },
+        Ok(BlockWithSenders::new_unchecked(
+            Block { header, body },
             senders,
         ))
     }

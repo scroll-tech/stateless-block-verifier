@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "crates/bin",
-    "crates/chainspec",
     "crates/core",
     "crates/helpers",
     "crates/kv",
@@ -90,7 +89,6 @@ reqwest = "0.12"
 
 # workspace
 sbv = { path = "crates/sbv" }
-sbv-chainspec = { path = "crates/chainspec" }
 sbv-core = { path = "crates/core" }
 sbv-kv = { path = "crates/kv" }
 sbv-primitives = { path = "crates/primitives" }

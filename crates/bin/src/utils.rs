@@ -1,9 +1,10 @@
-use sbv::core::BlockExecutionOutcome;
 use sbv::{
-    chainspec::{Chain, ChainSpecProvider, WellKnownChainSpecProvider},
-    core::{EvmExecutorBuilder, VerificationError},
-    primitives::{BlockWitness, Bytes, B256},
-    trie::TrieNode,
+    core::{BlockExecutionOutcome, EvmDatabase, EvmExecutor, VerificationError},
+    primitives::{
+        chainspec::{get_chain_spec, Chain},
+        BlockWitness, Bytes, B256,
+    },
+    trie::{decode_nodes, TrieNode},
 };
 use std::collections::HashMap;
 
@@ -24,22 +25,19 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
         .build()
         .unwrap();
 
-    let chain_spec = WellKnownChainSpecProvider::new(Chain::from_id(witness.chain_id()))
-        .unwrap()
-        .chain_spec();
+    let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id())).unwrap();
+
     let mut code_db = HashMap::<B256, Bytes>::new();
+    witness.import_codes(&mut code_db);
     let mut nodes_provider = HashMap::<B256, TrieNode>::new();
+    decode_nodes(&mut nodes_provider, witness.states_iter()).unwrap();
+    let db = EvmDatabase::new_from_root(code_db, witness.pre_state_root(), nodes_provider);
+
     let block = witness.build_reth_block()?;
 
     let BlockExecutionOutcome {
         post_state_root, ..
-    } = EvmExecutorBuilder::default()
-        .chain_spec(chain_spec)
-        .code_db(&mut code_db)
-        .nodes_provider(&mut nodes_provider)
-        .witness(&witness)
-        .block(&block)
-        .build()
+    } = EvmExecutor::new(chain_spec, db, &block)
         .execute()
         .inspect_err(|e| {
             dev_error!("Error occurs when executing block #{}: {e:?}", block.number);

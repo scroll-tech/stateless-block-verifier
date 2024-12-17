@@ -21,20 +21,16 @@ alloy-rpc-types-debug.workspace = true
 alloy-rpc-types-eth.workspace = true
 alloy-serde.workspace = true
 
-alloy-rlp.workspace = true
-
 alloy-primitives.workspace = true
 
-revm.workspace = true
 reth-chainspec.workspace = true
-reth-evm.workspace = true
 reth-primitives.workspace = true
-reth-primitives-traits.workspace = true
 
 rkyv.workspace = true
 serde = { workspace = true, features = ["derive"] }
 
 sbv-helpers.workspace = true
+sbv-kv.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

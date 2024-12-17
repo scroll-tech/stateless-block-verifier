@@ -10,7 +10,6 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-sbv-chainspec.workspace = true
 sbv-core.workspace = true
 sbv-kv.workspace = true
 sbv-primitives.workspace = true
@@ -18,7 +17,7 @@ sbv-trie.workspace = true
 sbv-helpers.workspace = true
 
 [features]
-scroll = ["sbv-chainspec/scroll", "sbv-core/scroll", "sbv-primitives/scroll"]
+scroll = ["sbv-core/scroll", "sbv-primitives/scroll"]
 debug-account = ["sbv-core/debug-account", "sbv-helpers/debug-account"]
 debug-storage = ["sbv-core/debug-storage", "sbv-helpers/debug-storage"]
 dev = ["sbv-core/dev", "sbv-helpers/dev", "sbv-primitives/dev", "sbv-trie/dev"]

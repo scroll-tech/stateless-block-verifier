@@ -2,17 +2,12 @@ use crate::{database::EvmDatabase, error::VerificationError};
 use reth_evm::execute::{BlockExecutorProvider, Executor};
 use reth_evm_ethereum::execute::EthExecutorProvider;
 use reth_execution_types::BlockExecutionInput;
-use reth_primitives::BlockWithSenders;
 use revm::db::CacheDB;
-use sbv_chainspec::ChainSpec;
 use sbv_kv::KeyValueStore;
-use sbv_primitives::{Bytes, B256};
+use sbv_primitives::{chainspec::ChainSpec, BlockWithSenders, Bytes, B256};
 use sbv_trie::TrieNode;
 use std::fmt::Debug;
 use std::sync::Arc;
-
-mod builder;
-pub use builder::EvmExecutorBuilder;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
@@ -32,6 +27,21 @@ pub struct BlockExecutionOutcome {
     /// RLP bytes of transactions
     #[cfg(feature = "scroll")]
     pub tx_rlps: Vec<Bytes>,
+}
+
+impl<'a, CodeDb, NodesProvider> EvmExecutor<'a, CodeDb, NodesProvider> {
+    /// Create a new EVM executor
+    pub fn new(
+        chain_spec: Arc<ChainSpec>,
+        db: EvmDatabase<CodeDb, NodesProvider>,
+        block: &'a BlockWithSenders,
+    ) -> Self {
+        Self {
+            chain_spec,
+            db,
+            block,
+        }
+    }
 }
 
 impl<CodeDb: KeyValueStore<B256, Bytes>, NodesProvider: KeyValueStore<B256, TrieNode>>

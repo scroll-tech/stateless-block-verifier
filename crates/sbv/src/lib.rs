@@ -1,6 +1,5 @@
 //! Umbrella crate for the SBV library.
 
-pub use sbv_chainspec as chainspec;
 pub use sbv_core as core;
 pub use sbv_helpers as helpers;
 pub use sbv_kv as kv;
