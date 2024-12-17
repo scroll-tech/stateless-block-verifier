@@ -46,6 +46,7 @@ reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", rev = "f36e36
 reth-ethereum-forks = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-execution-types = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
+reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-trie = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
 reth-trie-sparse = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }

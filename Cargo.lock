@@ -369,9 +369,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rpc-types"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "374ac12e35bb90ebccd86e7c943ddba9590149a6e35cc4d9cd860d6635fd1018"
+checksum = "986f23fe42ac95832901a24b93c20f7ed2b9644394c02b86222801230da60041"
 dependencies = [
  "alloy-primitives",
  "alloy-rpc-types-eth",
@@ -402,9 +402,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-rpc-types-engine"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ca5898f753ff0d15a0dc955c169523d8fee57e05bb5a38a398b3451b0b988be"
+checksum = "30814f8b9ac10219fb77fe42c277a0ffa1c369fbc3961f14d159f51fb221966e"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4271,6 +4271,7 @@ dependencies = [
  "reth-evm-ethereum",
  "reth-execution-types",
  "reth-primitives",
+ "reth-primitives-traits",
  "reth-storage-errors",
  "revm",
  "sbv-chainspec",
@@ -4329,6 +4330,7 @@ dependencies = [
  "reth-chainspec",
  "reth-evm",
  "reth-primitives",
+ "reth-primitives-traits",
  "revm",
  "rkyv",
  "sbv-helpers",

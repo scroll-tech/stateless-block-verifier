@@ -29,6 +29,7 @@ revm.workspace = true
 reth-chainspec.workspace = true
 reth-evm.workspace = true
 reth-primitives.workspace = true
+reth-primitives-traits.workspace = true
 
 rkyv.workspace = true
 serde = { workspace = true, features = ["derive"] }

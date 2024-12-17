@@ -1,8 +1,9 @@
 use crate::types::block_header::ToHelper as _;
-use crate::types::{BlockHeader, Transaction, TypedTransaction, Withdrawal};
+use crate::types::{BlockHeader, Transaction, Withdrawal};
 use alloy_primitives::{Bytes, ChainId, B256};
 use alloy_rpc_types_debug::ExecutionWitness;
 use alloy_rpc_types_eth::Block;
+use reth_primitives::TransactionSigned;
 
 /// Witness for a block.
 #[derive(
@@ -87,7 +88,7 @@ impl crate::BlockWitness for BlockWitness {
     }
     fn build_typed_transactions(
         &self,
-    ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>> {
+    ) -> impl Iterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>> {
         self.transaction.iter().map(|tx| tx.try_into())
     }
     fn withdrawals_iter(&self) -> Option<impl Iterator<Item = impl crate::Withdrawal>> {
@@ -116,7 +117,7 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     }
     fn build_typed_transactions(
         &self,
-    ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>> {
+    ) -> impl Iterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>> {
         self.transaction.iter().map(|tx| tx.try_into())
     }
     fn withdrawals_iter(&self) -> Option<impl Iterator<Item = impl crate::Withdrawal>> {

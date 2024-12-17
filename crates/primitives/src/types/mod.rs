@@ -1,8 +1,3 @@
-#[cfg(feature = "scroll")]
-mod scroll;
-#[cfg(feature = "scroll")]
-pub use scroll::TxL1Msg;
-
 mod access_list;
 mod block_header;
 mod signature;
@@ -17,7 +12,7 @@ pub use alloy_rpc_types_debug::ExecutionWitness;
 pub use alloy_rpc_types_eth::Block as RpcBlock;
 pub use block_header::{ArchivedBlockHeader, BlockHeader};
 pub use signature::{ArchivedSignature, Signature};
-pub use transaction::{ArchivedTransaction, Transaction, TypedTransaction};
+pub use transaction::{ArchivedTransaction, Transaction};
 pub use withdrawal::{ArchivedWithdrawal, Withdrawal};
 pub use witness::{ArchivedBlockWitness, BlockWitness};
 

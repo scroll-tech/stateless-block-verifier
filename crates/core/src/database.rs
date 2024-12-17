@@ -5,7 +5,6 @@ use revm::{
 };
 use sbv_kv::KeyValueStoreGet;
 use sbv_trie::{PartialStateTrie, TrieNode};
-use std::convert::Infallible;
 use std::{cell::RefCell, collections::HashMap, fmt};
 
 /// A database that consists of account and storage information.
@@ -74,8 +73,6 @@ impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256
             return Ok(None);
         };
         dev_trace!("load trie account of {address:?}: {account:?}");
-        let bt = std::backtrace::Backtrace::force_capture();
-        dev_trace!("backtrace: {bt}");
         let info = AccountInfo {
             balance: account.balance,
             nonce: account.nonce,

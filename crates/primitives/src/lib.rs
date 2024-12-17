@@ -1,13 +1,11 @@
 //! Stateless Block Verifier primitives library.
 
-use crate::types::TypedTransaction;
 use auto_impl::auto_impl;
 use std::fmt;
 
 /// Predeployed contracts
 #[cfg(feature = "scroll")]
 pub mod predeployed;
-// pub mod reth;
 /// Types definition
 pub mod types;
 
@@ -19,6 +17,7 @@ pub use alloy_primitives;
 pub use alloy_primitives::{
     address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
 };
+pub use reth_primitives::TransactionSigned;
 
 /// BlockWitness trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
@@ -35,13 +34,46 @@ pub trait BlockWitness: fmt::Debug {
     /// Transactions
     fn build_typed_transactions(
         &self,
-    ) -> impl Iterator<Item = Result<TypedTransaction, alloy_primitives::SignatureError>>;
+    ) -> impl Iterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>;
     /// Withdrawals
     fn withdrawals_iter(&self) -> Option<impl Iterator<Item = impl Withdrawal>>;
     /// States
     fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
     /// Codes
     fn codes_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
+
+    /// Build a reth block
+    fn build_reth_block(
+        &self,
+    ) -> Result<reth_primitives::BlockWithSenders, alloy_primitives::SignatureError> {
+        let header = self.header();
+        let transactions = self
+            .build_typed_transactions()
+            .collect::<Result<Vec<_>, _>>()?;
+        let senders =
+            TransactionSigned::recover_signers(&transactions, transactions.len()).unwrap(); // FIXME: proper error handling
+
+        let body = reth_primitives::BlockBody {
+            transactions,
+            ommers: vec![],
+            withdrawals: self.withdrawals_iter().map(|iter| {
+                alloy_eips::eip4895::Withdrawals(
+                    iter.map(|w| alloy_eips::eip4895::Withdrawal {
+                        index: w.index(),
+                        validator_index: w.validator_index(),
+                        address: w.address(),
+                        amount: w.amount(),
+                    })
+                    .collect(),
+                )
+            }),
+        };
+
+        Ok(reth_primitives::BlockWithSenders::new_unchecked(
+            reth_primitives::Block { header, body },
+            senders,
+        ))
+    }
 }
 
 /// Withdrawal trait
@@ -56,6 +88,7 @@ pub trait Withdrawal: fmt::Debug {
     /// Value of the withdrawal in gwei.
     fn amount(&self) -> u64;
 }
+
 // FIXME
 // #[cfg(feature = "scroll")]
 // pub trait BlockScrollExt: Block {
