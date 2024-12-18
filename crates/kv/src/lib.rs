@@ -5,8 +5,13 @@ use std::borrow::{Borrow, Cow};
 use std::hash::Hash;
 
 mod imps;
-pub use hashbrown::{self, HashMap, HashSet};
 pub use imps::{nohash, small};
+pub use rustc_hash::{FxBuildHasher, FxHasher};
+
+/// A hash map implemented with quadratic probing and SIMD lookup.
+pub type HashMap<K, V, S = FxBuildHasher> = hashbrown::HashMap<K, V, S>;
+/// A hash set implemented as a `HashMap` where the value is `()`.
+pub type HashSet<K, S = FxBuildHasher> = hashbrown::HashSet<K, S>;
 
 /// Value trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]

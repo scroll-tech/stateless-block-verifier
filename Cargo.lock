@@ -4213,6 +4213,7 @@ dependencies = [
  "alloy-trie",
  "auto_impl",
  "hashbrown 0.15.2",
+ "rustc-hash",
  "sled",
 ]
 

@@ -27,9 +27,9 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
 
     let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id())).unwrap();
 
-    let mut code_db = HashMap::<B256, Bytes>::new();
+    let mut code_db = HashMap::<B256, Bytes>::default();
     witness.import_codes(&mut code_db);
-    let mut nodes_provider = HashMap::<B256, TrieNode>::new();
+    let mut nodes_provider = HashMap::<B256, TrieNode>::default();
     decode_nodes(&mut nodes_provider, witness.states_iter()).unwrap();
     let mut db = EvmDatabase::new_from_root(code_db, witness.pre_state_root(), &nodes_provider);
 

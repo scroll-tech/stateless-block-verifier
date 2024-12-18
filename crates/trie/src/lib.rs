@@ -3,17 +3,19 @@
 extern crate core;
 
 use alloy_rlp::{Decodable, Encodable};
-use alloy_trie::{nodes::CHILD_INDEX_RANGE, Nibbles, TrieMask, EMPTY_ROOT_HASH};
+use alloy_trie::{
+    nodes::{RlpNode, CHILD_INDEX_RANGE},
+    Nibbles, TrieMask, EMPTY_ROOT_HASH,
+};
 use reth_trie_sparse::RevealedSparseTrie;
 use revm::db::BundleAccount;
+use sbv_helpers::dev_trace;
 use sbv_kv::{nohash::NoHashMap, HashMap, KeyValueStoreGet, KeyValueStoreInsert};
 use sbv_primitives::{keccak256, Address, B256, U256};
 use std::cell::RefCell;
 
-use alloy_trie::nodes::RlpNode;
 pub use alloy_trie::{nodes::TrieNode, TrieAccount};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
-use sbv_helpers::dev_trace;
 
 /// Fill a KeyValueStore<B256, TrieNode> from a list of nodes
 pub fn decode_nodes<
@@ -214,7 +216,7 @@ impl<T: Default> PartialTrie<T> {
         }
         let root = nodes_provider.get(&root).unwrap().into_owned();
         let mut state = RevealedSparseTrie::from_root(root.clone(), None, true).unwrap();
-        let mut leafs = HashMap::new();
+        let mut leafs = HashMap::default();
         // traverse the partial trie
         traverse_import_partial_trie(
             &Nibbles::default(),
