@@ -32,7 +32,7 @@ impl Hasher for NoHashHasher {
         self.0 = u64::from_le_bytes(bytes[..8].try_into().unwrap());
     }
 
-    fn write_length_prefix(&mut self, _len: usize) {
+    fn write_usize(&mut self, _i: usize) {
         // ignore length prefix
     }
 }
