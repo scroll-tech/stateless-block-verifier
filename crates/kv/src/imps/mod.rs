@@ -10,6 +10,7 @@ mod alloy_primitives;
 mod alloy_trie;
 #[cfg(feature = "sled")]
 mod sled;
+pub(crate) mod small;
 mod std_collections;
 
 impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, T: KeyValueStoreGet<K, V>> KeyValueStoreGet<K, V>
