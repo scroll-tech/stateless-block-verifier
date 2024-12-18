@@ -1,9 +1,11 @@
 use crate::{KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, Value};
 use std::borrow::{Borrow, Cow};
 use std::collections::{BTreeMap, HashMap};
-use std::hash::Hash;
+use std::hash::{BuildHasher, Hash};
 
-impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> KeyValueStoreInsert<K, V> for HashMap<K, V> {
+impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, S: BuildHasher> KeyValueStoreInsert<K, V>
+    for HashMap<K, V, S>
+{
     fn insert(&mut self, k: K, v: V) {
         HashMap::insert(self, k, v);
     }
@@ -12,7 +14,9 @@ impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> KeyValueStoreInsert<K, V> for H
     }
 }
 
-impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> KeyValueStoreGet<K, V> for HashMap<K, V> {
+impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, S: BuildHasher> KeyValueStoreGet<K, V>
+    for HashMap<K, V, S>
+{
     fn get<Q: ?Sized>(&self, k: &Q) -> Option<Cow<V>>
     where
         K: Borrow<Q>,
@@ -22,7 +26,10 @@ impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> KeyValueStoreGet<K, V> for Hash
     }
 }
 
-impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> KeyValueStore<K, V> for HashMap<K, V> {}
+impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, S: BuildHasher> KeyValueStore<K, V>
+    for HashMap<K, V, S>
+{
+}
 
 impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> KeyValueStoreInsert<K, V> for BTreeMap<K, V> {
     fn insert(&mut self, k: K, v: V) {
