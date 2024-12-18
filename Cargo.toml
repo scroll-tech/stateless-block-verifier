@@ -28,10 +28,6 @@ alloy-consensus = "0.8"
 alloy-rpc-types-eth = "0.8"
 alloy-rpc-types-debug = "0.8"
 alloy-serde = "0.8"
-# https://github.com/alloy-rs/chains
-alloy-chains = "0.1"
-# https://github.com/alloy-rs/eips
-alloy-eip2930 = "0.1"
 # https://github.com/alloy-rs/rlp
 alloy-rlp = "0.3"
 # https://github.com/alloy-rs/trie
@@ -39,19 +35,16 @@ alloy-trie = "0.7"
 # https://github.com/alloy-rs/core
 alloy-primitives = { version = "0.8", features = ["rkyv"] }
 
-reth-chainspec = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
-reth-evm = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
-reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
-reth-ethereum-forks = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
-reth-execution-types = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
-reth-primitives = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
-reth-primitives-traits = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
-reth-storage-errors = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
-reth-trie = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
-reth-trie-sparse = { git = "https://github.com/paradigmxyz/reth", rev = "f36e369" }
+reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
+reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
+reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
+reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
+reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
+reth-storage-errors = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
+reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
+reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
 
 auto_impl = "1.2"
-hex = "0.4"
 once_cell = "1.19"
 rkyv = "0.8"
 thiserror = "1.0"
@@ -61,14 +54,10 @@ tiny-keccak = "2.0"
 anyhow = "1.0"
 async-channel = "2.2"
 clap = "4"
-env_logger = "0.9"
 futures = "0.3"
-tokio-retry = "0.3"
 serde = "1.0"
 serde_json = "1.0"
-serde_with = "3.9"
 serde_path_to_error = "0.1"
-sled = "0.34"
 tokio = { version = "1", default-features = false }
 url = "2.5"
 
@@ -80,6 +69,7 @@ hyper-util = { version = "0.1", features = ["tokio"] }
 http-body-util = "0.1"
 prometheus-client = "0.22"
 pprof = { version = "0.13", features = ["flamegraph"] }
+sled = "0.34"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
@@ -112,8 +102,6 @@ missing-docs = "deny"
 missing-debug-implementations = "deny"
 
 [patch.crates-io]
-ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
-
 # patched add rkyv support & MSRV 1.77
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 
