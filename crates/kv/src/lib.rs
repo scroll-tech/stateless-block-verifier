@@ -5,7 +5,7 @@ use std::borrow::{Borrow, Cow};
 use std::hash::Hash;
 
 mod imps;
-pub use imps::small::SmallMap;
+pub use imps::{nohash, small};
 
 /// Value trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]

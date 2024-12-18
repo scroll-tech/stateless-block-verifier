@@ -8,9 +8,10 @@ use std::ops::{Deref, DerefMut};
 mod alloy_primitives;
 #[cfg(feature = "alloy-trie")]
 mod alloy_trie;
+pub mod nohash;
 #[cfg(feature = "sled")]
 mod sled;
-pub(crate) mod small;
+pub mod small;
 mod std_collections;
 
 impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, T: KeyValueStoreGet<K, V>> KeyValueStoreGet<K, V>

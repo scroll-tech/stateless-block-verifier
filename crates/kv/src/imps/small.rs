@@ -1,3 +1,4 @@
+//! Small map implementation
 use crate::{KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, Value};
 use std::borrow::{Borrow, Cow};
 use std::collections::VecDeque;
