@@ -1,6 +1,7 @@
 //! Stateless Block Verifier primitives library.
 
 use auto_impl::auto_impl;
+use sbv_kv::KeyValueStore;
 use std::fmt;
 
 /// Predeployed contracts
@@ -18,7 +19,6 @@ pub use alloy_primitives::{
     address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
 };
 pub use reth_primitives::{Block, BlockBody, BlockWithSenders, Receipt, TransactionSigned};
-use sbv_kv::KeyValueStore;
 
 /// The spec of an Ethereum network
 pub mod chainspec {
@@ -55,13 +55,13 @@ pub trait BlockWitness: fmt::Debug {
     /// Transactions
     fn build_typed_transactions(
         &self,
-    ) -> impl Iterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>;
+    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>;
     /// Withdrawals
-    fn withdrawals_iter(&self) -> Option<impl Iterator<Item = impl Withdrawal>>;
+    fn withdrawals_iter(&self) -> Option<impl ExactSizeIterator<Item = impl Withdrawal>>;
     /// States
-    fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
+    fn states_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>>;
     /// Codes
-    fn codes_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>>;
+    fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>>;
 
     /// Import codes into code db
     fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {

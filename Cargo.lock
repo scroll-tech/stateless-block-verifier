@@ -998,8 +998,6 @@ version = "1.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9157bbaa6b165880c27a4293a474c91cdcf265cc68cc829bf10be0964a391caf"
 dependencies = [
- "jobserver",
- "libc",
  "shlex",
 ]
 
@@ -1499,7 +1497,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2284,15 +2282,6 @@ name = "itoa"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d75a2a4b1b190afb6f5425f10f6a8f959d2ea0b9c2b1d79553551850539e4674"
-
-[[package]]
-name = "jobserver"
-version = "0.1.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48d1dbcbbeb6a7fec7e059840aa538bd62aaccf972c7346c4d9d2059312853d0"
-dependencies = [
- "libc",
-]
 
 [[package]]
 name = "js-sys"
@@ -3317,7 +3306,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -3337,7 +3326,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3354,7 +3343,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -3365,7 +3354,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3379,7 +3368,7 @@ dependencies = [
 [[package]]
 name = "reth-consensus-common"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3394,7 +3383,7 @@ dependencies = [
 [[package]]
 name = "reth-db"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -3418,7 +3407,7 @@ dependencies = [
 [[package]]
 name = "reth-db-api"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-genesis",
@@ -3443,7 +3432,7 @@ dependencies = [
 [[package]]
 name = "reth-db-models"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -3457,7 +3446,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-consensus"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3473,7 +3462,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -3490,7 +3479,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3516,7 +3505,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3535,7 +3524,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-errors"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -3551,7 +3540,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-types"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3568,7 +3557,7 @@ dependencies = [
 [[package]]
 name = "reth-fs-util"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "serde",
  "serde_json",
@@ -3578,7 +3567,7 @@ dependencies = [
 [[package]]
 name = "reth-metrics"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "metrics",
  "metrics-derive",
@@ -3587,7 +3576,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -3600,7 +3589,7 @@ dependencies = [
 [[package]]
 name = "reth-nippy-jar"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "anyhow",
  "bincode",
@@ -3617,7 +3606,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3644,7 +3633,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3670,7 +3659,7 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-primitives",
  "derive_more",
@@ -3683,7 +3672,7 @@ dependencies = [
 [[package]]
 name = "reth-revm"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -3699,7 +3688,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-primitives",
  "bytes",
@@ -3712,7 +3701,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-primitives",
  "derive_more",
@@ -3723,7 +3712,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3748,7 +3737,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -3763,7 +3752,7 @@ dependencies = [
 [[package]]
 name = "reth-tracing"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "clap",
  "eyre",
@@ -3778,7 +3767,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3801,7 +3790,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -3820,7 +3809,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-db"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -3838,7 +3827,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-sparse"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -3853,7 +3842,7 @@ dependencies = [
 [[package]]
 name = "reth-zstd-compressors"
 version = "1.1.4"
-source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#d3c19474ebbe728acb4a22f896314bcab92d9406"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"
 dependencies = [
  "zstd",
 ]
@@ -4099,7 +4088,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4822,7 +4811,7 @@ dependencies = [
  "fastrand",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5738,28 +5727,5 @@ dependencies = [
 
 [[package]]
 name = "zstd"
-version = "0.13.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcf2b778a664581e31e389454a7072dab1647606d44f7feea22cd5abb9c9f3f9"
-dependencies = [
- "zstd-safe",
-]
-
-[[package]]
-name = "zstd-safe"
-version = "7.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54a3ab4db68cea366acc5c897c7b4d4d1b8994a9cd6e6f841f8964566a419059"
-dependencies = [
- "zstd-sys",
-]
-
-[[package]]
-name = "zstd-sys"
-version = "2.0.13+zstd.1.5.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38ff0f21cfee8f97d94cef41359e0c89aa6113028ab0291aa8ca0038995a95aa"
-dependencies = [
- "cc",
- "pkg-config",
-]
+version = "1.1.4"
+source = "git+https://github.com/scroll-tech/reth?branch=rustc-1.81#b85a4c9a4cff273360f9ab573a375102394800fa"

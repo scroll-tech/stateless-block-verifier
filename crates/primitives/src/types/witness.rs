@@ -88,16 +88,17 @@ impl crate::BlockWitness for BlockWitness {
     }
     fn build_typed_transactions(
         &self,
-    ) -> impl Iterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>> {
+    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>
+    {
         self.transaction.iter().map(|tx| tx.try_into())
     }
-    fn withdrawals_iter(&self) -> Option<impl Iterator<Item = impl crate::Withdrawal>> {
+    fn withdrawals_iter(&self) -> Option<impl ExactSizeIterator<Item = impl crate::Withdrawal>> {
         self.withdrawals.as_ref().map(|w| w.iter())
     }
-    fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>> {
+    fn states_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>> {
         self.states.iter().map(|s| s.as_ref())
     }
-    fn codes_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>> {
+    fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>> {
         self.codes.iter().map(|c| c.as_ref())
     }
 }
@@ -117,16 +118,17 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     }
     fn build_typed_transactions(
         &self,
-    ) -> impl Iterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>> {
+    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>
+    {
         self.transaction.iter().map(|tx| tx.try_into())
     }
-    fn withdrawals_iter(&self) -> Option<impl Iterator<Item = impl crate::Withdrawal>> {
+    fn withdrawals_iter(&self) -> Option<impl ExactSizeIterator<Item = impl crate::Withdrawal>> {
         self.withdrawals.as_ref().map(|w| w.iter())
     }
-    fn states_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>> {
+    fn states_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>> {
         self.states.iter().map(|s| s.as_ref())
     }
-    fn codes_iter(&self) -> impl Iterator<Item = impl AsRef<[u8]>> {
+    fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>> {
         self.codes.iter().map(|c| c.as_ref())
     }
 }
