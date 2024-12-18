@@ -1,5 +1,5 @@
 //! NoHash is a [`HashMap`] optimized for key already being a hash.
-use std::collections::HashMap;
+use crate::HashMap;
 use std::hash::{BuildHasher, Hasher};
 
 /// [`HashMap`] optimized for key already being a hash.

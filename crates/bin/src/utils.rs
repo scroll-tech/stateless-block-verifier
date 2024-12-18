@@ -1,12 +1,12 @@
 use sbv::{
     core::{EvmDatabase, EvmExecutor, ExecutionOutput, VerificationError},
+    kv::HashMap,
     primitives::{
         chainspec::{get_chain_spec, Chain},
         BlockWitness, Bytes, B256,
     },
     trie::{decode_nodes, TrieNode},
 };
-use std::collections::HashMap;
 
 pub fn verify<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
     measure_duration_millis!(

@@ -45,6 +45,7 @@ reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81"
 reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
 
 auto_impl = "1.2"
+hashbrown = "0.15"
 once_cell = "1.19"
 rkyv = "0.8"
 thiserror = "1.0"

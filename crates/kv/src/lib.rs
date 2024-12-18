@@ -5,6 +5,7 @@ use std::borrow::{Borrow, Cow};
 use std::hash::Hash;
 
 mod imps;
+pub use hashbrown::{self, HashMap, HashSet};
 pub use imps::{nohash, small};
 
 /// Value trait

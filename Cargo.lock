@@ -4212,6 +4212,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-trie",
  "auto_impl",
+ "hashbrown 0.15.2",
  "sled",
 ]
 

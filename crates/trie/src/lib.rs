@@ -6,10 +6,9 @@ use alloy_rlp::{Decodable, Encodable};
 use alloy_trie::{nodes::CHILD_INDEX_RANGE, Nibbles, TrieMask, EMPTY_ROOT_HASH};
 use reth_trie_sparse::RevealedSparseTrie;
 use revm::db::BundleAccount;
-use sbv_kv::{KeyValueStoreGet, KeyValueStoreInsert};
+use sbv_kv::{nohash::NoHashMap, HashMap, KeyValueStoreGet, KeyValueStoreInsert};
 use sbv_primitives::{keccak256, Address, B256, U256};
 use std::cell::RefCell;
-use std::collections::HashMap;
 
 use alloy_trie::nodes::RlpNode;
 pub use alloy_trie::{nodes::TrieNode, TrieAccount};
@@ -45,9 +44,9 @@ pub struct PartialStateTrie {
     /// address -> hashed address
     address_hashes: RefCell<HashMap<Address, B256>>,
     /// hashed address -> storage root
-    storage_roots: RefCell<HashMap<B256, B256>>,
+    storage_roots: RefCell<NoHashMap<B256, B256>>,
     /// hashed address -> storage tire
-    storage_tries: RefCell<HashMap<B256, PartialTrie<U256>>>,
+    storage_tries: RefCell<NoHashMap<B256, PartialTrie<U256>>>,
     /// shared rlp buffer
     rlp_buffer: Vec<u8>,
 }
@@ -341,7 +340,7 @@ mod tests {
     use super::*;
     use alloy_rpc_types_debug::ExecutionWitness;
     use alloy_rpc_types_eth::Block;
-    use std::collections::HashMap;
+    use sbv_kv::HashMap;
 
     const PREV_BLOCK: &str = include_str!("../../../testdata/holesky_witness/0x2ba60c/block.json");
     const BLOCK: &str = include_str!("../../../testdata/holesky_witness/0x2ba60d/block.json");

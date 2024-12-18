@@ -15,6 +15,7 @@ workspace = true
 auto_impl.workspace = true
 alloy-trie = { workspace = true, optional = true }
 alloy-primitives = { workspace = true, optional = true }
+hashbrown.workspace = true
 sled = { workspace = true, optional = true }
 
 [features]
