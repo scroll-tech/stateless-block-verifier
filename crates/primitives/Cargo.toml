@@ -15,7 +15,7 @@ workspace = true
 [dependencies]
 auto_impl.workspace = true
 
-alloy-consensus = { workspace = true, features = ["k256"] }
+alloy-consensus = { workspace = true }
 alloy-eips.workspace = true
 alloy-rpc-types-debug.workspace = true
 alloy-rpc-types-eth.workspace = true
@@ -30,7 +30,7 @@ rkyv.workspace = true
 serde = { workspace = true, features = ["derive"] }
 
 sbv-helpers.workspace = true
-sbv-kv.workspace = true
+sbv-kv = { workspace = true, features = ["alloy-primitives"] }
 
 [dev-dependencies]
 serde_json.workspace = true

@@ -1,4 +1,4 @@
-use revm_primitives::Bytes;
+use alloy_primitives::Bytes;
 
 impl crate::Value for Bytes {
     #[cfg(feature = "sled")]

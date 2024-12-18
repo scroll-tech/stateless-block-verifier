@@ -22,27 +22,27 @@ repository = "https://github.com/scroll-tech/stateless-block-verifier"
 
 [workspace.dependencies]
 # https://github.com/alloy-rs/alloy
-alloy = "0.8"
-alloy-eips = "0.8"
-alloy-consensus = "0.8"
-alloy-rpc-types-eth = "0.8"
-alloy-rpc-types-debug = "0.8"
-alloy-serde = "0.8"
+alloy = { version = "0.8", default-features = false }
+alloy-eips = { version = "0.8", default-features = false }
+alloy-consensus = { version = "0.8", default-features = false }
+alloy-rpc-types-eth = { version = "0.8", default-features = false }
+alloy-rpc-types-debug = { version = "0.8", default-features = false }
+alloy-serde = { version = "0.8", default-features = false }
 # https://github.com/alloy-rs/rlp
-alloy-rlp = "0.3"
+alloy-rlp = { version = "0.3", default-features = false }
 # https://github.com/alloy-rs/trie
-alloy-trie = "0.7"
+alloy-trie = { version = "0.7", default-features = false }
 # https://github.com/alloy-rs/core
-alloy-primitives = { version = "0.8", features = ["rkyv"] }
+alloy-primitives = { version = "0.8", default-features = false, features = ["rkyv"] }
 
-reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
-reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
-reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
-reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
-reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
-reth-storage-errors = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
-reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
-reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81" }
+reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
+reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
+reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
+reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
+reth-storage-errors = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
+reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
+reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
 
 auto_impl = "1.2"
 once_cell = "1.19"

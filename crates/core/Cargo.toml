@@ -25,7 +25,7 @@ tiny-keccak.workspace = true
 
 sbv-primitives.workspace = true
 sbv-helpers.workspace = true
-sbv-kv = { workspace = true, features = ["revm-primitives"] }
+sbv-kv = { workspace = true, features = ["alloy-primitives"] }
 sbv-trie.workspace = true
 
 [dev-dependencies]
