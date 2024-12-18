@@ -1,8 +1,8 @@
 use crate::HashMap;
 use crate::{KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, Value};
+use core::hash::{BuildHasher, Hash};
 use std::borrow::{Borrow, Cow};
 use std::collections::BTreeMap;
-use std::hash::{BuildHasher, Hash};
 
 impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, S: BuildHasher> KeyValueStoreInsert<K, V>
     for HashMap<K, V, S>

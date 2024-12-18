@@ -31,4 +31,8 @@ impl Hasher for NoHashHasher {
         // expect the input to be a slice greater than 8 bytes
         self.0 = u64::from_le_bytes(bytes[..8].try_into().unwrap());
     }
+
+    fn write_length_prefix(&mut self, _len: usize) {
+        // ignore length prefix
+    }
 }
