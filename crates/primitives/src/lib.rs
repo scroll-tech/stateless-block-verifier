@@ -16,7 +16,8 @@ pub use alloy_eips;
 pub use alloy_consensus::Header;
 pub use alloy_primitives;
 pub use alloy_primitives::{
-    address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
+    address, b256, keccak256, map::B256HashMap, Address, BlockHash, BlockNumber, Bytes, ChainId,
+    B256, U256,
 };
 pub use reth_primitives::{Block, BlockBody, BlockWithSenders, Receipt, TransactionSigned};
 
