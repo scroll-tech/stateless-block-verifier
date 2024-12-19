@@ -172,35 +172,3 @@ impl BlockChunkExt for Block {
         }
     }
 }
-
-// FIXME
-// #[cfg(feature = "scroll")]
-// pub trait BlockScrollExt: Block {
-//     /// start l1 queue index
-//     fn start_l1_queue_index(&self) -> u64;
-//
-//     /// Number of l1 transactions
-//     #[inline]
-//     fn num_l1_txs(&self) -> u64 {
-//         // 0x7e is l1 tx
-//         match self
-//             .transactions()
-//             .filter(|tx| tx.is_l1_tx())
-//             // tx.nonce for l1 tx is the l1 queue index, which is a globally index,
-//             // not per user as suggested by the name...
-//             .map(|tx| tx.nonce())
-//             .max()
-//         {
-//             None => 0, // not l1 tx in this block
-//             Some(end_l1_queue_index) => end_l1_queue_index - self.start_l1_queue_index() + 1,
-//         }
-//     }
-//
-//     /// Number of l2 transactions
-//     #[inline]
-//     fn num_l2_txs(&self) -> u64 {
-//         // 0x7e is l1 tx
-//         self.transactions().filter(|tx| !tx.is_l1_tx()).count() as u64
-//     }
-//
-// }
