@@ -45,6 +45,16 @@ reth-storage-errors = { git = "https://github.com/scroll-tech/reth", rev = "4278
 reth-trie = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
 reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
 
+#reth-chainspec = { path = "../reth/crates/chainspec", default-features = false }
+#reth-evm = { path = "../reth/crates/evm/", default-features = false }
+#reth-evm-ethereum = { path = "../reth/crates/ethereum/evm", default-features = false }
+#reth-execution-types = { path = "../reth/crates/evm/execution-types", default-features = false }
+#reth-primitives = { path = "../reth/crates/primitives", default-features = false }
+##reth-scroll-primitives = { path = "../reth/crates/scroll/primitives", default-features = false }
+#reth-storage-errors = { path = "../reth/crates/storage/errors", default-features = false }
+#reth-trie = { path = "../reth/crates/trie/trie", default-features = false }
+#reth-trie-sparse = { path = "../reth/crates/trie/sparse", default-features = false }
+
 auto_impl = "1.2"
 hashbrown = "0.15"
 once_cell = "1.19"

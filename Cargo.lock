@@ -924,19 +924,6 @@ dependencies = [
 [[package]]
 name = "bn254"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/bn254.git?branch=master#81e1dcc92ee9a2798b13b84b24de182e9c42256e"
-dependencies = [
- "ff",
- "getrandom",
- "rand",
- "rand_core",
- "sp1-intrinsics",
- "subtle",
-]
-
-[[package]]
-name = "bn254"
-version = "0.1.0"
 source = "git+https://github.com/scroll-tech/bn254#81e1dcc92ee9a2798b13b84b24de182e9c42256e"
 dependencies = [
  "ff",
@@ -1525,7 +1512,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1858,6 +1845,7 @@ dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
+ "rayon",
  "serde",
 ]
 
@@ -2972,19 +2960,9 @@ checksum = "280dc24453071f1b63954171985a0b0d30058d287960968b9b2aca264c8d4ee6"
 [[package]]
 name = "poseidon-bn254"
 version = "0.1.0"
-source = "git+https://github.com/scroll-tech/poseidon-bn254?branch=master#254baa0e3e85c0975c16fe6f33042b1fa9ae0a44"
-dependencies = [
- "bn254 0.1.0 (git+https://github.com/scroll-tech/bn254.git?branch=master)",
- "itertools 0.13.0",
- "sp1-intrinsics",
-]
-
-[[package]]
-name = "poseidon-bn254"
-version = "0.1.0"
 source = "git+https://github.com/scroll-tech/poseidon-bn254?rev=526a64a#526a64a81419bcab6bd8280a8a3f9808189e0373"
 dependencies = [
- "bn254 0.1.0 (git+https://github.com/scroll-tech/bn254)",
+ "bn254",
  "itertools 0.13.0",
 ]
 
@@ -3681,7 +3659,6 @@ dependencies = [
  "reth-codecs",
  "reth-ethereum-forks",
  "reth-primitives-traits",
- "reth-scroll-primitives",
  "reth-static-file-types",
  "reth-zstd-compressors",
  "revm-primitives",
@@ -3765,7 +3742,7 @@ dependencies = [
  "alloy-serde",
  "bytes",
  "modular-bitfield",
- "poseidon-bn254 0.1.0 (git+https://github.com/scroll-tech/poseidon-bn254?rev=526a64a)",
+ "poseidon-bn254",
  "reth-codecs",
  "reth-codecs-derive",
  "serde",
@@ -4003,7 +3980,6 @@ dependencies = [
  "dyn-clone",
  "enumn",
  "hex",
- "poseidon-bn254 0.1.0 (git+https://github.com/scroll-tech/poseidon-bn254?branch=master)",
  "serde",
 ]
 
@@ -4187,7 +4163,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4312,7 +4288,6 @@ dependencies = [
  "alloy-trie",
  "auto_impl",
  "hashbrown 0.15.2",
- "rustc-hash",
  "sled",
 ]
 
@@ -4329,7 +4304,6 @@ dependencies = [
  "auto_impl",
  "reth-chainspec",
  "reth-primitives",
- "reth-scroll-primitives",
  "rkyv",
  "sbv-helpers",
  "sbv-kv",
@@ -4922,7 +4896,7 @@ dependencies = [
  "fastrand",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

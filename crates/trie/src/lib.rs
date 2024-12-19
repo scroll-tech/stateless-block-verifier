@@ -89,7 +89,7 @@ impl PartialStateTrie {
     ) -> Option<U256> {
         let hashed_address = self.hashed_address(address);
         let storage_root = *self.storage_roots.borrow().get(&hashed_address)?;
-        let path = Nibbles::unpack(keccak256(index.to_be_bytes::<32>()));
+        let path = Nibbles::unpack(keccak256(index.to_be_bytes::<{ U256::BYTES }>()));
 
         self.storage_tries
             .borrow_mut()
@@ -141,7 +141,7 @@ impl PartialStateTrie {
             dev_trace!("opened storage trie of {address} at {}", trie.trie.root());
 
             for (key, slot) in account.storage.iter() {
-                let key_hash = keccak256(key.to_be_bytes::<32>());
+                let key_hash = keccak256(key.to_be_bytes::<{ U256::BYTES }>());
                 let path = Nibbles::unpack(key_hash);
 
                 dev_trace!(

@@ -4,9 +4,7 @@ use std::hash::Hash;
 use std::mem::ManuallyDrop;
 use std::ops::{Deref, DerefMut};
 
-#[cfg(feature = "alloy-primitives")]
 mod alloy_primitives;
-#[cfg(feature = "alloy-trie")]
 mod alloy_trie;
 pub mod nohash;
 #[cfg(feature = "sled")]

@@ -19,7 +19,7 @@ reth-trie.workspace = true
 reth-trie-sparse.workspace = true
 
 sbv-primitives.workspace = true
-sbv-kv = { workspace = true, features = ["alloy-trie"] }
+sbv-kv.workspace = true
 sbv-helpers.workspace = true
 
 [dev-dependencies]
