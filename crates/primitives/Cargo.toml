@@ -25,9 +25,11 @@ alloy-primitives.workspace = true
 
 reth-chainspec.workspace = true
 reth-primitives.workspace = true
+reth-scroll-primitives = { workspace = true, optional = true }
 
 rkyv.workspace = true
 serde = { workspace = true, features = ["derive"] }
+tiny-keccak.workspace = true
 
 sbv-helpers.workspace = true
 sbv-kv = { workspace = true, features = ["alloy-primitives"] }
@@ -36,7 +38,7 @@ sbv-kv = { workspace = true, features = ["alloy-primitives"] }
 serde_json.workspace = true
 
 [features]
-scroll = []
+scroll = ["dep:reth-scroll-primitives", "reth-chainspec/scroll", "reth-primitives/scroll"]
 dev = ["sbv-helpers/dev"]
 sp1 = []
 cycle-tracker = []

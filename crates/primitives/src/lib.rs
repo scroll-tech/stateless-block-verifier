@@ -13,7 +13,8 @@ pub mod types;
 pub use alloy_consensus;
 pub use alloy_eips;
 
-pub use alloy_consensus::Header;
+use alloy_consensus::Typed2718;
+pub use alloy_consensus::{BlockHeader, Header};
 pub use alloy_primitives;
 pub use alloy_primitives::{
     address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
@@ -46,23 +47,50 @@ pub trait BlockWitness: fmt::Debug {
     /// Chain id
     fn chain_id(&self) -> ChainId;
     /// Header
+    fn header(&self) -> impl BlockHeader;
+    /// Build alloy header
     #[must_use]
-    fn header(&self) -> Header;
+    fn build_alloy_header(&self) -> Header;
     /// Pre-state root
+    #[must_use]
     fn pre_state_root(&self) -> B256;
     /// Number of transactions
     fn num_transactions(&self) -> usize;
     /// Transactions
+    #[must_use]
     fn build_typed_transactions(
         &self,
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>;
     /// Withdrawals
+    #[must_use]
     fn withdrawals_iter(&self) -> Option<impl ExactSizeIterator<Item = impl Withdrawal>>;
     /// States
+    #[must_use]
     fn states_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>>;
     /// Codes
+    #[must_use]
     fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>>;
 
+    // provided methods
+
+    /// Pre-state root
+    #[must_use]
+    fn post_state_root(&self) -> B256 {
+        self.header().state_root()
+    }
+    /// Withdrawal root
+    #[must_use]
+    fn withdrawals_root(&self) -> Option<B256> {
+        self.header().withdrawals_root()
+    }
+    /// Number of states
+    fn num_states(&self) -> usize {
+        self.states_iter().len()
+    }
+    /// Number of codes
+    fn num_codes(&self) -> usize {
+        self.codes_iter().len()
+    }
     /// Import codes into code db
     fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
         for code in self.codes_iter() {
@@ -74,7 +102,7 @@ pub trait BlockWitness: fmt::Debug {
 
     /// Build a reth block
     fn build_reth_block(&self) -> Result<BlockWithSenders, alloy_primitives::SignatureError> {
-        let header = self.header();
+        let header = self.build_alloy_header();
         let transactions = self
             .build_typed_transactions()
             .collect::<Result<Vec<_>, _>>()?;
@@ -117,6 +145,34 @@ pub trait Withdrawal: fmt::Debug {
     fn amount(&self) -> u64;
 }
 
+/// Chunk related extension methods for Block
+pub trait BlockChunkExt {
+    /// Hash the header of the block
+    fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher);
+    /// Hash the l1 messages of the block
+    fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher);
+}
+
+impl BlockChunkExt for Block {
+    #[inline]
+    fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        hasher.update(&self.number.to_be_bytes());
+        hasher.update(&self.timestamp.to_be_bytes());
+        hasher.update(
+            &U256::from_limbs([self.base_fee_per_gas.unwrap_or_default(), 0, 0, 0])
+                .to_be_bytes::<{ U256::BYTES }>(),
+        );
+        hasher.update(&self.gas_limit.to_be_bytes());
+        hasher.update(&(self.body.transactions.len() as u16).to_be_bytes());
+    }
+    #[inline]
+    fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        for tx in self.body.transactions.iter().filter(|tx| tx.ty() == 0x7e) {
+            hasher.update(tx.hash().as_slice())
+        }
+    }
+}
+
 // FIXME
 // #[cfg(feature = "scroll")]
 // pub trait BlockScrollExt: Block {
@@ -147,32 +203,4 @@ pub trait Withdrawal: fmt::Debug {
 //         self.transactions().filter(|tx| !tx.is_l1_tx()).count() as u64
 //     }
 //
-//     /// Hash the header of the block
-//     #[inline]
-//     fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
-//         let num_txs = (self.num_l1_txs() + self.num_l2_txs()) as u16;
-//         hasher.update(&self.number().to_be_bytes());
-//         hasher.update(&self.timestamp().to::<u64>().to_be_bytes());
-//         hasher.update(
-//             &self
-//                 .base_fee_per_gas()
-//                 .map(U256::from)
-//                 .unwrap_or_default()
-//                 .to_be_bytes::<{ U256::BYTES }>(),
-//         );
-//         hasher.update(&self.gas_limit().to::<u64>().to_be_bytes());
-//         hasher.update(&num_txs.to_be_bytes());
-//     }
-//
-//     /// Hash the l1 messages of the block
-//     #[inline]
-//     fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
-//         for tx_hash in self
-//             .transactions()
-//             .filter(|tx| tx.is_l1_tx())
-//             .map(|tx| tx.tx_hash())
-//         {
-//             hasher.update(tx_hash.as_slice())
-//         }
-//     }
 // }

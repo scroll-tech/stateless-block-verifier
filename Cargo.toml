@@ -35,14 +35,15 @@ alloy-trie = { version = "0.7", default-features = false }
 # https://github.com/alloy-rs/core
 alloy-primitives = { version = "0.8", default-features = false, features = ["rkyv"] }
 
-reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
-reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
-reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
-reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
-reth-storage-errors = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
-reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
-reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "rustc-1.81", default-features = false }
+reth-chainspec = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
+reth-evm = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
+reth-execution-types = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
+reth-primitives = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
+reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
+reth-storage-errors = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
+reth-trie = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
+reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", rev = "4278138", default-features = false }
 
 auto_impl = "1.2"
 hashbrown = "0.15"

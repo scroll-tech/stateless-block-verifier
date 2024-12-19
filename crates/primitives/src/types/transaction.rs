@@ -1,8 +1,8 @@
 use super::{access_list::AccessList, signature::Signature};
 use alloy_consensus::{
-    SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxLegacy, Typed2718,
+    SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEip4844, TxLegacy, Typed2718,
 };
-use alloy_primitives::{Address, Bytes, ChainId, SignatureError, TxHash, U256};
+use alloy_primitives::{Address, Bytes, ChainId, SignatureError, TxHash, B256, U256};
 use reth_primitives::TransactionSigned;
 
 /// Transaction object used in RPC
@@ -21,23 +21,23 @@ use reth_primitives::TransactionSigned;
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct Transaction {
     /// Hash
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Hash"))]
     pub hash: TxHash,
     /// Nonce
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Nonce"))]
     #[serde(with = "alloy_serde::quantity")]
     pub nonce: u64,
     /// Sender
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Sender"))]
     pub from: Address,
     /// Recipient
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Recipient"))]
     pub to: Option<Address>,
     /// Transferred value
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Transferred value"))]
     pub value: U256,
     /// Gas Price
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Gas Price"))]
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
@@ -45,15 +45,15 @@ pub struct Transaction {
     )]
     pub gas_price: Option<u128>,
     /// Gas amount
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Gas amount"))]
     #[serde(with = "alloy_serde::quantity")]
     pub gas: u64,
     /// Max BaseFeePerGas the user is willing to pay.
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Max BaseFeePerGas the user is willing to pay."))]
     #[serde(with = "alloy_serde::quantity")]
     pub max_fee_per_gas: u128,
     /// The miner's tip.
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "The miner's tip."))]
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
@@ -61,7 +61,7 @@ pub struct Transaction {
     )]
     pub max_priority_fee_per_gas: Option<u128>,
     /// Configured max fee per blob gas for eip-4844 transactions
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Configured max fee per blob gas for eip-4844 transactions"))]
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
@@ -69,31 +69,49 @@ pub struct Transaction {
     )]
     pub max_fee_per_blob_gas: Option<u128>,
     /// Data
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "Data"))]
     pub input: Bytes,
     /// All _flattened_ fields of the transaction signature.
     ///
     /// Note: this is an option so special transaction types without a signature (e.g. <https://github.com/ethereum-optimism/optimism/blob/0bf643c4147b43cd6f25a759d331ef3a2a61a2a3/specs/deposits.md#the-deposited-transaction-type>) can be supported.
-    #[rkyv(attr(doc = ""))]
-    pub signature: Signature,
+    #[rkyv(attr(doc = r#"All _flattened_ fields of the transaction signature.
+
+Note: this is an option so special transaction types without a signature (e.g. <https://github.com/ethereum-optimism/optimism/blob/0bf643c4147b43cd6f25a759d331ef3a2a61a2a3/specs/deposits.md#the-deposited-transaction-type>) can be supported."#))]
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub signature: Option<Signature>,
     /// The chain id of the transaction, if any.
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "The chain id of the transaction, if any."))]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "alloy_serde::quantity::opt"
+    )]
     pub chain_id: Option<ChainId>,
+    /// Contains the blob hashes for eip-4844 transactions.
+    #[rkyv(attr(doc = "Contains the blob hashes for eip-4844 transactions."))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blob_versioned_hashes: Option<Vec<B256>>,
     /// EIP2930
     ///
     /// Pre-pay to warm storage access.
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = r#"EIP2930
+
+    Pre-pay to warm storage access."#))]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub access_list: Option<AccessList>,
     /// EIP2718
     ///
     /// Transaction type,
     /// Some(4) for EIP-7702 transaction, Some(3) for EIP-4844 transaction, Some(2) for EIP-1559
     /// transaction, Some(1) for AccessList transaction, None or Some(0) for Legacy
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = r#"EIP2718
+
+Transaction type, Some(4) for EIP-7702 transaction, Some(3) for EIP-4844 transaction, Some(2) for EIP-1559 transaction, Some(1) for AccessList transaction, None or Some(0) for Legacy"#))]
+    #[doc(alias = "tx_type")]
     pub transaction_type: u8,
     /// L1Msg queueIndex
     #[cfg(feature = "scroll")]
-    #[rkyv(attr(doc = ""))]
+    #[rkyv(attr(doc = "L1Msg queueIndex"))]
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
@@ -104,10 +122,7 @@ pub struct Transaction {
 
 impl Transaction {
     /// Create a transaction from an alloy transaction
-    pub fn from_alloy(
-        tx: alloy_rpc_types_eth::Transaction,
-        #[cfg(feature = "scroll")] queue_index: Option<u64>,
-    ) -> Self {
+    pub fn from_alloy(tx: alloy_rpc_types_eth::Transaction) -> Self {
         Self {
             hash: *tx.inner.tx_hash(),
             nonce: tx.nonce(),
@@ -120,12 +135,13 @@ impl Transaction {
             max_priority_fee_per_gas: tx.max_priority_fee_per_gas(),
             max_fee_per_blob_gas: tx.max_fee_per_blob_gas(),
             input: tx.input().clone(),
-            signature: tx.inner.signature().into(),
+            signature: Some(tx.inner.signature().into()), // FIXME: scroll mode
             chain_id: tx.chain_id(),
+            blob_versioned_hashes: tx.blob_versioned_hashes().map(Vec::from),
             access_list: tx.access_list().map(Into::into),
             transaction_type: tx.ty(),
             #[cfg(feature = "scroll")]
-            queue_index,
+            queue_index: None, // FIXME: scroll mode
         }
     }
 }
@@ -137,8 +153,8 @@ impl TryFrom<&Transaction> for TransactionSigned {
         let tx_type = tx.transaction_type;
 
         let tx = match tx_type {
-            0x0 => {
-                let sig = tx.signature.try_into()?;
+            0x00 => {
+                let sig = tx.signature.expect("missing signature").try_into()?;
                 let tx = TxLegacy {
                     chain_id: tx.chain_id,
                     nonce: tx.nonce,
@@ -151,8 +167,8 @@ impl TryFrom<&Transaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
-            0x1 => {
-                let sig = tx.signature.try_into()?;
+            0x01 => {
+                let sig = tx.signature.expect("missing signature").try_into()?;
                 let tx = TxEip2930 {
                     chain_id: tx.chain_id.expect("missing chain_id"),
                     nonce: tx.nonce,
@@ -167,7 +183,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                 tx.into_signed(sig).into()
             }
             0x02 => {
-                let sig = tx.signature.try_into()?;
+                let sig = tx.signature.expect("missing signature").try_into()?;
                 let tx = TxEip1559 {
                     chain_id: tx.chain_id.expect("missing chain_id"),
                     nonce: tx.nonce,
@@ -184,20 +200,43 @@ impl TryFrom<&Transaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
+            0x03 => {
+                let sig = tx.signature.expect("missing signature").try_into()?;
+                let tx = TxEip4844 {
+                    chain_id: tx.chain_id.expect("missing chain_id"),
+                    nonce: tx.nonce,
+                    max_fee_per_gas: tx.max_fee_per_gas,
+                    max_priority_fee_per_gas: tx
+                        .max_priority_fee_per_gas
+                        .expect("missing max_priority_fee_per_gas"),
+                    gas_limit: tx.gas,
+                    to: tx.to.expect("missing to").into(),
+                    value: tx.value,
+                    input: tx.input.clone(),
+                    access_list: tx.access_list.clone().expect("missing access_list").into(),
+                    blob_versioned_hashes: tx
+                        .blob_versioned_hashes
+                        .clone()
+                        .expect("missing blob_versioned_hashes"),
+                    max_fee_per_blob_gas: tx
+                        .max_fee_per_blob_gas
+                        .expect("missing max_fee_per_blob_gas"),
+                };
+                tx.into_signed(sig).into()
+            }
             #[cfg(feature = "scroll")]
             0x7e => {
-                unimplemented!("FIXME")
-                // let tx = super::TxL1Msg {
-                //     tx_hash: tx.hash,
-                //     from: tx.from,
-                //     nonce: tx.queue_index.unwrap(),
-                //     gas_limit: tx.gas,
-                //     to: tx.to.into(),
-                //     value: tx.value,
-                //     input: tx.input.clone(),
-                // };
-                //
-                // TypedTransaction::L1Msg(tx)
+                use reth_scroll_primitives::l1_transaction::TxL1Message;
+                let tx = TxL1Message {
+                    queue_index: tx.queue_index.expect("missing queue_index"),
+                    gas_limit: tx.gas,
+                    to: tx.to.expect("missing to").into(),
+                    value: tx.value,
+                    sender: tx.from,
+                    input: tx.input.clone(),
+                };
+
+                TransactionSigned::new_unhashed(tx.into(), TxL1Message::signature())
             }
             _ => unimplemented!("unsupported tx type: {}", tx_type),
         };
@@ -212,31 +251,39 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
     fn try_from(tx: &ArchivedTransaction) -> Result<Self, Self::Error> {
         let tx_type = tx.transaction_type;
         let input = Bytes::copy_from_slice(tx.input.as_slice());
-        let to = tx.to.as_ref().map(|to| Address::from(*to)).into();
+        let to = tx.to.as_ref().map(|to| Address::from(*to));
 
         let tx = match tx_type {
-            0x0 => {
-                let sig = (&tx.signature).try_into()?;
+            0x00 => {
+                let sig = tx
+                    .signature
+                    .as_ref()
+                    .expect("missing signature")
+                    .try_into()?;
                 let tx = TxLegacy {
                     chain_id: tx.chain_id.as_ref().map(|x| x.to_native()),
                     nonce: tx.nonce.to_native(),
                     gas_price: tx.gas_price.unwrap().to_native(),
                     gas_limit: tx.gas.to_native(),
-                    to,
+                    to: to.into(),
                     value: tx.value.into(),
                     input,
                 };
 
                 tx.into_signed(sig).into()
             }
-            0x1 => {
-                let sig = (&tx.signature).try_into()?;
+            0x01 => {
+                let sig = tx
+                    .signature
+                    .as_ref()
+                    .expect("missing signature")
+                    .try_into()?;
                 let tx = TxEip2930 {
-                    chain_id: tx.chain_id.unwrap().to_native(),
+                    chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
                     nonce: tx.nonce.to_native(),
                     gas_price: tx.gas_price.unwrap().to_native(),
                     gas_limit: tx.gas.to_native(),
-                    to,
+                    to: to.into(),
                     value: tx.value.into(),
                     access_list: tx.access_list.as_ref().expect("missing access_list").into(),
                     input,
@@ -245,9 +292,13 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
                 tx.into_signed(sig).into()
             }
             0x02 => {
-                let sig = (&tx.signature).try_into()?;
+                let sig = tx
+                    .signature
+                    .as_ref()
+                    .expect("missing signature")
+                    .try_into()?;
                 let tx = TxEip1559 {
-                    chain_id: tx.chain_id.unwrap().to_native(),
+                    chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
                     nonce: tx.nonce.to_native(),
                     max_fee_per_gas: tx.max_fee_per_gas.to_native(),
                     max_priority_fee_per_gas: tx
@@ -256,7 +307,7 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
                         .expect("missing max_priority_fee_per_gas")
                         .to_native(),
                     gas_limit: tx.gas.to_native(),
-                    to,
+                    to: to.into(),
                     value: tx.value.into(),
                     access_list: tx.access_list.as_ref().expect("missing access_list").into(),
                     input,
@@ -264,20 +315,58 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
+            0x03 => {
+                let sig = tx
+                    .signature
+                    .as_ref()
+                    .expect("missing signature")
+                    .try_into()?;
+                let tx = TxEip4844 {
+                    chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
+                    nonce: tx.nonce.to_native(),
+                    max_fee_per_gas: tx.max_fee_per_gas.to_native(),
+                    max_priority_fee_per_gas: tx
+                        .max_priority_fee_per_gas
+                        .as_ref()
+                        .expect("missing max_priority_fee_per_gas")
+                        .to_native(),
+                    gas_limit: tx.gas.to_native(),
+                    to: to.expect("missing to").into(),
+                    value: tx.value.into(),
+                    input,
+                    access_list: tx.access_list.as_ref().expect("missing access_list").into(),
+                    blob_versioned_hashes: tx
+                        .blob_versioned_hashes
+                        .as_ref()
+                        .expect("missing blob_versioned_hashes")
+                        .iter()
+                        .map(|x| B256::from(*x))
+                        .collect(),
+                    max_fee_per_blob_gas: tx
+                        .max_fee_per_blob_gas
+                        .as_ref()
+                        .expect("missing max_fee_per_blob_gas")
+                        .to_native(),
+                };
+                tx.into_signed(sig).into()
+            }
             #[cfg(feature = "scroll")]
             0x7e => {
-                unimplemented!("FIXME")
-                // let tx = super::TxL1Msg {
-                //     tx_hash: tx.hash.into(),
-                //     from: tx.from.into(),
-                //     nonce: tx.queue_index.unwrap().to_native(),
-                //     gas_limit: tx.gas.to_native(),
-                //     to,
-                //     value: tx.value.into(),
-                //     input,
-                // };
-                //
-                // TypedTransaction::L1Msg(tx)
+                use reth_scroll_primitives::l1_transaction::TxL1Message;
+                let tx = TxL1Message {
+                    queue_index: tx
+                        .queue_index
+                        .as_ref()
+                        .expect("missing queue_index")
+                        .to_native(),
+                    gas_limit: tx.gas.to_native(),
+                    to: to.expect("missing to").into(),
+                    value: tx.value.into(),
+                    sender: Address::from(tx.from),
+                    input,
+                };
+
+                TransactionSigned::new_unhashed(tx.into(), TxL1Message::signature())
             }
             _ => unimplemented!("unsupported tx type: {}", tx_type),
         };

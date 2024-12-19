@@ -77,7 +77,10 @@ impl crate::BlockWitness for BlockWitness {
     fn chain_id(&self) -> ChainId {
         self.chain_id
     }
-    fn header(&self) -> alloy_consensus::Header {
+    fn header(&self) -> impl alloy_consensus::BlockHeader {
+        &self.header
+    }
+    fn build_alloy_header(&self) -> alloy_consensus::Header {
         self.header.to_alloy()
     }
     fn pre_state_root(&self) -> B256 {
@@ -107,7 +110,10 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     fn chain_id(&self) -> ChainId {
         self.chain_id.to_native()
     }
-    fn header(&self) -> alloy_consensus::Header {
+    fn header(&self) -> impl alloy_consensus::BlockHeader {
+        &self.header
+    }
+    fn build_alloy_header(&self) -> alloy_consensus::Header {
         self.header.to_alloy()
     }
     fn pre_state_root(&self) -> B256 {
