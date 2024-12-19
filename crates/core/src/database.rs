@@ -4,9 +4,9 @@ use revm::{
     db::DatabaseRef,
     primitives::{AccountInfo, Address, Bytecode, Bytes, B256, U256},
 };
-use sbv_kv::KeyValueStoreGet;
+use sbv_kv::{HashMap, KeyValueStoreGet};
 use sbv_trie::{PartialStateTrie, TrieNode};
-use std::{cell::RefCell, collections::HashMap, fmt};
+use std::{cell::RefCell, fmt};
 
 /// A database that consists of account and storage information.
 pub struct EvmDatabase<CodeDb, NodesProvider> {
