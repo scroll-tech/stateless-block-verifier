@@ -146,6 +146,7 @@ pub trait Withdrawal: fmt::Debug {
 }
 
 /// Chunk related extension methods for Block
+/// FIXME: gate this behind scroll feature
 pub trait BlockChunkExt {
     /// Hash the header of the block
     fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher);
