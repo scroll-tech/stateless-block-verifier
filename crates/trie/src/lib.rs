@@ -10,17 +10,44 @@ use alloy_trie::{
 use reth_trie_sparse::RevealedSparseTrie;
 use revm::db::BundleAccount;
 use sbv_helpers::dev_trace;
-use sbv_kv::{nohash::NoHashMap, HashMap, KeyValueStoreGet, KeyValueStoreInsert};
-use sbv_primitives::{keccak256, Address, B256, U256};
+use sbv_kv::{nohash::NoHashMap, HashMap};
+use sbv_primitives::{keccak256, Address, BlockWitness, B256, U256};
 use std::cell::RefCell;
 
 pub use alloy_trie::{nodes::TrieNode, TrieAccount};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
 
+/// Extension trait for BlockWitness
+pub trait BlockWitnessTrieExt {
+    /// Import nodes into a KeyValueStore
+    fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
+        &self,
+        provider: &mut P,
+    ) -> Result<(), alloy_rlp::Error>;
+}
+
+impl<T: BlockWitness> BlockWitnessTrieExt for T {
+    fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
+        &self,
+        provider: &mut P,
+    ) -> Result<(), alloy_rlp::Error> {
+        decode_nodes(provider, self.states_iter())
+    }
+}
+
+impl<T: BlockWitness> BlockWitnessTrieExt for [T] {
+    fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
+        &self,
+        provider: &mut P,
+    ) -> Result<(), alloy_rlp::Error> {
+        decode_nodes(provider, self.iter().flat_map(|w| w.states_iter()))
+    }
+}
+
 /// Fill a KeyValueStore<B256, TrieNode> from a list of nodes
 pub fn decode_nodes<
     B: AsRef<[u8]>,
-    P: KeyValueStoreInsert<B256, TrieNode>,
+    P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>,
     I: Iterator<Item = B>,
 >(
     provider: &mut P,
@@ -55,7 +82,10 @@ pub struct PartialStateTrie {
 
 impl PartialStateTrie {
     /// Open a partial trie from a root node
-    pub fn open<P: KeyValueStoreGet<B256, TrieNode> + Copy>(nodes_provider: P, root: B256) -> Self {
+    pub fn open<P: sbv_kv::KeyValueStoreGet<B256, TrieNode> + Copy>(
+        nodes_provider: P,
+        root: B256,
+    ) -> Self {
         let state = PartialTrie::open(nodes_provider, root, decode_trie_account);
 
         PartialStateTrie {
@@ -81,7 +111,7 @@ impl PartialStateTrie {
 
     /// Get storage
     #[must_use]
-    pub fn get_storage<P: KeyValueStoreGet<B256, TrieNode> + Copy>(
+    pub fn get_storage<P: sbv_kv::KeyValueStoreGet<B256, TrieNode> + Copy>(
         &self,
         nodes_provider: P,
         address: Address,
@@ -109,7 +139,7 @@ impl PartialStateTrie {
     }
 
     /// Update the trie with the new state
-    pub fn update<'a, P: KeyValueStoreGet<B256, TrieNode> + Copy>(
+    pub fn update<'a, P: sbv_kv::KeyValueStoreGet<B256, TrieNode> + Copy>(
         &mut self,
         nodes_provider: P,
         post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
@@ -206,7 +236,7 @@ struct PartialTrie<T> {
 
 impl<T: Default> PartialTrie<T> {
     /// Open a partial trie from a root node
-    fn open<P: KeyValueStoreGet<B256, TrieNode> + Copy, F: FnOnce(&[u8]) -> T + Copy>(
+    fn open<P: sbv_kv::KeyValueStoreGet<B256, TrieNode> + Copy, F: FnOnce(&[u8]) -> T + Copy>(
         nodes_provider: P,
         root: B256,
         parse_leaf: F,
@@ -249,7 +279,7 @@ impl<T: Default> PartialTrie<T> {
 }
 
 fn traverse_import_partial_trie<
-    P: KeyValueStoreGet<B256, TrieNode> + Copy,
+    P: sbv_kv::KeyValueStoreGet<B256, TrieNode> + Copy,
     F: FnMut(Nibbles, &Vec<u8>),
 >(
     path: &Nibbles,
@@ -320,7 +350,7 @@ fn decode_u256_rlp(mut buf: &[u8]) -> U256 {
     value
 }
 
-fn decode_rlp_node<P: KeyValueStoreGet<B256, TrieNode>>(
+fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
     nodes_provider: P,
     node: &RlpNode,
 ) -> Option<TrieNode> {

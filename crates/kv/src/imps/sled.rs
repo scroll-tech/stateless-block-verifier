@@ -16,7 +16,7 @@ impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> KeyValueStoreGet<K, V> for sled
     fn get<Q: ?Sized>(&self, k: &Q) -> Option<Cow<V>>
     where
         K: Borrow<Q>,
-        Q: Ord + Hash + Eq + AsRef<[u8]>,
+        Q: Ord + Hash + Eq,
     {
         sled::Tree::get(self, k)
             .expect("sled io error")

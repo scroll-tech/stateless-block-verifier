@@ -9,23 +9,22 @@ mod alloy_trie;
 pub mod nohash;
 #[cfg(feature = "sled")]
 mod sled;
-pub mod small;
 mod std_collections;
 
-impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, T: KeyValueStoreGet<K, V>> KeyValueStoreGet<K, V>
+impl<K: Ord + Hash + Eq, V: Value, T: KeyValueStoreGet<K, V>> KeyValueStoreGet<K, V>
     for ManuallyDrop<T>
 {
     fn get<Q: ?Sized>(&self, k: &Q) -> Option<Cow<V>>
     where
         K: Borrow<Q>,
-        Q: Ord + Hash + Eq + AsRef<[u8]>,
+        Q: Ord + Hash + Eq,
     {
         self.deref().get(k)
     }
 }
 
-impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, T: KeyValueStoreInsert<K, V>>
-    KeyValueStoreInsert<K, V> for ManuallyDrop<T>
+impl<K: Ord + Hash + Eq, V: Value, T: KeyValueStoreInsert<K, V>> KeyValueStoreInsert<K, V>
+    for ManuallyDrop<T>
 {
     fn insert(&mut self, k: K, v: V) {
         self.deref_mut().insert(k, v)
@@ -36,7 +35,4 @@ impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, T: KeyValueStoreInsert<K, V>>
     }
 }
 
-impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value, T: KeyValueStore<K, V>> KeyValueStore<K, V>
-    for ManuallyDrop<T>
-{
-}
+impl<K: Ord + Hash + Eq, V: Value, T: KeyValueStore<K, V>> KeyValueStore<K, V> for ManuallyDrop<T> {}

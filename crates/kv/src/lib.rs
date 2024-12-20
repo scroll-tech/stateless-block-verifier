@@ -6,7 +6,7 @@ use std::hash::Hash;
 
 mod imps;
 pub use alloy_primitives::map::{self, HashMap, HashSet};
-pub use imps::{nohash, small};
+pub use imps::nohash;
 
 /// Value trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
@@ -29,7 +29,7 @@ pub trait Value: ToOwned<Owned = Self> {
 
 /// Key-Value store insert trait
 #[auto_impl(&mut, Box)]
-pub trait KeyValueStoreInsert<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> {
+pub trait KeyValueStoreInsert<K: Ord + Hash + Eq, V: Value> {
     /// Insert key-value pair
     fn insert(&mut self, k: K, v: V);
     /// Insert key-value pair if key does not exist
@@ -38,17 +38,17 @@ pub trait KeyValueStoreInsert<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> {
 
 /// Key-Value store trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
-pub trait KeyValueStoreGet<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> {
+pub trait KeyValueStoreGet<K: Ord + Hash + Eq, V: Value> {
     /// Get value by key
     fn get<Q: ?Sized>(&self, k: &Q) -> Option<Cow<V>>
     where
         K: Borrow<Q>,
-        Q: Ord + Hash + Eq + AsRef<[u8]>;
+        Q: Ord + Hash + Eq;
 }
 
 /// Key-Value store trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
-pub trait KeyValueStore<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value>:
+pub trait KeyValueStore<K: Ord + Hash + Eq, V: Value>:
     KeyValueStoreInsert<K, V> + KeyValueStoreGet<K, V>
 {
 }
