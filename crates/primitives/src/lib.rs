@@ -61,6 +61,9 @@ pub trait BlockWitness: fmt::Debug {
     fn build_typed_transactions(
         &self,
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>;
+    /// Block hashes
+    #[must_use]
+    fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256>;
     /// Withdrawals
     #[must_use]
     fn withdrawals_iter(&self) -> Option<impl ExactSizeIterator<Item = impl Withdrawal>>;
@@ -90,14 +93,6 @@ pub trait BlockWitness: fmt::Debug {
     /// Number of codes
     fn num_codes(&self) -> usize {
         self.codes_iter().len()
-    }
-    /// Import codes into code db
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
-        for code in self.codes_iter() {
-            let code = code.as_ref();
-            let code_hash = keccak256(code);
-            code_db.insert(code_hash, Bytes::copy_from_slice(code))
-        }
     }
 
     /// Build a reth block
@@ -129,6 +124,73 @@ pub trait BlockWitness: fmt::Debug {
             Block { header, body },
             senders,
         ))
+    }
+}
+
+/// BlockWitnessCodeExt trait
+pub trait BlockWitnessCodeExt {
+    /// Import codes into code db
+    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, code_db: CodeDb);
+}
+
+impl<T: BlockWitness> BlockWitnessCodeExt for T {
+    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
+        for code in self.codes_iter() {
+            let code = code.as_ref();
+            let code_hash = keccak256(code);
+            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
+        }
+    }
+}
+
+impl<T: BlockWitness> BlockWitnessCodeExt for [T] {
+    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
+        for code in self.iter().flat_map(|w| w.codes_iter()) {
+            let code = code.as_ref();
+            let code_hash = keccak256(code);
+            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
+        }
+    }
+}
+
+/// BlockWitnessBlockHashExt trait
+pub trait BlockWitnessBlockHashExt {
+    /// Import block hashes into block hash provider
+    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
+        &self,
+        block_hashes: BlockHashProvider,
+    );
+}
+
+impl<T: BlockWitness> BlockWitnessBlockHashExt for T {
+    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
+        &self,
+        mut block_hashes: BlockHashProvider,
+    ) {
+        let block_number = self.header().number();
+        for (i, hash) in self.block_hashes_iter().enumerate() {
+            let block_number = block_number
+                .checked_sub(i as u64 + 1)
+                .expect("block number underflow");
+            block_hashes.insert(block_number, hash)
+        }
+    }
+}
+
+impl<T: BlockWitness> BlockWitnessBlockHashExt for [T] {
+    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
+        &self,
+        mut block_hashes: BlockHashProvider,
+    ) {
+        for witness in self.iter() {
+            let block_number = witness.header().number();
+            for (i, hash) in witness.block_hashes_iter().enumerate() {
+                let block_number = block_number
+                    .checked_sub(i as u64 + 1)
+                    .expect("block number underflow");
+                block_hashes.insert(block_number, hash)
+            }
+        }
     }
 }
 

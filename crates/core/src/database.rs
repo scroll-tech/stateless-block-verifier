@@ -9,13 +9,15 @@ use sbv_trie::{PartialStateTrie, TrieNode};
 use std::{cell::RefCell, fmt};
 
 /// A database that consists of account and storage information.
-pub struct EvmDatabase<CodeDb, NodesProvider> {
+pub struct EvmDatabase<CodeDb, NodesProvider, BlockHashProvider> {
     /// Map of code hash to bytecode.
     pub(crate) code_db: CodeDb,
     /// Cache of analyzed code
     analyzed_code_cache: RefCell<HashMap<B256, Option<Bytecode>>>,
     /// Provider of trie nodes
     pub(crate) nodes_provider: NodesProvider,
+    /// Provider of block hashes
+    block_hashes: BlockHashProvider,
     /// partial merkle patricia trie
     pub(crate) state: PartialStateTrie,
 }
@@ -23,20 +25,26 @@ pub struct EvmDatabase<CodeDb, NodesProvider> {
 #[derive(Debug, Copy, Clone)]
 pub enum DatabaseError {}
 
-impl<CodeDb, Db> fmt::Debug for EvmDatabase<CodeDb, Db> {
+impl<CodeDb, NodesProvider, BlockHashProvider> fmt::Debug
+    for EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("EvmDatabase").finish()
     }
 }
 
-impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256, TrieNode>>
-    EvmDatabase<CodeDb, NodesProvider>
+impl<
+        CodeDb: KeyValueStoreGet<B256, Bytes>,
+        NodesProvider: KeyValueStoreGet<B256, TrieNode>,
+        BlockHashProvider: KeyValueStoreGet<u64, B256>,
+    > EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
 {
     /// Initialize an EVM database from a zkTrie root.
     pub fn new_from_root(
         code_db: CodeDb,
         state_root_before: B256,
         nodes_provider: NodesProvider,
+        block_hashes: BlockHashProvider,
     ) -> Self {
         let state = PartialStateTrie::open(&nodes_provider, state_root_before);
 
@@ -44,17 +52,22 @@ impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256
             code_db,
             analyzed_code_cache: Default::default(),
             nodes_provider,
+            block_hashes,
             state,
         }
     }
 
-    /// Commit changes to the database.
-    pub fn commit_changes<'a, P: KeyValueStoreGet<B256, TrieNode> + Copy>(
+    /// Update changes to the database.
+    pub fn update<'a, P: KeyValueStoreGet<B256, TrieNode> + Copy>(
         &mut self,
         nodes_provider: P,
         post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
-    ) -> B256 {
+    ) {
         self.state.update(&nodes_provider, post_state);
+    }
+
+    /// Commit changes and return the new state root.
+    pub fn commit_changes(&mut self) -> B256 {
         self.state.commit_state()
     }
 
@@ -73,8 +86,11 @@ impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256
     }
 }
 
-impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256, TrieNode>>
-    DatabaseRef for EvmDatabase<CodeDb, NodesProvider>
+impl<
+        CodeDb: KeyValueStoreGet<B256, Bytes>,
+        NodesProvider: KeyValueStoreGet<B256, TrieNode>,
+        BlockHashProvider: KeyValueStoreGet<u64, B256>,
+    > DatabaseRef for EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
 {
     type Error = DatabaseError;
 
@@ -129,8 +145,11 @@ impl<CodeDb: KeyValueStoreGet<B256, Bytes>, NodesProvider: KeyValueStoreGet<B256
     }
 
     /// Get block hash by block number.
-    fn block_hash_ref(&self, _: u64) -> Result<B256, Self::Error> {
-        unreachable!("BLOCKHASH is disabled")
+    fn block_hash_ref(&self, number: u64) -> Result<B256, Self::Error> {
+        Ok(*self
+            .block_hashes
+            .get(&number)
+            .expect(format!("block hash of number {number} not found").as_str()))
     }
 }
 

@@ -1,5 +1,5 @@
-use revm::primitives::{alloy_primitives::SignatureError, EVMError, B256};
-use std::convert::Infallible;
+use reth_evm::execute::BlockExecutionError;
+use sbv_primitives::{alloy_primitives::SignatureError, B256};
 
 /// Error variants encountered during verification of transactions in a L2 block.
 #[derive(Debug, thiserror::Error)]
@@ -8,15 +8,10 @@ pub enum VerificationError {
     #[error("invalid signature: {0}")]
     InvalidSignature(#[from] SignatureError),
     /// Error encountered from [`revm`].
-    #[error("error encountered from revm for tx_hash={tx_hash}: {source}")]
-    EvmExecution {
-        /// The tx hash.
-        tx_hash: B256,
-        /// The source error originating in [`revm`].
-        source: EVMError<Infallible>,
-    },
+    #[error(transparent)]
+    Execution(#[from] BlockExecutionError),
     /// Root mismatch error
-    #[error("root_after in trace doesn't match with root_after in revm: expected {expected}, actual {actual}")]
+    #[error("state root in trace doesn't match with state root executed: expected {expected}, actual {actual}")]
     RootMismatch {
         /// Root after in trace
         expected: B256,

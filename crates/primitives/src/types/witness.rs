@@ -34,6 +34,9 @@ pub struct BlockWitness {
     /// Withdrawals in the block.
     #[rkyv(attr(doc = "Withdrawals in the block"))]
     pub withdrawals: Option<Vec<Withdrawal>>,
+    /// Last 256 Ancestor block hashes.
+    #[rkyv(attr(doc = "Ancestor block hashes"))]
+    pub block_hashes: Vec<B256>,
     /// Rlp encoded state trie nodes.
     #[rkyv(attr(doc = "Rlp encoded state trie nodes"))]
     pub states: Vec<Bytes>,
@@ -48,6 +51,7 @@ impl BlockWitness {
         chain_id: ChainId,
         block: Block,
         pre_state_root: B256,
+        block_hashes: Vec<B256>,
         witness: ExecutionWitness,
     ) -> Self {
         let header = BlockHeader::from(block.header);
@@ -65,6 +69,7 @@ impl BlockWitness {
             chain_id,
             header,
             transaction,
+            block_hashes,
             withdrawals,
             pre_state_root,
             states,
@@ -94,6 +99,9 @@ impl crate::BlockWitness for BlockWitness {
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>
     {
         self.transaction.iter().map(|tx| tx.try_into())
+    }
+    fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256> {
+        self.block_hashes.iter().copied()
     }
     fn withdrawals_iter(&self) -> Option<impl ExactSizeIterator<Item = impl crate::Withdrawal>> {
         self.withdrawals.as_ref().map(|w| w.iter())
@@ -127,6 +135,9 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>
     {
         self.transaction.iter().map(|tx| tx.try_into())
+    }
+    fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256> {
+        self.block_hashes.iter().map(|h| B256::from(h.0))
     }
     fn withdrawals_iter(&self) -> Option<impl ExactSizeIterator<Item = impl crate::Withdrawal>> {
         self.withdrawals.as_ref().map(|w| w.iter())
