@@ -8,6 +8,7 @@ use console::{style, Emoji};
 use indicatif::{HumanBytes, HumanDuration, ProgressBar};
 use rkyv::rancor;
 use sbv::primitives::types::{BlockHeader, BlockWitness, ExecutionWitness, Transaction};
+use std::cmp::Reverse;
 use std::path::PathBuf;
 use std::time::Instant;
 use tokio::task::JoinSet;
@@ -83,8 +84,8 @@ impl DumpWitnessCommand {
         let retry_layer = RetryBackoffLayer::new(self.max_retry, self.backoff, self.cups);
         let limit_layer = ConcurrencyLimitLayer::new(self.max_concurrency);
         let client = ClientBuilder::default()
-            .layer(limit_layer)
             .layer(retry_layer)
+            .layer(limit_layer)
             .http(self.rpc);
         let provider = ProviderBuilder::new().on_client(client);
 
@@ -160,7 +161,7 @@ impl DumpWitnessCommand {
                 block
             });
         }
-        let ancestor_blocks = joinset
+        let mut ancestor_blocks = joinset
             .join_all()
             .await
             .into_iter()
@@ -169,6 +170,7 @@ impl DumpWitnessCommand {
             .into_iter()
             .map(|b| b.expect("block not found"))
             .collect::<Vec<_>>();
+        ancestor_blocks.sort_by_key(|b| Reverse(b.header.number)); // JoinSet is unordered
         pb.finish_and_clear();
         steps += 1;
 
