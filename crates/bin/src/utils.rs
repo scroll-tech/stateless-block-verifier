@@ -1,21 +1,30 @@
+use sbv::primitives::BlockWitnessBlockHashExt;
 use sbv::{
-    core::{EvmDatabase, EvmExecutor, ExecutionOutput, VerificationError},
-    kv::HashMap,
+    core::{EvmDatabase, EvmExecutor, VerificationError},
+    kv::nohash::NoHashMap,
     primitives::{
         chainspec::{get_chain_spec, Chain},
-        BlockWitness, Bytes, B256,
+        BlockWitness, BlockWitnessCodeExt,
     },
-    trie::{decode_nodes, TrieNode},
+    trie::BlockWitnessTrieExt,
 };
 
-pub fn verify<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
+pub fn verify<
+    T: BlockWitness + BlockWitnessTrieExt + BlockWitnessCodeExt + BlockWitnessBlockHashExt,
+>(
+    witness: T,
+) -> Result<(), VerificationError> {
     measure_duration_millis!(
         total_block_verification_duration_milliseconds,
         verify_inner(witness)
     )
 }
 
-fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
+fn verify_inner<
+    T: BlockWitness + BlockWitnessTrieExt + BlockWitnessCodeExt + BlockWitnessBlockHashExt,
+>(
+    witness: T,
+) -> Result<(), VerificationError> {
     dev_trace!("{witness:#?}");
 
     #[cfg(feature = "profiling")]
@@ -27,15 +36,22 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
 
     let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id())).unwrap();
 
-    let mut code_db = HashMap::<B256, Bytes>::default();
+    let mut code_db = NoHashMap::default();
     witness.import_codes(&mut code_db);
-    let mut nodes_provider = HashMap::<B256, TrieNode>::default();
-    decode_nodes(&mut nodes_provider, witness.states_iter()).unwrap();
-    let mut db = EvmDatabase::new_from_root(code_db, witness.pre_state_root(), &nodes_provider);
+    let mut nodes_provider = NoHashMap::default();
+    witness.import_nodes(&mut nodes_provider).unwrap();
+    let mut block_hashes = NoHashMap::default();
+    witness.import_block_hashes(&mut block_hashes);
+    let mut db = EvmDatabase::new_from_root(
+        code_db,
+        witness.pre_state_root(),
+        &nodes_provider,
+        &block_hashes,
+    );
 
     let block = witness.build_reth_block()?;
 
-    let ExecutionOutput { output, .. } = EvmExecutor::new(chain_spec, &db, &block)
+    let output = EvmExecutor::new(chain_spec, &db, &block)
         .execute()
         .inspect_err(|e| {
             dev_error!("Error occurs when executing block #{}: {e:?}", block.number);
@@ -43,7 +59,8 @@ fn verify_inner<T: BlockWitness>(witness: T) -> Result<(), VerificationError> {
             update_metrics_counter!(verification_error);
         })?;
 
-    let post_state_root = db.commit_changes(&nodes_provider, output.state.state.iter());
+    db.update(&nodes_provider, output.state.state.iter());
+    let post_state_root = db.commit_changes();
 
     #[cfg(feature = "profiling")]
     if let Ok(report) = guard.report().build() {

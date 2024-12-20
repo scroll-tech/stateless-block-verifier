@@ -41,6 +41,11 @@ pub mod chainspec {
     }
 }
 
+/// Eips
+pub mod eips {
+    pub use alloy_eips::eip2718::Encodable2718;
+}
+
 /// BlockWitness trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockWitness: fmt::Debug {
