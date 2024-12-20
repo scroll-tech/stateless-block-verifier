@@ -160,7 +160,7 @@ impl DumpWitnessCommand {
                 block
             });
         }
-        let mut ancestor_blocks = joinset
+        let ancestor_blocks = joinset
             .join_all()
             .await
             .into_iter()
@@ -172,6 +172,10 @@ impl DumpWitnessCommand {
         pb.finish_and_clear();
         steps += 1;
 
+        let mut states = execution_witness.state.into_values().collect::<Vec<_>>();
+        states.sort();
+        let mut codes = execution_witness.codes.into_values().collect::<Vec<_>>();
+        codes.sort();
         let witness = BlockWitness {
             chain_id,
             header: BlockHeader::from(block.header),
@@ -185,8 +189,8 @@ impl DumpWitnessCommand {
             withdrawals: block
                 .withdrawals
                 .map(|w| w.iter().map(From::from).collect()),
-            states: execution_witness.state.into_values().collect(),
-            codes: execution_witness.codes.into_values().collect(),
+            states,
+            codes,
         };
 
         if self.json {
