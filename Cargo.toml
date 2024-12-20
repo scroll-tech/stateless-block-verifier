@@ -23,8 +23,8 @@ repository = "https://github.com/scroll-tech/stateless-block-verifier"
 [workspace.dependencies]
 # https://github.com/alloy-rs/alloy
 alloy = { version = "0.8", default-features = false }
-alloy-eips = { version = "0.8", default-features = false }
 alloy-consensus = { version = "0.8", default-features = false }
+alloy-eips = { version = "0.8", default-features = false }
 alloy-rpc-types-eth = { version = "0.8", default-features = false }
 alloy-rpc-types-debug = { version = "0.8", default-features = false }
 alloy-serde = { version = "0.8", default-features = false }
@@ -63,6 +63,7 @@ once_cell = "1.19"
 rkyv = "0.8"
 thiserror = "1.0"
 tiny-keccak = "2.0"
+tower = "0.5"
 url = "2.5"
 
 # binary dependencies

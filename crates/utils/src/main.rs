@@ -2,6 +2,7 @@
 use clap::Parser;
 
 mod commands;
+mod helpers;
 
 #[derive(Parser)]
 struct Cli {

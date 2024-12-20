@@ -1,3 +1,4 @@
+use crate::helpers::tower::ConcurrencyLimitLayer;
 use alloy::network::primitives::BlockTransactionsKind;
 use alloy::providers::{Provider, ProviderBuilder};
 use alloy::rpc::client::ClientBuilder;
@@ -9,6 +10,7 @@ use rkyv::rancor;
 use sbv::primitives::types::{BlockHeader, BlockWitness, ExecutionWitness, Transaction};
 use std::path::PathBuf;
 use std::time::Instant;
+use tokio::task::JoinSet;
 use url::Url;
 
 #[derive(Args)]
@@ -29,6 +31,14 @@ pub struct DumpWitnessCommand {
     json: bool,
     #[arg(long, help = "Output rkyv")]
     rkyv: bool,
+
+    // Concurrency Limit
+    #[arg(
+        long,
+        help = "Concurrency Limit: maximum number of concurrent requests",
+        default_value = "10"
+    )]
+    max_concurrency: usize,
 
     // Retry parameters
     #[arg(
@@ -71,7 +81,11 @@ impl DumpWitnessCommand {
         let total_steps = 4 + self.json as usize + self.rkyv as usize;
 
         let retry_layer = RetryBackoffLayer::new(self.max_retry, self.backoff, self.cups);
-        let client = ClientBuilder::default().layer(retry_layer).http(self.rpc);
+        let limit_layer = ConcurrencyLimitLayer::new(self.max_concurrency);
+        let client = ClientBuilder::default()
+            .layer(limit_layer)
+            .layer(retry_layer)
+            .http(self.rpc);
         let provider = ProviderBuilder::new().on_client(client);
 
         let chain_id = provider.get_chain_id().await?;
@@ -130,20 +144,31 @@ impl DumpWitnessCommand {
                 Emoji("⚠️  ", "")
             );
         }
-        let mut ancestor_blocks = Vec::with_capacity(self.ancestors as usize);
         let pb = ProgressBar::new(self.ancestors);
+        let mut joinset = JoinSet::new();
         for i in 1..=self.ancestors {
             let Some(block_number) = self.block.checked_sub(i) else {
                 break;
             };
-            let block = provider
-                .get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
-                .await
-                .expect("transport error")
-                .expect("block not found");
-            pb.inc(1);
-            ancestor_blocks.push(block);
+            let pb = pb.clone();
+            let provider = provider.clone();
+            joinset.spawn(async move {
+                let block = provider
+                    .get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
+                    .await;
+                pb.inc(1);
+                block
+            });
         }
+        let mut ancestor_blocks = joinset
+            .join_all()
+            .await
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()
+            .expect("transport error")
+            .into_iter()
+            .map(|b| b.expect("block not found"))
+            .collect::<Vec<_>>();
         pb.finish_and_clear();
         steps += 1;
 

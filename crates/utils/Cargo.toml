@@ -13,7 +13,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-alloy = { workspace = true, features = ["provider-http", "transport-http", "reqwest", "reqwest-rustls-tls"] }
+alloy = { workspace = true, features = ["provider-http", "transport-http", "reqwest", "reqwest-rustls-tls", "json-rpc"] }
 anyhow.workspace = true
 clap = { workspace = true, features = ["derive"] }
 console.workspace = true
@@ -22,6 +22,7 @@ rkyv.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tower = { workspace = true, features = ["limit"] }
 url.workspace = true
 
 sbv.workspace = true

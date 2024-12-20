@@ -54,6 +54,7 @@ dependencies = [
  "alloy-consensus",
  "alloy-core",
  "alloy-eips",
+ "alloy-json-rpc",
  "alloy-network",
  "alloy-provider",
  "alloy-rpc-client",
@@ -4366,6 +4367,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tower",
  "url",
 ]
 
@@ -5143,8 +5145,11 @@ dependencies = [
  "futures-util",
  "pin-project-lite",
  "sync_wrapper",
+ "tokio",
+ "tokio-util",
  "tower-layer",
  "tower-service",
+ "tracing",
 ]
 
 [[package]]
