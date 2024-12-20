@@ -231,7 +231,7 @@ impl BlockChunkExt for Block {
                 .to_be_bytes::<{ U256::BYTES }>(),
         );
         hasher.update(&self.gas_limit.to_be_bytes());
-        hasher.update(&(self.body.transactions.len() as u16).to_be_bytes());
+        hasher.update(&(self.body.transactions.len() as u16).to_be_bytes()); // FIXME: l1 tx could be skipped, the actual tx count needs to be calculated
     }
     #[inline]
     fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
