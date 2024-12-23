@@ -47,6 +47,7 @@ Arguments:
   [WITNESSES]...  Path to the witness json file
 
 Options:
+      --chunk              Make single chunk rkyv instead of multiple blocks
       --out-dir <OUT_DIR>  Output directory
   -h, --help               Print help
 ```
@@ -58,4 +59,10 @@ Converted ./testdata/holesky_witness/2971844.json to ./testdata/holesky_witness/
 Converted ./testdata/holesky_witness/2971845.json to ./testdata/holesky_witness/2971845.rkyv
 Converted ./testdata/holesky_witness/2971846.json to ./testdata/holesky_witness/2971846.rkyv
 Converted ./testdata/holesky_witness/2971847.json to ./testdata/holesky_witness/2971847.rkyv
+```
+
+e.g. build a 4 blocks chunk from `./testdata/holesky_witness/*.json` to rkyv format.
+```
+$ sbv-utils witness rkyv --chunk ./testdata/holesky_witness/*.json
+Converted 4 witnesses to chunk testdata/holesky_witness/chunk-2971844-4.rkyv
 ```
