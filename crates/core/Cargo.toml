@@ -46,6 +46,6 @@ dev = ["sbv-primitives/dev", "sbv-helpers/dev", "sbv-trie/dev"]
 metrics = ["sbv-helpers/metrics"]
 
 # sp1 related
-sp1 = []
+sp1 = ["sbv-trie/sp1"]
 cycle-tracker = ["sbv-trie/cycle-tracker"]
 ordered-db = ["revm/ordered-cache-db"]
