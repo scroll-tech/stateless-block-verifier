@@ -5,8 +5,12 @@ use std::borrow::{Borrow, Cow};
 use std::hash::Hash;
 
 mod imps;
-pub use alloy_primitives::map::{self, HashMap, HashSet};
+pub use hashbrown;
 pub use imps::nohash;
+/// HashMap
+pub type HashMap<K, V, S = rustc_hash::FxBuildHasher> = hashbrown::HashMap<K, V, S>;
+/// HashSet
+pub type HashSet<K, V, S = rustc_hash::FxBuildHasher> = hashbrown::HashSet<K, V, S>;
 
 /// Value trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
