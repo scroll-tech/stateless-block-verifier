@@ -236,7 +236,7 @@ dependencies = [
 [[package]]
 name = "alloy-primitives"
 version = "0.8.15"
-source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.15-transparent#cfb8cc079832b2f50549067372ddbc49d4a5af0a"
+source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.15-transparent#96f7f7172161bede8a3a72f9687fa4df1f1de789"
 dependencies = [
  "alloy-rlp",
  "bytes",
@@ -1533,7 +1533,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3213,7 +3213,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4204,7 +4204,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4939,7 +4939,7 @@ dependencies = [
  "fastrand",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
