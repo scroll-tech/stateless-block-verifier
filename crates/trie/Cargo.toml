@@ -29,3 +29,4 @@ serde_json.workspace = true
 
 [features]
 dev = ["sbv-helpers/dev"]
+cycle-tracker = []

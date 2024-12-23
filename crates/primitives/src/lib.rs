@@ -20,6 +20,7 @@ pub use alloy_primitives::{
     address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
 };
 pub use reth_primitives::{Block, BlockBody, BlockWithSenders, Receipt, TransactionSigned};
+use sbv_helpers::cycle_track;
 
 /// The spec of an Ethereum network
 pub mod chainspec {
@@ -142,7 +143,7 @@ impl<T: BlockWitness> BlockWitnessCodeExt for T {
     fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
         for code in self.codes_iter() {
             let code = code.as_ref();
-            let code_hash = keccak256(code);
+            let code_hash = cycle_track!(keccak256(code), "keccak256");
             code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
         }
     }
@@ -152,7 +153,7 @@ impl<T: BlockWitness> BlockWitnessCodeExt for [T] {
     fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
         for code in self.iter().flat_map(|w| w.codes_iter()) {
             let code = code.as_ref();
-            let code_hash = keccak256(code);
+            let code_hash = cycle_track!(keccak256(code), "keccak256");
             code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
         }
     }

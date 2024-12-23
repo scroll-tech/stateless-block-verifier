@@ -1,6 +1,6 @@
 //! Partial Merkle Patricia Trie
-
-extern crate core;
+#[macro_use]
+extern crate sbv_helpers;
 
 use alloy_rlp::{Decodable, Encodable};
 use alloy_trie::{
@@ -55,8 +55,8 @@ pub fn decode_nodes<
 ) -> Result<(), alloy_rlp::Error> {
     for byte in iter {
         let mut buf = byte.as_ref();
-        let node_hash = keccak256(buf);
-        let node = TrieNode::decode(&mut buf)?;
+        let node_hash = cycle_track!(keccak256(buf), "keccak256");
+        let node = cycle_track!(TrieNode::decode(&mut buf), "TrieNode::decode")?;
         assert!(
             buf.is_empty(),
             "the rlp buffer should only contains the node"

@@ -46,7 +46,10 @@ impl<
         nodes_provider: NodesProvider,
         block_hashes: BlockHashProvider,
     ) -> Self {
-        let state = PartialStateTrie::open(&nodes_provider, state_root_before);
+        let state = cycle_track!(
+            PartialStateTrie::open(&nodes_provider, state_root_before),
+            "PartialStateTrie::open"
+        );
 
         EvmDatabase {
             code_db,
