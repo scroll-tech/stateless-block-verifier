@@ -35,15 +35,15 @@ alloy-trie = { version = "0.7", default-features = false }
 # https://github.com/alloy-rs/core
 alloy-primitives = { version = "0.8", default-features = false, features = ["map-hashbrown", "map-fxhash", "rkyv"] }
 
-reth-chainspec = { git = "https://github.com/scroll-tech/reth", rev = "78f19718", default-features = false }
-reth-evm = { git = "https://github.com/scroll-tech/reth", rev = "78f19718", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", rev = "78f19718", default-features = false }
-reth-execution-types = { git = "https://github.com/scroll-tech/reth", rev = "78f19718", default-features = false }
-reth-primitives = { git = "https://github.com/scroll-tech/reth", rev = "78f19718", default-features = false }
-#reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", rev = "78f19718", default-features = false }
-reth-storage-errors = { git = "https://github.com/scroll-tech/reth", rev = "78f19718", default-features = false }
-reth-trie = { git = "https://github.com/scroll-tech/reth", rev = "78f19718", default-features = false }
-reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", rev = "78f19718", default-features = false }
+reth-chainspec = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-evm = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-execution-types = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-primitives = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+#reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-storage-errors = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-trie = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
 
 #reth-chainspec = { path = "../reth/crates/chainspec", default-features = false }
 #reth-evm = { path = "../reth/crates/evm/", default-features = false }
@@ -132,6 +132,16 @@ revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scrol
 # [patch."https://github.com/scroll-tech/revm"]
 # revm = { path = "../revm/crates/revm" }
 # revm-primitives = { path = "../revm/crates/primitives" }
+# [patch."https://github.com/scroll-tech/reth"]
+# reth-chainspec = { path = "../reth/crates/chainspec" }
+# reth-evm = { path = "../reth/crates/evm" }
+# reth-evm-ethereum = { path = "../reth/crates/ethereum/evm" }
+# reth-execution-types = { path = "../reth/crates/evm/execution-types" }
+# reth-primitives = { path = "../reth/crates/primitives" }
+# #reth-scroll-primitives = { path = "../reth/crates/" }
+# reth-storage-errors = { path = "../reth/crates/storage/errors" }
+# reth-trie = { path = "../reth/crates/trie/trie" }
+# reth-trie-sparse = { path = "../reth/crates/trie/sparse" }
 
 #[profile.release]
 #debug-assertions = true
