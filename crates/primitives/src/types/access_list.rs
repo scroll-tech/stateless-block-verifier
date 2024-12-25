@@ -90,7 +90,7 @@ impl From<&ArchivedAccessList> for alloy_eips::eip2930::AccessList {
         Self(
             list.0
                 .iter()
-                .map(|item| alloy_eips::eip2930::AccessListItem::from(item))
+                .map(alloy_eips::eip2930::AccessListItem::from)
                 .collect(),
         )
     }

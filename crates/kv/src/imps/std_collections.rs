@@ -14,10 +14,10 @@ impl<K: Ord + Hash + Eq, V: Value, S: BuildHasher> KeyValueStoreInsert<K, V> for
 }
 
 impl<K: Ord + Hash + Eq, V: Value, S: BuildHasher> KeyValueStoreGet<K, V> for HashMap<K, V, S> {
-    fn get<Q: ?Sized>(&self, k: &Q) -> Option<Cow<V>>
+    fn get<Q>(&self, k: &Q) -> Option<Cow<V>>
     where
         K: Borrow<Q>,
-        Q: Ord + Hash + Eq,
+        Q: Ord + Hash + Eq + ?Sized,
     {
         HashMap::get(self, k).map(Cow::Borrowed)
     }
@@ -35,10 +35,10 @@ impl<K: Ord + Hash + Eq, V: Value> KeyValueStoreInsert<K, V> for BTreeMap<K, V> 
 }
 
 impl<K: Ord + Hash + Eq, V: Value> KeyValueStoreGet<K, V> for BTreeMap<K, V> {
-    fn get<Q: ?Sized>(&self, k: &Q) -> Option<Cow<V>>
+    fn get<Q>(&self, k: &Q) -> Option<Cow<V>>
     where
         K: Borrow<Q>,
-        Q: Ord + Hash + Eq,
+        Q: Ord + Hash + Eq + ?Sized,
     {
         BTreeMap::get(self, k).map(Cow::Borrowed)
     }

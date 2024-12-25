@@ -169,7 +169,7 @@ impl PartialStateTrie {
         for (address, account) in post_state.into_iter() {
             dev_trace!("update account: {address} {:?}", account.info);
             let hashed_address = self.hashed_address(*address);
-            let account_path = Nibbles::unpack(&hashed_address);
+            let account_path = Nibbles::unpack(hashed_address);
 
             if account.was_destroyed() {
                 self.state.remove_leaf(&account_path);
@@ -239,7 +239,7 @@ impl PartialStateTrie {
     /// Update the account
     #[inline(always)]
     fn update_account(&mut self, hashed_address: B256, account: TrieAccount) {
-        let account_path = Nibbles::unpack(&hashed_address);
+        let account_path = Nibbles::unpack(hashed_address);
 
         self.state.update_leaf(account_path, account, |account| {
             self.rlp_buffer.clear();

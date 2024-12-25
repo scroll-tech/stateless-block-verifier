@@ -23,7 +23,7 @@ impl RkyvConvertCommand {
         }
         let mut witnesses = Vec::new();
         for path in self.witnesses.iter() {
-            let witness = std::fs::File::open(&path)?;
+            let witness = std::fs::File::open(path)?;
             let witness: BlockWitness = serde_json::from_reader(witness)?;
             witnesses.push(witness);
         }

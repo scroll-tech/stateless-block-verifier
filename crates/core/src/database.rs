@@ -66,7 +66,7 @@ impl<
         nodes_provider: P,
         post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
     ) {
-        self.state.update(&nodes_provider, post_state);
+        self.state.update(nodes_provider, post_state);
     }
 
     /// Commit changes and return the new state root.
@@ -108,7 +108,6 @@ impl<
             nonce: account.nonce,
             code_hash: account.code_hash,
             code: self.load_code(account.code_hash),
-            ..Default::default()
         };
 
         #[cfg(debug_assertions)]
@@ -152,7 +151,7 @@ impl<
         Ok(*self
             .block_hashes
             .get(&number)
-            .expect(format!("block hash of number {number} not found").as_str()))
+            .unwrap_or_else(|| panic!("block hash of number {number} not found")))
     }
 }
 

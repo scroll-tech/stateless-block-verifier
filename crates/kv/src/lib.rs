@@ -44,10 +44,10 @@ pub trait KeyValueStoreInsert<K: Ord + Hash + Eq, V: Value> {
 #[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait KeyValueStoreGet<K: Ord + Hash + Eq, V: Value> {
     /// Get value by key
-    fn get<Q: ?Sized>(&self, k: &Q) -> Option<Cow<V>>
+    fn get<Q>(&self, k: &Q) -> Option<Cow<V>>
     where
         K: Borrow<Q>,
-        Q: Ord + Hash + Eq;
+        Q: Ord + Hash + Eq + ?Sized;
 }
 
 /// Key-Value store trait

@@ -14,10 +14,10 @@ mod std_collections;
 impl<K: Ord + Hash + Eq, V: Value, T: KeyValueStoreGet<K, V>> KeyValueStoreGet<K, V>
     for ManuallyDrop<T>
 {
-    fn get<Q: ?Sized>(&self, k: &Q) -> Option<Cow<V>>
+    fn get<Q>(&self, k: &Q) -> Option<Cow<V>>
     where
         K: Borrow<Q>,
-        Q: Ord + Hash + Eq,
+        Q: Ord + Hash + Eq + ?Sized,
     {
         self.deref().get(k)
     }

@@ -154,7 +154,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
 
         let tx = match tx_type {
             0x00 => {
-                let sig = tx.signature.expect("missing signature").try_into()?;
+                let sig = tx.signature.expect("missing signature").into();
                 let tx = TxLegacy {
                     chain_id: tx.chain_id,
                     nonce: tx.nonce,
@@ -168,7 +168,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                 tx.into_signed(sig).into()
             }
             0x01 => {
-                let sig = tx.signature.expect("missing signature").try_into()?;
+                let sig = tx.signature.expect("missing signature").into();
                 let tx = TxEip2930 {
                     chain_id: tx.chain_id.expect("missing chain_id"),
                     nonce: tx.nonce,
@@ -183,7 +183,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                 tx.into_signed(sig).into()
             }
             0x02 => {
-                let sig = tx.signature.expect("missing signature").try_into()?;
+                let sig = tx.signature.expect("missing signature").into();
                 let tx = TxEip1559 {
                     chain_id: tx.chain_id.expect("missing chain_id"),
                     nonce: tx.nonce,
@@ -201,7 +201,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                 tx.into_signed(sig).into()
             }
             0x03 => {
-                let sig = tx.signature.expect("missing signature").try_into()?;
+                let sig = tx.signature.expect("missing signature").into();
                 let tx = TxEip4844 {
                     chain_id: tx.chain_id.expect("missing chain_id"),
                     nonce: tx.nonce,
@@ -210,7 +210,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                         .max_priority_fee_per_gas
                         .expect("missing max_priority_fee_per_gas"),
                     gas_limit: tx.gas,
-                    to: tx.to.expect("missing to").into(),
+                    to: tx.to.expect("missing to"),
                     value: tx.value,
                     input: tx.input.clone(),
                     access_list: tx.access_list.clone().expect("missing access_list").into(),
@@ -255,11 +255,7 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
 
         let tx = match tx_type {
             0x00 => {
-                let sig = tx
-                    .signature
-                    .as_ref()
-                    .expect("missing signature")
-                    .try_into()?;
+                let sig = tx.signature.as_ref().expect("missing signature").into();
                 let tx = TxLegacy {
                     chain_id: tx.chain_id.as_ref().map(|x| x.to_native()),
                     nonce: tx.nonce.to_native(),
@@ -273,11 +269,7 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
                 tx.into_signed(sig).into()
             }
             0x01 => {
-                let sig = tx
-                    .signature
-                    .as_ref()
-                    .expect("missing signature")
-                    .try_into()?;
+                let sig = tx.signature.as_ref().expect("missing signature").into();
                 let tx = TxEip2930 {
                     chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
                     nonce: tx.nonce.to_native(),
@@ -292,11 +284,7 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
                 tx.into_signed(sig).into()
             }
             0x02 => {
-                let sig = tx
-                    .signature
-                    .as_ref()
-                    .expect("missing signature")
-                    .try_into()?;
+                let sig = tx.signature.as_ref().expect("missing signature").into();
                 let tx = TxEip1559 {
                     chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
                     nonce: tx.nonce.to_native(),
@@ -316,11 +304,7 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
                 tx.into_signed(sig).into()
             }
             0x03 => {
-                let sig = tx
-                    .signature
-                    .as_ref()
-                    .expect("missing signature")
-                    .try_into()?;
+                let sig = tx.signature.as_ref().expect("missing signature").into();
                 let tx = TxEip4844 {
                     chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
                     nonce: tx.nonce.to_native(),
@@ -331,7 +315,7 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
                         .expect("missing max_priority_fee_per_gas")
                         .to_native(),
                     gas_limit: tx.gas.to_native(),
-                    to: to.expect("missing to").into(),
+                    to: to.expect("missing to"),
                     value: tx.value.into(),
                     input,
                     access_list: tx.access_list.as_ref().expect("missing access_list").into(),

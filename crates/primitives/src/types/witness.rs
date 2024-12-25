@@ -58,7 +58,7 @@ impl BlockWitness {
         let transaction = block
             .transactions
             .into_transactions()
-            .map(|tx| Transaction::from_alloy(tx))
+            .map(Transaction::from_alloy)
             .collect();
         let withdrawals = block
             .withdrawals
