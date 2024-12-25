@@ -1,7 +1,7 @@
 //! Stateless Block Verifier core library.
 
 #[macro_use]
-extern crate sbv_utils;
+extern crate sbv_helpers;
 extern crate core;
 
 mod chunk;
@@ -11,16 +11,10 @@ mod database;
 pub use database::EvmDatabase;
 
 mod error;
-pub use error::{DatabaseError, VerificationError};
+pub use error::VerificationError;
 
 mod executor;
-pub use executor::{BlockExecutionResult, EvmExecutor, EvmExecutorBuilder};
-
-mod genesis;
-pub use genesis::GenesisConfig;
-
-mod hardfork;
-pub use hardfork::HardforkConfig;
+pub use executor::EvmExecutor;
 
 #[cfg(test)]
 #[ctor::ctor]

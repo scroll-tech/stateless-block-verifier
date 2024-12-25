@@ -13,17 +13,20 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-hex.workspace = true
-once_cell.workspace = true
 revm.workspace = true
-rkyv.workspace = true
+reth-evm.workspace = true
+reth-evm-ethereum.workspace = true
+reth-execution-types.workspace = true
+reth-storage-errors.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tiny-keccak.workspace = true
 
 sbv-primitives.workspace = true
-sbv-utils.workspace = true
+sbv-helpers.workspace = true
+sbv-kv.workspace = true
+sbv-trie.workspace = true
 
 [dev-dependencies]
 ctor.workspace = true
@@ -33,12 +36,16 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [features]
-debug-account = ["sbv-utils/debug-account"]
-debug-storage = ["sbv-utils/debug-storage"]
-dev = ["sbv-primitives/dev", "sbv-utils/dev"]
-metrics = ["sbv-utils/metrics"]
+scroll = [
+    "revm/scroll-default-handler",
+    "revm/optional_no_base_fee",
+]
+debug-account = ["sbv-helpers/debug-account"]
+debug-storage = ["sbv-helpers/debug-storage"]
+dev = ["sbv-primitives/dev", "sbv-helpers/dev", "sbv-trie/dev"]
+metrics = ["sbv-helpers/metrics"]
 
 # sp1 related
-sp1 = []
-cycle-tracker = []
+sp1 = ["sbv-trie/sp1"]
+cycle-tracker = ["sbv-trie/cycle-tracker"]
 ordered-db = ["revm/ordered-cache-db"]

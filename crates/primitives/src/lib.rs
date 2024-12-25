@@ -1,409 +1,243 @@
 //! Stateless Block Verifier primitives library.
-#[macro_use]
-extern crate sbv_utils;
 
-use crate::types::{TxL1Msg, TypedTransaction};
-use alloy::{
-    consensus::{SignableTransaction, TxEip1559, TxEip2930, TxEnvelope, TxLegacy},
-    eips::eip2930::AccessList,
-    primitives::{Bytes, ChainId, Signature, SignatureError, TxKind},
-};
-use std::fmt::Debug;
-use zktrie_ng::db::kv::KVDatabase;
+use auto_impl::auto_impl;
+use sbv_kv::KeyValueStore;
+use std::fmt;
 
 /// Predeployed contracts
+#[cfg(feature = "scroll")]
 pub mod predeployed;
 /// Types definition
 pub mod types;
 
-pub use alloy::consensus as alloy_consensus;
-pub use alloy::consensus::Transaction;
-pub use alloy::primitives as alloy_primitives;
-pub use alloy::primitives::{Address, B256, U256};
-pub use zktrie_ng as zk_trie;
-use zktrie_ng::db::NodeDb;
+pub use alloy_consensus;
+pub use alloy_eips;
 
-/// Node proof trait
-pub trait NodeProof {
-    /// Import itself into zktrie db
-    fn import_node<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error>;
-}
+use alloy_consensus::Typed2718;
+pub use alloy_consensus::{BlockHeader, Header};
+pub use alloy_primitives;
+pub use alloy_primitives::{
+    address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
+};
+pub use reth_primitives::{Block, BlockBody, BlockWithSenders, Receipt, TransactionSigned};
+use sbv_helpers::cycle_track;
 
-/// Blanket trait for block trace extensions.
-pub trait Block: Debug {
-    /// Node proof type
-    type Node: NodeProof;
-    /// transaction type
-    type Tx: TxTrace;
+/// The spec of an Ethereum network
+pub mod chainspec {
+    pub use reth_chainspec::*;
+    use std::sync::Arc;
 
-    /// Get block number
-    fn number(&self) -> u64;
-
-    /// Get block hash
-    fn block_hash(&self) -> B256;
-
-    /// Get chain id
-    fn chain_id(&self) -> u64;
-
-    /// Get coinbase
-    fn coinbase(&self) -> Address;
-
-    /// Get timestamp
-    fn timestamp(&self) -> U256;
-
-    /// Get gas limit
-    fn gas_limit(&self) -> U256;
-
-    /// Get gas used
-    fn gas_used(&self) -> U256;
-
-    /// Get base fee per gas
-    fn base_fee_per_gas(&self) -> Option<U256>;
-
-    /// Get difficulty
-    fn difficulty(&self) -> U256;
-
-    /// Get prevrandao
-    fn prevrandao(&self) -> Option<B256>;
-
-    /// transactions
-    fn transactions(&self) -> impl Iterator<Item = &Self::Tx>;
-
-    /// Number of l1 transactions
-    fn num_txs(&self) -> usize;
-
-    /// root before
-    fn root_before(&self) -> B256;
-    /// root after
-    fn root_after(&self) -> B256;
-    /// withdraw root
-    fn withdraw_root(&self) -> B256;
-    /// codes
-    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]>;
-    /// start l1 queue index
-    fn start_l1_queue_index(&self) -> u64;
-
-    /// node proofs
-    fn node_proofs(&self) -> impl Iterator<Item = &Self::Node>;
-
-    /// Update zktrie state from trace
-    #[inline]
-    fn build_zktrie_db<Db: KVDatabase>(&self, db: &mut NodeDb<Db>) -> Result<(), Db::Error> {
-        for node in self.node_proofs() {
-            node.import_node(db)?;
+    /// Get chain spec
+    pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
+        if chain == Chain::from_named(NamedChain::Mainnet) {
+            return Some(MAINNET.clone());
         }
-        Ok(())
-    }
-
-    /// Number of l1 transactions
-    #[inline]
-    fn num_l1_txs(&self) -> u64 {
-        // 0x7e is l1 tx
-        match self
-            .transactions()
-            .filter(|tx| tx.is_l1_tx())
-            // tx.nonce for l1 tx is the l1 queue index, which is a globally index,
-            // not per user as suggested by the name...
-            .map(|tx| tx.nonce())
-            .max()
-        {
-            None => 0, // not l1 tx in this block
-            Some(end_l1_queue_index) => end_l1_queue_index - self.start_l1_queue_index() + 1,
+        if chain == Chain::from_named(NamedChain::Sepolia) {
+            return Some(SEPOLIA.clone());
         }
-    }
-
-    /// Number of l2 transactions
-    #[inline]
-    fn num_l2_txs(&self) -> u64 {
-        // 0x7e is l1 tx
-        self.transactions().filter(|tx| !tx.is_l1_tx()).count() as u64
-    }
-
-    /// Hash the header of the block
-    #[inline]
-    fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
-        let num_txs = (self.num_l1_txs() + self.num_l2_txs()) as u16;
-        hasher.update(&self.number().to_be_bytes());
-        hasher.update(&self.timestamp().to::<u64>().to_be_bytes());
-        hasher.update(
-            &self
-                .base_fee_per_gas()
-                .unwrap_or_default()
-                .to_be_bytes::<{ U256::BYTES }>(),
-        );
-        hasher.update(&self.gas_limit().to::<u64>().to_be_bytes());
-        hasher.update(&num_txs.to_be_bytes());
-    }
-
-    /// Hash the l1 messages of the block
-    #[inline]
-    fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
-        for tx_hash in self
-            .transactions()
-            .filter(|tx| tx.is_l1_tx())
-            .map(|tx| tx.tx_hash())
-        {
-            hasher.update(tx_hash.as_slice())
+        if chain == Chain::from_named(NamedChain::Holesky) {
+            return Some(HOLESKY.clone());
         }
+        None
     }
 }
 
-/// Utility trait for transaction trace
-pub trait TxTrace {
-    /// Return the hash of the transaction
-    fn tx_hash(&self) -> B256;
+/// Eips
+pub mod eips {
+    pub use alloy_eips::eip2718::Encodable2718;
+}
 
-    /// Returns the transaction type
-    fn ty(&self) -> u8;
+/// BlockWitness trait
+#[auto_impl(&, &mut, Box, Rc, Arc)]
+pub trait BlockWitness: fmt::Debug {
+    /// Chain id
+    fn chain_id(&self) -> ChainId;
+    /// Header
+    fn header(&self) -> impl BlockHeader;
+    /// Build alloy header
+    #[must_use]
+    fn build_alloy_header(&self) -> Header;
+    /// Pre-state root
+    #[must_use]
+    fn pre_state_root(&self) -> B256;
+    /// Number of transactions
+    fn num_transactions(&self) -> usize;
+    /// Transactions
+    #[must_use]
+    fn build_typed_transactions(
+        &self,
+    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>;
+    /// Block hashes
+    #[must_use]
+    fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256>;
+    /// Withdrawals
+    #[must_use]
+    fn withdrawals_iter(&self) -> Option<impl ExactSizeIterator<Item = impl Withdrawal>>;
+    /// States
+    #[must_use]
+    fn states_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>>;
+    /// Codes
+    #[must_use]
+    fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>>;
 
-    /// Get `nonce`.
-    fn nonce(&self) -> u64;
+    // provided methods
 
-    /// Get `gas_limit`.
-    fn gas_limit(&self) -> u64;
-
-    /// Get `gas_price`
-    fn gas_price(&self) -> u128;
-
-    /// Get `max_fee_per_gas`
-    fn max_fee_per_gas(&self) -> u128;
-
-    /// Get `max_priority_fee_per_gas`
-    fn max_priority_fee_per_gas(&self) -> u128;
-
-    /// Get `from` without checking
-    ///
-    /// # Safety
-    ///
-    /// Can only be used when the transaction is known to be an L1 transaction
-    unsafe fn get_from_unchecked(&self) -> Address;
-
-    /// Get `to`.
-    fn to(&self) -> TxKind;
-
-    /// Get `chain_id`.
-    fn chain_id(&self) -> Option<ChainId>;
-
-    /// Get `value`.
-    fn value(&self) -> U256;
-
-    /// Get `data`.
-    fn data(&self) -> Bytes;
-
-    /// Get `access_list`.
-    fn access_list(&self) -> AccessList;
-
-    /// Get `v`.
-    fn v(&self) -> u64;
-
-    /// Get `signature`.
-    fn signature(&self) -> Result<Signature, SignatureError>;
-
-    /// Check if the transaction is an L1 transaction
-    fn is_l1_tx(&self) -> bool {
-        self.ty() == 0x7e
+    /// Pre-state root
+    #[must_use]
+    fn post_state_root(&self) -> B256 {
+        self.header().state_root()
+    }
+    /// Withdrawal root
+    #[must_use]
+    fn withdrawals_root(&self) -> Option<B256> {
+        self.header().withdrawals_root()
+    }
+    /// Number of states
+    fn num_states(&self) -> usize {
+        self.states_iter().len()
+    }
+    /// Number of codes
+    fn num_codes(&self) -> usize {
+        self.codes_iter().len()
     }
 
-    /// Try to build a typed transaction
-    fn try_build_typed_tx(&self) -> Result<TypedTransaction, SignatureError> {
-        let tx = match self.ty() {
-            0x0 => {
-                let tx = TxLegacy {
-                    chain_id: self.chain_id(),
-                    nonce: self.nonce(),
-                    gas_price: self.gas_price(),
-                    gas_limit: self.gas_limit(),
-                    to: self.to(),
-                    value: self.value(),
-                    input: self.data(),
-                };
+    /// Build a reth block
+    fn build_reth_block(&self) -> Result<BlockWithSenders, alloy_primitives::SignatureError> {
+        let header = self.build_alloy_header();
+        let transactions = self
+            .build_typed_transactions()
+            .collect::<Result<Vec<_>, _>>()?;
+        let senders =
+            TransactionSigned::recover_signers(&transactions, transactions.len()).unwrap(); // FIXME: proper error handling
 
-                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(self.signature()?)))
-            }
-            0x1 => {
-                let tx = TxEip2930 {
-                    chain_id: self.chain_id().unwrap(),
-                    nonce: self.nonce(),
-                    gas_price: self.gas_price(),
-                    gas_limit: self.gas_limit(),
-                    to: self.to(),
-                    value: self.value(),
-                    access_list: self.access_list(),
-                    input: self.data(),
-                };
-
-                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(self.signature()?)))
-            }
-            0x02 => {
-                let tx = TxEip1559 {
-                    chain_id: self.chain_id().unwrap(),
-                    nonce: self.nonce(),
-                    max_fee_per_gas: self.max_fee_per_gas(),
-                    max_priority_fee_per_gas: self.max_priority_fee_per_gas(),
-                    gas_limit: self.gas_limit(),
-                    to: self.to(),
-                    value: self.value(),
-                    access_list: self.access_list(),
-                    input: self.data(),
-                };
-
-                TypedTransaction::Enveloped(TxEnvelope::from(tx.into_signed(self.signature()?)))
-            }
-            0x7e => {
-                let tx = TxL1Msg {
-                    tx_hash: self.tx_hash(),
-                    from: unsafe { self.get_from_unchecked() },
-                    nonce: self.nonce(),
-                    gas_limit: self.gas_limit(),
-                    to: self.to(),
-                    value: self.value(),
-                    input: self.data(),
-                };
-
-                TypedTransaction::L1Msg(tx)
-            }
-            _ => unimplemented!("unsupported tx type: {}", self.ty()),
+        let body = BlockBody {
+            transactions,
+            ommers: vec![],
+            withdrawals: self.withdrawals_iter().map(|iter| {
+                alloy_eips::eip4895::Withdrawals(
+                    iter.map(|w| alloy_eips::eip4895::Withdrawal {
+                        index: w.index(),
+                        validator_index: w.validator_index(),
+                        address: w.address(),
+                        amount: w.amount(),
+                    })
+                    .collect(),
+                )
+            }),
         };
 
-        Ok(tx)
+        Ok(BlockWithSenders::new_unchecked(
+            Block { header, body },
+            senders,
+        ))
     }
 }
 
-impl<T: Block> Block for &T {
-    type Node = <T as Block>::Node;
-    type Tx = <T as Block>::Tx;
+/// BlockWitnessCodeExt trait
+pub trait BlockWitnessCodeExt {
+    /// Import codes into code db
+    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, code_db: CodeDb);
+}
 
-    fn number(&self) -> u64 {
-        (*self).number()
-    }
-
-    fn block_hash(&self) -> B256 {
-        (*self).block_hash()
-    }
-
-    fn chain_id(&self) -> u64 {
-        (*self).chain_id()
-    }
-
-    fn coinbase(&self) -> Address {
-        (*self).coinbase()
-    }
-
-    fn timestamp(&self) -> U256 {
-        (*self).timestamp()
-    }
-
-    fn gas_limit(&self) -> U256 {
-        (*self).gas_limit()
-    }
-
-    fn gas_used(&self) -> U256 {
-        (*self).gas_used()
-    }
-
-    fn base_fee_per_gas(&self) -> Option<U256> {
-        (*self).base_fee_per_gas()
-    }
-
-    fn difficulty(&self) -> U256 {
-        (*self).difficulty()
-    }
-
-    fn prevrandao(&self) -> Option<B256> {
-        (*self).prevrandao()
-    }
-
-    fn transactions(&self) -> impl Iterator<Item = &Self::Tx> {
-        (*self).transactions()
-    }
-
-    fn num_txs(&self) -> usize {
-        (*self).num_txs()
-    }
-
-    fn root_before(&self) -> B256 {
-        (*self).root_before()
-    }
-
-    fn root_after(&self) -> B256 {
-        (*self).root_after()
-    }
-
-    fn withdraw_root(&self) -> B256 {
-        (*self).withdraw_root()
-    }
-
-    fn codes(&self) -> impl ExactSizeIterator<Item = &[u8]> {
-        (*self).codes()
-    }
-
-    fn start_l1_queue_index(&self) -> u64 {
-        (*self).start_l1_queue_index()
-    }
-
-    fn node_proofs(&self) -> impl Iterator<Item = &Self::Node> {
-        (*self).node_proofs()
+impl<T: BlockWitness> BlockWitnessCodeExt for T {
+    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
+        for code in self.codes_iter() {
+            let code = code.as_ref();
+            let code_hash = cycle_track!(keccak256(code), "keccak256");
+            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
+        }
     }
 }
 
-impl<T: TxTrace> TxTrace for &T {
-    fn tx_hash(&self) -> B256 {
-        (*self).tx_hash()
+impl<T: BlockWitness> BlockWitnessCodeExt for [T] {
+    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
+        for code in self.iter().flat_map(|w| w.codes_iter()) {
+            let code = code.as_ref();
+            let code_hash = cycle_track!(keccak256(code), "keccak256");
+            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
+        }
     }
+}
 
-    fn ty(&self) -> u8 {
-        (*self).ty()
+/// BlockWitnessBlockHashExt trait
+pub trait BlockWitnessBlockHashExt {
+    /// Import block hashes into block hash provider
+    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
+        &self,
+        block_hashes: BlockHashProvider,
+    );
+}
+
+impl<T: BlockWitness> BlockWitnessBlockHashExt for T {
+    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
+        &self,
+        mut block_hashes: BlockHashProvider,
+    ) {
+        let block_number = self.header().number();
+        for (i, hash) in self.block_hashes_iter().enumerate() {
+            let block_number = block_number
+                .checked_sub(i as u64 + 1)
+                .expect("block number underflow");
+            block_hashes.insert(block_number, hash)
+        }
     }
+}
 
-    fn nonce(&self) -> u64 {
-        (*self).nonce()
+impl<T: BlockWitness> BlockWitnessBlockHashExt for [T] {
+    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
+        &self,
+        mut block_hashes: BlockHashProvider,
+    ) {
+        for witness in self.iter() {
+            let block_number = witness.header().number();
+            for (i, hash) in witness.block_hashes_iter().enumerate() {
+                let block_number = block_number
+                    .checked_sub(i as u64 + 1)
+                    .expect("block number underflow");
+                block_hashes.insert(block_number, hash)
+            }
+        }
     }
+}
 
-    fn gas_limit(&self) -> u64 {
-        (*self).gas_limit()
+/// Withdrawal trait
+#[auto_impl(&, &mut, Box, Rc, Arc)]
+pub trait Withdrawal: fmt::Debug {
+    /// Monotonically increasing identifier issued by consensus layer.
+    fn index(&self) -> u64;
+    /// Index of validator associated with withdrawal.
+    fn validator_index(&self) -> u64;
+    /// Target address for withdrawn ether.
+    fn address(&self) -> Address;
+    /// Value of the withdrawal in gwei.
+    fn amount(&self) -> u64;
+}
+
+/// Chunk related extension methods for Block
+/// FIXME: gate this behind scroll feature
+pub trait BlockChunkExt {
+    /// Hash the header of the block
+    fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher);
+    /// Hash the l1 messages of the block
+    fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher);
+}
+
+impl BlockChunkExt for Block {
+    #[inline]
+    fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        hasher.update(&self.number.to_be_bytes());
+        hasher.update(&self.timestamp.to_be_bytes());
+        hasher.update(
+            &U256::from_limbs([self.base_fee_per_gas.unwrap_or_default(), 0, 0, 0])
+                .to_be_bytes::<{ U256::BYTES }>(),
+        );
+        hasher.update(&self.gas_limit.to_be_bytes());
+        hasher.update(&(self.body.transactions.len() as u16).to_be_bytes()); // FIXME: l1 tx could be skipped, the actual tx count needs to be calculated
     }
-
-    fn gas_price(&self) -> u128 {
-        (*self).gas_price()
-    }
-
-    fn max_fee_per_gas(&self) -> u128 {
-        (*self).max_fee_per_gas()
-    }
-
-    fn max_priority_fee_per_gas(&self) -> u128 {
-        (*self).max_priority_fee_per_gas()
-    }
-
-    unsafe fn get_from_unchecked(&self) -> Address {
-        (*self).get_from_unchecked()
-    }
-
-    fn to(&self) -> TxKind {
-        (*self).to()
-    }
-
-    fn chain_id(&self) -> Option<ChainId> {
-        (*self).chain_id()
-    }
-
-    fn value(&self) -> U256 {
-        (*self).value()
-    }
-
-    fn data(&self) -> Bytes {
-        (*self).data()
-    }
-
-    fn access_list(&self) -> AccessList {
-        (*self).access_list()
-    }
-
-    fn v(&self) -> u64 {
-        (*self).v()
-    }
-
-    fn signature(&self) -> Result<Signature, SignatureError> {
-        (*self).signature()
+    #[inline]
+    fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        for tx in self.body.transactions.iter().filter(|tx| tx.ty() == 0x7e) {
+            hasher.update(tx.hash().as_slice())
+        }
     }
 }

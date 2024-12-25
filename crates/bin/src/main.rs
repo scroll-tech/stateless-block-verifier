@@ -4,7 +4,6 @@
 extern crate sbv;
 
 use clap::Parser;
-use sbv::core::HardforkConfig;
 
 #[cfg(feature = "dev")]
 use tracing_subscriber::EnvFilter;
@@ -18,9 +17,6 @@ mod utils;
 struct Cli {
     #[command(subcommand)]
     commands: commands::Commands,
-    /// Curie block number, defaults to be determined by chain id
-    #[arg(short, long)]
-    curie_block: Option<u64>,
     /// Start metrics server
     #[cfg(feature = "metrics")]
     #[arg(long)]
@@ -46,20 +42,10 @@ async fn main() -> anyhow::Result<()> {
 
     #[cfg(feature = "metrics")]
     if cmd.metrics {
-        sbv::utils::metrics::start_metrics_server(cmd.metrics_addr);
+        sbv::helpers::metrics::start_metrics_server(cmd.metrics_addr);
     }
 
-    let get_fork_config = move |chain_id: u64| {
-        let mut config = HardforkConfig::default_from_chain_id(chain_id);
-
-        dev_info!("Using hardfork config: {:?}", config);
-        if let Some(curie_block) = cmd.curie_block {
-            config.set_curie_block(curie_block);
-        }
-        config
-    };
-
-    cmd.commands.run(get_fork_config).await?;
+    cmd.commands.run().await?;
 
     Ok(())
 }

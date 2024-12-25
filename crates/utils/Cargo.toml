@@ -1,36 +1,28 @@
 [package]
 name = "sbv-utils"
-homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/utils"
-
+description = "Command line utilities for Stateless Block Verifier"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 authors.workspace = true
 license.workspace = true
+homepage.workspace = true
 repository.workspace = true
 
 [lints]
 workspace = true
 
 [dependencies]
-revm.workspace = true
+alloy = { workspace = true, features = ["provider-http", "transport-http", "reqwest", "reqwest-rustls-tls", "json-rpc"] }
+anyhow.workspace = true
+clap = { workspace = true, features = ["derive"] }
+console.workspace = true
+indicatif.workspace = true
+rkyv.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+tower = { workspace = true, features = ["limit"] }
+url.workspace = true
 
-csv = { workspace = true, optional = true }
-hyper = { workspace = true, optional = true }
-hyper-util = { workspace = true, optional = true }
-http-body-util = { workspace = true, optional = true }
-once_cell = { workspace = true, optional = true }
-prometheus-client = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
-tokio = { workspace = true, optional = true }
-tracing = { workspace = true, optional = true }
-
-[dev-dependencies]
-rand.workspace = true
-reqwest.workspace = true
-
-[features]
-debug-account = ["dep:csv", "dep:serde", "revm/serde"]
-debug-storage = ["dep:csv", "dep:serde", "revm/serde"]
-dev = ["dep:tracing"]
-metrics = ["dep:hyper", "dep:hyper-util", "dep:http-body-util", "dep:once_cell", "dep:prometheus-client", "dep:tokio", "tokio/macros", "tokio/signal"]
+sbv.workspace = true

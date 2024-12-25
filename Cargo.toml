@@ -1,5 +1,14 @@
 [workspace]
-members = ["crates/*"]
+members = [
+    "crates/bin",
+    "crates/core",
+    "crates/helpers",
+    "crates/kv",
+    "crates/primitives",
+    "crates/sbv",
+    "crates/trie",
+    "crates/utils",
+]
 resolver = "2"
 
 [workspace.package]
@@ -12,30 +21,61 @@ homepage = "https://github.com/scroll-tech/stateless-block-verifier"
 repository = "https://github.com/scroll-tech/stateless-block-verifier"
 
 [workspace.dependencies]
-alloy = "0.5"
-hex = "0.4"
+# https://github.com/alloy-rs/alloy
+alloy = { version = "0.8", default-features = false }
+alloy-consensus = { version = "0.8", default-features = false }
+alloy-eips = { version = "0.8", default-features = false }
+alloy-rpc-types-eth = { version = "0.8", default-features = false }
+alloy-rpc-types-debug = { version = "0.8", default-features = false }
+alloy-serde = { version = "0.8", default-features = false }
+# https://github.com/alloy-rs/rlp
+alloy-rlp = { version = "0.3", default-features = false }
+# https://github.com/alloy-rs/trie
+alloy-trie = { version = "0.7", default-features = false }
+# https://github.com/alloy-rs/core
+alloy-primitives = { version = "0.8", default-features = false, features = ["map-hashbrown", "map-fxhash", "rkyv"] }
+
+reth-chainspec = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-evm = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-execution-types = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-primitives = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+#reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-storage-errors = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-trie = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", rev = "e9212cde1", default-features = false }
+
+#reth-chainspec = { path = "../reth/crates/chainspec", default-features = false }
+#reth-evm = { path = "../reth/crates/evm/", default-features = false }
+#reth-evm-ethereum = { path = "../reth/crates/ethereum/evm", default-features = false }
+#reth-execution-types = { path = "../reth/crates/evm/execution-types", default-features = false }
+#reth-primitives = { path = "../reth/crates/primitives", default-features = false }
+##reth-scroll-primitives = { path = "../reth/crates/scroll/primitives", default-features = false }
+#reth-storage-errors = { path = "../reth/crates/storage/errors", default-features = false }
+#reth-trie = { path = "../reth/crates/trie/trie", default-features = false }
+#reth-trie-sparse = { path = "../reth/crates/trie/sparse", default-features = false }
+
+auto_impl = "1.2"
+console = "0.15"
+hashbrown = { version = "0.15", default-features = false }
+indicatif = "0.17"
 once_cell = "1.19"
 rkyv = "0.8"
+rustc-hash = "2.1"
 thiserror = "1.0"
 tiny-keccak = "2.0"
-
-# dependencies from scroll-tech
-poseidon-bn254 = { git = "https://github.com/scroll-tech/poseidon-bn254", branch = "master", features = ["bn254"] }
-zktrie-ng = { git = "https://github.com/scroll-tech/zktrie-ng", branch = "master", features = ["scroll"] }
+tower = "0.5"
+url = "2.5"
 
 # binary dependencies
 anyhow = "1.0"
 async-channel = "2.2"
 clap = "4"
-env_logger = "0.9"
 futures = "0.3"
-tokio-retry = "0.3"
 serde = "1.0"
 serde_json = "1.0"
-serde_with = "3.9"
-sled = "0.34"
+serde_path_to_error = "0.1"
 tokio = { version = "1", default-features = false }
-url = "2.5"
 
 # optional dependencies
 csv = "1.3"
@@ -45,6 +85,7 @@ hyper-util = { version = "0.1", features = ["tokio"] }
 http-body-util = "0.1"
 prometheus-client = "0.22"
 pprof = { version = "0.13", features = ["flamegraph"] }
+sled = "0.34"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
@@ -55,56 +96,52 @@ reqwest = "0.12"
 # workspace
 sbv = { path = "crates/sbv" }
 sbv-core = { path = "crates/core" }
+sbv-kv = { path = "crates/kv" }
 sbv-primitives = { path = "crates/primitives" }
-sbv-utils = { path = "crates/utils" }
+sbv-trie = { path = "crates/trie" }
+sbv-helpers = { path = "crates/helpers" }
 
-[workspace.dependencies.revm] # v42
+[workspace.dependencies.revm]
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v49"
+branch = "scroll-evm-executor/v50"
 default-features = false
-features = [
-    "scroll-default-handler",
-    "scroll-poseidon-codehash",
-    "std",
-    "optional_no_base_fee"
-]
+features = ["std"]
 
-[workspace.dependencies.revm-primitives] # v42
+[workspace.dependencies.revm-primitives]
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v49"
+branch = "scroll-evm-executor/v50"
 default-features = false
-features = [
-    "scroll-default-handler",
-    "scroll-poseidon-codehash",
-    "std",
-    "optional_no_base_fee"
-]
+features = ["std"]
 
 [workspace.lints.rust]
 missing-docs = "deny"
 missing-debug-implementations = "deny"
 
 [patch.crates-io]
-ff = { git = "https://github.com/scroll-tech/ff", branch = "feat/sp1" }
-
 # patched add rkyv support & MSRV 1.77
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 
-alloy = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.5.4" }
-alloy-eips = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.5.4" }
-alloy-serde = { git = "https://github.com/scroll-tech/alloy.git", branch = "v0.5.4" }
+alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.15-transparent" }
 
-alloy-eip2930 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.3.2" }
-alloy-eip7702 = { git = "https://github.com/scroll-tech/alloy-eips", branch = "v0.3.2" }
-
-alloy-core = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
-alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
-alloy-sol-types = {git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.10" }
+revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v50" }
 
 # for local development
 # [patch."https://github.com/scroll-tech/revm"]
 # revm = { path = "../revm/crates/revm" }
 # revm-primitives = { path = "../revm/crates/primitives" }
+# [patch."https://github.com/scroll-tech/reth"]
+# reth-chainspec = { path = "../reth/crates/chainspec" }
+# reth-evm = { path = "../reth/crates/evm" }
+# reth-evm-ethereum = { path = "../reth/crates/ethereum/evm" }
+# reth-execution-types = { path = "../reth/crates/evm/execution-types" }
+# reth-primitives = { path = "../reth/crates/primitives" }
+# #reth-scroll-primitives = { path = "../reth/crates/" }
+# reth-storage-errors = { path = "../reth/crates/storage/errors" }
+# reth-trie = { path = "../reth/crates/trie/trie" }
+# reth-trie-sparse = { path = "../reth/crates/trie/sparse" }
 
 #[profile.release]
 #debug-assertions = true

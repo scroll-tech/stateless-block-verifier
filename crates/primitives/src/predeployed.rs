@@ -1,6 +1,6 @@
 /// Predeployed Gas Price Oracle
 pub mod l1_gas_price_oracle {
-    use alloy::primitives::{address, Address, U256};
+    use alloy_primitives::{address, Address, U256};
 
     /// L1GasPriceOracle predeployed address
     pub const ADDRESS: Address = address!("5300000000000000000000000000000000000002");
