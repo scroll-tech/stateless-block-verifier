@@ -415,32 +415,20 @@ fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_rpc_types_debug::ExecutionWitness;
-    use alloy_rpc_types_eth::Block;
-    use sbv_kv::HashMap;
+    use sbv_kv::nohash::NoHashMap;
+    use sbv_primitives::types::BlockWitness;
 
-    const PREV_BLOCK: &str = include_str!("../../../testdata/holesky_witness/0x2ba60c/block.json");
-    const BLOCK: &str = include_str!("../../../testdata/holesky_witness/0x2ba60d/block.json");
-    const WITNESS: &str = include_str!("../../../testdata/holesky_witness/0x2ba60d/witness.json");
+    const BLOCK: &str = include_str!("../../../testdata/holesky_witness/2971844.json");
 
     #[test]
     fn test() {
-        let state_root = serde_json::from_str::<Block>(PREV_BLOCK)
-            .unwrap()
-            .header
-            .state_root;
+        let block = serde_json::from_str::<BlockWitness>(BLOCK).unwrap();
 
-        let block = serde_json::from_str::<Block>(BLOCK).unwrap();
+        let mut store = NoHashMap::default();
+        block.import_nodes(&mut store).unwrap();
 
-        let state = serde_json::from_str::<ExecutionWitness>(WITNESS)
-            .unwrap()
-            .state;
-
-        let mut store = HashMap::new();
-        decode_nodes(&mut store, state.into_iter().map(|(_, node)| node.0)).unwrap();
-
-        let trie = PartialStateTrie::open(&store, state_root);
-        for tx in block.transactions.into_transactions() {
+        let trie = PartialStateTrie::open(&store, block.pre_state_root);
+        for tx in block.transaction.iter() {
             let _ = trie.get_account(tx.from).unwrap();
             let _ = trie.get_storage(&store, tx.from, U256::ZERO);
             if let Some(to) = tx.to {
