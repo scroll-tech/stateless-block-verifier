@@ -112,10 +112,10 @@ mod tests {
     use sbv_primitives::{types::BlockWitness, BlockWithSenders, BlockWitness as _};
 
     const TRACES_STR: [&str; 4] = [
-        include_str!("../../../testdata/holesky_witness/0x2d411d.json"),
-        include_str!("../../../testdata/holesky_witness/0x2d411e.json"),
-        include_str!("../../../testdata/holesky_witness/0x2d411f.json"),
-        include_str!("../../../testdata/holesky_witness/0x2d4120.json"),
+        include_str!("../../../testdata/holesky_witness/2971844.json"),
+        include_str!("../../../testdata/holesky_witness/2971845.json"),
+        include_str!("../../../testdata/holesky_witness/2971846.json"),
+        include_str!("../../../testdata/holesky_witness/2971847.json"),
     ];
 
     #[test]

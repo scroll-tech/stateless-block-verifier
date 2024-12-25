@@ -74,9 +74,9 @@ pub struct Transaction {
     /// All _flattened_ fields of the transaction signature.
     ///
     /// Note: this is an option so special transaction types without a signature (e.g. <https://github.com/ethereum-optimism/optimism/blob/0bf643c4147b43cd6f25a759d331ef3a2a61a2a3/specs/deposits.md#the-deposited-transaction-type>) can be supported.
-    #[rkyv(attr(doc = r#"All _flattened_ fields of the transaction signature.
-
-Note: this is an option so special transaction types without a signature (e.g. <https://github.com/ethereum-optimism/optimism/blob/0bf643c4147b43cd6f25a759d331ef3a2a61a2a3/specs/deposits.md#the-deposited-transaction-type>) can be supported."#))]
+    #[rkyv(attr(
+        doc = "All _flattened_ fields of the transaction signature. Note: this is an option so special transaction types without a signature (e.g. <https://github.com/ethereum-optimism/optimism/blob/0bf643c4147b43cd6f25a759d331ef3a2a61a2a3/specs/deposits.md#the-deposited-transaction-type>) can be supported."
+    ))]
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub signature: Option<Signature>,
     /// The chain id of the transaction, if any.
@@ -94,9 +94,7 @@ Note: this is an option so special transaction types without a signature (e.g. <
     /// EIP2930
     ///
     /// Pre-pay to warm storage access.
-    #[rkyv(attr(doc = r#"EIP2930
-
-    Pre-pay to warm storage access."#))]
+    #[rkyv(attr(doc = "EIP2930 Pre-pay to warm storage access."))]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub access_list: Option<AccessList>,
     /// EIP2718
@@ -104,9 +102,9 @@ Note: this is an option so special transaction types without a signature (e.g. <
     /// Transaction type,
     /// Some(4) for EIP-7702 transaction, Some(3) for EIP-4844 transaction, Some(2) for EIP-1559
     /// transaction, Some(1) for AccessList transaction, None or Some(0) for Legacy
-    #[rkyv(attr(doc = r#"EIP2718
-
-Transaction type, Some(4) for EIP-7702 transaction, Some(3) for EIP-4844 transaction, Some(2) for EIP-1559 transaction, Some(1) for AccessList transaction, None or Some(0) for Legacy"#))]
+    #[rkyv(attr(
+        doc = "EIP2718 Transaction type, Some(4) for EIP-7702 transaction, Some(3) for EIP-4844 transaction, Some(2) for EIP-1559 transaction, Some(1) for AccessList transaction, None or Some(0) for Legacy"
+    ))]
     #[doc(alias = "tx_type")]
     pub transaction_type: u8,
     /// L1Msg queueIndex
