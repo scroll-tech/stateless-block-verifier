@@ -1,6 +1,5 @@
 use crate::{database::EvmDatabase, error::VerificationError};
 use reth_evm::execute::{BlockExecutorProvider, Executor};
-use reth_evm_ethereum::execute::EthExecutorProvider;
 use reth_execution_types::{BlockExecutionInput, BlockExecutionOutput};
 use revm::db::CacheDB;
 use sbv_kv::KeyValueStoreGet;
@@ -8,6 +7,11 @@ use sbv_primitives::{chainspec::ChainSpec, BlockWithSenders, Bytes, Receipt, B25
 use sbv_trie::TrieNode;
 use std::fmt::Debug;
 use std::sync::Arc;
+
+#[cfg(not(feature = "scroll"))]
+use reth_evm_ethereum::execute::EthExecutorProvider as ExecutorProvider;
+#[cfg(feature = "scroll")]
+use reth_scroll_evm::ScrollExecutorProvider as ExecutorProvider;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
@@ -42,11 +46,16 @@ impl<
 {
     /// Handle the block with the given witness
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
+        #[cfg(not(feature = "scroll"))]
+        let provider = ExecutorProvider::ethereum(self.chain_spec.clone());
+        #[cfg(feature = "scroll")]
+        let provider = ExecutorProvider::scroll(self.chain_spec.clone());
+
         #[allow(clippy::let_and_return)]
         let output = measure_duration_millis!(
             handle_block_duration_milliseconds,
             cycle_track!(
-                EthExecutorProvider::ethereum(self.chain_spec.clone())
+                provider
                     .executor(CacheDB::new(self.db))
                     .execute(BlockExecutionInput::new(
                         self.block,
