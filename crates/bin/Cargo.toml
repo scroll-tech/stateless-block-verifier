@@ -21,7 +21,6 @@ futures.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 serde_path_to_error.workspace = true
-tiny-keccak.workspace = true
 tokio = { workspace = true, features = ["fs", "io-util", "macros", "rt-multi-thread", "sync", "time"] }
 url.workspace = true
 
@@ -40,4 +39,5 @@ dev = ["sbv/dev", "dep:tracing-subscriber"]
 debug-account = ["sbv/debug-account"]
 debug-storage = ["sbv/debug-storage"]
 profiling = ["dep:pprof"]
+scroll = ["sbv/scroll"]
 metrics = ["sbv/metrics"]

@@ -1,21 +1,9 @@
 use crate::utils;
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 use clap::Args;
-use sbv::primitives::B256;
-use sbv::{
-    core::{ChunkInfo, EvmDatabase, EvmExecutor},
-    kv::nohash::NoHashMap,
-    primitives::{
-        chainspec::{get_chain_spec, Chain},
-        eips::Encodable2718,
-        types::BlockWitness,
-        BlockWitness as _, BlockWitnessBlockHashExt, BlockWitnessCodeExt,
-    },
-    trie::BlockWitnessTrieExt,
-};
+use sbv::primitives::types::BlockWitness;
 use std::panic::catch_unwind;
 use std::path::PathBuf;
-use tiny_keccak::{Hasher, Keccak};
 use tokio::task::JoinSet;
 
 #[derive(Args)]
@@ -24,11 +12,18 @@ pub struct RunFileCommand {
     #[arg(default_value = "witness.json")]
     path: Vec<PathBuf>,
     /// Chunk mode
+    #[cfg(feature = "scroll")]
     #[arg(short, long)]
     chunk_mode: bool,
 }
 
 impl RunFileCommand {
+    #[cfg(not(feature = "scroll"))]
+    pub async fn run(self) -> anyhow::Result<()> {
+        self.run_witnesses().await
+    }
+
+    #[cfg(feature = "scroll")]
     pub async fn run(self) -> anyhow::Result<()> {
         if self.chunk_mode {
             self.run_chunk().await
@@ -53,21 +48,31 @@ impl RunFileCommand {
         Ok(())
     }
 
+    #[cfg(feature = "scroll")]
     async fn run_chunk(self) -> anyhow::Result<()> {
+        use anyhow::bail;
+        use sbv::{
+            core::{ChunkInfo, EvmDatabase, EvmExecutor},
+            kv::{nohash::NoHashMap, null::NullProvider},
+            primitives::{
+                chainspec::{get_chain_spec, Chain},
+                ext::{BlockWitnessChunkExt, BlockWitnessExt, TxBytesHashExt},
+                types::BlockWitness,
+                BlockWitness as _,
+            },
+            trie::BlockWitnessTrieExt,
+        };
+
         let witnesses = futures::future::join_all(self.path.iter().map(read_witness))
             .await
             .into_iter()
             .collect::<Result<Vec<BlockWitness>, _>>()?;
 
-        let has_same_chain_id = witnesses.windows(2).all(|w| w[0].chain_id == w[1].chain_id);
-        if !has_same_chain_id {
+        if !witnesses.has_same_chain_id() {
             bail!("All traces must have the same chain id in chunk mode");
         }
 
-        let has_seq_block_number = witnesses
-            .windows(2)
-            .all(|w| w[0].header.number + 1 == w[1].header.number);
-        if !has_seq_block_number {
+        if !witnesses.has_seq_block_number() {
             bail!("All traces must have sequential block numbers in chunk mode");
         }
 
@@ -86,14 +91,12 @@ impl RunFileCommand {
         witnesses.import_codes(&mut code_db);
         let mut nodes_provider = NoHashMap::default();
         witnesses.import_nodes(&mut nodes_provider)?;
-        let mut block_hashes = NoHashMap::default();
-        witnesses.import_block_hashes(&mut block_hashes);
 
         let mut db = EvmDatabase::new_from_root(
             &code_db,
             chunk_info.prev_state_root(),
             &nodes_provider,
-            &block_hashes,
+            &NullProvider,
         );
         for block in blocks.iter() {
             let output = EvmExecutor::new(chain_spec.clone(), &db, block).execute()?;
@@ -104,18 +107,12 @@ impl RunFileCommand {
             bail!("post state root mismatch");
         }
 
-        let mut rlp_buffer = Vec::new();
-        let mut tx_bytes_hasher = Keccak::v256();
-        for block in blocks.iter() {
-            for tx in block.block.body.transactions.iter() {
-                tx.encode_2718(&mut rlp_buffer);
-                tx_bytes_hasher.update(&rlp_buffer);
-                rlp_buffer.clear();
-            }
-        }
-        let mut tx_bytes_hash = B256::ZERO;
-        tx_bytes_hasher.finalize(&mut tx_bytes_hash.0);
-        let _public_input_hash = chunk_info.public_input_hash(&tx_bytes_hash);
+        let withdraw_root = db.withdraw_root()?;
+        let tx_bytes_hash = blocks
+            .iter()
+            .flat_map(|b| b.block.body.transactions.iter())
+            .tx_bytes_hash();
+        let _public_input_hash = chunk_info.public_input_hash(&withdraw_root, &tx_bytes_hash);
         dev_info!("[chunk mode] public input hash: {_public_input_hash:?}");
 
         Ok(())
@@ -131,6 +128,7 @@ async fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
 
 async fn run_witness(path: PathBuf) -> anyhow::Result<()> {
     let witness = read_witness(&path).await?;
+    utils::verify(&witness).unwrap();
     if let Err(e) = tokio::task::spawn_blocking(move || catch_unwind(|| utils::verify(&witness)))
         .await?
         .map_err(|e| {

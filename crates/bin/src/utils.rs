@@ -1,17 +1,15 @@
-use sbv::primitives::BlockWitnessBlockHashExt;
 use sbv::{
     core::{EvmDatabase, EvmExecutor, VerificationError},
     kv::nohash::NoHashMap,
     primitives::{
         chainspec::{get_chain_spec, Chain},
-        BlockWitness, BlockWitnessCodeExt,
+        ext::BlockWitnessExt,
+        BlockWitness,
     },
     trie::BlockWitnessTrieExt,
 };
 
-pub fn verify<
-    T: BlockWitness + BlockWitnessTrieExt + BlockWitnessCodeExt + BlockWitnessBlockHashExt,
->(
+pub fn verify<T: BlockWitness + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
 ) -> Result<(), VerificationError> {
     measure_duration_millis!(
@@ -20,9 +18,7 @@ pub fn verify<
     )
 }
 
-fn verify_inner<
-    T: BlockWitness + BlockWitnessTrieExt + BlockWitnessCodeExt + BlockWitnessBlockHashExt,
->(
+fn verify_inner<T: BlockWitness + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
 ) -> Result<(), VerificationError> {
     dev_trace!("{witness:#?}");
@@ -40,8 +36,14 @@ fn verify_inner<
     witness.import_codes(&mut code_db);
     let mut nodes_provider = NoHashMap::default();
     witness.import_nodes(&mut nodes_provider).unwrap();
-    let mut block_hashes = NoHashMap::default();
-    witness.import_block_hashes(&mut block_hashes);
+    #[cfg(not(feature = "scroll"))]
+    let block_hashes = {
+        let mut block_hashes = NoHashMap::default();
+        witness.import_block_hashes(&mut block_hashes);
+        block_hashes
+    };
+    #[cfg(feature = "scroll")]
+    let block_hashes = &sbv::kv::null::NullProvider;
     let mut db = EvmDatabase::new_from_root(
         code_db,
         witness.pre_state_root(),
