@@ -23,11 +23,14 @@ sbv-kv.workspace = true
 sbv-helpers.workspace = true
 
 [dev-dependencies]
-alloy-rpc-types-debug.workspace = true
-alloy-rpc-types-eth.workspace = true
 serde_json.workspace = true
 
 [features]
+scroll = [
+    "revm/scroll",
+    "reth-trie/scroll",
+    "sbv-primitives/scroll",
+]
 dev = ["sbv-helpers/dev"]
 
 sp1 = []
