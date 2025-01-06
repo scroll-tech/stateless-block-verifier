@@ -4,7 +4,9 @@
 extern crate sbv_helpers;
 extern crate core;
 
+#[cfg(feature = "scroll")]
 mod chunk;
+#[cfg(feature = "scroll")]
 pub use chunk::ChunkInfo;
 
 mod database;
