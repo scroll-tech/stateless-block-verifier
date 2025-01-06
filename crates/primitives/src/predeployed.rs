@@ -1,8 +1,18 @@
-/// Predeployed Gas Price Oracle
-pub mod l1_gas_price_oracle {
-    use alloy_primitives::{address, Address, U256};
+/// Pre-deployed L2MessageQueue
+pub mod message_queue {
+    use crate::{address, Address, U256};
 
-    /// L1GasPriceOracle predeployed address
+    /// L2MessageQueue pre-deployed address
+    pub const ADDRESS: Address = address!("5300000000000000000000000000000000000000");
+    /// the slot of withdraw root in L2MessageQueue
+    pub const WITHDRAW_TRIE_ROOT_SLOT: U256 = U256::ZERO;
+}
+
+/// Pre-deployed Gas Price Oracle
+pub mod l1_gas_price_oracle {
+    use crate::{address, Address, U256};
+
+    /// L1GasPriceOracle pre-deployed address
     pub const ADDRESS: Address = address!("5300000000000000000000000000000000000002");
     /// L1 base fee slot in L1GasPriceOracle
     pub const BASE_FEE_SLOT: U256 = U256::from_limbs([1, 0, 0, 0]);
