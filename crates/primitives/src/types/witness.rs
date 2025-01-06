@@ -1,9 +1,24 @@
 use crate::types::block_header::ToHelper as _;
 use crate::types::{BlockHeader, Transaction, Withdrawal};
+use alloy_primitives::map::B256HashMap;
 use alloy_primitives::{Bytes, ChainId, B256};
-use alloy_rpc_types_debug::ExecutionWitness;
 use alloy_rpc_types_eth::Block;
 use reth_primitives::TransactionSigned;
+
+/// Represents the execution witness of a block. Contains an optional map of state preimages.
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct ExecutionWitness {
+    /// Map of all hashed trie nodes to their preimages that were required during the execution of
+    /// the block, including during state root recomputation.
+    ///
+    /// `keccak(rlp(node)) => rlp(node)`
+    pub state: B256HashMap<Bytes>,
+    /// Map of all contract codes (created / accessed) to their preimages that were required during
+    /// the execution of the block, including during state root recomputation.
+    ///
+    /// `keccak(bytecodes) => bytecodes`
+    pub codes: B256HashMap<Bytes>,
+}
 
 /// Witness for a block.
 #[derive(
