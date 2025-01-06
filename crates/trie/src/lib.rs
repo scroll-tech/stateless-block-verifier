@@ -176,44 +176,54 @@ impl PartialStateTrie {
                 continue;
             }
 
-            let trie = self
-                .storage_tries
-                .get_mut()
-                .entry(hashed_address)
-                .or_insert_with(|| {
-                    let storage_root = self
-                        .storage_roots
-                        .get_mut()
-                        .get(&hashed_address)
-                        .copied()
-                        .unwrap_or(EMPTY_ROOT_HASH);
-                    dev_trace!("open storage trie of {address} at {storage_root}");
-                    PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp)
-                });
-            dev_trace!("opened storage trie of {address} at {}", trie.trie.root());
-
-            for (key, slot) in account.storage.iter() {
-                let key_hash = keccak256(key.to_be_bytes::<{ U256::BYTES }>());
-                let path = Nibbles::unpack(key_hash);
-
-                dev_trace!(
-                    "update storage of {address}: {key:#064X}={:#064X}, key_hash={key_hash}",
-                    slot.present_value
-                );
-
-                if slot.present_value.is_zero() {
-                    trie.remove_leaf(&path);
-                } else {
-                    trie.update_leaf(path, slot.present_value, |value| {
-                        self.rlp_buffer.clear();
-                        value.encode(&mut self.rlp_buffer);
-                        self.rlp_buffer.clone()
+            let storage_root = if !account.storage.is_empty() {
+                dev_trace!("non-empty storage, trie needs to be updated");
+                let trie = self
+                    .storage_tries
+                    .get_mut()
+                    .entry(hashed_address)
+                    .or_insert_with(|| {
+                        let storage_root = self
+                            .storage_roots
+                            .get_mut()
+                            .get(&hashed_address)
+                            .copied()
+                            .unwrap_or(EMPTY_ROOT_HASH);
+                        dev_trace!("open storage trie of {address} at {storage_root}");
+                        PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp)
                     });
-                }
-            }
+                dev_trace!("opened storage trie of {address} at {}", trie.trie.root());
 
-            let storage_root = trie.trie.root();
-            dev_trace!("new storage root: {storage_root}");
+                for (key, slot) in account.storage.iter() {
+                    let key_hash = keccak256(key.to_be_bytes::<{ U256::BYTES }>());
+                    let path = Nibbles::unpack(key_hash);
+
+                    dev_trace!(
+                        "update storage of {address}: {key:#064X}={:#064X}, key_hash={key_hash}",
+                        slot.present_value
+                    );
+
+                    if slot.present_value.is_zero() {
+                        trie.remove_leaf(&path);
+                    } else {
+                        trie.update_leaf(path, slot.present_value, |value| {
+                            self.rlp_buffer.clear();
+                            value.encode(&mut self.rlp_buffer);
+                            self.rlp_buffer.clone()
+                        });
+                    }
+                }
+                trie.trie.root()
+            } else {
+                dev_trace!("non-empty storage, skip trie update");
+                self.storage_roots
+                    .get_mut()
+                    .get(&hashed_address)
+                    .copied()
+                    .unwrap_or(EMPTY_ROOT_HASH)
+            };
+
+            dev_trace!("current storage root: {storage_root}");
             let info = account.info.as_ref().unwrap();
             let account = TrieAccount {
                 nonce: info.nonce,
