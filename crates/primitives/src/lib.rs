@@ -1,9 +1,10 @@
 //! Stateless Block Verifier primitives library.
 
 use auto_impl::auto_impl;
-use sbv_kv::KeyValueStore;
 use std::fmt;
 
+/// Extension Traits
+pub mod ext;
 /// Predeployed contracts
 #[cfg(feature = "scroll")]
 pub mod predeployed;
@@ -20,7 +21,6 @@ pub use alloy_primitives::{
     address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
 };
 pub use reth_primitives::{Block, BlockBody, BlockWithSenders, Receipt, TransactionSigned};
-use sbv_helpers::cycle_track;
 
 /// The spec of an Ethereum network
 pub mod chainspec {
@@ -174,73 +174,6 @@ pub trait BlockWitness: fmt::Debug {
             Block { header, body },
             senders,
         ))
-    }
-}
-
-/// BlockWitnessCodeExt trait
-pub trait BlockWitnessCodeExt {
-    /// Import codes into code db
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, code_db: CodeDb);
-}
-
-impl<T: BlockWitness> BlockWitnessCodeExt for T {
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
-        for code in self.codes_iter() {
-            let code = code.as_ref();
-            let code_hash = cycle_track!(keccak256(code), "keccak256");
-            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
-        }
-    }
-}
-
-impl<T: BlockWitness> BlockWitnessCodeExt for [T] {
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
-        for code in self.iter().flat_map(|w| w.codes_iter()) {
-            let code = code.as_ref();
-            let code_hash = cycle_track!(keccak256(code), "keccak256");
-            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
-        }
-    }
-}
-
-/// BlockWitnessBlockHashExt trait
-pub trait BlockWitnessBlockHashExt {
-    /// Import block hashes into block hash provider
-    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
-        &self,
-        block_hashes: BlockHashProvider,
-    );
-}
-
-impl<T: BlockWitness> BlockWitnessBlockHashExt for T {
-    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
-        &self,
-        mut block_hashes: BlockHashProvider,
-    ) {
-        let block_number = self.header().number();
-        for (i, hash) in self.block_hashes_iter().enumerate() {
-            let block_number = block_number
-                .checked_sub(i as u64 + 1)
-                .expect("block number underflow");
-            block_hashes.insert(block_number, hash)
-        }
-    }
-}
-
-impl<T: BlockWitness> BlockWitnessBlockHashExt for [T] {
-    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
-        &self,
-        mut block_hashes: BlockHashProvider,
-    ) {
-        for witness in self.iter() {
-            let block_number = witness.header().number();
-            for (i, hash) in witness.block_hashes_iter().enumerate() {
-                let block_number = block_number
-                    .checked_sub(i as u64 + 1)
-                    .expect("block number underflow");
-                block_hashes.insert(block_number, hash)
-            }
-        }
     }
 }
 
