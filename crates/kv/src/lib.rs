@@ -6,7 +6,8 @@ use std::hash::Hash;
 
 mod imps;
 pub use hashbrown;
-pub use imps::nohash;
+pub use imps::{nohash, null};
+
 /// HashMap
 pub type HashMap<K, V, S = rustc_hash::FxBuildHasher> = hashbrown::HashMap<K, V, S>;
 /// HashSet

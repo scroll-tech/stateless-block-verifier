@@ -7,6 +7,7 @@ use std::ops::{Deref, DerefMut};
 mod alloy_primitives;
 mod alloy_trie;
 pub mod nohash;
+pub mod null;
 #[cfg(feature = "sled")]
 mod sled;
 mod std_collections;
