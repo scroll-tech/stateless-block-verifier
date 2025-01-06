@@ -24,10 +24,27 @@ use sbv_helpers::cycle_track;
 
 /// The spec of an Ethereum network
 pub mod chainspec {
-    pub use reth_chainspec::*;
     use std::sync::Arc;
 
+    pub use reth_chainspec::*;
+    #[cfg(feature = "scroll")]
+    pub use reth_scroll_chainspec as scroll;
+
+    /// An Ethereum chain specification.
+    ///
+    /// A chain specification describes:
+    ///
+    /// - Meta-information about the chain (the chain ID)
+    /// - The genesis block of the chain ([`Genesis`])
+    /// - What hardforks are activated, and under which conditions
+    #[cfg(not(feature = "scroll"))]
+    pub type ChainSpec = reth_chainspec::ChainSpec;
+    /// Scroll chain spec type.
+    #[cfg(feature = "scroll")]
+    pub type ChainSpec = scroll::ScrollChainSpec;
+
     /// Get chain spec
+    #[cfg(not(feature = "scroll"))]
     pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
         if chain == Chain::from_named(NamedChain::Mainnet) {
             return Some(MAINNET.clone());
@@ -37,6 +54,24 @@ pub mod chainspec {
         }
         if chain == Chain::from_named(NamedChain::Holesky) {
             return Some(HOLESKY.clone());
+        }
+        if chain == Chain::dev() {
+            return Some(DEV.clone());
+        }
+        None
+    }
+
+    /// Get chain spec
+    #[cfg(feature = "scroll")]
+    pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
+        if chain == Chain::from_named(NamedChain::Scroll) {
+            return Some(scroll::SCROLL_MAINNET.clone());
+        }
+        if chain == Chain::from_named(NamedChain::ScrollSepolia) {
+            return Some(scroll::SCROLL_SEPOLIA.clone());
+        }
+        if chain == Chain::dev() {
+            return Some(scroll::SCROLL_DEV.clone());
         }
         None
     }
