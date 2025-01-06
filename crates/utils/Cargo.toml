@@ -26,3 +26,6 @@ tower = { workspace = true, features = ["limit"] }
 url.workspace = true
 
 sbv.workspace = true
+
+[features]
+scroll = []

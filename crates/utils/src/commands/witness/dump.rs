@@ -5,13 +5,16 @@ use alloy::rpc::client::ClientBuilder;
 use alloy::transports::layers::RetryBackoffLayer;
 use clap::Args;
 use console::{style, Emoji};
-use indicatif::{HumanBytes, HumanDuration, ProgressBar};
+use indicatif::{HumanBytes, HumanDuration};
 use rkyv::rancor;
-use sbv::primitives::types::{BlockHeader, BlockWitness, ExecutionWitness, Transaction};
-use std::cmp::Reverse;
+use sbv::primitives::chainspec::{Chain, NamedChain};
+use sbv::primitives::types::RpcBlock;
+use sbv::primitives::{
+    ext::ProviderExt,
+    types::{BlockHeader, BlockWitness, Transaction},
+};
 use std::path::PathBuf;
 use std::time::Instant;
-use tokio::task::JoinSet;
 use url::Url;
 
 #[derive(Args)]
@@ -79,7 +82,8 @@ impl DumpWitnessCommand {
         }
 
         let mut steps = 1;
-        let total_steps = 4 + self.json as usize + self.rkyv as usize;
+        let total_steps =
+            4 + self.json as usize + self.rkyv as usize + cfg!(feature = "scroll") as usize;
 
         let retry_layer = RetryBackoffLayer::new(self.max_retry, self.backoff, self.cups);
         let limit_layer = ConcurrencyLimitLayer::new(self.max_concurrency);
@@ -97,6 +101,18 @@ impl DumpWitnessCommand {
             chain_id
         );
         steps += 1;
+
+        if !cfg!(feature = "scroll") {
+            let chain = Chain::from(chain_id);
+            if chain == Chain::from_named(NamedChain::Scroll)
+                || chain == Chain::from_named(NamedChain::ScrollSepolia)
+            {
+                eprintln!(
+                    "      {}Scroll feature is not enabled, but the chain is Scroll or ScrollSepolia",
+                    Emoji("⚠️  ", "")
+                );
+            }
+        }
 
         let block = provider
             .get_block_by_number(self.block.into(), BlockTransactionsKind::Full)
@@ -118,11 +134,27 @@ impl DumpWitnessCommand {
         );
         steps += 1;
 
+        #[cfg(feature = "scroll")]
+        let block = {
+            let roots = provider
+                .scroll_disk_root(self.block.into())
+                .await
+                .expect("transport error");
+            eprintln!(
+                "{} {}Patch block header state root to MPT root = {}",
+                style(format!("[{}/{}]", steps, total_steps)).bold().dim(),
+                Emoji("🔧  ", ""),
+                roots.disk_root
+            );
+            let mut block = block;
+            assert_eq!(block.header.state_root, roots.header_root, "should same");
+            block.header.state_root = roots.disk_root;
+            steps += 1;
+            block
+        };
+
         let execution_witness = provider
-            .raw_request::<_, ExecutionWitness>(
-                "debug_executionWitness".into(),
-                (format!("0x{:x}", self.block),),
-            )
+            .debug_execution_witness(self.block.into())
             .await
             .expect("transport error");
         eprintln!(
@@ -134,44 +166,37 @@ impl DumpWitnessCommand {
         );
         steps += 1;
 
-        eprintln!(
-            "{} {}Fetching ancestor blocks...",
-            style(format!("[{}/{}]", steps, total_steps)).bold().dim(),
-            Emoji("🚚  ", ""),
-        );
-        if self.ancestors != 256 {
+        #[cfg(not(feature = "scroll"))]
+        let (ancestor_blocks, pre_state_root) = {
             eprintln!(
-                "      {}As requested, not all 256 ancestor blocks will be fetched, incomplete bloch hashes may cause verification failure",
+                "{} {}Fetching ancestor blocks...",
+                style(format!("[{}/{}]", steps, total_steps)).bold().dim(),
+                Emoji("🚚  ", ""),
+            );
+            if self.ancestors != 256 {
+                eprintln!(
+                    "      {}As requested, not all 256 ancestor blocks will be fetched, incomplete bloch hashes may cause verification failure",
+                    Emoji("⚠️  ", "")
+                );
+            }
+            let ancestor_blocks =
+                dump_ancestor_blocks(provider.clone(), self.block, self.ancestors).await;
+            let pre_state_root = ancestor_blocks[0].header.state_root;
+            (ancestor_blocks, pre_state_root)
+        };
+        #[cfg(feature = "scroll")]
+        let (ancestor_blocks, pre_state_root) = {
+            eprintln!(
+                "      {}Scroll feature enabled, ancestor blocks will not be fetched",
                 Emoji("⚠️  ", "")
             );
-        }
-        let pb = ProgressBar::new(self.ancestors);
-        let mut joinset = JoinSet::new();
-        for i in 1..=self.ancestors {
-            let Some(block_number) = self.block.checked_sub(i) else {
-                break;
-            };
-            let pb = pb.clone();
-            let provider = provider.clone();
-            joinset.spawn(async move {
-                let block = provider
-                    .get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
-                    .await;
-                pb.inc(1);
-                block
-            });
-        }
-        let mut ancestor_blocks = joinset
-            .join_all()
-            .await
-            .into_iter()
-            .collect::<Result<Vec<_>, _>>()
-            .expect("transport error")
-            .into_iter()
-            .map(|b| b.expect("block not found"))
-            .collect::<Vec<_>>();
-        ancestor_blocks.sort_by_key(|b| Reverse(b.header.number)); // JoinSet is unordered
-        pb.finish_and_clear();
+            let pre_state_root = provider
+                .scroll_disk_root((self.block - 1).into())
+                .await
+                .expect("transport error")
+                .disk_root;
+            (vec![], pre_state_root)
+        };
         steps += 1;
 
         let mut states = execution_witness.state.into_values().collect::<Vec<_>>();
@@ -181,13 +206,16 @@ impl DumpWitnessCommand {
         let witness = BlockWitness {
             chain_id,
             header: BlockHeader::from(block.header),
-            pre_state_root: ancestor_blocks[0].header.state_root,
+            pre_state_root,
             transaction: block
                 .transactions
                 .into_transactions()
                 .map(Transaction::from_alloy)
                 .collect(),
-            block_hashes: ancestor_blocks.into_iter().map(|b| b.header.hash).collect(),
+            block_hashes: ancestor_blocks
+                .into_iter()
+                .map(|b: RpcBlock| b.header.hash)
+                .collect(),
             withdrawals: block
                 .withdrawals
                 .map(|w| w.iter().map(From::from).collect()),
@@ -231,4 +259,43 @@ impl DumpWitnessCommand {
         );
         Ok(())
     }
+}
+
+#[cfg(not(feature = "scroll"))]
+async fn dump_ancestor_blocks<
+    P: Provider<T> + Clone + 'static,
+    T: alloy::transports::Transport + Clone,
+>(
+    provider: P,
+    block: u64,
+    ancestors: u64,
+) -> Vec<RpcBlock> {
+    let pb = indicatif::ProgressBar::new(ancestors);
+    let mut joinset = tokio::task::JoinSet::new();
+    for i in 1..=ancestors {
+        let Some(block_number) = block.checked_sub(i) else {
+            break;
+        };
+        let pb = pb.clone();
+        let provider = provider.clone();
+        joinset.spawn(async move {
+            let block = provider
+                .get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
+                .await;
+            pb.inc(1);
+            block
+        });
+    }
+    let mut ancestor_blocks = joinset
+        .join_all()
+        .await
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()
+        .expect("transport error")
+        .into_iter()
+        .map(|b| b.expect("block not found"))
+        .collect::<Vec<_>>();
+    ancestor_blocks.sort_by_key(|b| std::cmp::Reverse(b.header.number)); // JoinSet is unordered
+    pb.finish_and_clear();
+    ancestor_blocks
 }
