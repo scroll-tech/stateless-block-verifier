@@ -13,19 +13,24 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+async-trait.workspace = true
 auto_impl.workspace = true
 
-alloy-consensus = { workspace = true }
+alloy-consensus.workspace = true
 alloy-eips.workspace = true
-alloy-rpc-types-debug.workspace = true
+alloy-provider.workspace = true
 alloy-rpc-types-eth.workspace = true
 alloy-serde.workspace = true
+alloy-transport.workspace = true
 
 alloy-primitives.workspace = true
 
+revm.workspace = true
 reth-chainspec.workspace = true
 reth-primitives.workspace = true
-#reth-scroll-primitives = { workspace = true, optional = true }
+reth-scroll-chainspec = { workspace = true, optional = true }
+reth-scroll-primitives = { workspace = true, optional = true }
+reth-scroll-revm = { workspace = true, optional = true }
 
 rkyv.workspace = true
 serde = { workspace = true, features = ["derive"] }
@@ -39,9 +44,11 @@ serde_json.workspace = true
 
 [features]
 scroll = [
-#    "dep:reth-scroll-primitives",
-#    "reth-chainspec/scroll",
-#    "reth-primitives/scroll"
+    "dep:reth-scroll-chainspec",
+    "dep:reth-scroll-primitives",
+    "dep:reth-scroll-revm",
+    "reth-chainspec/scroll",
+    "reth-primitives/scroll",
 ]
 dev = ["sbv-helpers/dev"]
 sp1 = []
