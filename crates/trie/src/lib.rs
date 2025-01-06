@@ -8,10 +8,9 @@ use alloy_trie::{
     Nibbles, TrieMask, EMPTY_ROOT_HASH,
 };
 use reth_trie_sparse::RevealedSparseTrie;
-use revm::db::BundleAccount;
 use sbv_helpers::dev_trace;
 use sbv_kv::{nohash::NoHashMap, HashMap};
-use sbv_primitives::{keccak256, Address, BlockWitness, B256, U256};
+use sbv_primitives::{keccak256, states::BundleAccount, Address, BlockWitness, B256, U256};
 use std::cell::RefCell;
 
 pub use alloy_trie::{nodes::TrieNode, TrieAccount};
