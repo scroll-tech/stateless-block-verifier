@@ -10,7 +10,7 @@ mod chunk;
 pub use chunk::ChunkInfo;
 
 mod database;
-pub use database::EvmDatabase;
+pub use database::{DatabaseRef, EvmDatabase};
 
 mod error;
 pub use error::VerificationError;
