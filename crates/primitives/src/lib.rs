@@ -82,6 +82,15 @@ pub mod eips {
     pub use alloy_eips::eip2718::Encodable2718;
 }
 
+/// States types
+pub mod states {
+    #[cfg(not(feature = "scroll"))]
+    pub use revm::db::BundleAccount;
+
+    #[cfg(feature = "scroll")]
+    pub use reth_scroll_revm::states::ScrollBundleAccount as BundleAccount;
+}
+
 /// BlockWitness trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockWitness: fmt::Debug {
