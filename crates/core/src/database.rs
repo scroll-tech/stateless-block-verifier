@@ -1,12 +1,11 @@
-use revm::db::BundleAccount;
 use revm::interpreter::analysis::to_analysed;
-use revm::{
-    db::DatabaseRef,
-    primitives::{AccountInfo, Address, Bytecode, Bytes, B256, U256},
-};
+use revm::primitives::{AccountInfo, Address, Bytecode};
 use sbv_kv::{HashMap, KeyValueStoreGet};
+use sbv_primitives::{states::BundleAccount, Bytes, B256, U256};
 use sbv_trie::{PartialStateTrie, TrieNode};
 use std::{cell::RefCell, fmt};
+
+pub use revm::db::DatabaseRef;
 
 /// A database that consists of account and storage information.
 pub struct EvmDatabase<CodeDb, NodesProvider, BlockHashProvider> {
@@ -22,8 +21,12 @@ pub struct EvmDatabase<CodeDb, NodesProvider, BlockHashProvider> {
     pub(crate) state: PartialStateTrie,
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum DatabaseError {}
+#[derive(Debug, Copy, Clone, thiserror::Error)]
+pub enum DatabaseError {
+    #[cfg(feature = "scroll")]
+    #[error("missing L2 message queue witness")]
+    MissingL2MessageQueueWitness,
+}
 
 impl<CodeDb, NodesProvider, BlockHashProvider> fmt::Debug
     for EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
@@ -74,6 +77,21 @@ impl<
         self.state.commit_state()
     }
 
+    /// Get the withdrawal trie root of scroll.
+    ///
+    /// Note: this should not be confused with the withdrawal of the beacon chain.
+    #[cfg(feature = "scroll")]
+    pub fn withdraw_root(&self) -> Result<B256, DatabaseError> {
+        use sbv_primitives::predeployed::message_queue;
+        self.basic_ref(message_queue::ADDRESS)?
+            .ok_or(DatabaseError::MissingL2MessageQueueWitness)?;
+        let withdraw_root = self.storage_ref(
+            message_queue::ADDRESS,
+            message_queue::WITHDRAW_TRIE_ROOT_SLOT,
+        )?;
+        Ok(withdraw_root.into())
+    }
+
     fn load_code(&self, hash: B256) -> Option<Bytecode> {
         let mut code_cache = self.analyzed_code_cache.borrow_mut();
         if let Some(code) = code_cache.get(&hash) {
@@ -103,11 +121,16 @@ impl<
             return Ok(None);
         };
         dev_trace!("load trie account of {address:?}: {account:?}");
+        let code = self.load_code(account.code_hash);
         let info = AccountInfo {
             balance: account.balance,
             nonce: account.nonce,
+            #[cfg(feature = "scroll")]
+            code_size: code.as_ref().map(|c| c.len()).unwrap_or(0), // FIXME: this should be remove
             code_hash: account.code_hash,
-            code: self.load_code(account.code_hash),
+            #[cfg(feature = "scroll")]
+            poseidon_code_hash: Default::default(), // FIXME: this should be remove
+            code,
         };
 
         #[cfg(debug_assertions)]
@@ -152,12 +175,6 @@ impl<
             .block_hashes
             .get(&number)
             .unwrap_or_else(|| panic!("block hash of number {number} not found")))
-    }
-}
-
-impl fmt::Display for DatabaseError {
-    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
-        unreachable!()
     }
 }
 
