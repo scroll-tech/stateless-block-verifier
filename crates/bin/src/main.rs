@@ -27,8 +27,7 @@ struct Cli {
     metrics_addr: std::net::SocketAddr,
 }
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     // Install the tracing subscriber that will listen for events and filters. We try to use the
     // `RUST_LOG` environment variable and default to RUST_LOG=info if unset.
     #[cfg(feature = "dev")]
@@ -45,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
         sbv::helpers::metrics::start_metrics_server(cmd.metrics_addr);
     }
 
-    cmd.commands.run().await?;
+    cmd.commands.run()?;
 
     Ok(())
 }

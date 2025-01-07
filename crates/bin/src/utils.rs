@@ -49,7 +49,7 @@ fn verify_inner<T: BlockWitness + BlockWitnessTrieExt + BlockWitnessExt>(
         witness.pre_state_root(),
         &nodes_provider,
         &block_hashes,
-    );
+    )?;
 
     let block = witness.build_reth_block()?;
 
@@ -61,7 +61,7 @@ fn verify_inner<T: BlockWitness + BlockWitnessTrieExt + BlockWitnessExt>(
             update_metrics_counter!(verification_error);
         })?;
 
-    db.update(&nodes_provider, output.state.state.iter());
+    db.update(&nodes_provider, output.state.state.iter())?;
     let post_state_root = db.commit_changes();
 
     #[cfg(feature = "profiling")]
