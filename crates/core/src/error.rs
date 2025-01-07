@@ -1,3 +1,4 @@
+use crate::database::DatabaseError;
 use reth_evm::execute::BlockExecutionError;
 use sbv_primitives::{alloy_primitives::SignatureError, B256};
 
@@ -7,6 +8,9 @@ pub enum VerificationError {
     /// Error while recovering signer from an ECDSA signature.
     #[error("invalid signature: {0}")]
     InvalidSignature(#[from] SignatureError),
+    /// Error encountered from database.
+    #[error(transparent)]
+    Database(#[from] DatabaseError),
     /// Error encountered from [`revm`].
     #[error(transparent)]
     Execution(#[from] BlockExecutionError),

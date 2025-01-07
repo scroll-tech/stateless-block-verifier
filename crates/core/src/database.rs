@@ -21,12 +21,16 @@ pub struct EvmDatabase<CodeDb, NodesProvider, BlockHashProvider> {
     pub(crate) state: PartialStateTrie,
 }
 
-#[derive(Debug, Copy, Clone, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum DatabaseError {
     #[cfg(feature = "scroll")]
     #[error("missing L2 message queue witness")]
     MissingL2MessageQueueWitness,
+    #[error(transparent)]
+    PartialStateTrie(#[from] sbv_trie::PartialStateTrieError),
 }
+
+type Result<T, E = DatabaseError> = std::result::Result<T, E>;
 
 impl<CodeDb, NodesProvider, BlockHashProvider> fmt::Debug
     for EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
@@ -48,19 +52,19 @@ impl<
         state_root_before: B256,
         nodes_provider: NodesProvider,
         block_hashes: BlockHashProvider,
-    ) -> Self {
+    ) -> Result<Self> {
         let state = cycle_track!(
             PartialStateTrie::open(&nodes_provider, state_root_before),
             "PartialStateTrie::open"
-        );
+        )?;
 
-        EvmDatabase {
+        Ok(EvmDatabase {
             code_db,
             analyzed_code_cache: Default::default(),
             nodes_provider,
             block_hashes,
             state,
-        }
+        })
     }
 
     /// Update changes to the database.
@@ -68,8 +72,9 @@ impl<
         &mut self,
         nodes_provider: P,
         post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
-    ) {
-        self.state.update(nodes_provider, post_state);
+    ) -> Result<()> {
+        self.state.update(nodes_provider, post_state)?;
+        Ok(())
     }
 
     /// Commit changes and return the new state root.
@@ -165,7 +170,7 @@ impl<
         dev_trace!("get storage of {:?} at index {:?}", address, index);
         Ok(self
             .state
-            .get_storage(&self.nodes_provider, address, index)
+            .get_storage(&self.nodes_provider, address, index)?
             .unwrap_or(U256::ZERO))
     }
 
@@ -179,7 +184,7 @@ impl<
 }
 
 impl From<DatabaseError> for reth_storage_errors::provider::ProviderError {
-    fn from(_: DatabaseError) -> Self {
-        unreachable!()
+    fn from(e: DatabaseError) -> Self {
+        reth_storage_errors::provider::ProviderError::TrieWitnessError(e.to_string())
     }
 }
