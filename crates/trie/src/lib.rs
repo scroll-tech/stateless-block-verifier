@@ -317,7 +317,7 @@ impl<T: Default> PartialTrie<T> {
         }
         let root = nodes_provider
             .get(&root)
-            .ok_or_else(|| PartialStateTrieError::MissingWitness(root))?
+            .ok_or(PartialStateTrieError::MissingWitness(root))?
             .into_owned();
         let mut state = cycle_track!(
             RevealedSparseTrie::from_root(root.clone(), None, true),
