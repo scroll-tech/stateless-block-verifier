@@ -3,19 +3,17 @@
 extern crate sbv_helpers;
 
 use alloy_rlp::{Decodable, Encodable};
+pub use alloy_trie::{nodes::TrieNode, TrieAccount};
 use alloy_trie::{
     nodes::{RlpNode, CHILD_INDEX_RANGE},
     Nibbles, TrieMask, EMPTY_ROOT_HASH,
 };
-use reth_trie_sparse::errors::SparseTrieError;
+pub use reth_trie::{KeccakKeyHasher, KeyHasher};
 use reth_trie_sparse::RevealedSparseTrie;
 use sbv_helpers::dev_trace;
 use sbv_kv::{nohash::NoHashMap, HashMap};
 use sbv_primitives::{keccak256, states::BundleAccount, Address, BlockWitness, B256, U256};
 use std::cell::RefCell;
-
-pub use alloy_trie::{nodes::TrieNode, TrieAccount};
-pub use reth_trie::{KeccakKeyHasher, KeyHasher};
 
 /// Extension trait for BlockWitness
 pub trait BlockWitnessTrieExt {
@@ -84,8 +82,8 @@ pub struct PartialStateTrie {
 #[derive(thiserror::Error, Debug)]
 pub enum PartialStateTrieError {
     /// reth sparse trie error
-    #[error(transparent)]
-    Impl(#[from] SparseTrieError),
+    #[error("error occurred in reth_trie_sparse, see the logs for more details")]
+    Impl, // FIXME: wtf, why `SparseTrieError` they don't require Sync?
     /// an error occurred while previously try to open the storage trie
     #[error("an error occurred while previously try to open the storage trie")]
     PreviousError,
@@ -324,7 +322,11 @@ impl<T: Default> PartialTrie<T> {
         let mut state = cycle_track!(
             RevealedSparseTrie::from_root(root.clone(), None, true),
             "RevealedSparseTrie::from_root"
-        )?;
+        )
+        .map_err(|e| {
+            dev_error!("failed to open trie: {e}");
+            PartialStateTrieError::Impl
+        })?;
         let mut leafs = HashMap::default();
         // traverse the partial trie
         cycle_track!(
@@ -370,13 +372,21 @@ impl<T: Default> PartialTrie<T> {
         value: T,
         mut encode: F,
     ) -> Result<()> {
-        self.trie.update_leaf(path.clone(), encode(&value))?;
+        self.trie
+            .update_leaf(path.clone(), encode(&value))
+            .map_err(|e| {
+                dev_error!("failed to update leaf: {e}");
+                PartialStateTrieError::Impl
+            })?;
         self.leafs.insert(path, value);
         Ok(())
     }
 
     fn remove_leaf_inner(&mut self, path: &Nibbles) -> Result<()> {
-        self.trie.remove_leaf(path)?;
+        self.trie.remove_leaf(path).map_err(|e| {
+            dev_error!("failed to remove leaf: {e}");
+            PartialStateTrieError::Impl
+        })?;
         self.leafs.remove(path);
         Ok(())
     }
@@ -437,7 +447,11 @@ fn traverse_import_partial_trie<
         }
     };
 
-    trie.reveal_node(path.clone(), node, trie_mask)?;
+    trie.reveal_node(path.clone(), node, trie_mask)
+        .map_err(|e| {
+            dev_error!("failed to reveal node: {e}");
+            PartialStateTrieError::Impl
+        })?;
 
     Ok(trie_mask)
 }
