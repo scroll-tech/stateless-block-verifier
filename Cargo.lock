@@ -5067,6 +5067,7 @@ dependencies = [
  "sbv-kv",
  "sbv-primitives",
  "serde_json",
+ "thiserror 1.0.69",
 ]
 
 [[package]]

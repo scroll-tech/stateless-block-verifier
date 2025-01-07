@@ -22,6 +22,8 @@ sbv-primitives.workspace = true
 sbv-kv.workspace = true
 sbv-helpers.workspace = true
 
+thiserror.workspace = true
+
 [dev-dependencies]
 serde_json.workspace = true
 
