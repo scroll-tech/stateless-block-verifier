@@ -67,7 +67,7 @@ impl BlockWitness {
         chain_id: ChainId,
         block: Block,
         pre_state_root: B256,
-        block_hashes: Vec<B256>,
+        #[cfg(not(feature = "scroll"))] block_hashes: Vec<B256>,
         witness: ExecutionWitness,
     ) -> Self {
         let header = BlockHeader::from(block.header);
@@ -85,6 +85,7 @@ impl BlockWitness {
             chain_id,
             header,
             transaction,
+            #[cfg(not(feature = "scroll"))]
             block_hashes,
             withdrawals,
             pre_state_root,
@@ -116,6 +117,7 @@ impl crate::BlockWitness for BlockWitness {
     {
         self.transaction.iter().map(|tx| tx.try_into())
     }
+    #[cfg(not(feature = "scroll"))]
     fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256> {
         self.block_hashes.iter().copied()
     }
@@ -152,6 +154,7 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     {
         self.transaction.iter().map(|tx| tx.try_into())
     }
+    #[cfg(not(feature = "scroll"))]
     fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256> {
         self.block_hashes.iter().map(|h| B256::from(h.0))
     }

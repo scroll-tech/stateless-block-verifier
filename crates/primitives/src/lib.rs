@@ -113,6 +113,7 @@ pub trait BlockWitness: fmt::Debug {
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>;
     /// Block hashes
     #[must_use]
+    #[cfg(not(feature = "scroll"))]
     fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256>;
     /// Withdrawals
     #[must_use]

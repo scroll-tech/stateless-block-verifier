@@ -8,6 +8,7 @@ use console::{style, Emoji};
 use indicatif::{HumanBytes, HumanDuration};
 use rkyv::rancor;
 use sbv::primitives::chainspec::{Chain, NamedChain};
+#[cfg(not(feature = "scroll"))]
 use sbv::primitives::types::RpcBlock;
 use sbv::primitives::{
     ext::ProviderExt,
@@ -185,7 +186,7 @@ impl DumpWitnessCommand {
             (ancestor_blocks, pre_state_root)
         };
         #[cfg(feature = "scroll")]
-        let (ancestor_blocks, pre_state_root) = {
+        let pre_state_root = {
             eprintln!(
                 "      {}Scroll feature enabled, ancestor blocks will not be fetched",
                 Emoji("⚠️  ", "")
@@ -195,7 +196,7 @@ impl DumpWitnessCommand {
                 .await
                 .expect("transport error")
                 .disk_root;
-            (vec![], pre_state_root)
+            pre_state_root
         };
         steps += 1;
 
@@ -212,6 +213,7 @@ impl DumpWitnessCommand {
                 .into_transactions()
                 .map(Transaction::from_alloy)
                 .collect(),
+            #[cfg(not(feature = "scroll"))]
             block_hashes: ancestor_blocks
                 .into_iter()
                 .map(|b: RpcBlock| b.header.hash)
