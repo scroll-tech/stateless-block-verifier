@@ -95,6 +95,9 @@ impl<T: BlockWitness> BlockWitnessExt for [T] {
 pub trait TxBytesHashExt {
     /// Hash the transaction bytes.
     fn tx_bytes_hash(self) -> B256;
+
+    /// Hash the transaction bytes.
+    fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> B256;
 }
 
 #[cfg(feature = "scroll")]
@@ -102,12 +105,15 @@ impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: alloy_eips::eip2718::Encodable2718 
     for I
 {
     fn tx_bytes_hash(self) -> B256 {
-        use tiny_keccak::{Hasher, Keccak};
-
         let mut rlp_buffer = Vec::new();
+        self.tx_bytes_hash_in(&mut rlp_buffer)
+    }
+
+    fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> B256 {
+        use tiny_keccak::{Hasher, Keccak};
         let mut tx_bytes_hasher = Keccak::v256();
         for tx in self.into_iter() {
-            tx.encode_2718(&mut rlp_buffer);
+            tx.encode_2718(rlp_buffer);
             tx_bytes_hasher.update(&rlp_buffer);
             rlp_buffer.clear();
         }
