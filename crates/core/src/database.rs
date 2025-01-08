@@ -21,11 +21,14 @@ pub struct EvmDatabase<CodeDb, NodesProvider, BlockHashProvider> {
     pub(crate) state: PartialStateTrie,
 }
 
+/// Database error.
 #[derive(Debug, thiserror::Error)]
 pub enum DatabaseError {
+    /// Missing L2 message queue witness
     #[cfg(feature = "scroll")]
     #[error("missing L2 message queue witness")]
     MissingL2MessageQueueWitness,
+    /// Partial state trie error
     #[error(transparent)]
     PartialStateTrie(#[from] sbv_trie::PartialStateTrieError),
 }
