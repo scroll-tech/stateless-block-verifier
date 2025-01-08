@@ -51,6 +51,7 @@ pub struct BlockWitness {
     pub withdrawals: Option<Vec<Withdrawal>>,
     /// Last 256 Ancestor block hashes.
     #[rkyv(attr(doc = "Ancestor block hashes"))]
+    #[cfg(not(feature = "scroll"))]
     pub block_hashes: Vec<B256>,
     /// Rlp encoded state trie nodes.
     #[rkyv(attr(doc = "Rlp encoded state trie nodes"))]
