@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, BlockNumber, Bloom, Bytes, B256, B64, U256};
+use alloy_primitives::{Address, B64, B256, BlockNumber, Bloom, Bytes, U256};
 use auto_impl::auto_impl;
 use std::sync::OnceLock;
 

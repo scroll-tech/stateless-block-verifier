@@ -1,6 +1,6 @@
 /// Pre-deployed L2MessageQueue
 pub mod message_queue {
-    use crate::{address, Address, U256};
+    use crate::{Address, U256, address};
 
     /// L2MessageQueue pre-deployed address
     pub const ADDRESS: Address = address!("5300000000000000000000000000000000000000");
@@ -10,7 +10,7 @@ pub mod message_queue {
 
 /// Pre-deployed Gas Price Oracle
 pub mod l1_gas_price_oracle {
-    use crate::{address, Address, U256};
+    use crate::{Address, U256, address};
 
     /// L1GasPriceOracle pre-deployed address
     pub const ADDRESS: Address = address!("5300000000000000000000000000000000000002");

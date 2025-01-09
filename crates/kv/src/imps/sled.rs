@@ -1,7 +1,9 @@
 use crate::{KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, Value};
-use std::borrow::{Borrow, Cow};
-use std::collections::BTreeMap;
-use std::hash::Hash;
+use std::{
+    borrow::{Borrow, Cow},
+    collections::BTreeMap,
+    hash::Hash,
+};
 
 impl<K: Ord + Hash + Eq + AsRef<[u8]>, V: Value> KeyValueStoreInsert<K, V> for sled::Tree {
     fn insert(&mut self, k: K, v: V) {

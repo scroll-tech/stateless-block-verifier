@@ -1,7 +1,9 @@
-use revm::interpreter::analysis::to_analysed;
-use revm::primitives::{AccountInfo, Address, Bytecode};
+use revm::{
+    interpreter::analysis::to_analysed,
+    primitives::{AccountInfo, Address, Bytecode},
+};
 use sbv_kv::{HashMap, KeyValueStoreGet};
-use sbv_primitives::{states::BundleAccount, Bytes, B256, U256};
+use sbv_primitives::{B256, Bytes, U256, states::BundleAccount};
 use sbv_trie::{PartialStateTrie, TrieNode};
 use std::{cell::RefCell, fmt};
 
@@ -44,10 +46,10 @@ impl<CodeDb, NodesProvider, BlockHashProvider> fmt::Debug
 }
 
 impl<
-        CodeDb: KeyValueStoreGet<B256, Bytes>,
-        NodesProvider: KeyValueStoreGet<B256, TrieNode>,
-        BlockHashProvider: KeyValueStoreGet<u64, B256>,
-    > EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
+    CodeDb: KeyValueStoreGet<B256, Bytes>,
+    NodesProvider: KeyValueStoreGet<B256, TrieNode>,
+    BlockHashProvider: KeyValueStoreGet<u64, B256>,
+> EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
 {
     /// Initialize an EVM database from a zkTrie root.
     pub fn new_from_root(
@@ -116,10 +118,10 @@ impl<
 }
 
 impl<
-        CodeDb: KeyValueStoreGet<B256, Bytes>,
-        NodesProvider: KeyValueStoreGet<B256, TrieNode>,
-        BlockHashProvider: KeyValueStoreGet<u64, B256>,
-    > DatabaseRef for EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
+    CodeDb: KeyValueStoreGet<B256, Bytes>,
+    NodesProvider: KeyValueStoreGet<B256, TrieNode>,
+    BlockHashProvider: KeyValueStoreGet<u64, B256>,
+> DatabaseRef for EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
 {
     type Error = DatabaseError;
 

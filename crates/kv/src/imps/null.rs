@@ -1,7 +1,9 @@
 //! A null provider that does nothing.
 use crate::{KeyValueStoreGet, KeyValueStoreInsert, Value};
-use std::borrow::{Borrow, Cow};
-use std::hash::Hash;
+use std::{
+    borrow::{Borrow, Cow},
+    hash::Hash,
+};
 
 /// A null provider that does nothing.
 #[derive(Debug, Copy, Clone)]

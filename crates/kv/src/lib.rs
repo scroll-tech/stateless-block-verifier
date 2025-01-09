@@ -1,8 +1,10 @@
 //! Abstract KV-Store interface.
 
 use auto_impl::auto_impl;
-use std::borrow::{Borrow, Cow};
-use std::hash::Hash;
+use std::{
+    borrow::{Borrow, Cow},
+    hash::Hash,
+};
 
 mod imps;
 pub use hashbrown;

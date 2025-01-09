@@ -2,8 +2,7 @@ use crate::utils;
 use anyhow::anyhow;
 use clap::Args;
 use sbv::primitives::types::BlockWitness;
-use std::panic::catch_unwind;
-use std::path::PathBuf;
+use std::{panic::catch_unwind, path::PathBuf};
 
 #[derive(Args)]
 pub struct RunFileCommand {
@@ -46,10 +45,10 @@ impl RunFileCommand {
             core::{ChunkInfo, EvmDatabase, EvmExecutor},
             kv::{nohash::NoHashMap, null::NullProvider},
             primitives::{
-                chainspec::{get_chain_spec, Chain},
+                BlockWitness as _,
+                chainspec::{Chain, get_chain_spec},
                 ext::{BlockWitnessChunkExt, BlockWitnessExt, TxBytesHashExt},
                 types::BlockWitness,
-                BlockWitness as _,
             },
             trie::BlockWitnessTrieExt,
         };

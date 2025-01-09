@@ -1,7 +1,6 @@
-use crate::{keccak256, types::ExecutionWitness, BlockHeader, BlockWitness, Bytes, B256};
+use crate::{B256, BlockHeader, BlockWitness, Bytes, keccak256, types::ExecutionWitness};
 use alloy_eips::BlockNumberOrTag;
-use alloy_provider::network::Ethereum;
-use alloy_provider::{Network, Provider};
+use alloy_provider::{Network, Provider, network::Ethereum};
 use alloy_transport::{BoxTransport, Transport, TransportResult};
 #[cfg(feature = "scroll")]
 use itertools::Itertools;

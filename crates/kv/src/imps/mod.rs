@@ -1,8 +1,10 @@
 use crate::{KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, Value};
-use std::borrow::{Borrow, Cow};
-use std::hash::Hash;
-use std::mem::ManuallyDrop;
-use std::ops::{Deref, DerefMut};
+use std::{
+    borrow::{Borrow, Cow},
+    hash::Hash,
+    mem::ManuallyDrop,
+    ops::{Deref, DerefMut},
+};
 
 mod alloy_primitives;
 mod alloy_trie;

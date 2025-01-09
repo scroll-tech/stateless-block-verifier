@@ -1,21 +1,22 @@
 use crate::helpers::tower::ConcurrencyLimitLayer;
-use alloy::network::primitives::BlockTransactionsKind;
-use alloy::providers::{Provider, ProviderBuilder};
-use alloy::rpc::client::ClientBuilder;
-use alloy::transports::layers::RetryBackoffLayer;
+use alloy::{
+    network::primitives::BlockTransactionsKind,
+    providers::{Provider, ProviderBuilder},
+    rpc::client::ClientBuilder,
+    transports::layers::RetryBackoffLayer,
+};
 use clap::Args;
-use console::{style, Emoji};
+use console::{Emoji, style};
 use indicatif::{HumanBytes, HumanDuration};
 use rkyv::rancor;
-use sbv::primitives::chainspec::{Chain, NamedChain};
 #[cfg(not(feature = "scroll"))]
 use sbv::primitives::types::RpcBlock;
 use sbv::primitives::{
+    chainspec::{Chain, NamedChain},
     ext::ProviderExt,
     types::{BlockHeader, BlockWitness, Transaction},
 };
-use std::path::PathBuf;
-use std::time::Instant;
+use std::{path::PathBuf, time::Instant};
 use url::Url;
 
 #[derive(Args)]

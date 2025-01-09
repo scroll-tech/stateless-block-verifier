@@ -3,16 +3,16 @@
 extern crate sbv_helpers;
 
 use alloy_rlp::{Decodable, Encodable};
-pub use alloy_trie::{nodes::TrieNode, TrieAccount};
 use alloy_trie::{
-    nodes::{RlpNode, CHILD_INDEX_RANGE},
-    Nibbles, TrieMask, EMPTY_ROOT_HASH,
+    EMPTY_ROOT_HASH, Nibbles, TrieMask,
+    nodes::{CHILD_INDEX_RANGE, RlpNode},
 };
+pub use alloy_trie::{TrieAccount, nodes::TrieNode};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
 use reth_trie_sparse::RevealedSparseTrie;
 use sbv_helpers::dev_trace;
-use sbv_kv::{nohash::NoHashMap, HashMap};
-use sbv_primitives::{keccak256, states::BundleAccount, Address, BlockWitness, B256, U256};
+use sbv_kv::{HashMap, nohash::NoHashMap};
+use sbv_primitives::{Address, B256, BlockWitness, U256, keccak256, states::BundleAccount};
 use std::cell::RefCell;
 
 /// Extension trait for BlockWitness

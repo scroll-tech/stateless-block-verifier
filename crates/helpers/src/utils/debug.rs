@@ -1,7 +1,5 @@
-use revm::primitives::{hex, AccountInfo, Address, B256, U256};
-use std::collections::BTreeMap;
-use std::io::Write;
-use std::path::PathBuf;
+use revm::primitives::{AccountInfo, Address, B256, U256, hex};
+use std::{collections::BTreeMap, io::Write, path::PathBuf};
 
 #[derive(Debug, serde::Serialize)]
 struct StorageOps {
@@ -52,18 +50,15 @@ impl DebugRecorder {
     #[cfg(feature = "debug-account")]
     #[allow(clippy::too_many_arguments)]
     pub fn record_account(&mut self, addr: Address, info: AccountInfo, storage_root: B256) {
-        self.accounts.insert(
+        self.accounts.insert(addr, AccountData {
             addr,
-            AccountData {
-                addr,
-                nonce: info.nonce,
-                balance: info.balance,
-                code_hash: info.code_hash,
-                poseidon_code_hash: info.poseidon_code_hash,
-                code_size: info.code_size as u64,
-                storage_root,
-            },
-        );
+            nonce: info.nonce,
+            balance: info.balance,
+            code_hash: info.code_hash,
+            poseidon_code_hash: info.poseidon_code_hash,
+            code_size: info.code_size as u64,
+            storage_root,
+        });
     }
 
     /// Record the storage root of an account.
@@ -77,23 +72,17 @@ impl DebugRecorder {
     pub fn record_storage(&mut self, addr: Address, key: U256, value: U256) {
         let entry = self.storages.entry(addr).or_default();
         if !value.is_zero() {
-            entry.insert(
+            entry.insert(key, StorageOps {
+                kind: "update",
                 key,
-                StorageOps {
-                    kind: "update",
-                    key,
-                    value: Some(value),
-                },
-            );
+                value: Some(value),
+            });
         } else {
-            entry.insert(
+            entry.insert(key, StorageOps {
+                kind: "delete",
                 key,
-                StorageOps {
-                    kind: "delete",
-                    key,
-                    value: None,
-                },
-            );
+                value: None,
+            });
         }
     }
 

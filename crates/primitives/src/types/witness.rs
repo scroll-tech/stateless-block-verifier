@@ -1,7 +1,5 @@
-use crate::types::block_header::ToHelper as _;
-use crate::types::{BlockHeader, Transaction, Withdrawal};
-use alloy_primitives::map::B256HashMap;
-use alloy_primitives::{Bytes, ChainId, B256};
+use crate::types::{BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _};
+use alloy_primitives::{B256, Bytes, ChainId, map::B256HashMap};
 use alloy_rpc_types_eth::Block;
 use reth_primitives::TransactionSigned;
 

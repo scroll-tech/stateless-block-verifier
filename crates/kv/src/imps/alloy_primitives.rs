@@ -1,5 +1,5 @@
 use crate::Value;
-use alloy_primitives::{Bytes, B256};
+use alloy_primitives::{B256, Bytes};
 
 impl Value for Bytes {
     #[cfg(feature = "sled")]

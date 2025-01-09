@@ -1,8 +1,9 @@
-use crate::HashMap;
-use crate::{KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, Value};
+use crate::{HashMap, KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, Value};
 use core::hash::{BuildHasher, Hash};
-use std::borrow::{Borrow, Cow};
-use std::collections::BTreeMap;
+use std::{
+    borrow::{Borrow, Cow},
+    collections::BTreeMap,
+};
 
 impl<K: Ord + Hash + Eq, V: Value, S: BuildHasher> KeyValueStoreInsert<K, V> for HashMap<K, V, S> {
     fn insert(&mut self, k: K, v: V) {

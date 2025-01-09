@@ -100,7 +100,7 @@ impl ChunkInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sbv_primitives::{types::BlockWitness, BlockWithSenders, BlockWitness as _};
+    use sbv_primitives::{BlockWithSenders, BlockWitness as _, types::BlockWitness};
 
     const TRACES_STR: [&str; 4] = [
         include_str!("../../../testdata/holesky_witness/2971844.json"),

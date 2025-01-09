@@ -2,9 +2,9 @@ use sbv::{
     core::{EvmDatabase, EvmExecutor, VerificationError},
     kv::nohash::NoHashMap,
     primitives::{
-        chainspec::{get_chain_spec, Chain},
-        ext::BlockWitnessExt,
         BlockWitness,
+        chainspec::{Chain, get_chain_spec},
+        ext::BlockWitnessExt,
     },
     trie::BlockWitnessTrieExt,
 };

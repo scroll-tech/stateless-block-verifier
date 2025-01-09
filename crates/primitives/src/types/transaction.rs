@@ -2,7 +2,7 @@ use super::{access_list::AccessList, signature::Signature};
 use alloy_consensus::{
     SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEip4844, TxLegacy, Typed2718,
 };
-use alloy_primitives::{Address, Bytes, ChainId, SignatureError, TxHash, B256, U256};
+use alloy_primitives::{Address, B256, Bytes, ChainId, SignatureError, TxHash, U256};
 use reth_primitives::TransactionSigned;
 
 /// Transaction object used in RPC

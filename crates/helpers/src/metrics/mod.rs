@@ -1,9 +1,9 @@
 use http_body_util::{BodyExt, Full};
 use hyper::{
+    Request, Response,
     body::{Bytes, Incoming},
     server::conn::http1,
     service::service_fn,
-    Request, Response,
 };
 use hyper_util::rt::TokioIo;
 use once_cell::sync::Lazy;
@@ -12,7 +12,7 @@ use std::{io, net::SocketAddr};
 use tokio::{
     net::TcpListener,
     pin,
-    signal::unix::{signal, SignalKind},
+    signal::unix::{SignalKind, signal},
 };
 
 mod registry;
@@ -78,12 +78,13 @@ mod tests {
         let client = reqwest::Client::new();
         let res = client.get(format!("http://{addr}")).send().await.unwrap();
         assert_eq!(res.status(), 200);
-        assert!(res
-            .headers()
-            .get(reqwest::header::CONTENT_TYPE)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .contains("openmetrics"));
+        assert!(
+            res.headers()
+                .get(reqwest::header::CONTENT_TYPE)
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .contains("openmetrics")
+        );
     }
 }
