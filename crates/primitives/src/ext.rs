@@ -3,6 +3,7 @@ use alloy_eips::BlockNumberOrTag;
 use alloy_provider::network::Ethereum;
 use alloy_provider::{Network, Provider};
 use alloy_transport::{BoxTransport, Transport, TransportResult};
+use itertools::Itertools;
 use sbv_helpers::cycle_track;
 use sbv_kv::KeyValueStore;
 
@@ -19,12 +20,15 @@ pub trait BlockWitnessChunkExt {
 impl<T: BlockWitness> BlockWitnessChunkExt for [T] {
     #[inline(always)]
     fn has_same_chain_id(&self) -> bool {
-        self.windows(2).all(|w| w[0].chain_id() == w[1].chain_id())
+        self.iter()
+            .tuple_windows()
+            .all(|(a, b)| a.chain_id() == b.chain_id())
     }
     #[inline(always)]
     fn has_seq_block_number(&self) -> bool {
-        self.windows(2)
-            .all(|w| w[0].header().number() + 1 == w[1].header().number())
+        self.iter()
+            .tuple_windows()
+            .all(|(a, b)| a.header().number() + 1 == b.header().number())
     }
 }
 
