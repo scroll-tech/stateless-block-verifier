@@ -1,16 +1,13 @@
 //! A null provider that does nothing.
-use crate::{KeyValueStoreGet, KeyValueStoreInsert, Value};
-use std::{
-    borrow::{Borrow, Cow},
-    hash::Hash,
-};
+use crate::{KeyValueStoreGet, KeyValueStoreInsert};
+use std::{borrow::Borrow, hash::Hash};
 
 /// A null provider that does nothing.
 #[derive(Debug, Copy, Clone)]
 pub struct NullProvider;
 
-impl<K: Ord + Hash + Eq, V: Value> KeyValueStoreGet<K, V> for NullProvider {
-    fn get<Q>(&self, _k: &Q) -> Option<Cow<V>>
+impl<K: Ord + Hash + Eq, V> KeyValueStoreGet<K, V> for NullProvider {
+    fn get<Q>(&self, _k: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
         Q: Ord + Hash + Eq + ?Sized,
@@ -19,7 +16,7 @@ impl<K: Ord + Hash + Eq, V: Value> KeyValueStoreGet<K, V> for NullProvider {
     }
 }
 
-impl<K: Ord + Hash + Eq, V: Value> KeyValueStoreInsert<K, V> for NullProvider {
+impl<K: Ord + Hash + Eq, V> KeyValueStoreInsert<K, V> for NullProvider {
     fn insert(&mut self, _k: K, _v: V) {
         // do nothing
     }

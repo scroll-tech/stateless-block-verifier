@@ -80,7 +80,6 @@ url = "2.5"
 
 # binary dependencies
 anyhow = "1.0"
-async-channel = "2.2"
 clap = "4"
 futures = "0.3"
 serde = "1.0"
@@ -96,7 +95,6 @@ hyper-util = { version = "0.1", features = ["tokio"] }
 http-body-util = "0.1"
 prometheus-client = "0.22"
 pprof = { version = "0.13", features = ["flamegraph"] }
-sled = "0.34"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
@@ -113,12 +111,6 @@ sbv-trie = { path = "crates/trie" }
 sbv-helpers = { path = "crates/helpers" }
 
 [workspace.dependencies.revm]
-git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/v50"
-default-features = false
-features = ["std"]
-
-[workspace.dependencies.revm-primitives]
 git = "https://github.com/scroll-tech/revm"
 branch = "scroll-evm-executor/v50"
 default-features = false

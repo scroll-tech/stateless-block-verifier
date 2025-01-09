@@ -110,7 +110,9 @@ impl<
             let code = self
                 .code_db
                 .get(&hash)
-                .map(|v| to_analysed(Bytecode::new_legacy(v.into_owned())));
+                .cloned()
+                .map(Bytecode::new_legacy)
+                .map(to_analysed);
             code_cache.insert(hash, code.clone());
             code
         }

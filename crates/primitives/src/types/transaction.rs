@@ -228,7 +228,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                 let tx = TxL1Message {
                     queue_index: tx.queue_index.expect("missing queue_index"),
                     gas_limit: tx.gas,
-                    to: tx.to.expect("missing to").into(),
+                    to: tx.to.expect("missing to"),
                     value: tx.value,
                     sender: tx.from,
                     input: tx.input.clone(),
@@ -342,7 +342,7 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
                         .expect("missing queue_index")
                         .to_native(),
                     gas_limit: tx.gas.to_native(),
-                    to: to.expect("missing to").into(),
+                    to: to.expect("missing to"),
                     value: tx.value.into(),
                     sender: Address::from(tx.from),
                     input,

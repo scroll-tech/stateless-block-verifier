@@ -192,12 +192,11 @@ impl DumpWitnessCommand {
                 "      {}Scroll feature enabled, ancestor blocks will not be fetched",
                 Emoji("⚠️  ", "")
             );
-            let pre_state_root = provider
+            provider
                 .scroll_disk_root((self.block - 1).into())
                 .await
                 .expect("transport error")
-                .disk_root;
-            pre_state_root
+                .disk_root
         };
         steps += 1;
 

@@ -13,11 +13,5 @@ workspace = true
 
 [dependencies]
 auto_impl.workspace = true
-alloy-trie.workspace = true
-alloy-primitives.workspace = true
 hashbrown = { workspace = true, features = ["rayon"] } # reth use rayon::IntoParallelIterator
 rustc-hash.workspace = true
-sled = { workspace = true, optional = true }
-
-[features]
-sled = ["dep:sled"]

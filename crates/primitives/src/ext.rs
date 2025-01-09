@@ -118,7 +118,7 @@ impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: alloy_eips::eip2718::Encodable2718 
         let mut tx_bytes_hasher = Keccak::v256();
         for tx in self.into_iter() {
             tx.encode_2718(rlp_buffer);
-            tx_bytes_hasher.update(&rlp_buffer);
+            tx_bytes_hasher.update(rlp_buffer);
             rlp_buffer.clear();
         }
         let mut tx_bytes_hash = B256::ZERO;

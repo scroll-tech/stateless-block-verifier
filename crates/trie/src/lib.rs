@@ -318,7 +318,7 @@ impl<T: Default> PartialTrie<T> {
         let root = nodes_provider
             .get(&root)
             .ok_or(PartialStateTrieError::MissingWitness(root))?
-            .into_owned();
+            .clone();
         let mut state = cycle_track!(
             RevealedSparseTrie::from_root(root.clone(), None, true),
             "RevealedSparseTrie::from_root"
@@ -483,7 +483,7 @@ fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
     if node.len() == B256::len_bytes() + 1 {
         let hash = B256::from_slice(&node[1..]);
 
-        Ok(nodes_provider.get(&hash).map(|node| node.into_owned()))
+        Ok(nodes_provider.get(&hash).cloned())
     } else {
         let mut buf = node.as_ref();
         let child = cycle_track!(TrieNode::decode(&mut buf), "TrieNode::decode")?;

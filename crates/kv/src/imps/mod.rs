@@ -1,23 +1,17 @@
-use crate::{KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, Value};
+use crate::{KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert};
 use std::{
-    borrow::{Borrow, Cow},
+    borrow::Borrow,
     hash::Hash,
     mem::ManuallyDrop,
     ops::{Deref, DerefMut},
 };
 
-mod alloy_primitives;
-mod alloy_trie;
 pub mod nohash;
 pub mod null;
-#[cfg(feature = "sled")]
-mod sled;
 mod std_collections;
 
-impl<K: Ord + Hash + Eq, V: Value, T: KeyValueStoreGet<K, V>> KeyValueStoreGet<K, V>
-    for ManuallyDrop<T>
-{
-    fn get<Q>(&self, k: &Q) -> Option<Cow<V>>
+impl<K: Ord + Hash + Eq, V, T: KeyValueStoreGet<K, V>> KeyValueStoreGet<K, V> for ManuallyDrop<T> {
+    fn get<Q>(&self, k: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
         Q: Ord + Hash + Eq + ?Sized,
@@ -26,7 +20,7 @@ impl<K: Ord + Hash + Eq, V: Value, T: KeyValueStoreGet<K, V>> KeyValueStoreGet<K
     }
 }
 
-impl<K: Ord + Hash + Eq, V: Value, T: KeyValueStoreInsert<K, V>> KeyValueStoreInsert<K, V>
+impl<K: Ord + Hash + Eq, V, T: KeyValueStoreInsert<K, V>> KeyValueStoreInsert<K, V>
     for ManuallyDrop<T>
 {
     fn insert(&mut self, k: K, v: V) {
@@ -38,4 +32,4 @@ impl<K: Ord + Hash + Eq, V: Value, T: KeyValueStoreInsert<K, V>> KeyValueStoreIn
     }
 }
 
-impl<K: Ord + Hash + Eq, V: Value, T: KeyValueStore<K, V>> KeyValueStore<K, V> for ManuallyDrop<T> {}
+impl<K: Ord + Hash + Eq, V, T: KeyValueStore<K, V>> KeyValueStore<K, V> for ManuallyDrop<T> {}
