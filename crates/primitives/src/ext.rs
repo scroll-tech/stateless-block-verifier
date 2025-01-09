@@ -3,6 +3,7 @@ use alloy_eips::BlockNumberOrTag;
 use alloy_provider::network::Ethereum;
 use alloy_provider::{Network, Provider};
 use alloy_transport::{BoxTransport, Transport, TransportResult};
+#[cfg(feature = "scroll")]
 use itertools::Itertools;
 use sbv_helpers::cycle_track;
 use sbv_kv::KeyValueStore;
