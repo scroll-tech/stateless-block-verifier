@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "nightly-2024-07-07"
+          toolchain: "nightly-2024-12-06"
           components: rustfmt
       - name: Cargo fmt
         run: cargo fmt --all -- --check
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "nightly-2024-07-07"
+          toolchain: "nightly-2024-12-06"
           components: clippy
       - name: cargo cache
         uses: Swatinem/rust-cache@v2
@@ -63,9 +63,9 @@ jobs:
         run: cargo clippy --workspace --features dev -- -D warnings
       - name: clippy metrics
         run: cargo clippy --workspace --features metrics -- -D warnings
-#      - name: clippy all
-#        run: cargo clippy --workspace --all-features -- -D warnings
+      - name: clippy all
+        run: cargo clippy --workspace --all-features -- -D warnings
       - name: clippy test
         run: cargo clippy --workspace --tests -- -D warnings
-#      - name: clippy test all
-#        run: cargo clippy --workspace --tests --all-features -- -D warnings # scroll feature is broken now
+      - name: clippy test all
+        run: cargo clippy --workspace --tests --all-features -- -D warnings
