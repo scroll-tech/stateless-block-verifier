@@ -2,7 +2,7 @@ use prometheus_client::{
     metrics::{
         counter::Counter,
         gauge::Gauge,
-        histogram::{linear_buckets, Histogram},
+        histogram::{Histogram, linear_buckets},
     },
     registry,
 };

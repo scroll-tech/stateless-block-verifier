@@ -1,9 +1,22 @@
-use crate::types::block_header::ToHelper as _;
-use crate::types::{BlockHeader, Transaction, Withdrawal};
-use alloy_primitives::{Bytes, ChainId, B256};
-use alloy_rpc_types_debug::ExecutionWitness;
+use crate::types::{BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _};
+use alloy_primitives::{B256, Bytes, ChainId, map::B256HashMap};
 use alloy_rpc_types_eth::Block;
 use reth_primitives::TransactionSigned;
+
+/// Represents the execution witness of a block. Contains an optional map of state preimages.
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct ExecutionWitness {
+    /// Map of all hashed trie nodes to their preimages that were required during the execution of
+    /// the block, including during state root recomputation.
+    ///
+    /// `keccak(rlp(node)) => rlp(node)`
+    pub state: B256HashMap<Bytes>,
+    /// Map of all contract codes (created / accessed) to their preimages that were required during
+    /// the execution of the block, including during state root recomputation.
+    ///
+    /// `keccak(bytecodes) => bytecodes`
+    pub codes: B256HashMap<Bytes>,
+}
 
 /// Witness for a block.
 #[derive(
@@ -36,6 +49,7 @@ pub struct BlockWitness {
     pub withdrawals: Option<Vec<Withdrawal>>,
     /// Last 256 Ancestor block hashes.
     #[rkyv(attr(doc = "Ancestor block hashes"))]
+    #[cfg(not(feature = "scroll"))]
     pub block_hashes: Vec<B256>,
     /// Rlp encoded state trie nodes.
     #[rkyv(attr(doc = "Rlp encoded state trie nodes"))]
@@ -51,7 +65,7 @@ impl BlockWitness {
         chain_id: ChainId,
         block: Block,
         pre_state_root: B256,
-        block_hashes: Vec<B256>,
+        #[cfg(not(feature = "scroll"))] block_hashes: Vec<B256>,
         witness: ExecutionWitness,
     ) -> Self {
         let header = BlockHeader::from(block.header);
@@ -69,6 +83,7 @@ impl BlockWitness {
             chain_id,
             header,
             transaction,
+            #[cfg(not(feature = "scroll"))]
             block_hashes,
             withdrawals,
             pre_state_root,
@@ -100,6 +115,7 @@ impl crate::BlockWitness for BlockWitness {
     {
         self.transaction.iter().map(|tx| tx.try_into())
     }
+    #[cfg(not(feature = "scroll"))]
     fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256> {
         self.block_hashes.iter().copied()
     }
@@ -136,6 +152,7 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     {
         self.transaction.iter().map(|tx| tx.try_into())
     }
+    #[cfg(not(feature = "scroll"))]
     fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256> {
         self.block_hashes.iter().map(|h| B256::from(h.0))
     }

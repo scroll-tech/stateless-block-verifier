@@ -1,5 +1,6 @@
+use crate::database::DatabaseError;
 use reth_evm::execute::BlockExecutionError;
-use sbv_primitives::{alloy_primitives::SignatureError, B256};
+use sbv_primitives::{B256, alloy_primitives::SignatureError};
 
 /// Error variants encountered during verification of transactions in a L2 block.
 #[derive(Debug, thiserror::Error)]
@@ -7,11 +8,16 @@ pub enum VerificationError {
     /// Error while recovering signer from an ECDSA signature.
     #[error("invalid signature: {0}")]
     InvalidSignature(#[from] SignatureError),
+    /// Error encountered from database.
+    #[error(transparent)]
+    Database(#[from] DatabaseError),
     /// Error encountered from [`revm`].
     #[error(transparent)]
     Execution(#[from] BlockExecutionError),
     /// Root mismatch error
-    #[error("state root in trace doesn't match with state root executed: expected {expected}, actual {actual}")]
+    #[error(
+        "state root in trace doesn't match with state root executed: expected {expected}, actual {actual}"
+    )]
     RootMismatch {
         /// Root after in trace
         expected: B256,

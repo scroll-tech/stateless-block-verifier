@@ -1,10 +1,8 @@
-use crate::HashMap;
-use crate::{KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, Value};
+use crate::{HashMap, KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert};
 use core::hash::{BuildHasher, Hash};
-use std::borrow::{Borrow, Cow};
-use std::collections::BTreeMap;
+use std::{borrow::Borrow, collections::BTreeMap};
 
-impl<K: Ord + Hash + Eq, V: Value, S: BuildHasher> KeyValueStoreInsert<K, V> for HashMap<K, V, S> {
+impl<K: Ord + Hash + Eq, V, S: BuildHasher> KeyValueStoreInsert<K, V> for HashMap<K, V, S> {
     fn insert(&mut self, k: K, v: V) {
         HashMap::insert(self, k, v);
     }
@@ -13,19 +11,19 @@ impl<K: Ord + Hash + Eq, V: Value, S: BuildHasher> KeyValueStoreInsert<K, V> for
     }
 }
 
-impl<K: Ord + Hash + Eq, V: Value, S: BuildHasher> KeyValueStoreGet<K, V> for HashMap<K, V, S> {
-    fn get<Q>(&self, k: &Q) -> Option<Cow<V>>
+impl<K: Ord + Hash + Eq, V, S: BuildHasher> KeyValueStoreGet<K, V> for HashMap<K, V, S> {
+    fn get<Q>(&self, k: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
         Q: Ord + Hash + Eq + ?Sized,
     {
-        HashMap::get(self, k).map(Cow::Borrowed)
+        HashMap::get(self, k)
     }
 }
 
-impl<K: Ord + Hash + Eq, V: Value, S: BuildHasher> KeyValueStore<K, V> for HashMap<K, V, S> {}
+impl<K: Ord + Hash + Eq, V, S: BuildHasher> KeyValueStore<K, V> for HashMap<K, V, S> {}
 
-impl<K: Ord + Hash + Eq, V: Value> KeyValueStoreInsert<K, V> for BTreeMap<K, V> {
+impl<K: Ord + Hash + Eq, V> KeyValueStoreInsert<K, V> for BTreeMap<K, V> {
     fn insert(&mut self, k: K, v: V) {
         BTreeMap::insert(self, k, v);
     }
@@ -34,14 +32,14 @@ impl<K: Ord + Hash + Eq, V: Value> KeyValueStoreInsert<K, V> for BTreeMap<K, V> 
     }
 }
 
-impl<K: Ord + Hash + Eq, V: Value> KeyValueStoreGet<K, V> for BTreeMap<K, V> {
-    fn get<Q>(&self, k: &Q) -> Option<Cow<V>>
+impl<K: Ord + Hash + Eq, V> KeyValueStoreGet<K, V> for BTreeMap<K, V> {
+    fn get<Q>(&self, k: &Q) -> Option<&V>
     where
         K: Borrow<Q>,
         Q: Ord + Hash + Eq + ?Sized,
     {
-        BTreeMap::get(self, k).map(Cow::Borrowed)
+        BTreeMap::get(self, k)
     }
 }
 
-impl<K: Ord + Hash + Eq, V: Value> KeyValueStore<K, V> for BTreeMap<K, V> {}
+impl<K: Ord + Hash + Eq, V> KeyValueStore<K, V> for BTreeMap<K, V> {}

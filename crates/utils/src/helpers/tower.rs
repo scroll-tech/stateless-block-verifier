@@ -1,5 +1,7 @@
-use alloy::rpc::json_rpc::{RequestPacket, ResponsePacket};
-use alloy::transports::{TransportError, TransportFut};
+use alloy::{
+    rpc::json_rpc::{RequestPacket, ResponsePacket},
+    transports::{TransportError, TransportFut},
+};
 use tower::{Layer, Service};
 
 /// Enforces a limit on the concurrent number of requests the underlying

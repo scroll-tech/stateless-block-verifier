@@ -15,7 +15,6 @@ pub struct ChunkInfo {
     chain_id: u64,
     prev_state_root: B256,
     post_state_root: B256,
-    withdraw_root: Option<B256>,
     data_hash: B256,
 }
 
@@ -49,7 +48,6 @@ impl ChunkInfo {
             chain_id,
             prev_state_root,
             post_state_root: last_block.state_root,
-            withdraw_root: last_block.withdrawals_root,
             data_hash,
         }
     }
@@ -63,15 +61,13 @@ impl ChunkInfo {
     ///     chunk data hash ||
     ///     chunk txdata hash
     /// )
-    pub fn public_input_hash(&self, tx_bytes_hash: &B256) -> B256 {
+    pub fn public_input_hash(&self, withdraw_root: &B256, tx_bytes_hash: &B256) -> B256 {
         let mut hasher = Keccak::v256();
 
         hasher.update(&self.chain_id.to_be_bytes());
         hasher.update(self.prev_state_root.as_ref());
         hasher.update(self.post_state_root.as_slice());
-        #[cfg(feature = "scroll")]
-        assert!(self.withdraw_root.is_some(), "withdraw root is required");
-        hasher.update(self.withdraw_root.as_ref().unwrap_or_default().as_slice());
+        hasher.update(withdraw_root.as_slice());
         hasher.update(self.data_hash.as_slice());
         hasher.update(tx_bytes_hash.as_slice());
 
@@ -95,11 +91,6 @@ impl ChunkInfo {
         self.post_state_root
     }
 
-    /// Withdraw root after this chunk
-    pub fn withdraw_root(&self) -> Option<B256> {
-        self.withdraw_root
-    }
-
     /// Data hash of this chunk
     pub fn data_hash(&self) -> B256 {
         self.data_hash
@@ -109,7 +100,7 @@ impl ChunkInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sbv_primitives::{types::BlockWitness, BlockWithSenders, BlockWitness as _};
+    use sbv_primitives::{BlockWithSenders, BlockWitness as _, types::BlockWitness};
 
     const TRACES_STR: [&str; 4] = [
         include_str!("../../../testdata/holesky_witness/2971844.json"),

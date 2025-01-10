@@ -9,9 +9,9 @@ pub enum Commands {
 }
 
 impl Commands {
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub fn run(self) -> anyhow::Result<()> {
         match self {
-            Commands::RunFile(cmd) => cmd.run().await,
+            Commands::RunFile(cmd) => cmd.run(),
         }
     }
 }

@@ -1,9 +1,10 @@
 //! Stateless Block Verifier primitives library.
 
 use auto_impl::auto_impl;
-use sbv_kv::KeyValueStore;
 use std::fmt;
 
+/// Extension Traits
+pub mod ext;
 /// Predeployed contracts
 #[cfg(feature = "scroll")]
 pub mod predeployed;
@@ -15,19 +16,34 @@ pub use alloy_eips;
 
 use alloy_consensus::Typed2718;
 pub use alloy_consensus::{BlockHeader, Header};
-pub use alloy_primitives;
 pub use alloy_primitives::{
-    address, b256, keccak256, Address, BlockHash, BlockNumber, Bytes, ChainId, B256, U256,
+    self, Address, B256, BlockHash, BlockNumber, Bytes, ChainId, U256, address, b256, keccak256,
 };
 pub use reth_primitives::{Block, BlockBody, BlockWithSenders, Receipt, TransactionSigned};
-use sbv_helpers::cycle_track;
 
 /// The spec of an Ethereum network
 pub mod chainspec {
-    pub use reth_chainspec::*;
     use std::sync::Arc;
 
+    pub use reth_chainspec::*;
+    #[cfg(feature = "scroll")]
+    pub use reth_scroll_chainspec as scroll;
+
+    /// An Ethereum chain specification.
+    ///
+    /// A chain specification describes:
+    ///
+    /// - Meta-information about the chain (the chain ID)
+    /// - The genesis block of the chain ([`Genesis`])
+    /// - What hardforks are activated, and under which conditions
+    #[cfg(not(feature = "scroll"))]
+    pub type ChainSpec = reth_chainspec::ChainSpec;
+    /// Scroll chain spec type.
+    #[cfg(feature = "scroll")]
+    pub type ChainSpec = scroll::ScrollChainSpec;
+
     /// Get chain spec
+    #[cfg(not(feature = "scroll"))]
     pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
         if chain == Chain::from_named(NamedChain::Mainnet) {
             return Some(MAINNET.clone());
@@ -38,6 +54,24 @@ pub mod chainspec {
         if chain == Chain::from_named(NamedChain::Holesky) {
             return Some(HOLESKY.clone());
         }
+        if chain == Chain::dev() {
+            return Some(DEV.clone());
+        }
+        None
+    }
+
+    /// Get chain spec
+    #[cfg(feature = "scroll")]
+    pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
+        if chain == Chain::from_named(NamedChain::Scroll) {
+            return Some(scroll::SCROLL_MAINNET.clone());
+        }
+        if chain == Chain::from_named(NamedChain::ScrollSepolia) {
+            return Some(scroll::SCROLL_SEPOLIA.clone());
+        }
+        if chain == Chain::dev() {
+            return Some(scroll::SCROLL_DEV.clone());
+        }
         None
     }
 }
@@ -45,6 +79,15 @@ pub mod chainspec {
 /// Eips
 pub mod eips {
     pub use alloy_eips::eip2718::Encodable2718;
+}
+
+/// States types
+pub mod states {
+    #[cfg(not(feature = "scroll"))]
+    pub use revm::db::BundleAccount;
+
+    #[cfg(feature = "scroll")]
+    pub use reth_scroll_revm::states::ScrollBundleAccount as BundleAccount;
 }
 
 /// BlockWitness trait
@@ -69,6 +112,7 @@ pub trait BlockWitness: fmt::Debug {
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>;
     /// Block hashes
     #[must_use]
+    #[cfg(not(feature = "scroll"))]
     fn block_hashes_iter(&self) -> impl ExactSizeIterator<Item = B256>;
     /// Withdrawals
     #[must_use]
@@ -130,73 +174,6 @@ pub trait BlockWitness: fmt::Debug {
             Block { header, body },
             senders,
         ))
-    }
-}
-
-/// BlockWitnessCodeExt trait
-pub trait BlockWitnessCodeExt {
-    /// Import codes into code db
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, code_db: CodeDb);
-}
-
-impl<T: BlockWitness> BlockWitnessCodeExt for T {
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
-        for code in self.codes_iter() {
-            let code = code.as_ref();
-            let code_hash = cycle_track!(keccak256(code), "keccak256");
-            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
-        }
-    }
-}
-
-impl<T: BlockWitness> BlockWitnessCodeExt for [T] {
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
-        for code in self.iter().flat_map(|w| w.codes_iter()) {
-            let code = code.as_ref();
-            let code_hash = cycle_track!(keccak256(code), "keccak256");
-            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
-        }
-    }
-}
-
-/// BlockWitnessBlockHashExt trait
-pub trait BlockWitnessBlockHashExt {
-    /// Import block hashes into block hash provider
-    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
-        &self,
-        block_hashes: BlockHashProvider,
-    );
-}
-
-impl<T: BlockWitness> BlockWitnessBlockHashExt for T {
-    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
-        &self,
-        mut block_hashes: BlockHashProvider,
-    ) {
-        let block_number = self.header().number();
-        for (i, hash) in self.block_hashes_iter().enumerate() {
-            let block_number = block_number
-                .checked_sub(i as u64 + 1)
-                .expect("block number underflow");
-            block_hashes.insert(block_number, hash)
-        }
-    }
-}
-
-impl<T: BlockWitness> BlockWitnessBlockHashExt for [T] {
-    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
-        &self,
-        mut block_hashes: BlockHashProvider,
-    ) {
-        for witness in self.iter() {
-            let block_number = witness.header().number();
-            for (i, hash) in witness.block_hashes_iter().enumerate() {
-                let block_number = block_number
-                    .checked_sub(i as u64 + 1)
-                    .expect("block number underflow");
-                block_hashes.insert(block_number, hash)
-            }
-        }
     }
 }
 

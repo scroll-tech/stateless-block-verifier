@@ -4,11 +4,13 @@
 extern crate sbv_helpers;
 extern crate core;
 
+#[cfg(feature = "scroll")]
 mod chunk;
+#[cfg(feature = "scroll")]
 pub use chunk::ChunkInfo;
 
 mod database;
-pub use database::EvmDatabase;
+pub use database::{DatabaseError, DatabaseRef, EvmDatabase};
 
 mod error;
 pub use error::VerificationError;
