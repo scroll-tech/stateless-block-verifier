@@ -10,7 +10,7 @@ use tiny_keccak::{Hasher, Keccak};
 /// - the data hash of this chunk
 /// - the tx data hash of this chunk
 /// - flattened L2 tx bytes hash
-#[derive(Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ChunkInfo {
     chain_id: u64,
     prev_state_root: B256,
