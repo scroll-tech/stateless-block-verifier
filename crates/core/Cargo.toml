@@ -58,3 +58,5 @@ metrics = ["sbv-helpers/metrics"]
 # sp1 related
 sp1 = ["sbv-trie/sp1"]
 cycle-tracker = ["sbv-trie/cycle-tracker"]
+
+openvm = ["revm/openvm"]

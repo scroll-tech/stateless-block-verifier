@@ -51,5 +51,8 @@ scroll = [
     "reth-primitives/scroll",
 ]
 dev = ["sbv-helpers/dev"]
+
 sp1 = []
 cycle-tracker = []
+
+openvm = ["revm/openvm"]
