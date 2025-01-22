@@ -7,7 +7,7 @@ extern crate core;
 #[cfg(feature = "scroll")]
 mod chunk;
 #[cfg(feature = "scroll")]
-pub use chunk::ChunkInfo;
+pub use chunk::ChunkInfoBuilder;
 
 mod database;
 pub use database::{DatabaseError, DatabaseRef, EvmDatabase};

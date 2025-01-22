@@ -42,7 +42,7 @@ impl RunFileCommand {
     fn run_chunk(self) -> anyhow::Result<()> {
         use anyhow::bail;
         use sbv::{
-            core::{ChunkInfo, EvmDatabase, EvmExecutor},
+            core::{ChunkInfoBuilder, EvmDatabase, EvmExecutor},
             kv::{nohash::NoHashMap, null::NullProvider},
             primitives::{
                 BlockWitness as _,
@@ -71,7 +71,7 @@ impl RunFileCommand {
             .iter()
             .map(|w| w.build_reth_block())
             .collect::<Result<Vec<_>, _>>()?;
-        let chunk_info = ChunkInfo::from_blocks_iter(
+        let chunk_info = ChunkInfoBuilder::from_blocks_iter(
             witnesses[0].chain_id,
             witnesses[0].pre_state_root,
             blocks.iter().map(|b| &b.block),
@@ -103,7 +103,7 @@ impl RunFileCommand {
             .iter()
             .flat_map(|b| b.block.body.transactions.iter())
             .tx_bytes_hash();
-        let _public_input_hash = chunk_info.public_input_hash(&withdraw_root, &tx_bytes_hash);
+        let _public_input_hash = chunk_info.build(withdraw_root, tx_bytes_hash).hash();
         dev_info!("[chunk mode] public input hash: {_public_input_hash:?}");
 
         Ok(())

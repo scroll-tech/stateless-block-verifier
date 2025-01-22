@@ -20,6 +20,7 @@ reth-execution-types.workspace = true
 reth-scroll-evm = { workspace = true, optional = true }
 reth-storage-errors.workspace = true
 reth-scroll-storage = { workspace = true, optional = true }
+rkyv.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

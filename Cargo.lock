@@ -5132,6 +5132,7 @@ dependencies = [
  "reth-scroll-storage",
  "reth-storage-errors",
  "revm",
+ "rkyv",
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",

@@ -2,6 +2,15 @@ use revm::primitives::B256;
 use sbv_primitives::{Block, BlockChunkExt};
 use tiny_keccak::{Hasher, Keccak};
 
+/// Builder for `ChunkInfo`
+#[derive(Clone, Debug)]
+pub struct ChunkInfoBuilder {
+    chain_id: u64,
+    prev_state_root: B256,
+    post_state_root: B256,
+    data_hash: B256,
+}
+
 /// A chunk is a set of continuous blocks.
 /// ChunkInfo is metadata of chunk, with following fields:
 /// - state root before this chunk
@@ -10,15 +19,31 @@ use tiny_keccak::{Hasher, Keccak};
 /// - the data hash of this chunk
 /// - the tx data hash of this chunk
 /// - flattened L2 tx bytes hash
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone,
+    Debug,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 pub struct ChunkInfo {
-    chain_id: u64,
-    prev_state_root: B256,
-    post_state_root: B256,
-    data_hash: B256,
+    /// Chain ID
+    pub chain_id: u64,
+    /// State root before this chunk
+    pub prev_state_root: B256,
+    /// State root after this chunk
+    pub post_state_root: B256,
+    /// Withdraw root after this chunk
+    pub withdraw_root: B256,
+    /// Data hash of this chunk
+    pub data_hash: B256,
+    /// Flattened L2 tx bytes hash
+    pub tx_bytes_hash: B256,
 }
 
-impl ChunkInfo {
+impl ChunkInfoBuilder {
     /// Construct by block traces
     #[must_use]
     pub fn from_blocks_iter<'a, I: IntoIterator<Item = &'a Block> + Clone>(
@@ -44,7 +69,7 @@ impl ChunkInfo {
             "Keccak::v256"
         );
 
-        ChunkInfo {
+        ChunkInfoBuilder {
             chain_id,
             prev_state_root,
             post_state_root: last_block.state_root,
@@ -52,28 +77,16 @@ impl ChunkInfo {
         }
     }
 
-    /// Public input hash for a given chunk is defined as
-    /// keccak(
-    ///     chain id ||
-    ///     prev state root ||
-    ///     post state root ||
-    ///     withdraw root ||
-    ///     chunk data hash ||
-    ///     chunk txdata hash
-    /// )
-    pub fn public_input_hash(&self, withdraw_root: &B256, tx_bytes_hash: &B256) -> B256 {
-        let mut hasher = Keccak::v256();
-
-        hasher.update(&self.chain_id.to_be_bytes());
-        hasher.update(self.prev_state_root.as_ref());
-        hasher.update(self.post_state_root.as_slice());
-        hasher.update(withdraw_root.as_slice());
-        hasher.update(self.data_hash.as_slice());
-        hasher.update(tx_bytes_hash.as_slice());
-
-        let mut public_input_hash = B256::ZERO;
-        hasher.finalize(&mut public_input_hash.0);
-        public_input_hash
+    /// Build `ChunkInfo`
+    pub fn build(&self, withdraw_root: B256, tx_bytes_hash: B256) -> ChunkInfo {
+        ChunkInfo {
+            chain_id: self.chain_id,
+            prev_state_root: self.prev_state_root,
+            post_state_root: self.post_state_root,
+            data_hash: self.data_hash,
+            withdraw_root,
+            tx_bytes_hash,
+        }
     }
 
     /// Chain ID of this chunk
@@ -97,6 +110,32 @@ impl ChunkInfo {
     }
 }
 
+impl ChunkInfo {
+    /// Public input hash for a given chunk is defined as
+    /// keccak(
+    ///     chain id ||
+    ///     prev state root ||
+    ///     post state root ||
+    ///     withdraw root ||
+    ///     chunk data hash ||
+    ///     chunk txdata hash
+    /// )
+    pub fn hash(&self) -> B256 {
+        let mut hasher = Keccak::v256();
+
+        hasher.update(&self.chain_id.to_be_bytes());
+        hasher.update(self.prev_state_root.as_ref());
+        hasher.update(self.post_state_root.as_slice());
+        hasher.update(self.withdraw_root.as_slice());
+        hasher.update(self.data_hash.as_slice());
+        hasher.update(self.tx_bytes_hash.as_slice());
+
+        let mut public_input_hash = B256::ZERO;
+        hasher.finalize(&mut public_input_hash.0);
+        public_input_hash
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,7 +154,7 @@ mod tests {
         let blocks: [BlockWithSenders; 4] =
             witnesses.clone().map(|s| s.build_reth_block().unwrap());
 
-        let _ = ChunkInfo::from_blocks_iter(
+        let _ = ChunkInfoBuilder::from_blocks_iter(
             1,
             witnesses[0].pre_state_root,
             blocks.iter().map(|b| &b.block),
