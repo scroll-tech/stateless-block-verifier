@@ -68,7 +68,7 @@ pub struct DumpWitnessCommand {
 }
 
 impl DumpWitnessCommand {
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub async fn run(self) -> anyhow::Result<BlockWitness> {
         let started = Instant::now();
 
         if self.out_dir.is_file() {
@@ -76,7 +76,7 @@ impl DumpWitnessCommand {
         }
         std::fs::create_dir_all(&self.out_dir)?;
         if !self.json && !self.rkyv {
-            anyhow::bail!("No output format specified");
+            eprintln!("{}No output format specified", Emoji("⚠️  ", ""));
         }
 
         if self.ancestors < 1 || self.ancestors > 256 {
@@ -259,7 +259,7 @@ impl DumpWitnessCommand {
             Emoji("✨ ", ":-)"),
             HumanDuration(started.elapsed())
         );
-        Ok(())
+        Ok(witness)
     }
 }
 

@@ -14,7 +14,7 @@ pub enum WitnessCommands {
 impl WitnessCommands {
     pub async fn run(self) -> anyhow::Result<()> {
         match self {
-            WitnessCommands::Dump(cmd) => cmd.run().await,
+            WitnessCommands::Dump(cmd) => cmd.run().await.map(|_| ()),
             WitnessCommands::Rkyv(cmd) => cmd.run().await,
         }
     }
