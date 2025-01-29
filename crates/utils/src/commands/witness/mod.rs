@@ -1,7 +1,7 @@
 use clap::Subcommand;
 
-mod dump;
-mod rkyv_convert;
+pub mod dump;
+pub mod rkyv_convert;
 
 #[derive(Debug, Subcommand)]
 pub enum WitnessCommands {
