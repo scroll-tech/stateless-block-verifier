@@ -3,7 +3,7 @@ use rkyv::{rancor, vec::ArchivedVec};
 use sbv::primitives::types::{ArchivedBlockWitness, BlockWitness};
 use std::path::PathBuf;
 
-#[derive(Args)]
+#[derive(Debug, Args)]
 pub struct RkyvConvertCommand {
     /// Path to the witness json file
     witnesses: Vec<PathBuf>,

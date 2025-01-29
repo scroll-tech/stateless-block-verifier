@@ -28,4 +28,4 @@ url.workspace = true
 sbv.workspace = true
 
 [features]
-scroll = []
+scroll = ["sbv/scroll"]

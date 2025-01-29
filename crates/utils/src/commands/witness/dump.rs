@@ -19,7 +19,7 @@ use sbv::primitives::{
 use std::{path::PathBuf, time::Instant};
 use url::Url;
 
-#[derive(Args)]
+#[derive(Debug, Args)]
 pub struct DumpWitnessCommand {
     #[arg(
         long,
