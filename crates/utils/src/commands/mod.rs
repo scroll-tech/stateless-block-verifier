@@ -1,6 +1,6 @@
 use clap::Subcommand;
 
-mod witness;
+pub mod witness;
 
 #[derive(Subcommand)]
 pub enum Commands {
