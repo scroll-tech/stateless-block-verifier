@@ -109,6 +109,7 @@ sbv-kv = { path = "crates/kv" }
 sbv-primitives = { path = "crates/primitives" }
 sbv-trie = { path = "crates/trie" }
 sbv-helpers = { path = "crates/helpers" }
+sbv-utils = { path = "crates/utils" }
 
 [workspace.dependencies.revm]
 git = "https://github.com/scroll-tech/revm"
