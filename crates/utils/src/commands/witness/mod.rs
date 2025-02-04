@@ -1,9 +1,9 @@
 use clap::Subcommand;
 
-mod dump;
-mod rkyv_convert;
+pub mod dump;
+pub mod rkyv_convert;
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum WitnessCommands {
     #[command(about = "Dump a witness from reth RPC")]
     Dump(dump::DumpWitnessCommand),

@@ -19,24 +19,24 @@ use sbv::primitives::{
 use std::{path::PathBuf, time::Instant};
 use url::Url;
 
-#[derive(Args)]
+#[derive(Debug, Args)]
 pub struct DumpWitnessCommand {
     #[arg(
         long,
         help = "URL to the RPC server",
         default_value = "http://localhost:8545"
     )]
-    rpc: Url,
+    pub rpc: Url,
     #[arg(long, help = "Block number")]
-    block: u64,
+    pub block: u64,
     #[arg(long, help = "Ancestor blocks", default_value_t = 256)]
-    ancestors: u64,
+    pub ancestors: u64,
     #[arg(long, help = "Output directory", default_value_os_t = std::env::current_dir().unwrap())]
-    out_dir: PathBuf,
+    pub out_dir: PathBuf,
     #[arg(long, help = "Output json")]
-    json: bool,
+    pub json: bool,
     #[arg(long, help = "Output rkyv")]
-    rkyv: bool,
+    pub rkyv: bool,
 
     // Concurrency Limit
     #[arg(
@@ -44,7 +44,7 @@ pub struct DumpWitnessCommand {
         help = "Concurrency Limit: maximum number of concurrent requests",
         default_value = "10"
     )]
-    max_concurrency: usize,
+    pub max_concurrency: usize,
 
     // Retry parameters
     #[arg(
@@ -52,19 +52,19 @@ pub struct DumpWitnessCommand {
         help = "Retry Backoff: maximum number of retries",
         default_value = "10"
     )]
-    max_retry: u32,
+    pub max_retry: u32,
     #[arg(
         long,
         help = "Retry Backoff: backoff duration in milliseconds",
         default_value = "100"
     )]
-    backoff: u64,
+    pub backoff: u64,
     #[arg(
         long,
         help = "Retry Backoff: compute units per second",
         default_value = "100"
     )]
-    cups: u64,
+    pub cups: u64,
 }
 
 impl DumpWitnessCommand {

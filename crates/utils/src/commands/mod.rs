@@ -1,8 +1,8 @@
 use clap::Subcommand;
 
-mod witness;
+pub mod witness;
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum Commands {
     #[command(subcommand, about = "Witness commands")]
     Witness(witness::WitnessCommands),
