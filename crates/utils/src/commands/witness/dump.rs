@@ -264,10 +264,7 @@ impl DumpWitnessCommand {
 }
 
 #[cfg(not(feature = "scroll"))]
-async fn dump_ancestor_blocks<
-    P: Provider<T> + Clone + 'static,
-    T: alloy::transports::Transport + Clone,
->(
+async fn dump_ancestor_blocks<P: Provider + Clone + 'static>(
     provider: P,
     block: u64,
     ancestors: u64,

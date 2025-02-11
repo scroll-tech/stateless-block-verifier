@@ -19,7 +19,6 @@ reth-evm-ethereum.workspace = true
 reth-execution-types.workspace = true
 reth-scroll-evm = { workspace = true, optional = true }
 reth-storage-errors.workspace = true
-reth-scroll-storage = { workspace = true, optional = true }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
@@ -40,12 +39,10 @@ tracing-subscriber.workspace = true
 [features]
 scroll = [
     "dep:reth-scroll-evm",
-    "dep:reth-scroll-storage",
     "reth-evm/scroll",
     "reth-evm-ethereum/scroll",
     "reth-execution-types/scroll",
     "reth-scroll-evm/scroll",
-    "reth-scroll-storage/scroll",
     "revm/scroll-default-handler",
     "revm/optional_no_base_fee",
     "sbv-primitives/scroll",

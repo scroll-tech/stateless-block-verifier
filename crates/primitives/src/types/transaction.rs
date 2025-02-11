@@ -1,9 +1,11 @@
-use super::{access_list::AccessList, signature::Signature};
+use crate::{
+    TransactionSigned,
+    types::{access_list::AccessList, signature::Signature},
+};
 use alloy_consensus::{
-    SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEip4844, TxLegacy, Typed2718,
+    SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxLegacy, Typed2718,
 };
 use alloy_primitives::{Address, B256, Bytes, ChainId, SignatureError, TxHash, U256};
-use reth_primitives::TransactionSigned;
 
 /// Transaction object used in RPC
 #[derive(
@@ -198,9 +200,10 @@ impl TryFrom<&Transaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
+            #[cfg(not(feature = "scroll"))]
             0x03 => {
                 let sig = tx.signature.expect("missing signature").into();
-                let tx = TxEip4844 {
+                let tx = alloy_consensus::TxEip4844 {
                     chain_id: tx.chain_id.expect("missing chain_id"),
                     nonce: tx.nonce,
                     max_fee_per_gas: tx.max_fee_per_gas,
@@ -224,7 +227,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
             }
             #[cfg(feature = "scroll")]
             0x7e => {
-                use reth_scroll_primitives::l1_transaction::TxL1Message;
+                use scroll_alloy_consensus::TxL1Message;
                 let tx = TxL1Message {
                     queue_index: tx.queue_index.expect("missing queue_index"),
                     gas_limit: tx.gas,
@@ -301,9 +304,10 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
+            #[cfg(not(feature = "scroll"))]
             0x03 => {
                 let sig = tx.signature.as_ref().expect("missing signature").into();
-                let tx = TxEip4844 {
+                let tx = alloy_consensus::TxEip4844 {
                     chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
                     nonce: tx.nonce.to_native(),
                     max_fee_per_gas: tx.max_fee_per_gas.to_native(),
@@ -334,7 +338,7 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
             }
             #[cfg(feature = "scroll")]
             0x7e => {
-                use reth_scroll_primitives::l1_transaction::TxL1Message;
+                use scroll_alloy_consensus::TxL1Message;
                 let tx = TxL1Message {
                     queue_index: tx
                         .queue_index

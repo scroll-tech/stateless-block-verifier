@@ -140,8 +140,6 @@ impl<
             #[cfg(feature = "scroll")]
             code_size: code.as_ref().map(|c| c.len()).unwrap_or(0), // FIXME: this should be remove
             code_hash: account.code_hash,
-            #[cfg(feature = "scroll")]
-            poseidon_code_hash: Default::default(), // FIXME: this should be remove
             code,
         };
 

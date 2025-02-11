@@ -320,7 +320,7 @@ impl<T: Default> PartialTrie<T> {
             .ok_or(PartialStateTrieError::MissingWitness(root))?
             .clone();
         let mut state = cycle_track!(
-            RevealedSparseTrie::from_root(root.clone(), None, true),
+            RevealedSparseTrie::from_root(root.clone(), None, None, true),
             "RevealedSparseTrie::from_root"
         )
         .map_err(|e| {
@@ -447,7 +447,7 @@ fn traverse_import_partial_trie<
         }
     };
 
-    trie.reveal_node(path.clone(), node, trie_mask)
+    trie.reveal_node(path.clone(), node, trie_mask, None) // FIXME: is this correct?
         .map_err(|e| {
             dev_error!("failed to reveal node: {e}");
             PartialStateTrieError::Impl

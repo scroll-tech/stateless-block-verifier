@@ -1,7 +1,9 @@
-use crate::types::{BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _};
+use crate::{
+    TransactionSigned,
+    types::{BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _},
+};
 use alloy_primitives::{B256, Bytes, ChainId, map::B256HashMap};
 use alloy_rpc_types_eth::Block;
-use reth_primitives::TransactionSigned;
 
 /// Represents the execution witness of a block. Contains an optional map of state preimages.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

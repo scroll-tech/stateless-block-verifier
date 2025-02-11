@@ -1,9 +1,9 @@
 use crate::{database::EvmDatabase, error::VerificationError};
 use reth_evm::execute::{BlockExecutorProvider, Executor};
-use reth_execution_types::{BlockExecutionInput, BlockExecutionOutput};
+use reth_execution_types::BlockExecutionOutput;
 use revm::db::CacheDB;
 use sbv_kv::KeyValueStoreGet;
-use sbv_primitives::{B256, BlockWithSenders, Bytes, Receipt, chainspec::ChainSpec};
+use sbv_primitives::{B256, Block, Bytes, Receipt, RecoveredBlock, chainspec::ChainSpec};
 use sbv_trie::TrieNode;
 use std::{fmt::Debug, sync::Arc};
 
@@ -17,7 +17,7 @@ use reth_scroll_evm::ScrollExecutorProvider as ExecutorProvider;
 pub struct EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider> {
     chain_spec: Arc<ChainSpec>,
     db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
-    block: &'a BlockWithSenders,
+    block: &'a RecoveredBlock<Block>,
 }
 
 impl<'a, CodeDb, NodesProvider, BlockHashProvider>
@@ -27,7 +27,7 @@ impl<'a, CodeDb, NodesProvider, BlockHashProvider>
     pub fn new(
         chain_spec: Arc<ChainSpec>,
         db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
-        block: &'a BlockWithSenders,
+        block: &'a RecoveredBlock<Block>,
     ) -> Self {
         Self {
             chain_spec,
@@ -54,12 +54,7 @@ impl<
         let output = measure_duration_millis!(
             handle_block_duration_milliseconds,
             cycle_track!(
-                provider
-                    .executor(CacheDB::new(self.db))
-                    .execute(BlockExecutionInput::new(
-                        self.block,
-                        self.block.header.difficulty,
-                    )),
+                provider.executor(CacheDB::new(self.db)).execute(self.block),
                 "handle_block"
             )
         )?;

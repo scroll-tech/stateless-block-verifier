@@ -1,7 +1,7 @@
 use crate::{B256, BlockHeader, BlockWitness, Bytes, keccak256, types::ExecutionWitness};
 use alloy_eips::BlockNumberOrTag;
 use alloy_provider::{Network, Provider, network::Ethereum};
-use alloy_transport::{BoxTransport, Transport, TransportResult};
+use alloy_transport::TransportResult;
 #[cfg(feature = "scroll")]
 use itertools::Itertools;
 use sbv_helpers::cycle_track;
@@ -129,9 +129,7 @@ impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: alloy_eips::eip2718::Encodable2718 
 
 /// Extension trait for [`Provider`](Provider).
 #[async_trait::async_trait]
-pub trait ProviderExt<T: Transport + Clone = BoxTransport, N: Network = Ethereum>:
-    Provider<T, N>
-{
+pub trait ProviderExt<N: Network = Ethereum>: Provider<N> {
     /// Get the execution witness for a block.
     async fn debug_execution_witness(
         &self,
@@ -154,4 +152,4 @@ pub trait ProviderExt<T: Transport + Clone = BoxTransport, N: Network = Ethereum
     }
 }
 
-impl<P: Provider<T, N>, T: Transport + Clone, N: Network> ProviderExt<T, N> for P {}
+impl<P: Provider<N>, N: Network> ProviderExt<N> for P {}

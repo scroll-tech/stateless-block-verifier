@@ -19,7 +19,16 @@ pub use alloy_consensus::{BlockHeader, Header};
 pub use alloy_primitives::{
     self, Address, B256, BlockHash, BlockNumber, Bytes, ChainId, U256, address, b256, keccak256,
 };
-pub use reth_primitives::{Block, BlockBody, BlockWithSenders, Receipt, TransactionSigned};
+pub use reth_primitives::RecoveredBlock;
+
+#[cfg(not(feature = "scroll"))]
+pub use reth_primitives::{Block, BlockBody, Receipt, TransactionSigned};
+use reth_primitives_traits::SignedTransaction;
+#[cfg(feature = "scroll")]
+pub use reth_scroll_primitives::{
+    ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollReceipt as Receipt,
+    ScrollTransactionSigned as TransactionSigned,
+};
 
 /// The spec of an Ethereum network
 pub mod chainspec {
@@ -83,11 +92,7 @@ pub mod eips {
 
 /// States types
 pub mod states {
-    #[cfg(not(feature = "scroll"))]
     pub use revm::db::BundleAccount;
-
-    #[cfg(feature = "scroll")]
-    pub use reth_scroll_revm::states::ScrollBundleAccount as BundleAccount;
 }
 
 /// BlockWitness trait
@@ -146,13 +151,18 @@ pub trait BlockWitness: fmt::Debug {
     }
 
     /// Build a reth block
-    fn build_reth_block(&self) -> Result<BlockWithSenders, alloy_primitives::SignatureError> {
+    fn build_reth_block(&self) -> Result<RecoveredBlock<Block>, alloy_primitives::SignatureError> {
+        use reth_primitives_traits::transaction::signed::SignedTransaction;
+
         let header = self.build_alloy_header();
         let transactions = self
             .build_typed_transactions()
             .collect::<Result<Vec<_>, _>>()?;
-        let senders =
-            TransactionSigned::recover_signers(&transactions, transactions.len()).unwrap(); // FIXME: proper error handling
+        let senders = transactions
+            .iter()
+            .map(|tx| tx.recover_signer())
+            .collect::<Result<Vec<_>, _>>()
+            .expect("Failed to recover signer");
 
         let body = BlockBody {
             transactions,
@@ -170,7 +180,7 @@ pub trait BlockWitness: fmt::Debug {
             }),
         };
 
-        Ok(BlockWithSenders::new_unchecked(
+        Ok(RecoveredBlock::new_unhashed(
             Block { header, body },
             senders,
         ))
@@ -199,7 +209,7 @@ pub trait BlockChunkExt {
     fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher);
 }
 
-impl BlockChunkExt for Block {
+impl BlockChunkExt for RecoveredBlock<Block> {
     #[inline]
     fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
         hasher.update(&self.number.to_be_bytes());
@@ -209,12 +219,13 @@ impl BlockChunkExt for Block {
                 .to_be_bytes::<{ U256::BYTES }>(),
         );
         hasher.update(&self.gas_limit.to_be_bytes());
-        hasher.update(&(self.body.transactions.len() as u16).to_be_bytes()); // FIXME: l1 tx could be skipped, the actual tx count needs to be calculated
+        hasher.update(&(self.body().transactions.len() as u16).to_be_bytes()); // FIXME: l1 tx could be skipped, the actual tx count needs to be calculated
     }
+
     #[inline]
     fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
-        for tx in self.body.transactions.iter().filter(|tx| tx.ty() == 0x7e) {
-            hasher.update(tx.hash().as_slice())
+        for tx in self.body().transactions.iter().filter(|tx| tx.ty() == 0x7e) {
+            hasher.update(tx.tx_hash().as_slice())
         }
     }
 }
