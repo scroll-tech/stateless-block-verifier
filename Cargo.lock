@@ -1571,7 +1571,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33d852cb9b869c2a9b3df2f71a3074817f01e1844f839a144f5fcef059a4eb5d"
 dependencies = [
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2326,7 +2326,7 @@ checksum = "e19b23d53f35ce9f56aebc7d1bb4e6ac1e9c0db7ac85c8d1760c04379edced37"
 dependencies = [
  "hermit-abi 0.4.0",
  "libc",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3426,7 +3426,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4269,7 +4269,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "19.4.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/chore/v55-upgrade#fcd06ee5198fab84ab7a82f5ace3c84b893ade8a"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/chore/v55-upgrade#9155313825bcc38d663bdc840f5231bac8801d93"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -4283,7 +4283,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "15.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/chore/v55-upgrade#fcd06ee5198fab84ab7a82f5ace3c84b893ade8a"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/chore/v55-upgrade#9155313825bcc38d663bdc840f5231bac8801d93"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -4292,7 +4292,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "16.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/chore/v55-upgrade#fcd06ee5198fab84ab7a82f5ace3c84b893ade8a"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/chore/v55-upgrade#9155313825bcc38d663bdc840f5231bac8801d93"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -4314,7 +4314,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "15.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/chore/v55-upgrade#fcd06ee5198fab84ab7a82f5ace3c84b893ade8a"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/chore/v55-upgrade#9155313825bcc38d663bdc840f5231bac8801d93"
 dependencies = [
  "alloy-eip2930",
  "alloy-eip7702",
@@ -4507,7 +4507,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5263,7 +5263,7 @@ dependencies = [
  "getrandom 0.3.1",
  "once_cell",
  "rustix",
- "windows-sys 0.59.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
