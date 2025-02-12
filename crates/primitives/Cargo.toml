@@ -37,6 +37,8 @@ reth-scroll-chainspec = { workspace = true, optional = true }
 reth-scroll-primitives = { workspace = true, optional = true }
 
 scroll-alloy-consensus = { workspace = true, optional = true }
+scroll-alloy-rpc-types = { workspace = true, optional = true }
+scroll-alloy-network = { workspace = true, optional = true }
 
 sbv-helpers.workspace = true
 sbv-kv.workspace = true
@@ -48,7 +50,9 @@ serde_json.workspace = true
 scroll = [
     "dep:reth-scroll-chainspec",
     "dep:reth-scroll-primitives",
-    "dep:scroll-alloy-consensus"
+    "dep:scroll-alloy-consensus",
+    "dep:scroll-alloy-rpc-types",
+    "dep:scroll-alloy-network",
 ]
 dev = ["sbv-helpers/dev"]
 

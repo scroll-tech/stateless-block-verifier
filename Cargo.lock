@@ -4674,6 +4674,8 @@ dependencies = [
  "sbv-helpers",
  "sbv-kv",
  "scroll-alloy-consensus",
+ "scroll-alloy-network",
+ "scroll-alloy-rpc-types",
  "serde",
  "serde_json",
  "tiny-keccak",
@@ -4744,6 +4746,37 @@ dependencies = [
  "reth-codecs-derive",
  "serde",
  "serde_with",
+]
+
+[[package]]
+name = "scroll-alloy-network"
+version = "1.1.5"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#a337c9777863e3da3ffe9460ab3f0c2fdefc41c7"
+dependencies = [
+ "alloy-consensus",
+ "alloy-network",
+ "alloy-primitives",
+ "alloy-rpc-types-eth",
+ "alloy-signer",
+ "scroll-alloy-consensus",
+ "scroll-alloy-rpc-types",
+]
+
+[[package]]
+name = "scroll-alloy-rpc-types"
+version = "1.1.5"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#a337c9777863e3da3ffe9460ab3f0c2fdefc41c7"
+dependencies = [
+ "alloy-consensus",
+ "alloy-eips",
+ "alloy-network-primitives",
+ "alloy-primitives",
+ "alloy-rpc-types-eth",
+ "alloy-serde",
+ "derive_more",
+ "scroll-alloy-consensus",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

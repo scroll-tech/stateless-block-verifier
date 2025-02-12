@@ -12,6 +12,7 @@ use rkyv::rancor;
 #[cfg(not(feature = "scroll"))]
 use sbv::primitives::types::RpcBlock;
 use sbv::primitives::{
+    Network,
     chainspec::{Chain, NamedChain},
     ext::ProviderExt,
     types::{BlockHeader, BlockWitness, Transaction},
@@ -93,7 +94,8 @@ impl DumpWitnessCommand {
             .layer(retry_layer)
             .layer(limit_layer)
             .http(self.rpc);
-        let provider = ProviderBuilder::new().on_client(client);
+
+        let provider = ProviderBuilder::<_, _, Network>::default().on_client(client);
 
         let chain_id = provider.get_chain_id().await?;
         eprintln!(
@@ -211,7 +213,16 @@ impl DumpWitnessCommand {
             transaction: block
                 .transactions
                 .into_transactions()
-                .map(Transaction::from_alloy)
+                .map(|t| {
+                    #[cfg(not(feature = "scroll"))]
+                    {
+                        return Transaction::from_alloy(t);
+                    }
+                    #[cfg(feature = "scroll")]
+                    {
+                        return Transaction::from_alloy(t.inner);
+                    }
+                })
                 .collect(),
             #[cfg(not(feature = "scroll"))]
             block_hashes: ancestor_blocks

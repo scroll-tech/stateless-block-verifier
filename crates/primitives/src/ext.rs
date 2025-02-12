@@ -1,4 +1,7 @@
-use crate::{B256, BlockHeader, BlockWitness, Bytes, keccak256, types::ExecutionWitness};
+use crate::{
+    B256, BlockWitness, Bytes, keccak256,
+    types::{ExecutionWitness, consensus::BlockHeader},
+};
 use alloy_eips::BlockNumberOrTag;
 use alloy_provider::{Network, Provider, network::Ethereum};
 use alloy_transport::TransportResult;

@@ -14,21 +14,17 @@ pub mod types;
 pub use alloy_consensus;
 pub use alloy_eips;
 
-use alloy_consensus::Typed2718;
-pub use alloy_consensus::{BlockHeader, Header};
 pub use alloy_primitives::{
     self, Address, B256, BlockHash, BlockNumber, Bytes, ChainId, U256, address, b256, keccak256,
 };
 pub use reth_primitives::RecoveredBlock;
 
+/// Network definition
 #[cfg(not(feature = "scroll"))]
-pub use reth_primitives::{Block, BlockBody, Receipt, TransactionSigned};
-use reth_primitives_traits::SignedTransaction;
+pub type Network = alloy_provider::network::Ethereum;
+/// Network definition
 #[cfg(feature = "scroll")]
-pub use reth_scroll_primitives::{
-    ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollReceipt as Receipt,
-    ScrollTransactionSigned as TransactionSigned,
-};
+pub type Network = scroll_alloy_network::Scroll;
 
 /// The spec of an Ethereum network
 pub mod chainspec {
@@ -101,10 +97,10 @@ pub trait BlockWitness: fmt::Debug {
     /// Chain id
     fn chain_id(&self) -> ChainId;
     /// Header
-    fn header(&self) -> impl BlockHeader;
+    fn header(&self) -> impl types::consensus::BlockHeader;
     /// Build alloy header
     #[must_use]
-    fn build_alloy_header(&self) -> Header;
+    fn build_alloy_header(&self) -> types::consensus::Header;
     /// Pre-state root
     #[must_use]
     fn pre_state_root(&self) -> B256;
@@ -114,7 +110,9 @@ pub trait BlockWitness: fmt::Debug {
     #[must_use]
     fn build_typed_transactions(
         &self,
-    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, alloy_primitives::SignatureError>>;
+    ) -> impl ExactSizeIterator<
+        Item = Result<types::reth::TransactionSigned, alloy_primitives::SignatureError>,
+    >;
     /// Block hashes
     #[must_use]
     #[cfg(not(feature = "scroll"))]
@@ -134,11 +132,13 @@ pub trait BlockWitness: fmt::Debug {
     /// Pre-state root
     #[must_use]
     fn post_state_root(&self) -> B256 {
+        use types::consensus::BlockHeader;
         self.header().state_root()
     }
     /// Withdrawal root
     #[must_use]
     fn withdrawals_root(&self) -> Option<B256> {
+        use types::consensus::BlockHeader;
         self.header().withdrawals_root()
     }
     /// Number of states
@@ -151,7 +151,9 @@ pub trait BlockWitness: fmt::Debug {
     }
 
     /// Build a reth block
-    fn build_reth_block(&self) -> Result<RecoveredBlock<Block>, alloy_primitives::SignatureError> {
+    fn build_reth_block(
+        &self,
+    ) -> Result<RecoveredBlock<types::reth::Block>, alloy_primitives::SignatureError> {
         use reth_primitives_traits::transaction::signed::SignedTransaction;
 
         let header = self.build_alloy_header();
@@ -164,7 +166,7 @@ pub trait BlockWitness: fmt::Debug {
             .collect::<Result<Vec<_>, _>>()
             .expect("Failed to recover signer");
 
-        let body = BlockBody {
+        let body = types::reth::BlockBody {
             transactions,
             ommers: vec![],
             withdrawals: self.withdrawals_iter().map(|iter| {
@@ -181,7 +183,7 @@ pub trait BlockWitness: fmt::Debug {
         };
 
         Ok(RecoveredBlock::new_unhashed(
-            Block { header, body },
+            types::reth::Block { header, body },
             senders,
         ))
     }
@@ -209,7 +211,7 @@ pub trait BlockChunkExt {
     fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher);
 }
 
-impl BlockChunkExt for RecoveredBlock<Block> {
+impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
     #[inline]
     fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
         hasher.update(&self.number.to_be_bytes());
@@ -224,6 +226,8 @@ impl BlockChunkExt for RecoveredBlock<Block> {
 
     #[inline]
     fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        use reth_primitives_traits::SignedTransaction;
+        use types::consensus::Typed2718;
         for tx in self.body().transactions.iter().filter(|tx| tx.ty() == 0x7e) {
             hasher.update(tx.tx_hash().as_slice())
         }

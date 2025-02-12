@@ -1,7 +1,7 @@
-use crate::{
-    TransactionSigned,
-    types::{BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _},
+use crate::types::{
+    BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _, reth::TransactionSigned,
 };
+use alloy_consensus::TxEnvelope;
 use alloy_primitives::{B256, Bytes, ChainId, map::B256HashMap};
 use alloy_rpc_types_eth::Block;
 
@@ -65,7 +65,7 @@ impl BlockWitness {
     /// Creates a new block witness from a block, pre-state root, execution witness.
     pub fn new_from_block(
         chain_id: ChainId,
-        block: Block,
+        block: Block<crate::types::rpc::Transaction>,
         pre_state_root: B256,
         #[cfg(not(feature = "scroll"))] block_hashes: Vec<B256>,
         witness: ExecutionWitness,
@@ -74,7 +74,16 @@ impl BlockWitness {
         let transaction = block
             .transactions
             .into_transactions()
-            .map(Transaction::from_alloy)
+            .map(|t| {
+                #[cfg(not(feature = "scroll"))]
+                {
+                    return Transaction::from_alloy(t);
+                }
+                #[cfg(feature = "scroll")]
+                {
+                    return Transaction::from_alloy(t.inner);
+                }
+            })
             .collect();
         let withdrawals = block
             .withdrawals

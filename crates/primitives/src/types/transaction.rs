@@ -1,10 +1,14 @@
-use crate::{
-    TransactionSigned,
-    types::{access_list::AccessList, signature::Signature},
+use crate::types::{
+    access_list::AccessList,
+    consensus::{
+        SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEnvelope, TxEnvelopeExt,
+        TxLegacy, Typed2718,
+    },
+    reth::TransactionSigned,
+    rpc::AlloyRpcTransaction,
+    signature::Signature,
 };
-use alloy_consensus::{
-    SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxLegacy, Typed2718,
-};
+use alloy_eips::Encodable2718;
 use alloy_primitives::{Address, B256, Bytes, ChainId, SignatureError, TxHash, U256};
 
 /// Transaction object used in RPC
@@ -122,9 +126,9 @@ pub struct Transaction {
 
 impl Transaction {
     /// Create a transaction from an alloy transaction
-    pub fn from_alloy(tx: alloy_rpc_types_eth::Transaction) -> Self {
+    pub fn from_alloy(tx: AlloyRpcTransaction<TxEnvelope>) -> Self {
         Self {
-            hash: *tx.inner.tx_hash(),
+            hash: tx.inner.trie_hash(),
             nonce: tx.nonce(),
             from: tx.from,
             to: tx.to(),
@@ -135,13 +139,13 @@ impl Transaction {
             max_priority_fee_per_gas: tx.max_priority_fee_per_gas(),
             max_fee_per_blob_gas: tx.max_fee_per_blob_gas(),
             input: tx.input().clone(),
-            signature: Some(tx.inner.signature().into()), // FIXME: scroll mode
+            signature: TxEnvelopeExt::signature(&tx.inner).map(Into::into),
             chain_id: tx.chain_id(),
             blob_versioned_hashes: tx.blob_versioned_hashes().map(Vec::from),
             access_list: tx.access_list().map(Into::into),
             transaction_type: tx.ty(),
             #[cfg(feature = "scroll")]
-            queue_index: None, // FIXME: scroll mode
+            queue_index: tx.inner.queue_index(), // FIXME: scroll mode
         }
     }
 }
