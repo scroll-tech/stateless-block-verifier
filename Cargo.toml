@@ -36,19 +36,19 @@ alloy-trie = { version = "0.7", default-features = false }
 # https://github.com/alloy-rs/core
 alloy-primitives = { version = "0.8", default-features = false, features = ["map-hashbrown", "map-fxhash", "rkyv"] }
 
-reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-storage-errors = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
-scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", branch = "fix/scroll-zkvm", default-features = false }
+reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-storage-errors = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
+scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
 
 #reth-chainspec = { path = "../reth/crates/chainspec", default-features = false }
 #reth-evm = { path = "../reth/crates/evm/", default-features = false }
@@ -111,7 +111,7 @@ sbv-utils = { path = "crates/utils" }
 
 [workspace.dependencies.revm]
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/chore/v55-upgrade"
+branch = "scroll-evm-executor/v55"
 default-features = false
 features = ["std"]
 
@@ -125,10 +125,10 @@ ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18" }
 
-revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/chore/v55-upgrade" }
-revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/chore/v55-upgrade" }
-revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/chore/v55-upgrade" }
-revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/chore/v55-upgrade" }
+revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v55" }
+revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v55" }
+revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v55" }
+revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/v55" }
 
 # for local development
 # [patch."https://github.com/scroll-tech/revm"]
