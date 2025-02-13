@@ -1,10 +1,4 @@
-use crate::{
-    B256, BlockWitness, Bytes, keccak256,
-    types::{ExecutionWitness, consensus::BlockHeader},
-};
-use alloy_eips::BlockNumberOrTag;
-use alloy_provider::{Network, Provider, network::Ethereum};
-use alloy_transport::TransportResult;
+use crate::{B256, BlockWitness, Bytes, keccak256, types::consensus::BlockHeader};
 #[cfg(feature = "scroll")]
 use itertools::Itertools;
 use sbv_helpers::cycle_track;
@@ -129,30 +123,3 @@ impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: alloy_eips::eip2718::Encodable2718 
         tx_bytes_hash
     }
 }
-
-/// Extension trait for [`Provider`](Provider).
-#[async_trait::async_trait]
-pub trait ProviderExt<N: Network = Ethereum>: Provider<N> {
-    /// Get the execution witness for a block.
-    async fn debug_execution_witness(
-        &self,
-        number: BlockNumberOrTag,
-    ) -> TransportResult<ExecutionWitness> {
-        self.client()
-            .request::<_, ExecutionWitness>("debug_executionWitness", (number,))
-            .await
-    }
-
-    /// Get the disk root for a block.
-    #[cfg(feature = "scroll")]
-    async fn scroll_disk_root(
-        &self,
-        number: BlockNumberOrTag,
-    ) -> TransportResult<crate::types::DiskRoot> {
-        self.client()
-            .request::<_, crate::types::DiskRoot>("scroll_diskRoot", (number,))
-            .await
-    }
-}
-
-impl<P: Provider<N>, N: Network> ProviderExt<N> for P {}

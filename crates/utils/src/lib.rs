@@ -1,6 +1,4 @@
-//! This crate allows programmatical access to CLI commands
+//! Utilities for the  Stateless Block Verifier
 
-#[doc(hidden)]
-pub mod commands;
-#[doc(hidden)]
-pub mod helpers;
+pub mod rpc;
+pub mod witness;

@@ -21,7 +21,7 @@ pub use reth_primitives::RecoveredBlock;
 
 /// Network definition
 #[cfg(not(feature = "scroll"))]
-pub type Network = alloy_provider::network::Ethereum;
+pub type Network = alloy_network::Ethereum;
 /// Network definition
 #[cfg(feature = "scroll")]
 pub type Network = scroll_alloy_network::Scroll;
@@ -83,7 +83,7 @@ pub mod chainspec {
 
 /// Eips
 pub mod eips {
-    pub use alloy_eips::eip2718::Encodable2718;
+    pub use alloy_eips::{BlockHashOrNumber, BlockNumberOrTag, eip2718::Encodable2718};
 }
 
 /// States types

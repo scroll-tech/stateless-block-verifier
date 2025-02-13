@@ -1,7 +1,6 @@
 use crate::types::{
     BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _, reth::TransactionSigned,
 };
-use alloy_consensus::TxEnvelope;
 use alloy_primitives::{B256, Bytes, ChainId, map::B256HashMap};
 use alloy_rpc_types_eth::Block;
 

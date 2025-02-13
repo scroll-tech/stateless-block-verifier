@@ -1,6 +1,6 @@
 use clap::Args;
 use rkyv::{rancor, vec::ArchivedVec};
-use sbv::primitives::types::{ArchivedBlockWitness, BlockWitness};
+use sbv_primitives::types::{ArchivedBlockWitness, BlockWitness};
 use std::path::PathBuf;
 
 #[derive(Debug, Args)]
