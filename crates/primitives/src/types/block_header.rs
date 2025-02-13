@@ -1,4 +1,7 @@
-use alloy_primitives::{Address, B64, B256, BlockNumber, Bloom, Bytes, U256};
+use crate::{
+    Address, B256, BlockNumber, Bytes, U256,
+    alloy_primitives::{B64, Bloom},
+};
 use auto_impl::auto_impl;
 use std::sync::OnceLock;
 

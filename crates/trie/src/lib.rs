@@ -7,13 +7,13 @@ use alloy_trie::{
     EMPTY_ROOT_HASH, Nibbles, TrieMask,
     nodes::{CHILD_INDEX_RANGE, RlpNode},
 };
+use reth_trie_sparse::RevealedSparseTrie;
+use sbv_kv::{HashMap, nohash::NoHashMap};
+use sbv_primitives::{Address, B256, BlockWitness, U256, keccak256, revm::db::BundleAccount};
+use std::cell::RefCell;
+
 pub use alloy_trie::{TrieAccount, nodes::TrieNode};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
-use reth_trie_sparse::RevealedSparseTrie;
-use sbv_helpers::dev_trace;
-use sbv_kv::{HashMap, nohash::NoHashMap};
-use sbv_primitives::{Address, B256, BlockWitness, U256, keccak256, states::BundleAccount};
-use std::cell::RefCell;
 
 /// Extension trait for BlockWitness
 pub trait BlockWitnessTrieExt {

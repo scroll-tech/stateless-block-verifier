@@ -42,7 +42,6 @@ sbv-helpers.workspace = true
 sbv-kv.workspace = true
 
 [dev-dependencies]
-serde_json.workspace = true
 
 [features]
 scroll = [
@@ -52,6 +51,8 @@ scroll = [
     "dep:scroll-alloy-rpc-types",
     "dep:scroll-alloy-network",
     "reth-scroll-primitives/serde",
+    "revm/scroll-default-handler",
+    "revm/optional_no_base_fee",
 ]
 dev = ["sbv-helpers/dev"]
 

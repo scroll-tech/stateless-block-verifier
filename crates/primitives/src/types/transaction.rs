@@ -1,15 +1,18 @@
-use crate::types::{
-    access_list::AccessList,
-    consensus::{
-        SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEnvelope, TxEnvelopeExt,
-        TxLegacy, Typed2718,
+use crate::{
+    Address, B256, Bytes, ChainId, TxHash, U256,
+    alloy_primitives::SignatureError,
+    eips::Encodable2718,
+    types::{
+        access_list::AccessList,
+        consensus::{
+            SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEnvelope, TxEnvelopeExt,
+            TxLegacy, Typed2718,
+        },
+        reth::TransactionSigned,
+        rpc::AlloyRpcTransaction,
+        signature::Signature,
     },
-    reth::TransactionSigned,
-    rpc::AlloyRpcTransaction,
-    signature::Signature,
 };
-use alloy_eips::Encodable2718;
-use alloy_primitives::{Address, B256, Bytes, ChainId, SignatureError, TxHash, U256};
 
 /// Transaction object used in RPC
 #[derive(

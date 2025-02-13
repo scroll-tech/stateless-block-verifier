@@ -1,8 +1,11 @@
-use crate::types::{
-    BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _, reth::TransactionSigned,
+use crate::{
+    B256, Bytes, ChainId,
+    alloy_primitives::map::B256HashMap,
+    types::{
+        BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _, reth::TransactionSigned,
+        rpc::Block,
+    },
 };
-use alloy_primitives::{B256, Bytes, ChainId, map::B256HashMap};
-use alloy_rpc_types_eth::Block;
 
 /// Represents the execution witness of a block. Contains an optional map of state preimages.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -64,7 +67,7 @@ impl BlockWitness {
     /// Creates a new block witness from a block, pre-state root, execution witness.
     pub fn new_from_block(
         chain_id: ChainId,
-        block: Block<crate::types::rpc::Transaction>,
+        block: Block,
         pre_state_root: B256,
         #[cfg(not(feature = "scroll"))] block_hashes: Vec<B256>,
         witness: ExecutionWitness,

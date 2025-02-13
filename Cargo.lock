@@ -4610,7 +4610,6 @@ dependencies = [
  "reth-execution-types",
  "reth-scroll-evm",
  "reth-storage-errors",
- "revm",
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",
@@ -4675,7 +4674,6 @@ dependencies = [
  "scroll-alloy-network",
  "scroll-alloy-rpc-types",
  "serde",
- "serde_json",
  "tiny-keccak",
 ]
 
@@ -4687,7 +4685,6 @@ dependencies = [
  "alloy-trie",
  "reth-trie",
  "reth-trie-sparse",
- "revm",
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",

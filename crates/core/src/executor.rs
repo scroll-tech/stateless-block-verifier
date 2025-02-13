@@ -1,11 +1,11 @@
 use crate::{database::EvmDatabase, error::VerificationError};
 use reth_evm::execute::{BlockExecutorProvider, Executor};
 use reth_execution_types::BlockExecutionOutput;
-use revm::db::CacheDB;
 use sbv_kv::KeyValueStoreGet;
 use sbv_primitives::{
     B256, Bytes, RecoveredBlock,
     chainspec::ChainSpec,
+    revm::db::CacheDB,
     types::reth::{Block, Receipt},
 };
 use sbv_trie::TrieNode;
