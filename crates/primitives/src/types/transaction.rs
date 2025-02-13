@@ -125,8 +125,19 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    /// Create a transaction from an alloy transaction
-    pub fn from_alloy(tx: AlloyRpcTransaction<TxEnvelope>) -> Self {
+    /// Create a transaction from a rpc transaction
+    #[cfg(feature = "scroll")]
+    pub fn from_rpc(tx: crate::types::rpc::Transaction) -> Self {
+        Transaction::from_rpc_inner(tx.inner)
+    }
+
+    /// Create a transaction from a rpc transaction
+    #[cfg(not(feature = "scroll"))]
+    pub fn from_rpc(tx: crate::types::rpc::Transaction) -> Self {
+        Transaction::from_rpc_inner(tx)
+    }
+
+    fn from_rpc_inner(tx: AlloyRpcTransaction<TxEnvelope>) -> Self {
         Self {
             hash: tx.inner.trie_hash(),
             nonce: tx.nonce(),

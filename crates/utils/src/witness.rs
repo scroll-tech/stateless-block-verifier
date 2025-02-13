@@ -113,16 +113,7 @@ impl WitnessBuilder {
             transaction: block
                 .transactions
                 .into_transactions()
-                .map(|t| {
-                    #[cfg(not(feature = "scroll"))]
-                    {
-                        return Transaction::from_alloy(t);
-                    }
-                    #[cfg(feature = "scroll")]
-                    {
-                        return Transaction::from_alloy(t.inner);
-                    }
-                })
+                .map(Transaction::from_rpc)
                 .collect(),
             #[cfg(not(feature = "scroll"))]
             block_hashes: self

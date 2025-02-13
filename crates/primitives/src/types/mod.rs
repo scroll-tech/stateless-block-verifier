@@ -48,7 +48,7 @@ pub mod consensus {
     #[cfg(not(feature = "scroll"))]
     impl TxEnvelopeExt for TxEnvelope {
         fn signature(&self) -> Option<&Signature> {
-            Some(TxEnvelope::signature(&self))
+            Some(TxEnvelope::signature(self))
         }
     }
 
