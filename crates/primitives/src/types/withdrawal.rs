@@ -1,4 +1,4 @@
-use alloy_primitives::Address;
+use crate::Address;
 
 /// Withdrawal represents a validator withdrawal from the consensus layer.
 #[derive(

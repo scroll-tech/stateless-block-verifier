@@ -1,4 +1,4 @@
-use alloy_primitives::B256;
+use crate::B256;
 use serde::{Deserialize, Serialize};
 
 /// RPC response of the `scroll_diskRoot` method.

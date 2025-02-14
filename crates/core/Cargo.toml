@@ -13,7 +13,6 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-revm.workspace = true
 reth-evm.workspace = true
 reth-evm-ethereum.workspace = true
 reth-execution-types.workspace = true
@@ -43,8 +42,6 @@ scroll = [
     "reth-evm-ethereum/scroll",
     "reth-execution-types/scroll",
     "reth-scroll-evm/scroll",
-    "revm/scroll-default-handler",
-    "revm/optional_no_base_fee",
     "sbv-primitives/scroll",
 ]
 debug-account = ["sbv-helpers/debug-account"]
@@ -56,4 +53,4 @@ metrics = ["sbv-helpers/metrics"]
 sp1 = ["sbv-trie/sp1"]
 cycle-tracker = ["sbv-trie/cycle-tracker"]
 
-openvm = ["revm/openvm"]
+openvm = ["sbv-primitives/openvm"]

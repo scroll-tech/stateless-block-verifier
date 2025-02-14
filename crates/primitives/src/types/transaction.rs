@@ -1,15 +1,18 @@
-use crate::types::{
-    access_list::AccessList,
-    consensus::{
-        SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEnvelope, TxEnvelopeExt,
-        TxLegacy, Typed2718,
+use crate::{
+    Address, B256, Bytes, ChainId, TxHash, U256,
+    alloy_primitives::SignatureError,
+    eips::Encodable2718,
+    types::{
+        access_list::AccessList,
+        consensus::{
+            SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEnvelope, TxEnvelopeExt,
+            TxLegacy, Typed2718,
+        },
+        reth::TransactionSigned,
+        rpc::AlloyRpcTransaction,
+        signature::Signature,
     },
-    reth::TransactionSigned,
-    rpc::AlloyRpcTransaction,
-    signature::Signature,
 };
-use alloy_eips::Encodable2718;
-use alloy_primitives::{Address, B256, Bytes, ChainId, SignatureError, TxHash, U256};
 
 /// Transaction object used in RPC
 #[derive(
@@ -125,8 +128,19 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    /// Create a transaction from an alloy transaction
-    pub fn from_alloy(tx: AlloyRpcTransaction<TxEnvelope>) -> Self {
+    /// Create a transaction from a rpc transaction
+    #[cfg(feature = "scroll")]
+    pub fn from_rpc(tx: crate::types::rpc::Transaction) -> Self {
+        Transaction::from_rpc_inner(tx.inner)
+    }
+
+    /// Create a transaction from a rpc transaction
+    #[cfg(not(feature = "scroll"))]
+    pub fn from_rpc(tx: crate::types::rpc::Transaction) -> Self {
+        Transaction::from_rpc_inner(tx)
+    }
+
+    fn from_rpc_inner(tx: AlloyRpcTransaction<TxEnvelope>) -> Self {
         Self {
             hash: tx.inner.trie_hash(),
             nonce: tx.nonce(),

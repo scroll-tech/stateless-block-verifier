@@ -14,7 +14,6 @@ workspace = true
 [dependencies]
 alloy-rlp.workspace = true
 alloy-trie.workspace = true
-revm.workspace = true
 reth-trie.workspace = true
 reth-trie-sparse.workspace = true
 
@@ -29,13 +28,18 @@ serde_json.workspace = true
 
 [features]
 scroll = [
-    "revm/scroll",
     "reth-trie/scroll",
     "sbv-primitives/scroll",
 ]
-dev = ["sbv-helpers/dev"]
+dev = [
+    "sbv-primitives/dev",
+    "sbv-helpers/dev"
+]
 
 sp1 = []
 cycle-tracker = []
 
-openvm = ["revm/openvm"]
+openvm = [
+    "sbv-primitives/openvm",
+    "sbv-helpers/openvm",
+]

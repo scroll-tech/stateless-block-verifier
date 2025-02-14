@@ -13,7 +13,6 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-async-trait.workspace = true
 auto_impl.workspace = true
 itertools.workspace = true
 rkyv.workspace = true
@@ -22,10 +21,9 @@ tiny-keccak.workspace = true
 
 alloy-consensus.workspace = true
 alloy-eips.workspace = true
-alloy-provider.workspace = true
+alloy-network.workspace = true
 alloy-rpc-types-eth.workspace = true
 alloy-serde.workspace = true
-alloy-transport.workspace = true
 
 alloy-primitives.workspace = true
 
@@ -44,7 +42,6 @@ sbv-helpers.workspace = true
 sbv-kv.workspace = true
 
 [dev-dependencies]
-serde_json.workspace = true
 
 [features]
 scroll = [
@@ -53,6 +50,9 @@ scroll = [
     "dep:scroll-alloy-consensus",
     "dep:scroll-alloy-rpc-types",
     "dep:scroll-alloy-network",
+    "reth-scroll-primitives/serde",
+    "revm/scroll-default-handler",
+    "revm/optional_no_base_fee",
 ]
 dev = ["sbv-helpers/dev"]
 

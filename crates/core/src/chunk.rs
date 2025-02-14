@@ -1,5 +1,4 @@
-use revm::primitives::B256;
-use sbv_primitives::{BlockChunkExt, RecoveredBlock, types::reth::Block};
+use sbv_primitives::{B256, BlockChunkExt, RecoveredBlock, types::reth::Block};
 use tiny_keccak::{Hasher, Keccak};
 
 /// A chunk is a set of continuous blocks.

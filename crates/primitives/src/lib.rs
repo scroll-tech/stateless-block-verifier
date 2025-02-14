@@ -12,16 +12,18 @@ pub mod predeployed;
 pub mod types;
 
 pub use alloy_consensus;
-pub use alloy_eips;
+pub use revm;
 
 pub use alloy_primitives::{
-    self, Address, B256, BlockHash, BlockNumber, Bytes, ChainId, U256, address, b256, keccak256,
+    self, Address, B256, BlockHash, BlockNumber, Bytes, ChainId, PrimitiveSignature, TxHash, U256,
+    address, b256, keccak256,
 };
 pub use reth_primitives::RecoveredBlock;
+pub use revm::primitives::{AccountInfo, Bytecode};
 
 /// Network definition
 #[cfg(not(feature = "scroll"))]
-pub type Network = alloy_provider::network::Ethereum;
+pub type Network = alloy_network::Ethereum;
 /// Network definition
 #[cfg(feature = "scroll")]
 pub type Network = scroll_alloy_network::Scroll;
@@ -83,12 +85,7 @@ pub mod chainspec {
 
 /// Eips
 pub mod eips {
-    pub use alloy_eips::eip2718::Encodable2718;
-}
-
-/// States types
-pub mod states {
-    pub use revm::db::BundleAccount;
+    pub use alloy_eips::*;
 }
 
 /// BlockWitness trait

@@ -1,4 +1,4 @@
-use alloy_primitives::{PrimitiveSignature, U256};
+use crate::{PrimitiveSignature, U256};
 
 /// An Ethereum ECDSA signature.
 #[derive(

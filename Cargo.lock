@@ -4610,7 +4610,6 @@ dependencies = [
  "reth-execution-types",
  "reth-scroll-evm",
  "reth-storage-errors",
- "revm",
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",
@@ -4656,12 +4655,10 @@ version = "2.0.0"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
+ "alloy-network",
  "alloy-primitives",
- "alloy-provider",
  "alloy-rpc-types-eth",
  "alloy-serde",
- "alloy-transport",
- "async-trait",
  "auto_impl",
  "itertools 0.14.0",
  "reth-chainspec",
@@ -4677,7 +4674,6 @@ dependencies = [
  "scroll-alloy-network",
  "scroll-alloy-rpc-types",
  "serde",
- "serde_json",
  "tiny-keccak",
 ]
 
@@ -4689,7 +4685,6 @@ dependencies = [
  "alloy-trie",
  "reth-trie",
  "reth-trie-sparse",
- "revm",
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",
@@ -4701,14 +4696,26 @@ dependencies = [
 name = "sbv-utils"
 version = "2.0.0"
 dependencies = [
+ "alloy-provider",
+ "alloy-transport",
+ "async-trait",
+ "futures",
+ "sbv-primitives",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "sbv-utils-cli"
+version = "2.0.0"
+dependencies = [
  "alloy",
  "anyhow",
  "clap",
  "console",
  "indicatif",
  "rkyv",
- "sbv",
- "serde",
+ "sbv-primitives",
+ "sbv-utils",
  "serde_json",
  "tokio",
  "tower",
