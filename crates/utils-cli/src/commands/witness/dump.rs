@@ -4,12 +4,14 @@ use alloy::{
 };
 use clap::Args;
 use console::{Emoji, style};
-use futures::FutureExt;
 use indicatif::{HumanBytes, HumanDuration, ProgressBar, ProgressStyle};
 use rkyv::rancor;
 use sbv_primitives::Network;
 use sbv_utils::rpc::ProviderExt;
-use std::{path::PathBuf, time::Instant};
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 use url::Url;
 
 #[derive(Debug, Args)]
@@ -97,29 +99,20 @@ impl DumpWitnessCommand {
             style(format!("[{}/{}]", steps, total_steps)).bold().dim(),
             Emoji("🔗  ", "")
         ));
+        pb.enable_steady_tick(Duration::from_millis(100));
         pb.set_message(format!("Dumping witness for block {}", self.block));
         steps += 1;
 
         #[cfg(not(feature = "scroll"))]
-        let mut fetcher = provider
+        let witness = provider
             .dump_block_witness(self.block.into(), Some(self.ancestors))
-            .fuse();
+            .await?;
         #[cfg(feature = "scroll")]
-        let mut fetcher = provider.dump_block_witness(self.block.into()).fuse();
+        let witness = provider.dump_block_witness(self.block.into()).await?;
 
-        let witness = loop {
-            tokio::select! {
-                _ = tokio::time::sleep(tokio::time::Duration::from_millis(3)) => {
-                    pb.tick();
-                }
-                result = &mut fetcher => {
-                    pb.set_message(format!("Dumped witness for block {}", self.block));
-                    pb.finish();
-                    break result;
-                }
-            }
-        }
-        .expect("block not found");
+        pb.finish_with_message(format!("Dumped witness for block {}", self.block));
+        println!();
+
         if self.json {
             let json = serde_json::to_string_pretty(&witness)?;
             let path = self.out_dir.join(format!("{}.json", self.block));

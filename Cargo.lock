@@ -4712,7 +4712,6 @@ dependencies = [
  "anyhow",
  "clap",
  "console",
- "futures",
  "indicatif",
  "rkyv",
  "sbv-primitives",

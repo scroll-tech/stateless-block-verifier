@@ -15,7 +15,6 @@ alloy = { workspace = true, features = ["provider-http", "transport-http", "reqw
 anyhow.workspace = true
 clap = { workspace = true, features = ["derive"] }
 console.workspace = true
-futures.workspace = true
 indicatif.workspace = true
 rkyv.workspace = true
 serde_json.workspace = true
