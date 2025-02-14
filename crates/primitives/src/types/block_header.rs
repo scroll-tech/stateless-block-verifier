@@ -1,4 +1,7 @@
-use alloy_primitives::{Address, B64, B256, BlockNumber, Bloom, Bytes, U256};
+use crate::{
+    Address, B256, BlockNumber, Bytes, U256,
+    alloy_primitives::{B64, Bloom},
+};
 use auto_impl::auto_impl;
 use std::sync::OnceLock;
 
@@ -177,16 +180,6 @@ pub struct BlockHeader {
         doc = "The Keccak 256-bit hash of the an RLP encoded list with each [EIP-7685] request in the block body."
     ))]
     pub requests_hash: Option<B256>,
-    /// The target number of blobs in the block, introduced in [EIP-7742].
-    ///
-    /// [EIP-7742]: https://eips.ethereum.org/EIPS/eip-7742
-    #[serde(
-        default,
-        with = "alloy_serde::quantity::opt",
-        skip_serializing_if = "Option::is_none"
-    )]
-    #[rkyv(attr(doc = "The target number of blobs in the block, introduced in [EIP-7742]."))]
-    pub target_blobs_per_block: Option<u64>,
 }
 
 #[auto_impl(&, &mut, Box, Rc, Arc)]
@@ -220,7 +213,6 @@ pub(crate) trait ToHelper: alloy_consensus::BlockHeader {
             excess_blob_gas: self.excess_blob_gas(),
             parent_beacon_block_root: self.parent_beacon_block_root(),
             requests_hash: self.requests_hash(),
-            target_blobs_per_block: self.target_blobs_per_block(),
         }
     }
 }
@@ -252,7 +244,6 @@ impl<T: FromHelper> From<T> for BlockHeader {
             excess_blob_gas: header.excess_blob_gas(),
             parent_beacon_block_root: header.parent_beacon_block_root(),
             requests_hash: header.requests_hash(),
-            target_blobs_per_block: header.target_blobs_per_block(),
         }
     }
 }
@@ -336,10 +327,6 @@ impl alloy_consensus::BlockHeader for BlockHeader {
 
     fn requests_hash(&self) -> Option<B256> {
         self.requests_hash
-    }
-
-    fn target_blobs_per_block(&self) -> Option<u64> {
-        self.target_blobs_per_block
     }
 
     fn extra_data(&self) -> &Bytes {
@@ -426,10 +413,6 @@ impl alloy_consensus::BlockHeader for ArchivedBlockHeader {
 
     fn requests_hash(&self) -> Option<B256> {
         self.requests_hash.as_ref().map(|x| x.0.into())
-    }
-
-    fn target_blobs_per_block(&self) -> Option<u64> {
-        self.target_blobs_per_block.as_ref().map(|x| x.to_native())
     }
 
     fn extra_data(&self) -> &Bytes {

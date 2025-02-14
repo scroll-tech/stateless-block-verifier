@@ -7,13 +7,13 @@ use alloy_trie::{
     EMPTY_ROOT_HASH, Nibbles, TrieMask,
     nodes::{CHILD_INDEX_RANGE, RlpNode},
 };
+use reth_trie_sparse::RevealedSparseTrie;
+use sbv_kv::{HashMap, nohash::NoHashMap};
+use sbv_primitives::{Address, B256, BlockWitness, U256, keccak256, revm::db::BundleAccount};
+use std::cell::RefCell;
+
 pub use alloy_trie::{TrieAccount, nodes::TrieNode};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
-use reth_trie_sparse::RevealedSparseTrie;
-use sbv_helpers::dev_trace;
-use sbv_kv::{HashMap, nohash::NoHashMap};
-use sbv_primitives::{Address, B256, BlockWitness, U256, keccak256, states::BundleAccount};
-use std::cell::RefCell;
 
 /// Extension trait for BlockWitness
 pub trait BlockWitnessTrieExt {
@@ -320,7 +320,7 @@ impl<T: Default> PartialTrie<T> {
             .ok_or(PartialStateTrieError::MissingWitness(root))?
             .clone();
         let mut state = cycle_track!(
-            RevealedSparseTrie::from_root(root.clone(), None, true),
+            RevealedSparseTrie::from_root(root.clone(), None, None, true),
             "RevealedSparseTrie::from_root"
         )
         .map_err(|e| {
@@ -447,7 +447,7 @@ fn traverse_import_partial_trie<
         }
     };
 
-    trie.reveal_node(path.clone(), node, trie_mask)
+    trie.reveal_node(path.clone(), node, trie_mask, None) // FIXME: is this correct?
         .map_err(|e| {
             dev_error!("failed to reveal node: {e}");
             PartialStateTrieError::Impl

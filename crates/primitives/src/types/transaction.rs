@@ -1,9 +1,18 @@
-use super::{access_list::AccessList, signature::Signature};
-use alloy_consensus::{
-    SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEip4844, TxLegacy, Typed2718,
+use crate::{
+    Address, B256, Bytes, ChainId, TxHash, U256,
+    alloy_primitives::SignatureError,
+    eips::Encodable2718,
+    types::{
+        access_list::AccessList,
+        consensus::{
+            SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEnvelope, TxEnvelopeExt,
+            TxLegacy, Typed2718,
+        },
+        reth::TransactionSigned,
+        rpc::AlloyRpcTransaction,
+        signature::Signature,
+    },
 };
-use alloy_primitives::{Address, B256, Bytes, ChainId, SignatureError, TxHash, U256};
-use reth_primitives::TransactionSigned;
 
 /// Transaction object used in RPC
 #[derive(
@@ -119,10 +128,21 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    /// Create a transaction from an alloy transaction
-    pub fn from_alloy(tx: alloy_rpc_types_eth::Transaction) -> Self {
+    /// Create a transaction from a rpc transaction
+    #[cfg(feature = "scroll")]
+    pub fn from_rpc(tx: crate::types::rpc::Transaction) -> Self {
+        Transaction::from_rpc_inner(tx.inner)
+    }
+
+    /// Create a transaction from a rpc transaction
+    #[cfg(not(feature = "scroll"))]
+    pub fn from_rpc(tx: crate::types::rpc::Transaction) -> Self {
+        Transaction::from_rpc_inner(tx)
+    }
+
+    fn from_rpc_inner(tx: AlloyRpcTransaction<TxEnvelope>) -> Self {
         Self {
-            hash: *tx.inner.tx_hash(),
+            hash: tx.inner.trie_hash(),
             nonce: tx.nonce(),
             from: tx.from,
             to: tx.to(),
@@ -133,13 +153,13 @@ impl Transaction {
             max_priority_fee_per_gas: tx.max_priority_fee_per_gas(),
             max_fee_per_blob_gas: tx.max_fee_per_blob_gas(),
             input: tx.input().clone(),
-            signature: Some(tx.inner.signature().into()), // FIXME: scroll mode
+            signature: TxEnvelopeExt::signature(&tx.inner).map(Into::into),
             chain_id: tx.chain_id(),
             blob_versioned_hashes: tx.blob_versioned_hashes().map(Vec::from),
             access_list: tx.access_list().map(Into::into),
             transaction_type: tx.ty(),
             #[cfg(feature = "scroll")]
-            queue_index: None, // FIXME: scroll mode
+            queue_index: tx.inner.queue_index(), // FIXME: scroll mode
         }
     }
 }
@@ -198,9 +218,10 @@ impl TryFrom<&Transaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
+            #[cfg(not(feature = "scroll"))]
             0x03 => {
                 let sig = tx.signature.expect("missing signature").into();
-                let tx = TxEip4844 {
+                let tx = alloy_consensus::TxEip4844 {
                     chain_id: tx.chain_id.expect("missing chain_id"),
                     nonce: tx.nonce,
                     max_fee_per_gas: tx.max_fee_per_gas,
@@ -224,7 +245,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
             }
             #[cfg(feature = "scroll")]
             0x7e => {
-                use reth_scroll_primitives::l1_transaction::TxL1Message;
+                use scroll_alloy_consensus::TxL1Message;
                 let tx = TxL1Message {
                     queue_index: tx.queue_index.expect("missing queue_index"),
                     gas_limit: tx.gas,
@@ -301,9 +322,10 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
+            #[cfg(not(feature = "scroll"))]
             0x03 => {
                 let sig = tx.signature.as_ref().expect("missing signature").into();
-                let tx = TxEip4844 {
+                let tx = alloy_consensus::TxEip4844 {
                     chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
                     nonce: tx.nonce.to_native(),
                     max_fee_per_gas: tx.max_fee_per_gas.to_native(),
@@ -334,7 +356,7 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
             }
             #[cfg(feature = "scroll")]
             0x7e => {
-                use reth_scroll_primitives::l1_transaction::TxL1Message;
+                use scroll_alloy_consensus::TxL1Message;
                 let tx = TxL1Message {
                     queue_index: tx
                         .queue_index

@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, B256};
+use crate::{Address, B256};
 
 /// A list of addresses and storage keys that the transaction plans to access.
 /// Accesses outside the list are possible, but become more expensive.

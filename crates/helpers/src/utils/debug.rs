@@ -14,7 +14,6 @@ struct AccountData {
     nonce: u64,
     balance: U256,
     code_hash: B256,
-    poseidon_code_hash: B256,
     code_size: u64,
     storage_root: B256,
 }
@@ -55,7 +54,6 @@ impl DebugRecorder {
             nonce: info.nonce,
             balance: info.balance,
             code_hash: info.code_hash,
-            poseidon_code_hash: info.poseidon_code_hash,
             code_size: info.code_size as u64,
             storage_root,
         });

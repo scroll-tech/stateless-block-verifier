@@ -1,5 +1,4 @@
-use revm::primitives::B256;
-use sbv_primitives::{Block, BlockChunkExt};
+use sbv_primitives::{B256, BlockChunkExt, RecoveredBlock, types::reth::Block};
 use tiny_keccak::{Hasher, Keccak};
 
 /// A chunk is a set of continuous blocks.
@@ -21,20 +20,20 @@ pub struct ChunkInfo {
 impl ChunkInfo {
     /// Construct by block traces
     #[must_use]
-    pub fn from_blocks_iter<'a, I: IntoIterator<Item = &'a Block> + Clone>(
+    pub fn from_blocks(
         chain_id: u64,
         prev_state_root: B256,
-        iter: I,
+        blocks: &[RecoveredBlock<Block>],
     ) -> Self {
-        let last_block = iter.clone().into_iter().last().expect("at least one block");
+        let last_block = blocks.last().expect("at least one block");
 
         let data_hash = cycle_track!(
             {
                 let mut data_hasher = Keccak::v256();
-                for block in iter.clone().into_iter() {
+                for block in blocks.iter() {
                     block.hash_da_header(&mut data_hasher);
                 }
-                for block in iter.into_iter() {
+                for block in blocks.iter() {
                     block.hash_l1_msg(&mut data_hasher);
                 }
                 let mut data_hash = B256::ZERO;
@@ -100,7 +99,7 @@ impl ChunkInfo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sbv_primitives::{BlockWithSenders, BlockWitness as _, types::BlockWitness};
+    use sbv_primitives::{BlockWitness as _, RecoveredBlock, types::BlockWitness};
 
     const TRACES_STR: [&str; 4] = [
         include_str!("../../../testdata/holesky_witness/2971844.json"),
@@ -112,13 +111,9 @@ mod tests {
     #[test]
     fn test_public_input_hash() {
         let witnesses: [BlockWitness; 4] = TRACES_STR.map(|s| serde_json::from_str(s).unwrap());
-        let blocks: [BlockWithSenders; 4] =
+        let blocks: [RecoveredBlock<Block>; 4] =
             witnesses.clone().map(|s| s.build_reth_block().unwrap());
 
-        let _ = ChunkInfo::from_blocks_iter(
-            1,
-            witnesses[0].pre_state_root,
-            blocks.iter().map(|b| &b.block),
-        );
+        let _ = ChunkInfo::from_blocks(1, witnesses[0].pre_state_root, &blocks);
     }
 }

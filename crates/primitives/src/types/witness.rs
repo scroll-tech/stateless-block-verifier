@@ -1,7 +1,11 @@
-use crate::types::{BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _};
-use alloy_primitives::{B256, Bytes, ChainId, map::B256HashMap};
-use alloy_rpc_types_eth::Block;
-use reth_primitives::TransactionSigned;
+use crate::{
+    B256, Bytes, ChainId,
+    alloy_primitives::map::B256HashMap,
+    types::{
+        BlockHeader, Transaction, Withdrawal, block_header::ToHelper as _, reth::TransactionSigned,
+        rpc::Block,
+    },
+};
 
 /// Represents the execution witness of a block. Contains an optional map of state preimages.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -72,7 +76,7 @@ impl BlockWitness {
         let transaction = block
             .transactions
             .into_transactions()
-            .map(Transaction::from_alloy)
+            .map(Transaction::from_rpc)
             .collect();
         let withdrawals = block
             .withdrawals
