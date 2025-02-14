@@ -47,6 +47,7 @@ pub trait ProviderExt: Provider<Network> {
         let number = block.header.number;
 
         let builder = builder
+            .block(block)
             .chain_id(self.get_chain_id().await?)
             .execution_witness(self.debug_execution_witness(number.into()).await?);
 
