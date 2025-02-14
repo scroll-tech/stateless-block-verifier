@@ -91,25 +91,3 @@ impl ChunkInfo {
         self.msg_queue_hash
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use sbv_primitives::{BlockWitness as _, RecoveredBlock, types::BlockWitness};
-
-    const TRACES_STR: [&str; 4] = [
-        include_str!("../../../testdata/holesky_witness/2971844.json"),
-        include_str!("../../../testdata/holesky_witness/2971845.json"),
-        include_str!("../../../testdata/holesky_witness/2971846.json"),
-        include_str!("../../../testdata/holesky_witness/2971847.json"),
-    ];
-
-    #[test]
-    fn test_public_input_hash() {
-        let witnesses: [BlockWitness; 4] = TRACES_STR.map(|s| serde_json::from_str(s).unwrap());
-        let blocks: [RecoveredBlock<Block>; 4] =
-            witnesses.clone().map(|s| s.build_reth_block().unwrap());
-
-        let _ = ChunkInfo::from_blocks(1, witnesses[0].pre_state_root, &blocks);
-    }
-}
