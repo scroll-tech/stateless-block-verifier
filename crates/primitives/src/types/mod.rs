@@ -1,4 +1,5 @@
 mod access_list;
+mod auth_list;
 mod block_header;
 #[cfg(feature = "scroll")]
 mod scroll;
