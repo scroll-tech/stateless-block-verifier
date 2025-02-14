@@ -6,7 +6,7 @@ use tiny_keccak::{Hasher, Keccak};
 /// - state root before this chunk
 /// - state root after this chunk
 /// - the withdraw root after this chunk
-/// - the data hash of this chunk
+/// - the msg_queue_hash of this chunk
 /// - the tx data hash of this chunk
 /// - flattened L2 tx bytes hash
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -14,7 +14,7 @@ pub struct ChunkInfo {
     chain_id: u64,
     prev_state_root: B256,
     post_state_root: B256,
-    data_hash: B256,
+    msg_queue_hash: B256,
 }
 
 impl ChunkInfo {
@@ -23,22 +23,18 @@ impl ChunkInfo {
     pub fn from_blocks(
         chain_id: u64,
         prev_state_root: B256,
+        prev_msg_queue_hash: B256,
         blocks: &[RecoveredBlock<Block>],
     ) -> Self {
         let last_block = blocks.last().expect("at least one block");
 
-        let data_hash = cycle_track!(
+        let msg_queue_hash = cycle_track!(
             {
-                let mut data_hasher = Keccak::v256();
+                let mut rolling_hash = prev_msg_queue_hash;
                 for block in blocks.iter() {
-                    block.hash_da_header(&mut data_hasher);
+                    rolling_hash = block.hash_l1_msg(&rolling_hash);
                 }
-                for block in blocks.iter() {
-                    block.hash_l1_msg(&mut data_hasher);
-                }
-                let mut data_hash = B256::ZERO;
-                data_hasher.finalize(&mut data_hash.0);
-                data_hash
+                rolling_hash
             },
             "Keccak::v256"
         );
@@ -47,7 +43,7 @@ impl ChunkInfo {
             chain_id,
             prev_state_root,
             post_state_root: last_block.state_root,
-            data_hash,
+            msg_queue_hash,
         }
     }
 
@@ -67,7 +63,7 @@ impl ChunkInfo {
         hasher.update(self.prev_state_root.as_ref());
         hasher.update(self.post_state_root.as_slice());
         hasher.update(withdraw_root.as_slice());
-        hasher.update(self.data_hash.as_slice());
+        hasher.update(self.msg_queue_hash.as_slice()); // FIXME: is this correct?
         hasher.update(tx_bytes_hash.as_slice());
 
         let mut public_input_hash = B256::ZERO;
@@ -90,9 +86,9 @@ impl ChunkInfo {
         self.post_state_root
     }
 
-    /// Data hash of this chunk
-    pub fn data_hash(&self) -> B256 {
-        self.data_hash
+    /// Message queue hash of this chunk
+    pub fn msg_queue_hash(&self) -> B256 {
+        self.msg_queue_hash
     }
 }
 

@@ -11,8 +11,10 @@ pub struct RunFileCommand {
     path: Vec<PathBuf>,
     /// Chunk mode
     #[cfg(feature = "scroll")]
-    #[arg(short, long)]
+    #[arg(short, long, requires = "prev_msg_queue_hash")]
     chunk_mode: bool,
+    #[cfg(feature = "scroll")]
+    prev_msg_queue_hash: Option<sbv::primitives::B256>,
 }
 
 impl RunFileCommand {
@@ -71,8 +73,12 @@ impl RunFileCommand {
             .iter()
             .map(|w| w.build_reth_block())
             .collect::<Result<Vec<_>, _>>()?;
-        let chunk_info =
-            ChunkInfo::from_blocks(witnesses[0].chain_id, witnesses[0].pre_state_root, &blocks);
+        let chunk_info = ChunkInfo::from_blocks(
+            witnesses[0].chain_id,
+            witnesses[0].pre_state_root,
+            self.prev_msg_queue_hash.unwrap(),
+            &blocks,
+        );
 
         let chain_spec = get_chain_spec(Chain::from_id(chunk_info.chain_id())).unwrap();
         let mut code_db = NoHashMap::default();
