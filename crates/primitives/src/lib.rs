@@ -202,14 +202,40 @@ pub trait Withdrawal: fmt::Debug {
 /// Chunk related extension methods for Block
 #[cfg(feature = "scroll")]
 pub trait BlockChunkExt {
+    /// Hash the header of the block
+    fn legacy_hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher);
     /// Hash the l1 messages of the block
-    fn hash_l1_msg(&self, initial_queue_hash: &B256) -> B256;
+    fn legacy_hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher);
+    /// Hash the l1 messages of the block
+    fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256;
 }
 
 #[cfg(feature = "scroll")]
 impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
     #[inline]
-    fn hash_l1_msg(&self, initial_queue_hash: &B256) -> B256 {
+    fn legacy_hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        hasher.update(&self.number.to_be_bytes());
+        hasher.update(&self.timestamp.to_be_bytes());
+        hasher.update(
+            &U256::from_limbs([self.base_fee_per_gas.unwrap_or_default(), 0, 0, 0])
+                .to_be_bytes::<{ U256::BYTES }>(),
+        );
+        hasher.update(&self.gas_limit.to_be_bytes());
+        // FIXME: l1 tx could be skipped, the actual tx count needs to be calculated
+        hasher.update(&(self.body().transactions.len() as u16).to_be_bytes());
+    }
+
+    #[inline]
+    fn legacy_hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
+        use reth_primitives_traits::SignedTransaction;
+        use types::consensus::Typed2718;
+        for tx in self.body().transactions.iter().filter(|tx| tx.ty() == 0x7e) {
+            hasher.update(tx.tx_hash().as_slice())
+        }
+    }
+
+    #[inline]
+    fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256 {
         use reth_primitives_traits::SignedTransaction;
         use tiny_keccak::Hasher;
 
@@ -226,9 +252,9 @@ impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
 
             hasher.finalize(rolling_hash.as_mut_slice());
 
-            // clear last 36 bits
-            // https://github.com/scroll-tech/da-codec/blob/d028c537b995acbdf9f3d6db84d138268f9691e6/encoding/da.go#L817-L830
-            rolling_hash.0[27] &= 0xF0;
+            // clear last 32 bits, i.e. 4 bytes.
+            // https://github.com/scroll-tech/da-codec/blob/26dc8d575244560611548fada6a3a2745c60fe83/encoding/da.go#L817-L825
+            // see also https://github.com/scroll-tech/da-codec/pull/42
             rolling_hash.0[28] = 0;
             rolling_hash.0[29] = 0;
             rolling_hash.0[30] = 0;

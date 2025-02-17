@@ -44,13 +44,13 @@ impl RunFileCommand {
     fn run_chunk(self) -> anyhow::Result<()> {
         use anyhow::bail;
         use sbv::{
-            core::{ChunkInfo, EvmDatabase, EvmExecutor},
+            core::{EvmDatabase, EvmExecutor},
             kv::{nohash::NoHashMap, null::NullProvider},
             primitives::{
                 BlockWitness as _,
                 chainspec::{Chain, get_chain_spec},
-                ext::{BlockWitnessChunkExt, BlockWitnessExt, TxBytesHashExt},
-                types::BlockWitness,
+                ext::{BlockWitnessChunkExt, BlockWitnessExt},
+                types::{BlockWitness, ChunkInfoBuilder},
             },
             trie::BlockWitnessTrieExt,
         };
@@ -73,14 +73,12 @@ impl RunFileCommand {
             .iter()
             .map(|w| w.build_reth_block())
             .collect::<Result<Vec<_>, _>>()?;
-        let chunk_info = ChunkInfo::from_blocks(
-            witnesses[0].chain_id,
-            witnesses[0].pre_state_root,
-            self.prev_msg_queue_hash.unwrap(),
-            &blocks,
-        );
 
-        let chain_spec = get_chain_spec(Chain::from_id(chunk_info.chain_id())).unwrap();
+        let chain_id = witnesses[0].chain_id;
+        let chain_spec = get_chain_spec(Chain::from_id(chain_id)).unwrap();
+
+        let chunk_info_builder = ChunkInfoBuilder::new(&chain_spec, &blocks);
+
         let mut code_db = NoHashMap::default();
         witnesses.import_codes(&mut code_db);
         let mut nodes_provider = NoHashMap::default();
@@ -88,7 +86,7 @@ impl RunFileCommand {
 
         let mut db = EvmDatabase::new_from_root(
             &code_db,
-            chunk_info.prev_state_root(),
+            chunk_info_builder.get_prev_state_root(),
             &nodes_provider,
             &NullProvider,
         )?;
@@ -97,16 +95,12 @@ impl RunFileCommand {
             db.update(&nodes_provider, output.state.state.iter())?;
         }
         let post_state_root = db.commit_changes();
-        if post_state_root != chunk_info.post_state_root() {
+        if post_state_root != chunk_info_builder.get_post_state_root() {
             bail!("post state root mismatch");
         }
 
-        let withdraw_root = db.withdraw_root()?;
-        let tx_bytes_hash = blocks
-            .iter()
-            .flat_map(|b| b.body().transactions.iter())
-            .tx_bytes_hash();
-        let _public_input_hash = chunk_info.public_input_hash(&withdraw_root, &tx_bytes_hash);
+        let chunk_info = chunk_info_builder.build(db.withdraw_root()?);
+        let _public_input_hash = chunk_info.pi_hash();
         dev_info!("[chunk mode] public input hash: {_public_input_hash:?}");
 
         Ok(())
