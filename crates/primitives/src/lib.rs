@@ -228,8 +228,12 @@ impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
     #[inline]
     fn legacy_hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
         use reth_primitives_traits::SignedTransaction;
-        use types::consensus::Typed2718;
-        for tx in self.body().transactions.iter().filter(|tx| tx.ty() == 0x7e) {
+        for tx in self
+            .body()
+            .transactions
+            .iter()
+            .filter(|tx| tx.is_l1_message())
+        {
             hasher.update(tx.tx_hash().as_slice())
         }
     }
