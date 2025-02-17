@@ -209,7 +209,7 @@ pub trait BlockChunkExt {
     /// Hash the l1 messages of the block
     fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256;
     /// Number of L1 msg txs in the block
-    fn num_l1_msgs(&self) -> u64;
+    fn num_l1_msgs(&self) -> usize;
 }
 
 #[cfg(feature = "scroll")]
@@ -271,13 +271,13 @@ impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
     }
 
     #[inline]
-    fn num_l1_msgs(&self) -> u64 {
+    fn num_l1_msgs(&self) -> usize {
         use reth_primitives_traits::SignedTransaction;
 
         self.body()
             .transactions
             .iter()
             .filter(|tx| tx.is_l1_message())
-            .count::<u64>()
+            .count()
     }
 }
