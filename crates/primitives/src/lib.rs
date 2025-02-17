@@ -272,8 +272,6 @@ impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
 
     #[inline]
     fn num_l1_msgs(&self) -> usize {
-        use reth_primitives_traits::SignedTransaction;
-
         self.body()
             .transactions
             .iter()
