@@ -11,7 +11,7 @@ pub struct RunFileCommand {
     path: Vec<PathBuf>,
     /// Chunk mode
     #[cfg(feature = "scroll")]
-    #[arg(short, long, requires = "prev_msg_queue_hash")]
+    #[arg(short, long)]
     chunk_mode: bool,
     #[cfg(feature = "scroll")]
     prev_msg_queue_hash: Option<sbv::primitives::B256>,
@@ -77,7 +77,10 @@ impl RunFileCommand {
         let chain_id = witnesses[0].chain_id;
         let chain_spec = get_chain_spec(Chain::from_id(chain_id)).unwrap();
 
-        let chunk_info_builder = ChunkInfoBuilder::new(&chain_spec, &blocks);
+        let mut chunk_info_builder = ChunkInfoBuilder::new(&chain_spec, &blocks);
+        if let Some(prev_msg_queue_hash) = self.prev_msg_queue_hash {
+            chunk_info_builder.prev_msg_queue_hash(prev_msg_queue_hash);
+        }
 
         let mut code_db = NoHashMap::default();
         witnesses.import_codes(&mut code_db);
