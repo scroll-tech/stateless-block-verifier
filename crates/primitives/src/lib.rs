@@ -208,6 +208,8 @@ pub trait BlockChunkExt {
     fn legacy_hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher);
     /// Hash the l1 messages of the block
     fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256;
+    /// Number of L1 msg txs in the block
+    fn num_l1_msgs(&self) -> u64;
 }
 
 #[cfg(feature = "scroll")]
@@ -266,5 +268,16 @@ impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
         }
 
         rolling_hash
+    }
+
+    #[inline]
+    fn num_l1_msgs(&self) -> u64 {
+        use reth_primitives_traits::SignedTransaction;
+
+        self.body()
+            .transactions
+            .iter()
+            .filter(|tx| tx.is_l1_message())
+            .count::<u64>()
     }
 }
