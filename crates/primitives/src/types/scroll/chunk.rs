@@ -93,7 +93,7 @@ pub struct EuclidV2ChunkInfo {
     /// The withdrawals root after applying the chunk.
     #[rkyv(attr(doc = "The withdrawals root after applying the chunk."))]
     pub withdraw_root: B256,
-    /// rlp encoded length of L2 tx data flattened over all L2 txs in the chunk.
+    /// length of L2 tx data (rlp encoded) flattened over all L2 txs in the chunk.
     #[rkyv(attr(doc = "Digest of L2 tx data flattened over all L2 txs in the chunk."))]
     pub tx_data_length: usize,
     /// Digest of L2 tx data flattened over all L2 txs in the chunk.
