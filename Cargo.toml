@@ -41,6 +41,7 @@ alloy-primitives = { version = "0.8", default-features = false, features = ["map
 reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
 reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
 reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
+reth-ethereum-forks = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
 reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
 reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
 reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
@@ -50,6 +51,7 @@ reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "feat
 
 reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
 reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
+reth-scroll-forks = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
 reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
 
 scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", branch = "feat/euclid-v2", default-features = false }
