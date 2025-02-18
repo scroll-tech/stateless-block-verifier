@@ -79,11 +79,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[cfg(feature = "scroll")]
     #[test]
     fn test_build_chain_spec() {
+        use super::*;
         use crate::hardforks::ScrollHardfork;
 
         let chain_spec = get_chain_spec_or_build(Chain::from_id(42424242), |spec| {
