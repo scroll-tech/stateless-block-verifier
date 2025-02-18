@@ -29,9 +29,11 @@ alloy-primitives.workspace = true
 
 revm.workspace = true
 reth-chainspec.workspace = true
+reth-ethereum-forks.workspace = true
 reth-primitives.workspace = true
 reth-primitives-traits.workspace = true
 reth-scroll-chainspec = { workspace = true, optional = true }
+reth-scroll-forks = { workspace = true, optional = true }
 reth-scroll-primitives = { workspace = true, optional = true }
 
 scroll-alloy-consensus = { workspace = true, optional = true }
@@ -46,11 +48,14 @@ sbv-kv.workspace = true
 [features]
 scroll = [
     "dep:reth-scroll-chainspec",
+    "dep:reth-scroll-forks",
     "dep:reth-scroll-primitives",
     "dep:scroll-alloy-consensus",
     "dep:scroll-alloy-rpc-types",
     "dep:scroll-alloy-network",
+    "reth-scroll-forks/serde",
     "reth-scroll-primitives/serde",
+    "reth-scroll-primitives/scroll",
     "revm/scroll-default-handler",
     "revm/optional_no_base_fee",
 ]

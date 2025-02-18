@@ -3,8 +3,12 @@
 use auto_impl::auto_impl;
 use std::fmt;
 
+/// The spec of an Ethereum network
+pub mod chainspec;
 /// Extension Traits
 pub mod ext;
+/// Ethereum fork types
+pub mod hardforks;
 /// Predeployed contracts
 #[cfg(feature = "scroll")]
 pub mod predeployed;
@@ -27,61 +31,6 @@ pub type Network = alloy_network::Ethereum;
 /// Network definition
 #[cfg(feature = "scroll")]
 pub type Network = scroll_alloy_network::Scroll;
-
-/// The spec of an Ethereum network
-pub mod chainspec {
-    use std::sync::Arc;
-
-    pub use reth_chainspec::*;
-    #[cfg(feature = "scroll")]
-    pub use reth_scroll_chainspec as scroll;
-
-    /// An Ethereum chain specification.
-    ///
-    /// A chain specification describes:
-    ///
-    /// - Meta-information about the chain (the chain ID)
-    /// - The genesis block of the chain ([`Genesis`])
-    /// - What hardforks are activated, and under which conditions
-    #[cfg(not(feature = "scroll"))]
-    pub type ChainSpec = reth_chainspec::ChainSpec;
-    /// Scroll chain spec type.
-    #[cfg(feature = "scroll")]
-    pub type ChainSpec = scroll::ScrollChainSpec;
-
-    /// Get chain spec
-    #[cfg(not(feature = "scroll"))]
-    pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
-        if chain == Chain::from_named(NamedChain::Mainnet) {
-            return Some(MAINNET.clone());
-        }
-        if chain == Chain::from_named(NamedChain::Sepolia) {
-            return Some(SEPOLIA.clone());
-        }
-        if chain == Chain::from_named(NamedChain::Holesky) {
-            return Some(HOLESKY.clone());
-        }
-        if chain == Chain::dev() {
-            return Some(DEV.clone());
-        }
-        None
-    }
-
-    /// Get chain spec
-    #[cfg(feature = "scroll")]
-    pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
-        if chain == Chain::from_named(NamedChain::Scroll) {
-            return Some(scroll::SCROLL_MAINNET.clone());
-        }
-        if chain == Chain::from_named(NamedChain::ScrollSepolia) {
-            return Some(scroll::SCROLL_SEPOLIA.clone());
-        }
-        if chain == Chain::dev() {
-            return Some(scroll::SCROLL_DEV.clone());
-        }
-        None
-    }
-}
 
 /// Eips
 pub mod eips {
