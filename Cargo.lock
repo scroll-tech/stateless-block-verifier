@@ -4614,10 +4614,7 @@ dependencies = [
  "sbv-kv",
  "sbv-primitives",
  "sbv-trie",
- "serde",
- "serde_json",
  "thiserror 1.0.69",
- "tiny-keccak",
  "tracing",
  "tracing-subscriber",
 ]
@@ -5120,7 +5117,6 @@ version = "2.0.0"
 dependencies = [
  "anyhow",
  "clap",
- "futures",
  "pprof",
  "sbv",
  "serde",

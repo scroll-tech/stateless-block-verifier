@@ -149,17 +149,22 @@ pub trait Withdrawal: fmt::Debug {
 }
 
 /// Chunk related extension methods for Block
-/// FIXME: gate this behind scroll feature
+#[cfg(feature = "scroll")]
 pub trait BlockChunkExt {
     /// Hash the header of the block
-    fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher);
+    fn legacy_hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher);
     /// Hash the l1 messages of the block
-    fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher);
+    fn legacy_hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher);
+    /// Hash the l1 messages of the block
+    fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256;
+    /// Number of L1 msg txs in the block
+    fn num_l1_msgs(&self) -> usize;
 }
 
+#[cfg(feature = "scroll")]
 impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
     #[inline]
-    fn hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
+    fn legacy_hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher) {
         hasher.update(&self.number.to_be_bytes());
         hasher.update(&self.timestamp.to_be_bytes());
         hasher.update(
@@ -167,15 +172,59 @@ impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
                 .to_be_bytes::<{ U256::BYTES }>(),
         );
         hasher.update(&self.gas_limit.to_be_bytes());
-        hasher.update(&(self.body().transactions.len() as u16).to_be_bytes()); // FIXME: l1 tx could be skipped, the actual tx count needs to be calculated
+        // FIXME: l1 tx could be skipped, the actual tx count needs to be calculated
+        hasher.update(&(self.body().transactions.len() as u16).to_be_bytes());
     }
 
     #[inline]
-    fn hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
+    fn legacy_hash_l1_msg(&self, hasher: &mut impl tiny_keccak::Hasher) {
         use reth_primitives_traits::SignedTransaction;
-        use types::consensus::Typed2718;
-        for tx in self.body().transactions.iter().filter(|tx| tx.ty() == 0x7e) {
+        for tx in self
+            .body()
+            .transactions
+            .iter()
+            .filter(|tx| tx.is_l1_message())
+        {
             hasher.update(tx.tx_hash().as_slice())
         }
+    }
+
+    #[inline]
+    fn hash_msg_queue(&self, initial_queue_hash: &B256) -> B256 {
+        use reth_primitives_traits::SignedTransaction;
+        use tiny_keccak::Hasher;
+
+        let mut rolling_hash = *initial_queue_hash;
+        for tx in self
+            .body()
+            .transactions
+            .iter()
+            .filter(|tx| tx.is_l1_message())
+        {
+            let mut hasher = tiny_keccak::Keccak::v256();
+            hasher.update(rolling_hash.as_slice());
+            hasher.update(tx.tx_hash().as_slice());
+
+            hasher.finalize(rolling_hash.as_mut_slice());
+
+            // clear last 32 bits, i.e. 4 bytes.
+            // https://github.com/scroll-tech/da-codec/blob/26dc8d575244560611548fada6a3a2745c60fe83/encoding/da.go#L817-L825
+            // see also https://github.com/scroll-tech/da-codec/pull/42
+            rolling_hash.0[28] = 0;
+            rolling_hash.0[29] = 0;
+            rolling_hash.0[30] = 0;
+            rolling_hash.0[31] = 0;
+        }
+
+        rolling_hash
+    }
+
+    #[inline]
+    fn num_l1_msgs(&self) -> usize {
+        self.body()
+            .transactions
+            .iter()
+            .filter(|tx| tx.is_l1_message())
+            .count()
     }
 }
