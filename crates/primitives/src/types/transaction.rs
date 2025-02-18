@@ -255,7 +255,6 @@ impl TryFrom<&Transaction> for TransactionSigned {
                 };
                 tx.into_signed(sig).into()
             }
-            #[cfg(not(feature = "scroll"))] // FIXME: enable this when scroll reth EIP7702 ready
             0x04 => {
                 let sig = tx.signature.expect("missing signature").into();
                 let tx = alloy_consensus::TxEip7702 {
@@ -392,7 +391,6 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
                 };
                 tx.into_signed(sig).into()
             }
-            #[cfg(not(feature = "scroll"))] // FIXME: enable this when scroll reth EIP7702 ready
             0x04 => {
                 let sig = tx.signature.as_ref().expect("missing signature").into();
                 let tx = alloy_consensus::TxEip7702 {
