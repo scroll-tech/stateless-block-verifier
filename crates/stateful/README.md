@@ -9,7 +9,7 @@ than `scroll_getBlockTraceByNumberOrHash`.
 
 ## How to run
 
-*Note: In debug mode, it runs both stateless and stateful to performe sanity
+*Note: In debug mode, it runs both stateless and stateful to perform sanity
 check, which requires the rpc endpoint supports `scroll_getBlockTraceByNumberOrHash`
 
 ```bash
