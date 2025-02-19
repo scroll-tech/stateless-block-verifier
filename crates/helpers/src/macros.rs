@@ -101,10 +101,10 @@ macro_rules! measure_duration_millis {
         let __measure_duration_histogram_result = $e;
 
         #[cfg(feature = "metrics")]
-        let __measure_duration_histogram_elasped = __measure_duration_histogram_start.elapsed();
+        let __measure_duration_histogram_elapsed = __measure_duration_histogram_start.elapsed();
         #[cfg(feature = "metrics")]
-        let __duration_millis = __measure_duration_histogram_elasped.as_secs() as f64 * 1_000.0
-            + __measure_duration_histogram_elasped.subsec_nanos() as f64 / 1_000_000.0;
+        let __duration_millis = __measure_duration_histogram_elapsed.as_secs() as f64 * 1_000.0
+            + __measure_duration_histogram_elapsed.subsec_nanos() as f64 / 1_000_000.0;
 
         #[cfg(feature = "metrics")]
         $crate::metrics::REGISTRY.$label.observe(__duration_millis);
