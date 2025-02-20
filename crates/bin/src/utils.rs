@@ -3,8 +3,9 @@ use sbv::{
     kv::nohash::NoHashMap,
     primitives::{
         BlockWitness,
-        chainspec::{Chain, get_chain_spec},
+        chainspec::{Chain, get_chain_spec_or_build},
         ext::BlockWitnessExt,
+        hardforks::{ForkCondition, ScrollHardfork},
     },
     trie::BlockWitnessTrieExt,
 };
@@ -30,7 +31,11 @@ fn verify_inner<T: BlockWitness + BlockWitnessTrieExt + BlockWitnessExt>(
         .build()
         .unwrap();
 
-    let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id())).unwrap();
+    let chain_spec = get_chain_spec_or_build(Chain::from_id(witness.chain_id()), |spec| {
+        spec.inner
+            .hardforks
+            .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+    });
 
     let mut code_db = NoHashMap::default();
     witness.import_codes(&mut code_db);

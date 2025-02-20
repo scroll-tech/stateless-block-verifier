@@ -14,6 +14,7 @@ pub struct RunFileCommand {
     #[arg(short, long)]
     chunk_mode: bool,
     #[cfg(feature = "scroll")]
+    #[arg(long)]
     prev_msg_queue_hash: Option<sbv::primitives::B256>,
 }
 
@@ -48,8 +49,9 @@ impl RunFileCommand {
             kv::{nohash::NoHashMap, null::NullProvider},
             primitives::{
                 BlockWitness as _,
-                chainspec::{Chain, get_chain_spec},
+                chainspec::{Chain, get_chain_spec_or_build},
                 ext::{BlockWitnessChunkExt, BlockWitnessExt},
+                hardforks::{ForkCondition, ScrollHardfork},
                 types::{BlockWitness, ChunkInfoBuilder},
             },
             trie::BlockWitnessTrieExt,
@@ -75,7 +77,11 @@ impl RunFileCommand {
             .collect::<Result<Vec<_>, _>>()?;
 
         let chain_id = witnesses[0].chain_id;
-        let chain_spec = get_chain_spec(Chain::from_id(chain_id)).unwrap();
+        let chain_spec = get_chain_spec_or_build(Chain::from_id(chain_id), |spec| {
+            spec.inner
+                .hardforks
+                .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+        });
 
         let mut chunk_info_builder = ChunkInfoBuilder::new(&chain_spec, &blocks);
         if let Some(prev_msg_queue_hash) = self.prev_msg_queue_hash {
