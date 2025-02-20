@@ -2,6 +2,8 @@ use crate::{
     B256, BlockChunkExt, RecoveredBlock, chainspec::ChainSpec, ext::TxBytesHashExt,
     types::reth::Block,
 };
+use itertools::Itertools;
+use reth_scroll_forks::ScrollHardforks;
 use sbv_helpers::cycle_track;
 use tiny_keccak::{Hasher, Keccak};
 
@@ -112,6 +114,15 @@ impl<'a> ChunkInfoBuilder<'a> {
     pub fn new(chain_spec: &'a ChainSpec, blocks: &'a [RecoveredBlock<Block>]) -> Self {
         assert!(!blocks.is_empty(), "blocks must not be empty");
 
+        assert!(
+            blocks
+                .iter()
+                .map(|b| chain_spec.is_euclid_v2_active_at_timestamp(b.timestamp))
+                .tuple_windows()
+                .all(|(a, b)| a == b),
+            "all blocks must have the same hardfork enabled"
+        );
+
         ChunkInfoBuilder {
             chain_spec,
             blocks,
@@ -122,7 +133,8 @@ impl<'a> ChunkInfoBuilder<'a> {
     /// Check if EuclidV2 is enabled on this chunk
     #[inline]
     pub fn is_euclid_v2(&self) -> bool {
-        todo!("waiting for reth hardfork implementation")
+        self.chain_spec
+            .is_euclid_v2_active_at_timestamp(self.blocks[0].timestamp)
     }
 
     /// Set the prev msg queue hash
