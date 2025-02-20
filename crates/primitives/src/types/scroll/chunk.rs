@@ -122,7 +122,8 @@ impl<'a> ChunkInfoBuilder<'a> {
     /// Check if EuclidV2 is enabled on this chunk
     #[inline]
     pub fn is_euclid_v2(&self) -> bool {
-        todo!("waiting for reth hardfork implementation")
+        true
+        // todo!("waiting for reth hardfork implementation")
     }
 
     /// Set the prev msg queue hash
