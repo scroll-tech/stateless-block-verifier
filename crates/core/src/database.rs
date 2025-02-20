@@ -110,7 +110,7 @@ impl<
                 .code_db
                 .get(&hash)
                 .cloned()
-                .map(Bytecode::new_legacy)
+                .map(Bytecode::new_raw)
                 .map(to_analysed);
             code_cache.insert(hash, code.clone());
             code

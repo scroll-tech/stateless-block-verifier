@@ -1,6 +1,9 @@
 use crate::B256;
 use serde::{Deserialize, Serialize};
 
+mod chunk;
+pub use chunk::*;
+
 /// RPC response of the `scroll_diskRoot` method.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct DiskRoot {
