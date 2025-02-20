@@ -51,7 +51,6 @@ impl RunFileCommand {
                 BlockWitness as _,
                 chainspec::{Chain, get_chain_spec_or_build},
                 ext::{BlockWitnessChunkExt, BlockWitnessExt},
-                hardforks::{ForkCondition, ScrollHardfork},
                 types::{BlockWitness, ChunkInfoBuilder},
             },
             trie::BlockWitnessTrieExt,
@@ -77,10 +76,15 @@ impl RunFileCommand {
             .collect::<Result<Vec<_>, _>>()?;
 
         let chain_id = witnesses[0].chain_id;
-        let chain_spec = get_chain_spec_or_build(Chain::from_id(chain_id), |spec| {
-            spec.inner
-                .hardforks
-                .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+        let chain_spec = get_chain_spec_or_build(Chain::from_id(chain_id), |_spec| {
+            #[cfg(feature = "scroll")]
+            {
+                use sbv::primitives::hardforks::{ForkCondition, ScrollHardfork};
+                _spec
+                    .inner
+                    .hardforks
+                    .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+            }
         });
 
         let mut chunk_info_builder = ChunkInfoBuilder::new(&chain_spec, &blocks);
