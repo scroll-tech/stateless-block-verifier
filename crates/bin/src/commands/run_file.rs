@@ -1,7 +1,7 @@
 use crate::utils;
 use anyhow::anyhow;
 use clap::Args;
-use sbv::primitives::{ext::BlockWitnessChunkExt, types::BlockWitness};
+use sbv::primitives::types::BlockWitness;
 use std::{panic::catch_unwind, path::PathBuf};
 
 #[derive(Args)]
