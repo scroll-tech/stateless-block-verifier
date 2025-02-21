@@ -2,14 +2,14 @@ use sbv::{
     core::{EvmDatabase, EvmExecutor, VerificationError},
     kv::nohash::NoHashMap,
     primitives::{
-        BlockWitness,
         chainspec::{Chain, get_chain_spec_or_build},
         ext::BlockWitnessExt,
+        types::reth::BlockWitnessRethExt,
     },
     trie::BlockWitnessTrieExt,
 };
 
-pub fn verify<T: BlockWitness + BlockWitnessTrieExt + BlockWitnessExt>(
+pub fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
 ) -> Result<(), VerificationError> {
     measure_duration_millis!(
@@ -18,7 +18,7 @@ pub fn verify<T: BlockWitness + BlockWitnessTrieExt + BlockWitnessExt>(
     )
 }
 
-fn verify_inner<T: BlockWitness + BlockWitnessTrieExt + BlockWitnessExt>(
+fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
 ) -> Result<(), VerificationError> {
     dev_trace!("{witness:#?}");
