@@ -54,7 +54,7 @@ impl<'a> ChunkInfoBuilder<'a> {
 
     /// Set the prev msg queue hash
     #[inline]
-    pub fn prev_msg_queue_hash(&mut self, prev_msg_queue_hash: B256) -> &mut Self {
+    pub fn set_prev_msg_queue_hash(&mut self, prev_msg_queue_hash: B256) -> &mut Self {
         assert!(
             self.is_euclid_v2(),
             "prev_msg_queue_hash is only for EuclidV2"
@@ -66,21 +66,21 @@ impl<'a> ChunkInfoBuilder<'a> {
 
     /// Get the previous state root
     #[inline]
-    pub fn get_prev_state_root(&self) -> B256 {
+    pub fn prev_state_root(&self) -> B256 {
         self.prev_state_root
     }
 
     /// Get the post state root
     #[inline]
-    pub fn get_post_state_root(&self) -> B256 {
+    pub fn post_state_root(&self) -> B256 {
         self.blocks.last().expect("at least one block").state_root
     }
 
     /// Build the chunk info
     pub fn build(self, withdraw_root: B256) -> ChunkInfo {
         let chain_id = self.chain_spec.chain.id();
-        let prev_state_root = self.get_prev_state_root();
-        let post_state_root = self.get_post_state_root();
+        let prev_state_root = self.prev_state_root();
+        let post_state_root = self.post_state_root();
 
         let (tx_data_length, tx_data_digest) = self
             .blocks

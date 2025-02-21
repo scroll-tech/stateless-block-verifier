@@ -1,7 +1,7 @@
 use crate::utils;
 use anyhow::anyhow;
 use clap::Args;
-use sbv::primitives::types::BlockWitness;
+use sbv::primitives::{ext::BlockWitnessChunkExt, types::BlockWitness};
 use std::{panic::catch_unwind, path::PathBuf};
 
 #[derive(Args)]
@@ -75,8 +75,7 @@ impl RunFileCommand {
             .map(|w| w.build_reth_block())
             .collect::<Result<Vec<_>, _>>()?;
 
-        let chain_id = witnesses[0].chain_id;
-        let chain_spec = get_chain_spec_or_build(Chain::from_id(chain_id), |_spec| {
+        let chain_spec = get_chain_spec_or_build(Chain::from_id(witnesses.chain_id()), |_spec| {
             #[cfg(feature = "scroll")]
             {
                 use sbv::primitives::hardforks::{ForkCondition, ScrollHardfork};
@@ -88,9 +87,9 @@ impl RunFileCommand {
         });
 
         let mut chunk_info_builder =
-            ChunkInfoBuilder::new(&chain_spec, witnesses[0].pre_state_root, &blocks);
+            ChunkInfoBuilder::new(&chain_spec, witnesses.prev_state_root(), &blocks);
         if let Some(prev_msg_queue_hash) = self.prev_msg_queue_hash {
-            chunk_info_builder.prev_msg_queue_hash(prev_msg_queue_hash);
+            chunk_info_builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
         }
 
         let mut code_db = NoHashMap::default();
@@ -100,7 +99,7 @@ impl RunFileCommand {
 
         let mut db = EvmDatabase::new_from_root(
             &code_db,
-            chunk_info_builder.get_prev_state_root(),
+            chunk_info_builder.prev_state_root(),
             &nodes_provider,
             &NullProvider,
         )?;
@@ -109,7 +108,7 @@ impl RunFileCommand {
             db.update(&nodes_provider, output.state.state.iter())?;
         }
         let post_state_root = db.commit_changes();
-        if post_state_root != chunk_info_builder.get_post_state_root() {
+        if post_state_root != chunk_info_builder.post_state_root() {
             bail!("post state root mismatch");
         }
 

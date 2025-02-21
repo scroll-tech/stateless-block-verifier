@@ -1,4 +1,4 @@
-use crate::{B256, BlockWitness, Bytes, keccak256, types::consensus::BlockHeader};
+use crate::{B256, BlockWitness, Bytes, ChainId, keccak256, types::consensus::BlockHeader};
 #[cfg(feature = "scroll")]
 use itertools::Itertools;
 use sbv_helpers::cycle_track;
@@ -7,6 +7,10 @@ use sbv_kv::KeyValueStore;
 /// BlockWitnessCodeExt trait
 #[cfg(feature = "scroll")]
 pub trait BlockWitnessChunkExt {
+    /// Get the chain id.
+    fn chain_id(&self) -> ChainId;
+    /// Get the previous state root.
+    fn prev_state_root(&self) -> B256;
     /// Check if all witnesses have the same chain id.
     fn has_same_chain_id(&self) -> bool;
     /// Check if all witnesses have a sequence block number.
@@ -15,6 +19,15 @@ pub trait BlockWitnessChunkExt {
 
 #[cfg(feature = "scroll")]
 impl<T: BlockWitness> BlockWitnessChunkExt for [T] {
+    #[inline(always)]
+    fn chain_id(&self) -> ChainId {
+        debug_assert!(self.has_same_chain_id(), "chain id mismatch");
+        self.first().expect("empty witnesses").chain_id()
+    }
+    #[inline(always)]
+    fn prev_state_root(&self) -> B256 {
+        self.first().expect("empty witnesses").pre_state_root()
+    }
     #[inline(always)]
     fn has_same_chain_id(&self) -> bool {
         self.iter()
