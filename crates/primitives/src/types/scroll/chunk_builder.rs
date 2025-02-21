@@ -15,12 +15,17 @@ use tiny_keccak::{Hasher, Keccak};
 pub struct ChunkInfoBuilder<'a> {
     chain_spec: &'a ChainSpec,
     blocks: &'a [RecoveredBlock<Block>],
+    prev_state_root: B256,
     prev_msg_queue_hash: Option<B256>,
 }
 
 impl<'a> ChunkInfoBuilder<'a> {
     /// Create a new ChunkInfoBuilder
-    pub fn new(chain_spec: &'a ChainSpec, blocks: &'a [RecoveredBlock<Block>]) -> Self {
+    pub fn new(
+        chain_spec: &'a ChainSpec,
+        prev_state_root: B256,
+        blocks: &'a [RecoveredBlock<Block>],
+    ) -> Self {
         assert!(!blocks.is_empty(), "blocks must not be empty");
 
         assert!(
@@ -35,6 +40,7 @@ impl<'a> ChunkInfoBuilder<'a> {
         ChunkInfoBuilder {
             chain_spec,
             blocks,
+            prev_state_root,
             prev_msg_queue_hash: None,
         }
     }
@@ -61,7 +67,7 @@ impl<'a> ChunkInfoBuilder<'a> {
     /// Get the previous state root
     #[inline]
     pub fn get_prev_state_root(&self) -> B256 {
-        self.blocks.first().expect("at least one block").state_root
+        self.prev_state_root
     }
 
     /// Get the post state root

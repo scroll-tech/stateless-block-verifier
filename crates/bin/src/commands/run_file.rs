@@ -87,7 +87,8 @@ impl RunFileCommand {
             }
         });
 
-        let mut chunk_info_builder = ChunkInfoBuilder::new(&chain_spec, &blocks);
+        let mut chunk_info_builder =
+            ChunkInfoBuilder::new(&chain_spec, witnesses[0].pre_state_root, &blocks);
         if let Some(prev_msg_queue_hash) = self.prev_msg_queue_hash {
             chunk_info_builder.prev_msg_queue_hash(prev_msg_queue_hash);
         }
