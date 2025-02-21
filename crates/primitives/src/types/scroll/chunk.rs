@@ -1,19 +1,6 @@
-use crate::{
-    B256, BlockChunkExt, RecoveredBlock, chainspec::ChainSpec, ext::TxBytesHashExt,
-    types::reth::Block,
-};
-use itertools::Itertools;
-use reth_scroll_forks::ScrollHardforks;
-use sbv_helpers::cycle_track;
+//! Chunk related types
+use crate::{B256, U256};
 use tiny_keccak::{Hasher, Keccak};
-
-/// Builder for ChunkInfo
-#[derive(Clone, Debug)]
-pub struct ChunkInfoBuilder<'a> {
-    chain_spec: &'a ChainSpec,
-    blocks: &'a [RecoveredBlock<Block>],
-    prev_msg_queue_hash: Option<B256>,
-}
 
 /// ChunkInfo is metadata of chunk.
 #[derive(
@@ -107,122 +94,47 @@ pub struct EuclidV2ChunkInfo {
     /// Rolling hash of message queue after applying the chunk.
     #[rkyv(attr(doc = "Rolling hash of message queue after applying the chunk."))]
     pub post_msg_queue_hash: B256,
+    /// The block number of the first block in the chunk.
+    #[rkyv(attr(doc = "The block number of the first block in the chunk."))]
+    pub initial_block_number: u64,
+    /// The block contexts of the blocks in the chunk.
+    #[rkyv(attr(doc = "The block contexts of the blocks in the chunk."))]
+    pub block_ctxs: Vec<BlockContextV2>,
 }
 
-impl<'a> ChunkInfoBuilder<'a> {
-    /// Create a new ChunkInfoBuilder
-    pub fn new(chain_spec: &'a ChainSpec, blocks: &'a [RecoveredBlock<Block>]) -> Self {
-        assert!(!blocks.is_empty(), "blocks must not be empty");
-
-        assert!(
-            blocks
-                .iter()
-                .map(|b| chain_spec.is_euclid_v2_active_at_timestamp(b.timestamp))
-                .tuple_windows()
-                .all(|(a, b)| a == b),
-            "all blocks must have the same hardfork enabled"
-        );
-
-        ChunkInfoBuilder {
-            chain_spec,
-            blocks,
-            prev_msg_queue_hash: None,
-        }
-    }
-
-    /// Check if EuclidV2 is enabled on this chunk
-    #[inline]
-    pub fn is_euclid_v2(&self) -> bool {
-        self.chain_spec
-            .is_euclid_v2_active_at_timestamp(self.blocks[0].timestamp)
-    }
-
-    /// Set the prev msg queue hash
-    #[inline]
-    pub fn prev_msg_queue_hash(&mut self, prev_msg_queue_hash: B256) -> &mut Self {
-        assert!(
-            self.is_euclid_v2(),
-            "prev_msg_queue_hash is only for EuclidV2"
-        );
-
-        self.prev_msg_queue_hash = Some(prev_msg_queue_hash);
-        self
-    }
-
-    /// Get the previous state root
-    #[inline]
-    pub fn get_prev_state_root(&self) -> B256 {
-        self.blocks.first().expect("at least one block").state_root
-    }
-
-    /// Get the post state root
-    #[inline]
-    pub fn get_post_state_root(&self) -> B256 {
-        self.blocks.last().expect("at least one block").state_root
-    }
-
-    /// Build the chunk info
-    pub fn build(self, withdraw_root: B256) -> ChunkInfo {
-        let chain_id = self.chain_spec.chain.id();
-        let prev_state_root = self.get_prev_state_root();
-        let post_state_root = self.get_post_state_root();
-
-        let (tx_data_length, tx_data_digest) = self
-            .blocks
-            .iter()
-            .flat_map(|b| b.body().transactions.iter())
-            .tx_bytes_hash();
-
-        if self.is_euclid_v2() {
-            let prev_msg_queue_hash = self
-                .prev_msg_queue_hash
-                .expect("msg queue hash is required");
-            let post_msg_queue_hash = cycle_track!(
-                {
-                    let mut rolling_hash = prev_msg_queue_hash;
-                    for block in self.blocks.iter() {
-                        rolling_hash = block.hash_msg_queue(&rolling_hash);
-                    }
-                    rolling_hash
-                },
-                "Keccak::v256"
-            );
-            ChunkInfo::EuclidV2(EuclidV2ChunkInfo {
-                chain_id,
-                prev_state_root,
-                post_state_root,
-                withdraw_root,
-                tx_data_length,
-                tx_data_digest,
-                prev_msg_queue_hash,
-                post_msg_queue_hash,
-            })
-        } else {
-            let data_hash = cycle_track!(
-                {
-                    let mut data_hasher = Keccak::v256();
-                    for block in self.blocks.iter() {
-                        block.legacy_hash_da_header(&mut data_hasher);
-                    }
-                    for block in self.blocks.iter() {
-                        block.legacy_hash_l1_msg(&mut data_hasher);
-                    }
-                    let mut data_hash = B256::ZERO;
-                    data_hasher.finalize(&mut data_hash.0);
-                    data_hash
-                },
-                "Keccak::v256"
-            );
-            ChunkInfo::Legacy(LegacyChunkInfo {
-                chain_id,
-                prev_state_root,
-                post_state_root,
-                withdraw_root,
-                data_hash,
-                tx_data_digest,
-            })
-        }
-    }
+/// Represents the version 2 of block context.
+///
+/// The difference between v2 and v1 is that the block number field has been removed since v2.
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    serde::Serialize,
+    serde::Deserialize,
+    rkyv::Archive,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+)]
+#[rkyv(derive(Debug, PartialEq, Eq))]
+pub struct BlockContextV2 {
+    /// The timestamp of the block.
+    #[rkyv(attr(doc = "The timestamp of the block."))]
+    pub timestamp: u64,
+    /// The base fee of the block.
+    #[rkyv(attr(doc = "The base fee of the block."))]
+    pub base_fee: U256,
+    /// The gas limit of the block.
+    #[rkyv(attr(doc = "The gas limit of the block."))]
+    pub gas_limit: u64,
+    /// The number of transactions in the block, including both L1 msg txs and L2 txs.
+    #[rkyv(attr(
+        doc = "The number of transactions in the block, including both L1 msg txs and L2 txs."
+    ))]
+    pub num_txs: u16,
+    /// The number of L1 msg txs in the block.
+    #[rkyv(attr(doc = "The number of L1 msg txs in the block."))]
+    pub num_l1_msgs: u16,
 }
 
 impl ChunkInfo {
@@ -403,9 +315,11 @@ impl EuclidV2ChunkInfo {
     ///     prev state root ||
     ///     post state root ||
     ///     withdraw root ||
-    ///     tx data hash ||
+    ///     tx data digest ||
     ///     prev msg queue hash ||
-    ///     post msg queue hash
+    ///     post msg queue hash ||
+    ///     initial block number ||
+    ///     block_ctx for block_ctx in block_ctxs
     /// )
     /// ```
     pub fn pi_hash(&self) -> B256 {
@@ -418,6 +332,10 @@ impl EuclidV2ChunkInfo {
         hasher.update(self.tx_data_digest.as_ref());
         hasher.update(self.prev_msg_queue_hash.as_ref());
         hasher.update(self.post_msg_queue_hash.as_ref());
+        hasher.update(&self.initial_block_number.to_be_bytes());
+        for block_ctx in &self.block_ctxs {
+            block_ctx.hash_into(&mut hasher);
+        }
 
         let mut public_input_hash = B256::ZERO;
         hasher.finalize(&mut public_input_hash.0);
@@ -461,9 +379,11 @@ impl ArchivedEuclidV2ChunkInfo {
     ///     prev state root ||
     ///     post state root ||
     ///     withdraw root ||
-    ///     tx data hash ||
+    ///     tx data digest ||
     ///     prev msg queue hash ||
-    ///     post msg queue hash
+    ///     post msg queue hash ||
+    ///     initial block number ||
+    ///     block_ctx for block_ctx in block_ctxs
     /// )
     /// ```
     pub fn pi_hash(&self) -> B256 {
@@ -476,10 +396,88 @@ impl ArchivedEuclidV2ChunkInfo {
         hasher.update(self.tx_data_digest.0.as_ref());
         hasher.update(self.prev_msg_queue_hash.0.as_ref());
         hasher.update(self.post_msg_queue_hash.0.as_ref());
+        hasher.update(&self.initial_block_number.to_native().to_be_bytes());
+        for block_ctx in self.block_ctxs.iter() {
+            block_ctx.hash_into(&mut hasher);
+        }
 
         let mut public_input_hash = B256::ZERO;
         hasher.finalize(&mut public_input_hash.0);
         public_input_hash
+    }
+}
+
+impl BlockContextV2 {
+    /// Number of bytes used to serialise [`BlockContextV2`] into bytes.
+    pub const BYTES_SIZE: usize = 52;
+
+    /// Hash the block context into the given hasher.
+    pub fn hash_into<H: Hasher>(&self, hasher: &mut H) {
+        hasher.update(&self.timestamp.to_be_bytes());
+        hasher.update(&self.base_fee.to_be_bytes::<32>());
+        hasher.update(&self.gas_limit.to_be_bytes());
+        hasher.update(&self.num_txs.to_be_bytes());
+        hasher.update(&self.num_l1_msgs.to_be_bytes());
+    }
+
+    /// Serialise the block context into bytes.
+    pub fn to_vec(&self) -> Vec<u8> {
+        let mut vec = Vec::with_capacity(Self::BYTES_SIZE);
+        vec.extend_from_slice(&self.timestamp.to_be_bytes());
+        vec.extend_from_slice(&self.base_fee.to_be_bytes::<32>());
+        vec.extend_from_slice(&self.gas_limit.to_be_bytes());
+        vec.extend_from_slice(&self.num_txs.to_be_bytes());
+        vec.extend_from_slice(&self.num_l1_msgs.to_be_bytes());
+        vec
+    }
+}
+
+impl<T: AsRef<[u8]>> From<T> for BlockContextV2 {
+    fn from(bytes: T) -> Self {
+        let bytes = bytes.as_ref();
+
+        assert_eq!(bytes.len(), Self::BYTES_SIZE);
+
+        let timestamp = u64::from_be_bytes(bytes[0..8].try_into().expect("should not fail"));
+        let base_fee = U256::from_be_slice(&bytes[8..40]);
+        let gas_limit = u64::from_be_bytes(bytes[40..48].try_into().expect("should not fail"));
+        let num_txs = u16::from_be_bytes(bytes[48..50].try_into().expect("should not fail"));
+        let num_l1_msgs = u16::from_be_bytes(bytes[50..52].try_into().expect("should not fail"));
+
+        Self {
+            timestamp,
+            base_fee,
+            gas_limit,
+            num_txs,
+            num_l1_msgs,
+        }
+    }
+}
+
+impl ArchivedBlockContextV2 {
+    /// Number of bytes used to serialise [`BlockContextV2`] into bytes.
+    pub const BYTES_SIZE: usize = BlockContextV2::BYTES_SIZE;
+
+    /// Hash the block context into the given hasher.
+    pub fn hash_into<H: Hasher>(&self, hasher: &mut H) {
+        let base_fee: U256 = self.base_fee.into();
+        hasher.update(&self.timestamp.to_native().to_be_bytes());
+        hasher.update(&base_fee.to_be_bytes::<32>());
+        hasher.update(&self.gas_limit.to_native().to_be_bytes());
+        hasher.update(&self.num_txs.to_native().to_be_bytes());
+        hasher.update(&self.num_l1_msgs.to_native().to_be_bytes());
+    }
+
+    /// Serialise the block context into bytes.
+    pub fn to_vec(&self) -> Vec<u8> {
+        let base_fee: U256 = self.base_fee.into();
+        let mut vec = Vec::with_capacity(BlockContextV2::BYTES_SIZE);
+        vec.extend_from_slice(&self.timestamp.to_native().to_be_bytes());
+        vec.extend_from_slice(&base_fee.to_be_bytes::<32>());
+        vec.extend_from_slice(&self.gas_limit.to_native().to_be_bytes());
+        vec.extend_from_slice(&self.num_txs.to_native().to_be_bytes());
+        vec.extend_from_slice(&self.num_l1_msgs.to_native().to_be_bytes());
+        vec
     }
 }
 
@@ -508,6 +506,8 @@ mod tests {
             tx_data_digest: B256::new([5; 32]),
             prev_msg_queue_hash: B256::new([6; 32]),
             post_msg_queue_hash: B256::new([7; 32]),
+            initial_block_number: 0,
+            block_ctxs: vec![],
         });
 
         for chunk_info in &[LEGACY, EUCLID_V2] {

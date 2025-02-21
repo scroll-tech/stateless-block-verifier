@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 
 mod chunk;
 pub use chunk::*;
+mod chunk_builder;
+pub use chunk_builder::*;
 
 /// RPC response of the `scroll_diskRoot` method.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
