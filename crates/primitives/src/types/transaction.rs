@@ -4,6 +4,7 @@ use crate::{
     eips::Encodable2718,
     types::{
         access_list::AccessList,
+        auth_list::SignedAuthorization,
         consensus::{
             SignableTransaction, Transaction as _, TxEip1559, TxEip2930, TxEnvelope, TxEnvelopeExt,
             TxLegacy, Typed2718,
@@ -106,6 +107,14 @@ pub struct Transaction {
     #[rkyv(attr(doc = "EIP2930 Pre-pay to warm storage access."))]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub access_list: Option<AccessList>,
+    /// EIP7702
+    ///
+    /// Authorizations are used to temporarily set the code of its signer to
+    /// the code referenced by `address`. These also include a `chain_id` (which
+    /// can be set to zero and not evaluated) as well as an optional `nonce`.
+    #[rkyv(attr(doc = "EIP7702 Authorizations"))]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub authorization_list: Option<Vec<SignedAuthorization>>,
     /// EIP2718
     ///
     /// Transaction type,
@@ -158,6 +167,9 @@ impl Transaction {
             blob_versioned_hashes: tx.blob_versioned_hashes().map(Vec::from),
             access_list: tx.access_list().map(Into::into),
             transaction_type: tx.ty(),
+            authorization_list: tx
+                .authorization_list()
+                .map(|list| list.iter().map(Into::<SignedAuthorization>::into).collect()),
             #[cfg(feature = "scroll")]
             queue_index: tx.inner.queue_index(), // FIXME: scroll mode
         }
@@ -240,6 +252,31 @@ impl TryFrom<&Transaction> for TransactionSigned {
                     max_fee_per_blob_gas: tx
                         .max_fee_per_blob_gas
                         .expect("missing max_fee_per_blob_gas"),
+                };
+                tx.into_signed(sig).into()
+            }
+            0x04 => {
+                let sig = tx.signature.expect("missing signature").into();
+                let tx = alloy_consensus::TxEip7702 {
+                    chain_id: tx.chain_id.expect("missing chain_id"),
+                    nonce: tx.nonce,
+                    gas_limit: tx.gas,
+                    max_fee_per_gas: tx.max_fee_per_gas,
+                    max_priority_fee_per_gas: tx
+                        .max_priority_fee_per_gas
+                        .expect("missing max_priority_fee_per_gas"),
+                    to: tx.to.expect("missing to"),
+                    value: tx.value,
+                    access_list: tx.access_list.clone().expect("missing access_list").into(),
+                    authorization_list: tx
+                        .authorization_list
+                        .as_ref()
+                        .expect("missing authorization_list")
+                        .iter()
+                        .cloned()
+                        .map(|x| x.into())
+                        .collect(),
+                    input: tx.input.clone(),
                 };
                 tx.into_signed(sig).into()
             }
@@ -351,6 +388,32 @@ impl TryFrom<&ArchivedTransaction> for TransactionSigned {
                         .as_ref()
                         .expect("missing max_fee_per_blob_gas")
                         .to_native(),
+                };
+                tx.into_signed(sig).into()
+            }
+            0x04 => {
+                let sig = tx.signature.as_ref().expect("missing signature").into();
+                let tx = alloy_consensus::TxEip7702 {
+                    chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
+                    nonce: tx.nonce.to_native(),
+                    gas_limit: tx.gas.to_native(),
+                    max_fee_per_gas: tx.max_fee_per_gas.to_native(),
+                    max_priority_fee_per_gas: tx
+                        .max_priority_fee_per_gas
+                        .as_ref()
+                        .expect("missing max_priority_fee_per_gas")
+                        .to_native(),
+                    to: to.expect("missing to"),
+                    value: tx.value.into(),
+                    access_list: tx.access_list.as_ref().expect("missing access_list").into(),
+                    authorization_list: tx
+                        .authorization_list
+                        .as_ref()
+                        .expect("missing authorization_list")
+                        .iter()
+                        .map(|x| x.into())
+                        .collect(),
+                    input,
                 };
                 tx.into_signed(sig).into()
             }
