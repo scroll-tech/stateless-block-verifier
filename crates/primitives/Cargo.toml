@@ -15,23 +15,24 @@ workspace = true
 [dependencies]
 auto_impl.workspace = true
 itertools.workspace = true
-rkyv.workspace = true
-serde = { workspace = true, features = ["derive"] }
 tiny-keccak.workspace = true
 
-alloy-consensus.workspace = true
-alloy-eips.workspace = true
-alloy-network.workspace = true
-alloy-rpc-types-eth.workspace = true
-alloy-serde.workspace = true
+rkyv = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+
+alloy-consensus = { workspace = true, optional = true }
+alloy-eips = { workspace = true, optional = true }
+alloy-network = { workspace = true, optional = true }
+alloy-rpc-types-eth = { workspace = true, optional = true }
+alloy-serde = { workspace = true, optional = true }
 
 alloy-primitives.workspace = true
 
-revm.workspace = true
-reth-chainspec.workspace = true
-reth-ethereum-forks.workspace = true
-reth-primitives.workspace = true
-reth-primitives-traits.workspace = true
+revm = { workspace = true, optional = true }
+reth-chainspec = { workspace = true, optional = true }
+reth-ethereum-forks = { workspace = true, optional = true }
+reth-primitives = { workspace = true, optional = true }
+reth-primitives-traits = { workspace = true, optional = true }
 reth-scroll-chainspec = { workspace = true, optional = true }
 reth-scroll-forks = { workspace = true, optional = true }
 reth-scroll-primitives = { workspace = true, optional = true }
@@ -46,19 +47,84 @@ sbv-kv.workspace = true
 [dev-dependencies]
 
 [features]
-scroll = [
-    "dep:reth-scroll-chainspec",
-    "dep:reth-scroll-forks",
-    "dep:reth-scroll-primitives",
-    "dep:scroll-alloy-consensus",
-    "dep:scroll-alloy-rpc-types",
-    "dep:scroll-alloy-network",
-    "reth-scroll-forks/serde",
-    "reth-scroll-primitives/serde",
-    "reth-scroll-primitives/scroll",
-    "revm/scroll-default-handler",
-    "revm/optional_no_base_fee",
+# serialization
+rkyv = ["dep:rkyv"]
+serde = [
+  "dep:alloy-serde",
+  "dep:serde",
+  "reth-scroll-primitives?/serde",
 ]
+
+# core features switch
+chainspec = ["dep:reth-chainspec"]
+consensus-types = ["dep:alloy-consensus"]
+eips = ["dep:alloy-eips"]
+network-types = ["dep:alloy-network"]
+hardforks = ["dep:reth-ethereum-forks"]
+reth-types = [
+  "serde",
+  "consensus-types",
+  "eips",
+  "dep:reth-primitives",
+  "dep:reth-primitives-traits",
+]
+revm-types = ["dep:revm"]
+rpc-types = ["dep:alloy-rpc-types-eth", "eips"]
+ethereum-all = [
+    "chainspec",
+    "consensus-types",
+    "eips",
+    "network-types",
+    "hardforks",
+    "reth-types",
+    "revm-types",
+    "rpc-types",
+]
+
+scroll = []
+scroll-chainspec = ["scroll", "chainspec", "dep:reth-scroll-chainspec"]
+scroll-consensus-types = [
+  "scroll",
+  "consensus-types",
+  "dep:scroll-alloy-consensus",
+  "scroll-alloy-consensus/serde", # This is a bug
+  "scroll-alloy-consensus/reth-codec", # This is a bug
+]
+scroll-hardforks = [
+  "scroll",
+  "hardforks",
+  "dep:reth-scroll-forks",
+  "reth-scroll-forks/serde",
+]
+scroll-network-types = ["scroll", "network-types", "dep:scroll-alloy-network"]
+scroll-pre-deployed = ["scroll"]
+scroll-reth-types = [
+  "scroll",
+  "reth-types",
+  "scroll-revm", # This is a bug
+  "scroll-consensus-types",
+  "dep:reth-scroll-primitives",
+  "reth-scroll-primitives/scroll",
+]
+scroll-revm = [
+  "scroll",
+  "revm-types",
+  "revm/scroll-default-handler",
+  "revm/optional_no_base_fee",
+]
+scroll-rpc-types = ["scroll", "rpc-types", "dep:scroll-alloy-rpc-types"]
+scroll-all = [
+  "scroll",
+  "scroll-chainspec",
+  "scroll-consensus-types",
+  "scroll-network-types",
+  "scroll-hardforks",
+  "scroll-pre-deployed",
+  "scroll-reth-types",
+  "scroll-revm",
+  "scroll-rpc-types",
+]
+
 dev = ["sbv-helpers/dev"]
 
 sp1 = []

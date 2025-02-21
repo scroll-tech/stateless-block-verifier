@@ -1,9 +1,12 @@
 use crate::{
-    B256, BlockChunkExt, RecoveredBlock,
+    B256,
     chainspec::ChainSpec,
-    ext::TxBytesHashExt,
+    ext::{BlockChunkExt, TxBytesHashExt},
     hardforks::ScrollHardforks,
-    types::{BlockContextV2, ChunkInfo, EuclidV2ChunkInfo, LegacyChunkInfo, reth::Block},
+    types::{
+        reth::{Block, RecoveredBlock},
+        scroll::{BlockContextV2, ChunkInfo, EuclidV2ChunkInfo, LegacyChunkInfo},
+    },
 };
 use alloy_primitives::U256;
 use itertools::Itertools;

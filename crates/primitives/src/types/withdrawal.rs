@@ -1,48 +1,41 @@
 use crate::Address;
 
 /// Withdrawal represents a validator withdrawal from the consensus layer.
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Default,
-    PartialEq,
-    Eq,
-    Hash,
-    rkyv::Archive,
-    rkyv::Serialize,
-    rkyv::Deserialize,
-    serde::Serialize,
-    serde::Deserialize,
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
+    rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[rkyv(derive(Debug, PartialEq, Eq))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Withdrawal {
     /// Monotonically increasing identifier issued by consensus layer.
-    #[rkyv(attr(doc = "Monotonically increasing identifier issued by consensus layer."))]
-    #[serde(with = "alloy_serde::quantity")]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "Monotonically increasing identifier issued by consensus layer."))
+    )]
+    #[cfg_attr(feature = "serde", serde(with = "alloy_serde::quantity"))]
     pub index: u64,
     /// Index of validator associated with withdrawal.
-    #[rkyv(attr(doc = "Index of validator associated with withdrawal."))]
-    #[serde(with = "alloy_serde::quantity", rename = "validatorIndex")]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "Index of validator associated with withdrawal."))
+    )]
+    #[cfg_attr(
+        feature = "serde",
+        serde(with = "alloy_serde::quantity", rename = "validatorIndex")
+    )]
     pub validator_index: u64,
     /// Target address for withdrawn ether.
-    #[rkyv(attr(doc = "Target address for withdrawn ether."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "Target address for withdrawn ether."))
+    )]
     pub address: Address,
     /// Value of the withdrawal in gwei.
-    #[rkyv(attr(doc = "Value of the withdrawal in gwei."))]
-    #[serde(with = "alloy_serde::quantity")]
+    #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Value of the withdrawal in gwei.")))]
+    #[cfg_attr(feature = "serde", serde(with = "alloy_serde::quantity"))]
     pub amount: u64,
-}
-
-impl From<&alloy_eips::eip4895::Withdrawal> for Withdrawal {
-    fn from(withdrawal: &alloy_eips::eip4895::Withdrawal) -> Self {
-        Self {
-            index: withdrawal.index,
-            validator_index: withdrawal.validator_index,
-            address: withdrawal.address,
-            amount: withdrawal.amount,
-        }
-    }
 }
 
 impl crate::Withdrawal for Withdrawal {
@@ -61,6 +54,7 @@ impl crate::Withdrawal for Withdrawal {
     }
 }
 
+#[cfg(feature = "rkyv")]
 impl crate::Withdrawal for ArchivedWithdrawal {
     fn index(&self) -> u64 {
         self.index.to_native()
