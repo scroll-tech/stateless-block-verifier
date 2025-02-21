@@ -48,10 +48,9 @@ impl RunFileCommand {
             core::{EvmDatabase, EvmExecutor},
             kv::{nohash::NoHashMap, null::NullProvider},
             primitives::{
-                BlockWitness as _,
                 chainspec::{Chain, get_chain_spec_or_build},
                 ext::{BlockWitnessChunkExt, BlockWitnessExt},
-                types::{BlockWitness, ChunkInfoBuilder},
+                types::{BlockWitness, reth::BlockWitnessRethExt, scroll::ChunkInfoBuilder},
             },
             trie::BlockWitnessTrieExt,
         };

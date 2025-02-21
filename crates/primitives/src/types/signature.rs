@@ -1,29 +1,31 @@
 use crate::{PrimitiveSignature, U256};
 
 /// An Ethereum ECDSA signature.
-#[derive(
-    Copy,
-    Clone,
-    Debug,
-    Default,
-    PartialEq,
-    Eq,
-    rkyv::Archive,
-    rkyv::Serialize,
-    rkyv::Deserialize,
-    serde::Serialize,
-    serde::Deserialize,
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
+    rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[rkyv(derive(Debug, Hash, PartialEq, Eq))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Signature {
     /// The R field of the signature; the point on the curve.
-    #[rkyv(attr(doc = "The R field of the signature; the point on the curve."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The R field of the signature; the point on the curve."))
+    )]
     pub r: U256,
     /// The S field of the signature; the point on the curve.
-    #[rkyv(attr(doc = "The S field of the signature; the point on the curve."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The S field of the signature; the point on the curve."))
+    )]
     pub s: U256,
     /// The parity of the Y coordinate of the public key.
-    #[rkyv(attr(doc = "The parity of the Y coordinate of the public key."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The parity of the Y coordinate of the public key."))
+    )]
     pub y_parity: bool,
 }
 
@@ -43,6 +45,7 @@ impl From<Signature> for PrimitiveSignature {
     }
 }
 
+#[cfg(feature = "rkyv")]
 impl From<&ArchivedSignature> for PrimitiveSignature {
     fn from(sig: &ArchivedSignature) -> Self {
         Self::new(sig.r.into(), sig.s.into(), sig.y_parity)

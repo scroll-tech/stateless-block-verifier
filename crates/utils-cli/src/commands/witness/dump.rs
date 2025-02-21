@@ -6,7 +6,7 @@ use clap::Args;
 use console::{Emoji, style};
 use indicatif::{HumanBytes, HumanDuration, ProgressBar, ProgressStyle};
 use rkyv::rancor;
-use sbv_primitives::Network;
+use sbv_primitives::types::Network;
 use sbv_utils::rpc::ProviderExt;
 use std::{
     path::PathBuf,

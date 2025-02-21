@@ -1,12 +1,15 @@
 use sbv_kv::{HashMap, KeyValueStoreGet};
 use sbv_primitives::{
-    AccountInfo, Address, B256, Bytecode, Bytes, U256,
-    revm::{db::BundleAccount, interpreter::analysis::to_analysed},
+    Address, B256, Bytes, U256,
+    types::{
+        AccountInfo, Bytecode,
+        revm::{db::BundleAccount, interpreter::analysis::to_analysed},
+    },
 };
 use sbv_trie::{PartialStateTrie, TrieNode};
 use std::{cell::RefCell, fmt};
 
-pub use sbv_primitives::revm::db::DatabaseRef;
+pub use sbv_primitives::types::revm::db::DatabaseRef;
 
 /// A database that consists of account and storage information.
 pub struct EvmDatabase<CodeDb, NodesProvider, BlockHashProvider> {

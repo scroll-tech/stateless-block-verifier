@@ -3,18 +3,13 @@ use crate::{B256, U256};
 use tiny_keccak::{Hasher, Keccak};
 
 /// ChunkInfo is metadata of chunk.
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    serde::Serialize,
-    serde::Deserialize,
-    rkyv::Archive,
-    rkyv::Serialize,
-    rkyv::Deserialize,
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
+    rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[rkyv(derive(Debug, PartialEq, Eq))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ChunkInfo {
     /// ChunkInfo before EuclidV2 hardfork
     Legacy(LegacyChunkInfo),
@@ -23,117 +18,156 @@ pub enum ChunkInfo {
 }
 
 /// ChunkInfo before EuclidV2 hardfork
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    serde::Serialize,
-    serde::Deserialize,
-    rkyv::Archive,
-    rkyv::Serialize,
-    rkyv::Deserialize,
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
+    rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[rkyv(derive(Debug, PartialEq, Eq))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LegacyChunkInfo {
     /// The EIP-155 chain ID for all txs in the chunk.
-    #[rkyv(attr(doc = "The EIP-155 chain ID for all txs in the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The EIP-155 chain ID for all txs in the chunk."))
+    )]
     pub chain_id: u64,
     /// The state root before applying the chunk.
-    #[rkyv(attr(doc = "The state root before applying the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The state root before applying the chunk."))
+    )]
     pub prev_state_root: B256,
     /// The state root after applying the chunk.
-    #[rkyv(attr(doc = "The state root after applying the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The state root after applying the chunk."))
+    )]
     pub post_state_root: B256,
     /// The withdrawals root after applying the chunk.
-    #[rkyv(attr(doc = "The withdrawals root after applying the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The withdrawals root after applying the chunk."))
+    )]
     pub withdraw_root: B256,
     /// Digest of L1 message txs force included in the chunk.
-    #[rkyv(attr(doc = "Digest of L1 message txs force included in the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "Digest of L1 message txs force included in the chunk."))
+    )]
     pub data_hash: B256,
     /// Digest of L2 tx data flattened over all L2 txs in the chunk.
-    #[rkyv(attr(doc = "Digest of L2 tx data flattened over all L2 txs in the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "Digest of L2 tx data flattened over all L2 txs in the chunk."))
+    )]
     pub tx_data_digest: B256,
 }
 
 /// ChunkInfo after EuclidV2 hardfork
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    serde::Serialize,
-    serde::Deserialize,
-    rkyv::Archive,
-    rkyv::Serialize,
-    rkyv::Deserialize,
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
+    rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[rkyv(derive(Debug, PartialEq, Eq))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EuclidV2ChunkInfo {
     /// The EIP-155 chain ID for all txs in the chunk.
-    #[rkyv(attr(doc = "The EIP-155 chain ID for all txs in the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The EIP-155 chain ID for all txs in the chunk."))
+    )]
     pub chain_id: u64,
     /// The state root before applying the chunk.
-    #[rkyv(attr(doc = "The state root before applying the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The state root before applying the chunk."))
+    )]
     pub prev_state_root: B256,
     /// The state root after applying the chunk.
-    #[rkyv(attr(doc = "The state root after applying the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The state root after applying the chunk."))
+    )]
     pub post_state_root: B256,
     /// The withdrawals root after applying the chunk.
-    #[rkyv(attr(doc = "The withdrawals root after applying the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The withdrawals root after applying the chunk."))
+    )]
     pub withdraw_root: B256,
     /// length of L2 tx data (rlp encoded) flattened over all L2 txs in the chunk.
-    #[rkyv(attr(doc = "Digest of L2 tx data flattened over all L2 txs in the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "Digest of L2 tx data flattened over all L2 txs in the chunk."))
+    )]
     pub tx_data_length: usize,
     /// Digest of L2 tx data flattened over all L2 txs in the chunk.
-    #[rkyv(attr(doc = "Digest of L2 tx data flattened over all L2 txs in the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "Digest of L2 tx data flattened over all L2 txs in the chunk."))
+    )]
     pub tx_data_digest: B256,
     /// Rolling hash of message queue before applying the chunk.
-    #[rkyv(attr(doc = "Rolling hash of message queue before applying the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "Rolling hash of message queue before applying the chunk."))
+    )]
     pub prev_msg_queue_hash: B256,
     /// Rolling hash of message queue after applying the chunk.
-    #[rkyv(attr(doc = "Rolling hash of message queue after applying the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "Rolling hash of message queue after applying the chunk."))
+    )]
     pub post_msg_queue_hash: B256,
     /// The block number of the first block in the chunk.
-    #[rkyv(attr(doc = "The block number of the first block in the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The block number of the first block in the chunk."))
+    )]
     pub initial_block_number: u64,
     /// The block contexts of the blocks in the chunk.
-    #[rkyv(attr(doc = "The block contexts of the blocks in the chunk."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The block contexts of the blocks in the chunk."))
+    )]
     pub block_ctxs: Vec<BlockContextV2>,
 }
 
 /// Represents the version 2 of block context.
 ///
 /// The difference between v2 and v1 is that the block number field has been removed since v2.
-#[derive(
-    Clone,
-    Debug,
-    PartialEq,
-    Eq,
-    serde::Serialize,
-    serde::Deserialize,
-    rkyv::Archive,
-    rkyv::Serialize,
-    rkyv::Deserialize,
+#[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
+    rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[rkyv(derive(Debug, PartialEq, Eq))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BlockContextV2 {
     /// The timestamp of the block.
-    #[rkyv(attr(doc = "The timestamp of the block."))]
+    #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "The timestamp of the block.")))]
     pub timestamp: u64,
     /// The base fee of the block.
-    #[rkyv(attr(doc = "The base fee of the block."))]
+    #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "The base fee of the block.")))]
     pub base_fee: U256,
     /// The gas limit of the block.
-    #[rkyv(attr(doc = "The gas limit of the block."))]
+    #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "The gas limit of the block.")))]
     pub gas_limit: u64,
     /// The number of transactions in the block, including both L1 msg txs and L2 txs.
-    #[rkyv(attr(
-        doc = "The number of transactions in the block, including both L1 msg txs and L2 txs."
-    ))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(
+            doc = "The number of transactions in the block, including both L1 msg txs and L2 txs."
+        ))
+    )]
     pub num_txs: u16,
     /// The number of L1 msg txs in the block.
-    #[rkyv(attr(doc = "The number of L1 msg txs in the block."))]
+    #[cfg_attr(
+        feature = "rkyv",
+        rkyv(attr(doc = "The number of L1 msg txs in the block."))
+    )]
     pub num_l1_msgs: u16,
 }
 
@@ -244,6 +278,7 @@ impl ChunkInfo {
     }
 }
 
+#[cfg(feature = "rkyv")]
 impl ArchivedChunkInfo {
     /// Public input hash for a given chunk is defined as
     ///
@@ -343,6 +378,7 @@ impl EuclidV2ChunkInfo {
     }
 }
 
+#[cfg(feature = "rkyv")]
 impl ArchivedLegacyChunkInfo {
     /// Public input hash for a given chunk is defined as
     /// ```text
@@ -371,6 +407,7 @@ impl ArchivedLegacyChunkInfo {
     }
 }
 
+#[cfg(feature = "rkyv")]
 impl ArchivedEuclidV2ChunkInfo {
     /// Public input hash for a given chunk is defined as
     /// ```text
@@ -454,6 +491,7 @@ impl<T: AsRef<[u8]>> From<T> for BlockContextV2 {
     }
 }
 
+#[cfg(feature = "rkyv")]
 impl ArchivedBlockContextV2 {
     /// Number of bytes used to serialise [`BlockContextV2`] into bytes.
     pub const BYTES_SIZE: usize = BlockContextV2::BYTES_SIZE;
@@ -482,6 +520,7 @@ impl ArchivedBlockContextV2 {
 }
 
 #[cfg(test)]
+#[cfg(feature = "rkyv")]
 mod tests {
     use super::*;
     use rkyv::rancor;

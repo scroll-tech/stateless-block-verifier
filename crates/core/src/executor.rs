@@ -3,10 +3,12 @@ use reth_evm::execute::{BlockExecutorProvider, Executor};
 use reth_execution_types::BlockExecutionOutput;
 use sbv_kv::KeyValueStoreGet;
 use sbv_primitives::{
-    B256, Bytes, RecoveredBlock,
+    B256, Bytes,
     chainspec::ChainSpec,
-    revm::db::CacheDB,
-    types::reth::{Block, Receipt},
+    types::{
+        reth::{Block, Receipt, RecoveredBlock},
+        revm::db::CacheDB,
+    },
 };
 use sbv_trie::TrieNode;
 use std::{fmt::Debug, sync::Arc};
