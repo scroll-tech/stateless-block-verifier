@@ -51,7 +51,6 @@ pub struct Transaction {
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
-        skip_serializing_if = "Option::is_none"
     )]
     pub gas_price: Option<u128>,
     /// Gas amount
@@ -67,7 +66,6 @@ pub struct Transaction {
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
-        skip_serializing_if = "Option::is_none"
     )]
     pub max_priority_fee_per_gas: Option<u128>,
     /// Configured max fee per blob gas for eip-4844 transactions
@@ -75,7 +73,6 @@ pub struct Transaction {
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
-        skip_serializing_if = "Option::is_none"
     )]
     pub max_fee_per_blob_gas: Option<u128>,
     /// Data
@@ -87,25 +84,22 @@ pub struct Transaction {
     #[rkyv(attr(
         doc = "All _flattened_ fields of the transaction signature. Note: this is an option so special transaction types without a signature (e.g. <https://github.com/ethereum-optimism/optimism/blob/0bf643c4147b43cd6f25a759d331ef3a2a61a2a3/specs/deposits.md#the-deposited-transaction-type>) can be supported."
     ))]
-    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    #[serde(flatten)]
     pub signature: Option<Signature>,
     /// The chain id of the transaction, if any.
     #[rkyv(attr(doc = "The chain id of the transaction, if any."))]
     #[serde(
         default,
-        skip_serializing_if = "Option::is_none",
         with = "alloy_serde::quantity::opt"
     )]
     pub chain_id: Option<ChainId>,
     /// Contains the blob hashes for eip-4844 transactions.
     #[rkyv(attr(doc = "Contains the blob hashes for eip-4844 transactions."))]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub blob_versioned_hashes: Option<Vec<B256>>,
     /// EIP2930
     ///
     /// Pre-pay to warm storage access.
     #[rkyv(attr(doc = "EIP2930 Pre-pay to warm storage access."))]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub access_list: Option<AccessList>,
     /// EIP7702
     ///
@@ -113,7 +107,6 @@ pub struct Transaction {
     /// the code referenced by `address`. These also include a `chain_id` (which
     /// can be set to zero and not evaluated) as well as an optional `nonce`.
     #[rkyv(attr(doc = "EIP7702 Authorizations"))]
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub authorization_list: Option<Vec<SignedAuthorization>>,
     /// EIP2718
     ///
@@ -131,7 +124,6 @@ pub struct Transaction {
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
-        skip_serializing_if = "Option::is_none"
     )]
     pub queue_index: Option<u64>,
 }
