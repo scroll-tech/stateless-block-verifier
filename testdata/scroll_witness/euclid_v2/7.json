@@ -30,12 +30,14 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0xd50f6bf00000000000000000000000001111111111111111111111111111111111111111",
-      "r": "0x2bdc8c5db0c98ecd677847152493512fe702fec10ef2d2fefad9a9b39f7f2869",
-      "s": "0x35803ef4be52ed8247d25ef46fd25774f029129ab159ace266a70b593780b0a0",
-      "y_parity": true,
       "chain_id": "0x51615",
       "access_list": [],
-      "transaction_type": 2
+      "transaction_type": 2,
+      "signature": {
+        "r": "0x2bdc8c5db0c98ecd677847152493512fe702fec10ef2d2fefad9a9b39f7f2869",
+        "s": "0x35803ef4be52ed8247d25ef46fd25774f029129ab159ace266a70b593780b0a0",
+        "y_parity": true
+      }
     }
   ],
   "withdrawals": null,

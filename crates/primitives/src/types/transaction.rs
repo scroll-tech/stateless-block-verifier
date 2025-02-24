@@ -84,7 +84,6 @@ pub struct Transaction {
     #[rkyv(attr(
         doc = "All _flattened_ fields of the transaction signature. Note: this is an option so special transaction types without a signature (e.g. <https://github.com/ethereum-optimism/optimism/blob/0bf643c4147b43cd6f25a759d331ef3a2a61a2a3/specs/deposits.md#the-deposited-transaction-type>) can be supported."
     ))]
-    #[serde(flatten)]
     pub signature: Option<Signature>,
     /// The chain id of the transaction, if any.
     #[rkyv(attr(doc = "The chain id of the transaction, if any."))]
