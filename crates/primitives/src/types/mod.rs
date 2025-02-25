@@ -29,6 +29,7 @@ pub mod consensus {
     #[cfg(not(feature = "scroll"))]
     pub use alloy_consensus::{TxEnvelope, TxType, TypedTransaction};
     use reth_primitives_traits::transaction::signature::Signature;
+    pub use reth_primitives_traits::transaction::signed::SignedTransaction;
     #[cfg(feature = "scroll")]
     pub use scroll_alloy_consensus::{
         ScrollReceiptEnvelope as ReceiptEnvelope, ScrollTxEnvelope as TxEnvelope,
@@ -80,8 +81,8 @@ pub mod reth {
     pub use reth_primitives::{Block, BlockBody, Receipt, TransactionSigned};
     #[cfg(feature = "scroll")]
     pub use reth_scroll_primitives::{
-        ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollReceipt as Receipt,
-        ScrollTransactionSigned as TransactionSigned,
+        ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollPrimitives,
+        ScrollReceipt as Receipt, ScrollTransactionSigned as TransactionSigned,
     };
 }
 
