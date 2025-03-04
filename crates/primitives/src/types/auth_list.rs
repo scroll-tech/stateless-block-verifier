@@ -38,7 +38,6 @@ pub struct Authorization {
 #[rkyv(derive(Debug, Hash, PartialEq, Eq))]
 pub struct SignedAuthorization {
     /// Inner authorization.
-    #[serde(flatten)]
     inner: Authorization,
     /// Signature parity value. We allow any [`U8`] here, however, the only valid values are `0`
     /// and `1` and anything else will result in error during recovery.

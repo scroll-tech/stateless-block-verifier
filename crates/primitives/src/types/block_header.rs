@@ -125,7 +125,6 @@ pub struct BlockHeader {
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
-        skip_serializing_if = "Option::is_none"
     )]
     #[rkyv(attr(
         doc = "A scalar representing EIP1559 base fee which can move up or down each block according to a formula which is a function of gas used in parent block and gas target (block gas limit divided by elasticity multiplier) of parent block. The algorithm results in the base fee per gas increasing when blocks are above the gas target, and decreasing when blocks are below the gas target. The base fee per gas is burned."
@@ -133,7 +132,7 @@ pub struct BlockHeader {
     pub base_fee_per_gas: Option<u64>,
     /// The Keccak 256-bit hash of the withdrawals list portion of this block.
     /// <https://eips.ethereum.org/EIPS/eip-4895>
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     #[rkyv(attr(doc = "The Keccak 256-bit hash of the withdrawals list portion of this block."))]
     pub withdrawals_root: Option<B256>,
     /// The total amount of blob gas consumed by the transactions within the block, added in
@@ -141,7 +140,6 @@ pub struct BlockHeader {
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
-        skip_serializing_if = "Option::is_none"
     )]
     #[rkyv(attr(
         doc = "The total amount of blob gas consumed by the transactions within the block, added in EIP-4844."
@@ -153,7 +151,6 @@ pub struct BlockHeader {
     #[serde(
         default,
         with = "alloy_serde::quantity::opt",
-        skip_serializing_if = "Option::is_none"
     )]
     #[rkyv(attr(
         doc = "A running total of blob gas consumed in excess of the target, prior to the block. Blocks with above-target blob gas consumption increase this value, blocks with below-target blob gas consumption decrease it (bounded at 0). This was added in EIP-4844."
@@ -166,7 +163,7 @@ pub struct BlockHeader {
     /// and more.
     ///
     /// The beacon roots contract handles root storage, enhancing Ethereum's functionalities.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     #[rkyv(attr(
         doc = "The hash of the parent beacon block's root is included in execution blocks, as proposed by EIP-4788. This enables trust-minimized access to consensus state, supporting staking pools, bridges, and more. The beacon roots contract handles root storage, enhancing Ethereum's functionalities."
     ))]
@@ -175,7 +172,7 @@ pub struct BlockHeader {
     /// [EIP-7685] request in the block body.
     ///
     /// [EIP-7685]: https://eips.ethereum.org/EIPS/eip-7685
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
     #[rkyv(attr(
         doc = "The Keccak 256-bit hash of the an RLP encoded list with each [EIP-7685] request in the block body."
     ))]

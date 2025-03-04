@@ -30,22 +30,26 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0x",
-      "r": "0xf1d8199bdf49e2e9e8b562d14c18edfe4c38c80d28637f9452841c18b75e5426",
-      "s": "0x3672d35f23d51f442d327fa0e8dc85dd1a8b6984b4af44e843ca44333e599c22",
-      "y_parity": true,
       "chain_id": "0x51615",
       "access_list": [],
       "authorization_list": [
         {
-          "chain_id": "0x51615",
-          "address": "0xd4b75dfda0a9ab5bbcd7969dafc0bc19589157af",
-          "nonce": "0xf",
           "yParity": "0x0",
           "r": "0x859d91855104b6d36e2fe1013ddf265a7fc13e3ee9e144b00ec79d54da7df575",
-          "s": "0x6eb518f81d06f041e2e6b7ce9b5adf845319f946ea20b54cbb973e959c460dd1"
+          "s": "0x6eb518f81d06f041e2e6b7ce9b5adf845319f946ea20b54cbb973e959c460dd1",
+          "inner": {
+            "chain_id": "0x51615",
+            "address": "0xd4b75dfda0a9ab5bbcd7969dafc0bc19589157af",
+            "nonce": "0xf"
+          }
         }
       ],
-      "transaction_type": 4
+      "transaction_type": 4,
+      "signature": {
+        "r": "0xf1d8199bdf49e2e9e8b562d14c18edfe4c38c80d28637f9452841c18b75e5426",
+        "s": "0x3672d35f23d51f442d327fa0e8dc85dd1a8b6984b4af44e843ca44333e599c22",
+        "y_parity": true
+      }
     }
   ],
   "withdrawals": null,
