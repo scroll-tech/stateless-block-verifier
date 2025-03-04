@@ -1,11 +1,7 @@
 //! Rpc Extension
 use alloy_provider::{Provider, network::primitives::BlockTransactionsKind};
 use alloy_transport::TransportResult;
-use sbv_primitives::{
-    Network,
-    eips::BlockNumberOrTag,
-    types::{BlockWitness, ExecutionWitness},
-};
+use sbv_primitives::types::{BlockWitness, ExecutionWitness, Network, eips::BlockNumberOrTag};
 
 /// Extension trait for [`Provider`](Provider).
 #[async_trait::async_trait]
@@ -25,9 +21,9 @@ pub trait ProviderExt: Provider<Network> {
     async fn scroll_disk_root(
         &self,
         number: BlockNumberOrTag,
-    ) -> TransportResult<sbv_primitives::types::DiskRoot> {
+    ) -> TransportResult<sbv_primitives::types::scroll::DiskRoot> {
         self.client()
-            .request::<_, sbv_primitives::types::DiskRoot>("scroll_diskRoot", (number,))
+            .request::<_, sbv_primitives::types::scroll::DiskRoot>("scroll_diskRoot", (number,))
             .await
     }
 

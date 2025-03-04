@@ -23,4 +23,4 @@ thiserror.workspace = true
 sbv-primitives.workspace = true
 
 [features]
-scroll = ["sbv-primitives/scroll"]
+scroll = ["sbv-primitives/scroll-all"]

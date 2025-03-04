@@ -9,7 +9,9 @@ use alloy_trie::{
 };
 use reth_trie_sparse::RevealedSparseTrie;
 use sbv_kv::{HashMap, nohash::NoHashMap};
-use sbv_primitives::{Address, B256, BlockWitness, U256, keccak256, revm::db::BundleAccount};
+use sbv_primitives::{
+    Address, B256, BlockWitness, U256, keccak256, types::revm::db::BundleAccount,
+};
 use std::cell::RefCell;
 
 pub use alloy_trie::{TrieAccount, nodes::TrieNode};
