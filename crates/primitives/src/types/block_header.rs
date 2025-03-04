@@ -160,10 +160,7 @@ pub struct BlockHeader {
     /// gas is burned.
     #[cfg_attr(
         feature = "serde",
-        serde(
-            default,
-            with = "alloy_serde::quantity::opt",
-        )
+        serde(default, with = "alloy_serde::quantity::opt",)
     )]
     #[cfg_attr(
         feature = "rkyv",
@@ -174,10 +171,7 @@ pub struct BlockHeader {
     pub base_fee_per_gas: Option<u64>,
     /// The Keccak 256-bit hash of the withdrawals list portion of this block.
     /// <https://eips.ethereum.org/EIPS/eip-4895>
-    #[cfg_attr(
-        feature = "serde",
-        serde(default)
-    )]
+    #[cfg_attr(feature = "serde", serde(default))]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -189,10 +183,7 @@ pub struct BlockHeader {
     /// EIP-4844.
     #[cfg_attr(
         feature = "serde",
-        serde(
-            default,
-            with = "alloy_serde::quantity::opt",
-        )
+        serde(default, with = "alloy_serde::quantity::opt",)
     )]
     #[cfg_attr(
         feature = "rkyv",
@@ -206,10 +197,7 @@ pub struct BlockHeader {
     /// gas consumption decrease it (bounded at 0). This was added in EIP-4844.
     #[cfg_attr(
         feature = "serde",
-        serde(
-            default,
-            with = "alloy_serde::quantity::opt",
-        )
+        serde(default, with = "alloy_serde::quantity::opt",)
     )]
     #[cfg_attr(
         feature = "rkyv",
@@ -225,10 +213,7 @@ pub struct BlockHeader {
     /// and more.
     ///
     /// The beacon roots contract handles root storage, enhancing Ethereum's functionalities.
-    #[cfg_attr(
-        feature = "serde",
-        serde(default)
-    )]
+    #[cfg_attr(feature = "serde", serde(default))]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -240,10 +225,7 @@ pub struct BlockHeader {
     /// [EIP-7685] request in the block body.
     ///
     /// [EIP-7685]: https://eips.ethereum.org/EIPS/eip-7685
-    #[cfg_attr(
-        feature = "serde",
-        serde(default)
-    )]
+    #[cfg_attr(feature = "serde", serde(default))]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
