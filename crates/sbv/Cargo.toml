@@ -15,6 +15,7 @@ sbv-kv.workspace = true
 sbv-primitives.workspace = true
 sbv-trie.workspace = true
 sbv-helpers.workspace = true
+sbv-utils.workspace = true
 
 [features]
 scroll = ["sbv-core/scroll", "sbv-primitives/scroll", "sbv-core/scroll"]
