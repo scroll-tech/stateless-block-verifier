@@ -1,5 +1,4 @@
 use crate::B256;
-use serde::{Deserialize, Serialize};
 
 mod chunk;
 pub use chunk::*;
