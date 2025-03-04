@@ -32,10 +32,7 @@ pub struct Transaction {
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Gas Price")))]
     #[cfg_attr(
         feature = "serde",
-        serde(
-            default,
-            with = "alloy_serde::quantity::opt",
-        )
+        serde(default, with = "alloy_serde::quantity::opt",)
     )]
     pub gas_price: Option<u128>,
     /// Gas amount
@@ -53,10 +50,7 @@ pub struct Transaction {
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "The miner's tip.")))]
     #[cfg_attr(
         feature = "serde",
-        serde(
-            default,
-            with = "alloy_serde::quantity::opt",
-        )
+        serde(default, with = "alloy_serde::quantity::opt",)
     )]
     pub max_priority_fee_per_gas: Option<u128>,
     /// Configured max fee per blob gas for eip-4844 transactions
@@ -66,10 +60,7 @@ pub struct Transaction {
     )]
     #[cfg_attr(
         feature = "serde",
-        serde(
-            default,
-            with = "alloy_serde::quantity::opt",
-        )
+        serde(default, with = "alloy_serde::quantity::opt",)
     )]
     pub max_fee_per_blob_gas: Option<u128>,
     /// Data
@@ -84,23 +75,13 @@ pub struct Transaction {
             doc = "All _flattened_ fields of the transaction signature. Note: this is an option so special transaction types without a signature (e.g. <https://github.com/ethereum-optimism/optimism/blob/0bf643c4147b43cd6f25a759d331ef3a2a61a2a3/specs/deposits.md#the-deposited-transaction-type>) can be supported."
         ))
     )]
-    #[cfg_attr(
-        feature = "serde",
-        serde(flatten)
-    )]
     pub signature: Option<Signature>,
     /// The chain id of the transaction, if any.
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(doc = "The chain id of the transaction, if any."))
     )]
-    #[cfg_attr(
-        feature = "serde",
-        serde(
-            default,
-            with = "alloy_serde::quantity::opt"
-        )
-    )]
+    #[cfg_attr(feature = "serde", serde(default, with = "alloy_serde::quantity::opt"))]
     pub chain_id: Option<ChainId>,
     /// Contains the blob hashes for eip-4844 transactions.
     #[cfg_attr(
@@ -141,10 +122,7 @@ pub struct Transaction {
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "L1Msg queueIndex")))]
     #[cfg_attr(
         feature = "serde",
-        serde(
-            default,
-            with = "alloy_serde::quantity::opt",
-        )
+        serde(default, with = "alloy_serde::quantity::opt",)
     )]
     pub queue_index: Option<u64>,
 }
