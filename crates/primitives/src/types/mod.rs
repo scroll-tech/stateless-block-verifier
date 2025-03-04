@@ -1,4 +1,5 @@
 mod access_list;
+mod auth_list;
 mod block_header;
 #[cfg(feature = "scroll")]
 mod scroll;
@@ -59,6 +60,7 @@ pub mod consensus {
                 TxEnvelope::Legacy(tx) => Some(tx.signature()),
                 TxEnvelope::Eip2930(tx) => Some(tx.signature()),
                 TxEnvelope::Eip1559(tx) => Some(tx.signature()),
+                TxEnvelope::Eip7702(tx) => Some(tx.signature()),
                 _ => None,
             }
         }

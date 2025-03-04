@@ -18,10 +18,8 @@ reth-evm-ethereum.workspace = true
 reth-execution-types.workspace = true
 reth-scroll-evm = { workspace = true, optional = true }
 reth-storage-errors.workspace = true
-serde.workspace = true
-serde_json.workspace = true
+
 thiserror.workspace = true
-tiny-keccak.workspace = true
 
 sbv-primitives.workspace = true
 sbv-helpers.workspace = true
@@ -30,8 +28,6 @@ sbv-trie.workspace = true
 
 [dev-dependencies]
 ctor.workspace = true
-serde.workspace = true
-serde_json.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 

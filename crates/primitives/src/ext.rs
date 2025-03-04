@@ -7,6 +7,10 @@ use sbv_kv::KeyValueStore;
 /// BlockWitnessCodeExt trait
 #[cfg(feature = "scroll")]
 pub trait BlockWitnessChunkExt {
+    /// Get the chain id.
+    fn chain_id(&self) -> crate::ChainId;
+    /// Get the previous state root.
+    fn prev_state_root(&self) -> B256;
     /// Check if all witnesses have the same chain id.
     fn has_same_chain_id(&self) -> bool;
     /// Check if all witnesses have a sequence block number.
@@ -15,6 +19,15 @@ pub trait BlockWitnessChunkExt {
 
 #[cfg(feature = "scroll")]
 impl<T: BlockWitness> BlockWitnessChunkExt for [T] {
+    #[inline(always)]
+    fn chain_id(&self) -> crate::ChainId {
+        debug_assert!(self.has_same_chain_id(), "chain id mismatch");
+        self.first().expect("empty witnesses").chain_id()
+    }
+    #[inline(always)]
+    fn prev_state_root(&self) -> B256 {
+        self.first().expect("empty witnesses").pre_state_root()
+    }
     #[inline(always)]
     fn has_same_chain_id(&self) -> bool {
         self.iter()
@@ -95,31 +108,33 @@ impl<T: BlockWitness> BlockWitnessExt for [T] {
 #[cfg(feature = "scroll")]
 pub trait TxBytesHashExt {
     /// Hash the transaction bytes.
-    fn tx_bytes_hash(self) -> B256;
+    fn tx_bytes_hash(self) -> (usize, B256);
 
     /// Hash the transaction bytes.
-    fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> B256;
+    fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256);
 }
 
 #[cfg(feature = "scroll")]
 impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: alloy_eips::eip2718::Encodable2718 + 'a> TxBytesHashExt
     for I
 {
-    fn tx_bytes_hash(self) -> B256 {
+    fn tx_bytes_hash(self) -> (usize, B256) {
         let mut rlp_buffer = Vec::new();
         self.tx_bytes_hash_in(&mut rlp_buffer)
     }
 
-    fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> B256 {
+    fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256) {
         use tiny_keccak::{Hasher, Keccak};
         let mut tx_bytes_hasher = Keccak::v256();
+        let mut len = 0;
         for tx in self.into_iter() {
             tx.encode_2718(rlp_buffer);
+            len += rlp_buffer.len();
             tx_bytes_hasher.update(rlp_buffer);
             rlp_buffer.clear();
         }
         let mut tx_bytes_hash = B256::ZERO;
         tx_bytes_hasher.finalize(&mut tx_bytes_hash.0);
-        tx_bytes_hash
+        (len, tx_bytes_hash)
     }
 }

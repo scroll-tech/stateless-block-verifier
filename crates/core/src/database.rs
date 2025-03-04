@@ -57,6 +57,8 @@ impl<
         nodes_provider: NodesProvider,
         block_hashes: BlockHashProvider,
     ) -> Result<Self> {
+        dev_trace!("open trie from root {:?}", state_root_before);
+
         let state = cycle_track!(
             PartialStateTrie::open(&nodes_provider, state_root_before),
             "PartialStateTrie::open"
@@ -110,7 +112,7 @@ impl<
                 .code_db
                 .get(&hash)
                 .cloned()
-                .map(Bytecode::new_legacy)
+                .map(Bytecode::new_raw)
                 .map(to_analysed);
             code_cache.insert(hash, code.clone());
             code

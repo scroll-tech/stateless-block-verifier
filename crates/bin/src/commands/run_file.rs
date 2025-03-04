@@ -13,6 +13,9 @@ pub struct RunFileCommand {
     #[cfg(feature = "scroll")]
     #[arg(short, long)]
     chunk_mode: bool,
+    #[cfg(feature = "scroll")]
+    #[arg(long)]
+    prev_msg_queue_hash: Option<sbv::primitives::B256>,
 }
 
 impl RunFileCommand {
@@ -42,13 +45,13 @@ impl RunFileCommand {
     fn run_chunk(self) -> anyhow::Result<()> {
         use anyhow::bail;
         use sbv::{
-            core::{ChunkInfo, EvmDatabase, EvmExecutor},
+            core::{EvmDatabase, EvmExecutor},
             kv::{nohash::NoHashMap, null::NullProvider},
             primitives::{
                 BlockWitness as _,
-                chainspec::{Chain, get_chain_spec},
-                ext::{BlockWitnessChunkExt, BlockWitnessExt, TxBytesHashExt},
-                types::BlockWitness,
+                chainspec::{Chain, get_chain_spec_or_build},
+                ext::{BlockWitnessChunkExt, BlockWitnessExt},
+                types::{BlockWitness, ChunkInfoBuilder},
             },
             trie::BlockWitnessTrieExt,
         };
@@ -71,10 +74,24 @@ impl RunFileCommand {
             .iter()
             .map(|w| w.build_reth_block())
             .collect::<Result<Vec<_>, _>>()?;
-        let chunk_info =
-            ChunkInfo::from_blocks(witnesses[0].chain_id, witnesses[0].pre_state_root, &blocks);
 
-        let chain_spec = get_chain_spec(Chain::from_id(chunk_info.chain_id())).unwrap();
+        let chain_spec = get_chain_spec_or_build(Chain::from_id(witnesses.chain_id()), |_spec| {
+            #[cfg(feature = "scroll")]
+            {
+                use sbv::primitives::hardforks::{ForkCondition, ScrollHardfork};
+                _spec
+                    .inner
+                    .hardforks
+                    .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+            }
+        });
+
+        let mut chunk_info_builder =
+            ChunkInfoBuilder::new(&chain_spec, witnesses.prev_state_root(), &blocks);
+        if let Some(prev_msg_queue_hash) = self.prev_msg_queue_hash {
+            chunk_info_builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
+        }
+
         let mut code_db = NoHashMap::default();
         witnesses.import_codes(&mut code_db);
         let mut nodes_provider = NoHashMap::default();
@@ -82,7 +99,7 @@ impl RunFileCommand {
 
         let mut db = EvmDatabase::new_from_root(
             &code_db,
-            chunk_info.prev_state_root(),
+            chunk_info_builder.prev_state_root(),
             &nodes_provider,
             &NullProvider,
         )?;
@@ -91,16 +108,12 @@ impl RunFileCommand {
             db.update(&nodes_provider, output.state.state.iter())?;
         }
         let post_state_root = db.commit_changes();
-        if post_state_root != chunk_info.post_state_root() {
+        if post_state_root != chunk_info_builder.post_state_root() {
             bail!("post state root mismatch");
         }
 
-        let withdraw_root = db.withdraw_root()?;
-        let tx_bytes_hash = blocks
-            .iter()
-            .flat_map(|b| b.body().transactions.iter())
-            .tx_bytes_hash();
-        let _public_input_hash = chunk_info.public_input_hash(&withdraw_root, &tx_bytes_hash);
+        let chunk_info = chunk_info_builder.build(db.withdraw_root()?);
+        let _public_input_hash = chunk_info.pi_hash();
         dev_info!("[chunk mode] public input hash: {_public_input_hash:?}");
 
         Ok(())
