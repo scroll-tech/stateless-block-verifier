@@ -27,7 +27,6 @@ pub struct Authorization {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SignedAuthorization {
     /// Inner authorization.
-    #[cfg_attr(feature = "serde", serde(flatten))]
     pub inner: Authorization,
     /// Signature parity value. We allow any [`U8`] here, however, the only valid values are `0`
     /// and `1` and anything else will result in error during recovery.

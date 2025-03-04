@@ -35,7 +35,6 @@ pub struct Transaction {
         serde(
             default,
             with = "alloy_serde::quantity::opt",
-            skip_serializing_if = "Option::is_none"
         )
     )]
     pub gas_price: Option<u128>,
@@ -57,7 +56,6 @@ pub struct Transaction {
         serde(
             default,
             with = "alloy_serde::quantity::opt",
-            skip_serializing_if = "Option::is_none"
         )
     )]
     pub max_priority_fee_per_gas: Option<u128>,
@@ -71,7 +69,6 @@ pub struct Transaction {
         serde(
             default,
             with = "alloy_serde::quantity::opt",
-            skip_serializing_if = "Option::is_none"
         )
     )]
     pub max_fee_per_blob_gas: Option<u128>,
@@ -89,7 +86,7 @@ pub struct Transaction {
     )]
     #[cfg_attr(
         feature = "serde",
-        serde(flatten, skip_serializing_if = "Option::is_none")
+        serde(flatten)
     )]
     pub signature: Option<Signature>,
     /// The chain id of the transaction, if any.
@@ -101,7 +98,6 @@ pub struct Transaction {
         feature = "serde",
         serde(
             default,
-            skip_serializing_if = "Option::is_none",
             with = "alloy_serde::quantity::opt"
         )
     )]
@@ -111,7 +107,6 @@ pub struct Transaction {
         feature = "rkyv",
         rkyv(attr(doc = "Contains the blob hashes for eip-4844 transactions."))
     )]
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub blob_versioned_hashes: Option<Vec<B256>>,
     /// EIP2930
     ///
@@ -120,7 +115,6 @@ pub struct Transaction {
         feature = "rkyv",
         rkyv(attr(doc = "EIP2930 Pre-pay to warm storage access."))
     )]
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub access_list: Option<AccessList>,
     /// EIP7702
     ///
@@ -128,7 +122,6 @@ pub struct Transaction {
     /// the code referenced by `address`. These also include a `chain_id` (which
     /// can be set to zero and not evaluated) as well as an optional `nonce`.
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "EIP7702 Authorizations")))]
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub authorization_list: Option<Vec<SignedAuthorization>>,
     /// EIP2718
     ///
@@ -151,7 +144,6 @@ pub struct Transaction {
         serde(
             default,
             with = "alloy_serde::quantity::opt",
-            skip_serializing_if = "Option::is_none"
         )
     )]
     pub queue_index: Option<u64>,

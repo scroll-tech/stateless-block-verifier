@@ -30,12 +30,14 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4da73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d604aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff37618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e10e",
-      "r": "0x46ebf50743ce9a1d90ab42952373e50cc6fadd5b7c6e0331962feb9648afb030",
-      "s": "0x497b36360dbaf92ded051f34e4b45883bfdc881d91dbd9b56d6ea636d30d824a",
-      "y_parity": false,
       "chain_id": "0x51615",
       "access_list": [],
-      "transaction_type": 2
+      "transaction_type": 2,
+      "signature": {
+        "r": "0x46ebf50743ce9a1d90ab42952373e50cc6fadd5b7c6e0331962feb9648afb030",
+        "s": "0x497b36360dbaf92ded051f34e4b45883bfdc881d91dbd9b56d6ea636d30d824a",
+        "y_parity": false
+      }
     },
     {
       "hash": "0xb9e273887813361e65dc9404133e53d073aebf31fc88723d0901c8e04ce0b087",
@@ -47,12 +49,14 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4da73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d604aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff37618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e1",
-      "r": "0xd2a81c1a107acefda7512ff57124e64430e6976ae04d4591517ea554fab96577",
-      "s": "0x754aaea2817491db269d1189e8cf4cebb5acc462cc91c4045b83a92bbb05d9b",
-      "y_parity": true,
       "chain_id": "0x51615",
       "access_list": [],
-      "transaction_type": 2
+      "transaction_type": 2,
+      "signature": {
+        "r": "0xd2a81c1a107acefda7512ff57124e64430e6976ae04d4591517ea554fab96577",
+        "s": "0x754aaea2817491db269d1189e8cf4cebb5acc462cc91c4045b83a92bbb05d9b",
+        "y_parity": true
+      }
     },
     {
       "hash": "0xa403604b2fe028b4de480157e543d02d77272b4ffe2325cb8c54e51938de4e42",
@@ -64,12 +68,14 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4da73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d604aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff37618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e10eff",
-      "r": "0x4a228148c6cc653ac74b1c45d20aabe8686106bbacfb023f52f07be26fcf9d1e",
-      "s": "0x68350a31097b54db9370b78d0d91738682a747f310bd3a954c3440ca45fb0e0b",
-      "y_parity": true,
       "chain_id": "0x51615",
       "access_list": [],
-      "transaction_type": 2
+      "transaction_type": 2,
+      "signature": {
+        "r": "0x4a228148c6cc653ac74b1c45d20aabe8686106bbacfb023f52f07be26fcf9d1e",
+        "s": "0x68350a31097b54db9370b78d0d91738682a747f310bd3a954c3440ca45fb0e0b",
+        "y_parity": true
+      }
     },
     {
       "hash": "0xf553c9392d6d9caa98861b99119745deaa936f5d0077972edad60e4e23cdb40c",
@@ -81,12 +87,14 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4da73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d604aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff37618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e100",
-      "r": "0x385c30794917338d3301c9ca3a93f56d6f6d0d2dfff136cd0a9c597980eb493b",
-      "s": "0x14f07248e6a8dbd676c3576fcb7d49ab4d6f8bcd124eb071907831ceb52bfe50",
-      "y_parity": true,
       "chain_id": "0x51615",
       "access_list": [],
-      "transaction_type": 2
+      "transaction_type": 2,
+      "signature": {
+        "r": "0x385c30794917338d3301c9ca3a93f56d6f6d0d2dfff136cd0a9c597980eb493b",
+        "s": "0x14f07248e6a8dbd676c3576fcb7d49ab4d6f8bcd124eb071907831ceb52bfe50",
+        "y_parity": true
+      }
     },
     {
       "hash": "0xe62c94089fb8f7ed2349b120fb2d24b03df3481298067dff671f3015d931760d",
@@ -98,12 +106,14 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0xc566b209000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a04cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4da73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d604aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff37618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e10e",
-      "r": "0xc2de0d5111ed370802ec6549c63eb4cd64f0b36628b74773cf21908a9a043e38",
-      "s": "0x6eadaf8e1cf402578bf4695f4d40477aa1c1327757013f7e92311789a0e3191a",
-      "y_parity": false,
       "chain_id": "0x51615",
       "access_list": [],
-      "transaction_type": 2
+      "transaction_type": 2,
+      "signature": {
+        "r": "0xc2de0d5111ed370802ec6549c63eb4cd64f0b36628b74773cf21908a9a043e38",
+        "s": "0x6eadaf8e1cf402578bf4695f4d40477aa1c1327757013f7e92311789a0e3191a",
+        "y_parity": false
+      }
     },
     {
       "hash": "0x1409d2efd1f4052f63535421d13678f3664f9f7513de493947019bbced0ad416",
@@ -115,12 +125,14 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0xc566b2090000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000009f4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4da73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d604aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff37618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e100",
-      "r": "0x94d7b30351deb61158398597f81c888b3d24db2c88f09091fbfd4a23f1da4999",
-      "s": "0x17a2df719e21b4b23ea06ce52414ee5062283f755c2691e36f7e448ba8677aa6",
-      "y_parity": true,
       "chain_id": "0x51615",
       "access_list": [],
-      "transaction_type": 2
+      "transaction_type": 2,
+      "signature": {
+        "r": "0x94d7b30351deb61158398597f81c888b3d24db2c88f09091fbfd4a23f1da4999",
+        "s": "0x17a2df719e21b4b23ea06ce52414ee5062283f755c2691e36f7e448ba8677aa6",
+        "y_parity": true
+      }
     },
     {
       "hash": "0xb712acf01736e3f2d973a0c52ed754b97ba1fa122645b08770fb18c992e6af43",
@@ -132,12 +144,14 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0xc566b209000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a14cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4da73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d604aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff37618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e10eff00000000000000000000000000000000000000000000000000000000000000",
-      "r": "0xc390036a156f1cbcb06ec04dbb031c9f4d87843399a8dd1b650190ead16150c6",
-      "s": "0x3dea83877425cd265840a6acd1b4a732ecb2d17687b0d2760b35abb4f5fd23fc",
-      "y_parity": false,
       "chain_id": "0x51615",
       "access_list": [],
-      "transaction_type": 2
+      "transaction_type": 2,
+      "signature": {
+        "r": "0xc390036a156f1cbcb06ec04dbb031c9f4d87843399a8dd1b650190ead16150c6",
+        "s": "0x3dea83877425cd265840a6acd1b4a732ecb2d17687b0d2760b35abb4f5fd23fc",
+        "y_parity": false
+      }
     },
     {
       "hash": "0x216326474e436bdfe99ecee1ab6c4a6575dfd531581910ec0d1c7229d2993f5b",
@@ -149,12 +163,14 @@
       "max_fee_per_gas": "0x3b9aca00",
       "max_priority_fee_per_gas": "0x1",
       "input": "0xc566b209000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a04cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4da73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d604aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff37618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e100",
-      "r": "0x86bf5a768e794c374445d8df3f504a80fc9fc2aea67f5079e95904d8ff20d222",
-      "s": "0x4f022f362ebfdf3ce82e500c9fd7f0a4fa60858c348660cfa647ce64038b4677",
-      "y_parity": false,
       "chain_id": "0x51615",
       "access_list": [],
-      "transaction_type": 2
+      "transaction_type": 2,
+      "signature": {
+        "r": "0x86bf5a768e794c374445d8df3f504a80fc9fc2aea67f5079e95904d8ff20d222",
+        "s": "0x4f022f362ebfdf3ce82e500c9fd7f0a4fa60858c348660cfa647ce64038b4677",
+        "y_parity": false
+      }
     }
   ],
   "withdrawals": null,

@@ -163,7 +163,6 @@ pub struct BlockHeader {
         serde(
             default,
             with = "alloy_serde::quantity::opt",
-            skip_serializing_if = "Option::is_none"
         )
     )]
     #[cfg_attr(
@@ -177,7 +176,7 @@ pub struct BlockHeader {
     /// <https://eips.ethereum.org/EIPS/eip-4895>
     #[cfg_attr(
         feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
+        serde(default)
     )]
     #[cfg_attr(
         feature = "rkyv",
@@ -193,7 +192,6 @@ pub struct BlockHeader {
         serde(
             default,
             with = "alloy_serde::quantity::opt",
-            skip_serializing_if = "Option::is_none"
         )
     )]
     #[cfg_attr(
@@ -211,7 +209,6 @@ pub struct BlockHeader {
         serde(
             default,
             with = "alloy_serde::quantity::opt",
-            skip_serializing_if = "Option::is_none"
         )
     )]
     #[cfg_attr(
@@ -230,7 +227,7 @@ pub struct BlockHeader {
     /// The beacon roots contract handles root storage, enhancing Ethereum's functionalities.
     #[cfg_attr(
         feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
+        serde(default)
     )]
     #[cfg_attr(
         feature = "rkyv",
@@ -245,7 +242,7 @@ pub struct BlockHeader {
     /// [EIP-7685]: https://eips.ethereum.org/EIPS/eip-7685
     #[cfg_attr(
         feature = "serde",
-        serde(default, skip_serializing_if = "Option::is_none")
+        serde(default)
     )]
     #[cfg_attr(
         feature = "rkyv",
