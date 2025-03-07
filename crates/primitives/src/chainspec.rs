@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-pub use reth_chainspec;
-pub use reth_chainspec::*;
+pub use reth_chainspec::{self, *};
 
 #[cfg(feature = "scroll")]
 pub use reth_scroll_chainspec as scroll;

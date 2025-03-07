@@ -48,10 +48,7 @@ pub struct Transaction {
     pub value: U256,
     /// Gas Price
     #[rkyv(attr(doc = "Gas Price"))]
-    #[serde(
-        default,
-        with = "alloy_serde::quantity::opt",
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     pub gas_price: Option<u128>,
     /// Gas amount
     #[rkyv(attr(doc = "Gas amount"))]
@@ -63,17 +60,11 @@ pub struct Transaction {
     pub max_fee_per_gas: u128,
     /// The miner's tip.
     #[rkyv(attr(doc = "The miner's tip."))]
-    #[serde(
-        default,
-        with = "alloy_serde::quantity::opt",
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     pub max_priority_fee_per_gas: Option<u128>,
     /// Configured max fee per blob gas for eip-4844 transactions
     #[rkyv(attr(doc = "Configured max fee per blob gas for eip-4844 transactions"))]
-    #[serde(
-        default,
-        with = "alloy_serde::quantity::opt",
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     pub max_fee_per_blob_gas: Option<u128>,
     /// Data
     #[rkyv(attr(doc = "Data"))]
@@ -87,10 +78,7 @@ pub struct Transaction {
     pub signature: Option<Signature>,
     /// The chain id of the transaction, if any.
     #[rkyv(attr(doc = "The chain id of the transaction, if any."))]
-    #[serde(
-        default,
-        with = "alloy_serde::quantity::opt"
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     pub chain_id: Option<ChainId>,
     /// Contains the blob hashes for eip-4844 transactions.
     #[rkyv(attr(doc = "Contains the blob hashes for eip-4844 transactions."))]
@@ -120,10 +108,7 @@ pub struct Transaction {
     /// L1Msg queueIndex
     #[cfg(feature = "scroll")]
     #[rkyv(attr(doc = "L1Msg queueIndex"))]
-    #[serde(
-        default,
-        with = "alloy_serde::quantity::opt",
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     pub queue_index: Option<u64>,
 }
 
