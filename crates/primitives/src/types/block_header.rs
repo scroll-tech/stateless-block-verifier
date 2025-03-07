@@ -122,10 +122,7 @@ pub struct BlockHeader {
     /// The algorithm results in the base fee per gas increasing when blocks are
     /// above the gas target, and decreasing when blocks are below the gas target. The base fee per
     /// gas is burned.
-    #[serde(
-        default,
-        with = "alloy_serde::quantity::opt",
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     #[rkyv(attr(
         doc = "A scalar representing EIP1559 base fee which can move up or down each block according to a formula which is a function of gas used in parent block and gas target (block gas limit divided by elasticity multiplier) of parent block. The algorithm results in the base fee per gas increasing when blocks are above the gas target, and decreasing when blocks are below the gas target. The base fee per gas is burned."
     ))]
@@ -137,10 +134,7 @@ pub struct BlockHeader {
     pub withdrawals_root: Option<B256>,
     /// The total amount of blob gas consumed by the transactions within the block, added in
     /// EIP-4844.
-    #[serde(
-        default,
-        with = "alloy_serde::quantity::opt",
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     #[rkyv(attr(
         doc = "The total amount of blob gas consumed by the transactions within the block, added in EIP-4844."
     ))]
@@ -148,10 +142,7 @@ pub struct BlockHeader {
     /// A running total of blob gas consumed in excess of the target, prior to the block. Blocks
     /// with above-target blob gas consumption increase this value, blocks with below-target blob
     /// gas consumption decrease it (bounded at 0). This was added in EIP-4844.
-    #[serde(
-        default,
-        with = "alloy_serde::quantity::opt",
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     #[rkyv(attr(
         doc = "A running total of blob gas consumed in excess of the target, prior to the block. Blocks with above-target blob gas consumption increase this value, blocks with below-target blob gas consumption decrease it (bounded at 0). This was added in EIP-4844."
     ))]

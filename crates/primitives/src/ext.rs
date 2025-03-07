@@ -108,15 +108,24 @@ impl<T: BlockWitness> BlockWitnessExt for [T] {
 #[cfg(feature = "scroll")]
 pub trait TxBytesHashExt {
     /// Hash the transaction bytes.
+    ///
+    /// Only L2 transactions are considered while computing the digest.
     fn tx_bytes_hash(self) -> (usize, B256);
 
     /// Hash the transaction bytes.
+    ///
+    /// Only L2 transactions are considered while computing the digest.
     fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256);
 }
 
 #[cfg(feature = "scroll")]
 impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: alloy_eips::eip2718::Encodable2718 + 'a> TxBytesHashExt
     for I
+where
+    I: IntoIterator<Item = &'a Tx>,
+    Tx: 'a
+        + alloy_eips::eip2718::Encodable2718
+        + reth_scroll_primitives::transaction::signed::IsL1Message,
 {
     fn tx_bytes_hash(self) -> (usize, B256) {
         let mut rlp_buffer = Vec::new();
@@ -127,12 +136,15 @@ impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: alloy_eips::eip2718::Encodable2718 
         use tiny_keccak::{Hasher, Keccak};
         let mut tx_bytes_hasher = Keccak::v256();
         let mut len = 0;
-        for tx in self.into_iter() {
+
+        // Ignore L1 msg txs.
+        for tx in self.into_iter().filter(|&tx| !tx.is_l1_message()) {
             tx.encode_2718(rlp_buffer);
             len += rlp_buffer.len();
             tx_bytes_hasher.update(rlp_buffer);
             rlp_buffer.clear();
         }
+
         let mut tx_bytes_hash = B256::ZERO;
         tx_bytes_hasher.finalize(&mut tx_bytes_hash.0);
         (len, tx_bytes_hash)
