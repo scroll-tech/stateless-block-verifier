@@ -121,6 +121,11 @@ pub trait TxBytesHashExt {
 #[cfg(feature = "scroll")]
 impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: alloy_eips::eip2718::Encodable2718 + 'a> TxBytesHashExt
     for I
+where
+    I: IntoIterator<Item = &'a Tx>,
+    Tx: 'a
+        + alloy_eips::eip2718::Encodable2718
+        + reth_scroll_primitives::transaction::signed::IsL1Message,
 {
     fn tx_bytes_hash(self) -> (usize, B256) {
         let mut rlp_buffer = Vec::new();
@@ -133,7 +138,7 @@ impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: alloy_eips::eip2718::Encodable2718 
         let mut len = 0;
 
         // Ignore L1 msg txs.
-        for tx in self.into_iter().filter(|tx| !tx.is_l1_message()) {
+        for tx in self.into_iter().filter(|&tx| !tx.is_l1_message()) {
             tx.encode_2718(rlp_buffer);
             len += rlp_buffer.len();
             tx_bytes_hasher.update(rlp_buffer);
