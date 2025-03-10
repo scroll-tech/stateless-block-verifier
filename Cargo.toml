@@ -38,25 +38,25 @@ alloy-trie = { version = "0.7", default-features = false }
 # https://github.com/alloy-rs/core
 alloy-primitives = { version = "0.8", default-features = false, features = ["map-hashbrown", "map-fxhash", "rkyv"] }
 
-reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-ethereum-forks = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-storage-errors = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
+reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-ethereum-forks = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-storage-errors = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
 
-reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-scroll-forks = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
+reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-scroll-forks = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
 
-scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
-scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-v2", default-features = false }
+scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
+scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", branch = "zkvm/euclid-upgrade", default-features = false }
 
 async-trait = "0.1"
 auto_impl = "1.2"
@@ -107,7 +107,7 @@ sbv-utils = { path = "crates/utils" }
 
 [workspace.dependencies.revm]
 git = "https://github.com/scroll-tech/revm"
-branch = "scroll-evm-executor/feat/v55/euclid-v2"
+branch = "scroll-evm-executor/feat/v55/euclid-upgrade"
 default-features = false
 features = ["std"]
 
@@ -119,7 +119,7 @@ missing-debug-implementations = "deny"
 # patched add rkyv support & MSRV 1.77
 ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 
-alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18" }
+alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18-euclid-upgrade" }
 
 #revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
 #revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
