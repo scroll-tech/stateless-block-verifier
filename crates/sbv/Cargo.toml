@@ -18,7 +18,7 @@ sbv-helpers.workspace = true
 sbv-utils.workspace = true
 
 [features]
-scroll = ["sbv-core/scroll", "sbv-primitives/scroll", "sbv-core/scroll"]
+scroll = ["sbv-core/scroll", "sbv-primitives/scroll", "sbv-utils/scroll"]
 debug-account = ["sbv-core/debug-account", "sbv-helpers/debug-account"]
 debug-storage = ["sbv-core/debug-storage", "sbv-helpers/debug-storage"]
 dev = ["sbv-core/dev", "sbv-helpers/dev", "sbv-primitives/dev", "sbv-trie/dev"]
