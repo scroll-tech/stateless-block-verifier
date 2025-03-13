@@ -96,8 +96,11 @@ impl<'a> ChunkInfoBuilder<'a> {
             let post_msg_queue_hash = cycle_track!(
                 {
                     let mut rolling_hash = prev_msg_queue_hash;
-                    for block in self.blocks.iter() {
+                    println!("[START-rolling-hash]: prev_msg_queue_hash = {:?}", rolling_hash);
+                    for (i, block) in self.blocks.iter().enumerate() {
+                        println!("[START-rolling-hash-block]: {:?} and rh = {:?}", i, rolling_hash);
                         rolling_hash = block.hash_msg_queue(&rolling_hash);
+                        println!("[END-rolling-hash-block]: {:?} and rh = {:?}", i, rolling_hash);
                     }
                     rolling_hash
                 },

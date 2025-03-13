@@ -194,16 +194,23 @@ impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
         use reth_primitives_traits::SignedTransaction;
         use tiny_keccak::Hasher;
 
+        println!("[START-rolling-hash-block-hash-msg-queue]: initial = {:?}", initial_queue_hash);
+
         let mut rolling_hash = *initial_queue_hash;
-        for tx in self
+        for (i, tx) in self
             .body()
             .transactions
             .iter()
             .filter(|tx| tx.is_l1_message())
+            .enumerate()
         {
             let mut hasher = tiny_keccak::Keccak::v256();
             hasher.update(rolling_hash.as_slice());
-            hasher.update(tx.tx_hash().as_slice());
+
+            let tx_hash_dbg = tx.tx_hash();
+            println!("tx[{}]: tx_hash_dbg = {:?}", i, tx_hash_dbg);
+            //hasher.update(tx.tx_hash().as_slice());
+            hasher.update(tx_hash_dbg.as_slice());
 
             hasher.finalize(rolling_hash.as_mut_slice());
 
@@ -216,6 +223,7 @@ impl BlockChunkExt for RecoveredBlock<types::reth::Block> {
             rolling_hash.0[31] = 0;
         }
 
+        println!("[END-rolling-hash-block-hash-msg-queue]: rolling hash = {:?}", rolling_hash);
         rolling_hash
     }
 
