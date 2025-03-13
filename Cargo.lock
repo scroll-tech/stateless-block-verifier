@@ -1558,6 +1558,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "evm"
+version = "2.0.0"
+dependencies = [
+ "clap",
+ "sbv-t8n",
+ "serde_json",
+]
+
+[[package]]
 name = "eyre"
 version = "0.6.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4649,6 +4658,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "sbv-t8n"
+version = "2.0.0"
+dependencies = [
+ "reth-evm",
+ "reth-evm-ethereum",
+ "reth-execution-types",
+ "reth-primitives-traits",
+ "sbv-core",
+ "sbv-kv",
+ "sbv-primitives",
+ "serde_json",
+ "t8n-types",
+]
+
+[[package]]
 name = "sbv-trie"
 version = "2.0.0"
 dependencies = [
@@ -5288,6 +5312,16 @@ checksum = "8e1d1b10ced5ca923a1fcb8d03e96b8d3268065d724548c0211415ff6ac6bac4"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "t8n-types"
+version = "0.1.0"
+dependencies = [
+ "alloy-eips",
+ "alloy-primitives",
+ "alloy-serde",
+ "serde",
 ]
 
 [[package]]
