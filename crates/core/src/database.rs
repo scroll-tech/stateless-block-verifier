@@ -35,6 +35,9 @@ pub enum DatabaseError {
     /// Partial state trie error
     #[error(transparent)]
     PartialStateTrie(#[from] sbv_trie::PartialStateTrieError),
+    /// Requested code not loaded
+    #[error("requested code({0}) not loaded")]
+    CodeNotLoaded(B256),
 }
 
 type Result<T, E = DatabaseError> = std::result::Result<T, E>;
@@ -161,17 +164,8 @@ impl<
 
     /// Get account code by its code hash.
     fn code_by_hash_ref(&self, hash: B256) -> Result<Bytecode, Self::Error> {
-        // Sometimes the code in previous account info is not contained,
-        // and the CacheDB has already loaded the previous account info,
-        // then the upcoming trace contains code (meaning the code is used in this new block),
-        // we can't directly update the CacheDB, so we offer the code by hash here.
-        // However, if the code still cannot be found, this is an error.
-        self.load_code(hash).ok_or_else(|| {
-            unreachable!(
-                "Code is either loaded or not needed (like EXTCODESIZE), code hash: {:?}",
-                hash
-            );
-        })
+        self.load_code(hash)
+            .ok_or(DatabaseError::CodeNotLoaded(hash))
     }
 
     /// Get storage value of address at index.

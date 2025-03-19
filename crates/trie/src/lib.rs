@@ -84,8 +84,8 @@ pub struct PartialStateTrie {
 #[derive(thiserror::Error, Debug)]
 pub enum PartialStateTrieError {
     /// reth sparse trie error
-    #[error("error occurred in reth_trie_sparse, see the logs for more details")]
-    Impl, // FIXME: wtf, why `SparseTrieError` they don't require Sync?
+    #[error("error occurred in reth_trie_sparse: {0}")]
+    Impl(String), // FIXME: wtf, why `SparseTrieError` they don't require Sync?
     /// an error occurred while previously try to open the storage trie
     #[error("an error occurred while previously try to open the storage trie")]
     PreviousError,
@@ -327,7 +327,7 @@ impl<T: Default> PartialTrie<T> {
         )
         .map_err(|e| {
             dev_error!("failed to open trie: {e}");
-            PartialStateTrieError::Impl
+            PartialStateTrieError::Impl(format!("{e:?}"))
         })?;
         let mut leafs = HashMap::default();
         // traverse the partial trie
@@ -378,7 +378,7 @@ impl<T: Default> PartialTrie<T> {
             .update_leaf(path.clone(), encode(&value))
             .map_err(|e| {
                 dev_error!("failed to update leaf: {e}");
-                PartialStateTrieError::Impl
+                PartialStateTrieError::Impl(format!("{e:?}"))
             })?;
         self.leafs.insert(path, value);
         Ok(())
@@ -387,7 +387,7 @@ impl<T: Default> PartialTrie<T> {
     fn remove_leaf_inner(&mut self, path: &Nibbles) -> Result<()> {
         self.trie.remove_leaf(path).map_err(|e| {
             dev_error!("failed to remove leaf: {e}");
-            PartialStateTrieError::Impl
+            PartialStateTrieError::Impl(format!("{e:?}"))
         })?;
         self.leafs.remove(path);
         Ok(())
@@ -452,7 +452,7 @@ fn traverse_import_partial_trie<
     trie.reveal_node(path.clone(), node, trie_mask, None) // FIXME: is this correct?
         .map_err(|e| {
             dev_error!("failed to reveal node: {e}");
-            PartialStateTrieError::Impl
+            PartialStateTrieError::Impl(format!("{e:?}"))
         })?;
 
     Ok(trie_mask)
