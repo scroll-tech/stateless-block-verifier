@@ -121,25 +121,59 @@ ruint = { git = "https://github.com/scroll-tech/uint.git", branch = "v1.12.3" }
 
 alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch = "v0.8.18" }
 
-#revm = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-#revm-interpreter = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-#revm-precompile = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
-#revm-primitives = { git = "https://github.com/scroll-tech/revm", branch = "scroll-evm-executor/feat/v55/euclid-v2" }
+## for local development
+#reth-chainspec = { path = "../reth/crates/chainspec" }
+#reth-evm = { path = "../reth/crates/evm" }
+#reth-evm-ethereum = { path = "../reth/crates/ethereum/evm" }
+#reth-ethereum-forks = { path = "../reth/crates/ethereum-forks" }
+#reth-execution-types = { path = "../reth/crates/evm/execution-types" }
+#reth-primitives = { path = "../reth/crates/primitives" }
+#reth-primitives-traits = { path = "../reth/crates/primitives-traits" }
+#reth-storage-errors = { path = "../reth/crates/storage/errors" }
+#reth-trie = { path = "../reth/crates/trie/trie" }
+#reth-trie-sparse = { path = "../reth/crates/trie/sparse" }
+#
+#reth-scroll-chainspec = { path = "../reth/crates/scroll/chainspec" }
+#reth-scroll-evm = { path = "../reth/crates/scroll/evm" }
+#reth-scroll-forks = { path = "../reth/crates/scroll/hardforks" }
+#reth-scroll-primitives = { path = "../reth/crates/scroll/primitives" }
+#
+#scroll-alloy-consensus = { path = "../reth/crates/scroll/alloy/consensus" }
+#scroll-alloy-rpc-types = { path = "../reth/crates/scroll/alloy/rpc-types" }
+#scroll-alloy-network = { path = "../reth/crates/scroll/alloy/network" }
+#
+#revm = { path = "../revm/crates/revm" }
+#revm-interpreter = { path = "../revm/crates/interpreter" }
+#revm-precompile = { path = "../revm/crates/precompile" }
+#revm-primitives = { path = "../revm/crates/primitives" }
+#
+#[patch."https://github.com/scroll-tech/revm"]
+#revm = { path = "../revm/crates/revm" }
+#revm-interpreter = { path = "../revm/crates/interpreter" }
+#revm-precompile = { path = "../revm/crates/precompile" }
+#revm-primitives = { path = "../revm/crates/primitives" }
+#
+#[patch."https://github.com/scroll-tech/reth"]
+#reth-chainspec = { path = "../reth/crates/chainspec" }
+#reth-evm = { path = "../reth/crates/evm" }
+#reth-evm-ethereum = { path = "../reth/crates/ethereum/evm" }
+#reth-ethereum-forks = { path = "../reth/crates/ethereum-forks" }
+#reth-execution-types = { path = "../reth/crates/evm/execution-types" }
+#reth-primitives = { path = "../reth/crates/primitives" }
+#reth-primitives-traits = { path = "../reth/crates/primitives-traits" }
+#reth-storage-errors = { path = "../reth/crates/storage/errors" }
+#reth-trie = { path = "../reth/crates/trie/trie" }
+#reth-trie-sparse = { path = "../reth/crates/trie/sparse" }
+#
+#reth-scroll-chainspec = { path = "../reth/crates/scroll/chainspec" }
+#reth-scroll-evm = { path = "../reth/crates/scroll/evm" }
+#reth-scroll-forks = { path = "../reth/crates/scroll/hardforks" }
+#reth-scroll-primitives = { path = "../reth/crates/scroll/primitives" }
+#
+#scroll-alloy-consensus = { path = "../reth/crates/scroll/alloy/consensus" }
+#scroll-alloy-rpc-types = { path = "../reth/crates/scroll/alloy/rpc-types" }
+#scroll-alloy-network = { path = "../reth/crates/scroll/alloy/network" }
 
-# for local development
-# [patch."https://github.com/scroll-tech/revm"]
-# revm = { path = "../revm/crates/revm" }
-# revm-primitives = { path = "../revm/crates/primitives" }
-# [patch."https://github.com/scroll-tech/reth"]
-# reth-chainspec = { path = "../reth/crates/chainspec" }
-# reth-evm = { path = "../reth/crates/evm" }
-# reth-evm-ethereum = { path = "../reth/crates/ethereum/evm" }
-# reth-execution-types = { path = "../reth/crates/evm/execution-types" }
-# reth-primitives = { path = "../reth/crates/primitives" }
-# #reth-scroll-primitives = { path = "../reth/crates/" }
-# reth-storage-errors = { path = "../reth/crates/storage/errors" }
-# reth-trie = { path = "../reth/crates/trie/trie" }
-# reth-trie-sparse = { path = "../reth/crates/trie/sparse" }
 
 #[profile.release]
 #debug-assertions = true
