@@ -254,7 +254,7 @@ dependencies = [
 [[package]]
 name = "alloy-primitives"
 version = "0.8.18"
-source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.18-euclid-upgrade#caced63ffbe9e0b5c8f3cabc2cf14dbf5d76784b"
+source = "git+https://github.com/scroll-tech/alloy-core?branch=v0.8.18-euclid-upgrade#f81c6bd637b841097941b82594b0cf1277c8be82"
 dependencies = [
  "alloy-rlp",
  "bytes",
@@ -402,7 +402,7 @@ dependencies = [
  "alloy-rlp",
  "alloy-serde",
  "alloy-sol-types",
- "itertools 0.14.0",
+ "itertools 0.13.0",
  "serde",
  "serde_json",
  "thiserror 2.0.12",
@@ -2851,7 +2851,7 @@ dependencies = [
 [[package]]
 name = "openvm"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "bytemuck",
  "hex-literal",
@@ -2866,7 +2866,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-complex-macros"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2876,7 +2876,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-guest"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "halo2curves-axiom",
  "num-bigint",
@@ -2892,7 +2892,7 @@ dependencies = [
 [[package]]
 name = "openvm-algebra-moduli-macros"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2902,7 +2902,7 @@ dependencies = [
 [[package]]
 name = "openvm-custom-insn"
 version = "0.1.0"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2912,7 +2912,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-guest"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
@@ -2941,7 +2941,7 @@ dependencies = [
 [[package]]
 name = "openvm-ecc-sw-macros"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "openvm-macros-common",
  "quote",
@@ -2951,17 +2951,16 @@ dependencies = [
 [[package]]
 name = "openvm-keccak256-guest"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "openvm-platform",
- "serde",
  "tiny-keccak",
 ]
 
 [[package]]
 name = "openvm-macros-common"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "syn 2.0.100",
 ]
@@ -2969,7 +2968,7 @@ dependencies = [
 [[package]]
 name = "openvm-pairing-guest"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "group",
  "hex-literal",
@@ -2994,7 +2993,7 @@ dependencies = [
 [[package]]
 name = "openvm-platform"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "getrandom 0.2.15",
  "libm",
@@ -3007,7 +3006,7 @@ dependencies = [
 [[package]]
 name = "openvm-rv32im-guest"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
  "openvm-custom-insn",
  "strum_macros 0.26.4",
@@ -3016,9 +3015,8 @@ dependencies = [
 [[package]]
 name = "openvm-sha256-guest"
 version = "1.0.0-rc.2"
-source = "git+https://github.com/openvm-org/openvm.git?rev=6169765#6169765d27c2113a444f30c546ba379c1ceb0a1d"
+source = "git+https://github.com/openvm-org/openvm.git?rev=2bdf9ed#2bdf9edd280fa4dd43bbfb11d9f935cec1dc9aeb"
 dependencies = [
- "openvm",
  "openvm-platform",
  "sha2",
 ]
@@ -4260,7 +4258,7 @@ dependencies = [
 [[package]]
 name = "revm"
 version = "19.4.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v55/euclid-upgrade#759820623fbfb47953b8e2817f4feb0945fad0a6"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v55/euclid-upgrade#44b3191164a5e31adc18b852cfeb2903632691ed"
 dependencies = [
  "auto_impl",
  "cfg-if",
@@ -4274,7 +4272,7 @@ dependencies = [
 [[package]]
 name = "revm-interpreter"
 version = "15.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v55/euclid-upgrade#759820623fbfb47953b8e2817f4feb0945fad0a6"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v55/euclid-upgrade#44b3191164a5e31adc18b852cfeb2903632691ed"
 dependencies = [
  "revm-primitives",
  "serde",
@@ -4283,7 +4281,7 @@ dependencies = [
 [[package]]
 name = "revm-precompile"
 version = "16.0.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v55/euclid-upgrade#759820623fbfb47953b8e2817f4feb0945fad0a6"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v55/euclid-upgrade#44b3191164a5e31adc18b852cfeb2903632691ed"
 dependencies = [
  "aurora-engine-modexp",
  "c-kzg",
@@ -4305,7 +4303,7 @@ dependencies = [
 [[package]]
 name = "revm-primitives"
 version = "15.1.0"
-source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v55/euclid-upgrade#759820623fbfb47953b8e2817f4feb0945fad0a6"
+source = "git+https://github.com/scroll-tech/revm?branch=scroll-evm-executor/feat/v55/euclid-upgrade#44b3191164a5e31adc18b852cfeb2903632691ed"
 dependencies = [
  "alloy-eip2930",
  "alloy-eip7702",
