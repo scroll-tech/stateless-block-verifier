@@ -73,7 +73,7 @@ impl RunRpcCommand {
                     }
                     None::<()>
                 },
-                Concurrency::concurrent_unordered(usize::MAX),
+                Concurrency::concurrent_unordered(num_cpus::get()),
             )
             .build();
 

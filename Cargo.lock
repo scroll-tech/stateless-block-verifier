@@ -5084,6 +5084,7 @@ dependencies = [
  "clap",
  "console",
  "indicatif",
+ "num_cpus",
  "pprof",
  "pumps",
  "rkyv",
