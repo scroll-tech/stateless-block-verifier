@@ -9,6 +9,7 @@ use sbv::primitives::types::Network;
 use std::future::Future;
 use url::Url;
 
+pub mod retry;
 /// Helper functions for the tower
 pub mod tower;
 pub mod verifier;
@@ -54,7 +55,8 @@ pub struct RpcArgs {
 impl RpcArgs {
     /// Construct a provider from the rpc arguments
     pub fn into_provider(self) -> RootProvider<Network> {
-        let retry_layer = RetryBackoffLayer::new(self.max_retry, self.backoff, self.cups);
+        let retry_layer =
+            RetryBackoffLayer::new_with_policy(self.max_retry, self.backoff, self.cups);
         let limit_layer = ConcurrencyLimitLayer::new(self.max_concurrency);
         let client = ClientBuilder::default()
             .layer(retry_layer)
