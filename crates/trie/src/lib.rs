@@ -180,9 +180,9 @@ impl PartialStateTrie {
             .entry(hashed_address)
             .or_insert_with(|| {
                 dev_trace!("open storage trie of {address} at {storage_root}");
-                PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp).inspect_err(|e| {
+                PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp).inspect_err(|_e| {
                     dev_error!(
-                        "failed to open storage trie of {address} at {storage_root}, cause: {e}"
+                        "failed to open storage trie of {address} at {storage_root}, cause: {_e}"
                     )
                 })
             })
@@ -231,9 +231,9 @@ impl PartialStateTrie {
                             .unwrap_or(EMPTY_ROOT_HASH);
                         dev_trace!("open storage trie of {address} at {storage_root}");
                         PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp)
-                            .inspect_err(|e| {
+                            .inspect_err(|_e| {
                                 dev_error!(
-                                    "failed to open storage trie of {address} at {storage_root}, cause: {e}"
+                                    "failed to open storage trie of {address} at {storage_root}, cause: {_e}"
                                 )
                             })
                     })

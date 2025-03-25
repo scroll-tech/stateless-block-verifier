@@ -1,4 +1,4 @@
-use crate::helpers::tower::ConcurrencyLimitLayer;
+use crate::helpers::{retry::RateLimitRetryPolicy, tower::ConcurrencyLimitLayer};
 use alloy::{
     providers::{ProviderBuilder, RootProvider},
     rpc::client::ClientBuilder,
@@ -55,8 +55,12 @@ pub struct RpcArgs {
 impl RpcArgs {
     /// Construct a provider from the rpc arguments
     pub fn into_provider(self) -> RootProvider<Network> {
-        let retry_layer =
-            RetryBackoffLayer::new_with_policy(self.max_retry, self.backoff, self.cups);
+        let retry_layer = RetryBackoffLayer::new_with_policy(
+            self.max_retry,
+            self.backoff,
+            self.cups,
+            RateLimitRetryPolicy,
+        );
         let limit_layer = ConcurrencyLimitLayer::new(self.max_concurrency);
         let client = ClientBuilder::default()
             .layer(retry_layer)

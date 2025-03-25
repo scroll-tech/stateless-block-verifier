@@ -1,7 +1,7 @@
 use alloy::transports::{TransportError, layers};
 use std::time::Duration;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct RateLimitRetryPolicy;
 
 impl layers::RetryPolicy for RateLimitRetryPolicy {
@@ -9,7 +9,7 @@ impl layers::RetryPolicy for RateLimitRetryPolicy {
         true
     }
 
-    fn backoff_hint(&self, error: &TransportError) -> Option<Duration> {
-        layers::RateLimitRetryPolicy.backoff_hint(error)
+    fn backoff_hint(&self, _error: &TransportError) -> Option<Duration> {
+        None
     }
 }

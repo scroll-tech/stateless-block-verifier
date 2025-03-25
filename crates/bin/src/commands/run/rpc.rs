@@ -34,7 +34,7 @@ impl RunRpcCommand {
                 if running.load(std::sync::atomic::Ordering::SeqCst) {
                     Some(n + 1)
                 } else {
-                    dev_info!(
+                    dev_warn!(
                         "received stop signal, stop emitting new blocks, current block: #{n}"
                     );
                     None
@@ -57,9 +57,9 @@ impl RunRpcCommand {
                                     tokio::time::sleep(tokio::time::Duration::from_millis(500))
                                         .await;
                                 }
-                                Err(e) => {
+                                Err(_e) => {
                                     dev_error!(
-                                        "failed to dump block witness for #{block_number}: {e:?}"
+                                        "failed to dump block witness for #{block_number}: {_e:?}"
                                     );
                                     return None;
                                 }
@@ -72,11 +72,15 @@ impl RunRpcCommand {
             .backpressure(max_concurrency)
             .map(
                 |witness| async move {
-                    let number = witness.number();
-                    if let Err(e) =
-                        tokio::task::spawn_blocking(move || verify_catch_panics(witness)).await
+                    let _number = witness.number();
+
+                    match tokio::task::spawn_blocking(move || verify_catch_panics(witness))
+                        .await
+                        .map_err(anyhow::Error::from)
+                        .and_then(|e| e)
                     {
-                        dev_error!("cannot join verification task #{number}: {e:?}");
+                        Ok(_) => dev_info!("block#{_number} verified"),
+                        Err(_e) => dev_info!("failed to verify block#{_number}: {_e:?}"),
                     }
                 },
                 Concurrency::concurrent_unordered(num_cpus::get()),
@@ -94,14 +98,13 @@ impl RunRpcCommand {
                         .is_ok()
                     {
                         let now = Instant::now();
-                        let elapsed = {
+                        let _elapsed = {
                             let mut last = last_time.lock().unwrap();
                             let elapsed = now.duration_since(*last);
                             *last = now;
                             elapsed.as_secs_f64()
                         };
-                        let bps = 100.0 / elapsed;
-                        dev_warn!("bps: {bps:.2}");
+                        dev_info!("bps: {:.2}", 100.0 / _elapsed);
                     }
                     async { None::<()> }
                 },
@@ -116,7 +119,7 @@ impl RunRpcCommand {
                 dev_info!("pipeline finished");
             }
             _ = tokio::signal::ctrl_c() => {
-                dev_info!("received ctrl-c again, force stop");
+                dev_warn!("received ctrl-c again, force stop");
             }
         }
         Ok(())
