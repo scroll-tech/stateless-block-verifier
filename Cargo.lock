@@ -3347,6 +3347,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pumps"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f6a3b38c98c390b6b543e242b6765421d6339cee7a9a4ee2211622c56f516ed"
+dependencies = [
+ "futures",
+ "tokio",
+]
+
+[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4676,24 +4686,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sbv-utils-cli"
-version = "2.0.0"
-dependencies = [
- "alloy",
- "anyhow",
- "clap",
- "console",
- "indicatif",
- "rkyv",
- "sbv-primitives",
- "sbv-utils",
- "serde_json",
- "tokio",
- "tower",
- "url",
-]
-
-[[package]]
 name = "schannel"
 version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5087,15 +5079,22 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 name = "stateless-block-verifier"
 version = "2.0.0"
 dependencies = [
+ "alloy",
  "anyhow",
  "clap",
+ "console",
+ "indicatif",
  "pprof",
+ "pumps",
+ "rkyv",
  "sbv",
- "serde",
  "serde_json",
  "serde_path_to_error",
+ "tokio",
+ "tower",
  "tracing",
  "tracing-subscriber",
+ "url",
 ]
 
 [[package]]
@@ -5444,6 +5443,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",

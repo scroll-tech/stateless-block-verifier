@@ -1,3 +1,4 @@
+use crate::helpers::run_async;
 use clap::Subcommand;
 
 pub mod dump;
@@ -12,10 +13,10 @@ pub enum WitnessCommands {
 }
 
 impl WitnessCommands {
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub fn run(self) -> anyhow::Result<()> {
         match self {
-            WitnessCommands::Dump(cmd) => cmd.run().await.map(|_| ()),
-            WitnessCommands::Rkyv(cmd) => cmd.run().await,
+            WitnessCommands::Dump(cmd) => Ok(run_async(cmd.run())?),
+            WitnessCommands::Rkyv(cmd) => cmd.run(),
         }
     }
 }

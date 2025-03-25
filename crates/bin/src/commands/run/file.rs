@@ -1,10 +1,9 @@
-use crate::utils;
-use anyhow::anyhow;
+use crate::helpers::verifier::*;
 use clap::Args;
 use sbv::primitives::types::BlockWitness;
-use std::{panic::catch_unwind, path::PathBuf};
+use std::path::PathBuf;
 
-#[derive(Args)]
+#[derive(Args, Debug)]
 pub struct RunFileCommand {
     /// Path to the witness file
     #[arg(default_value = "witness.json")]
@@ -128,21 +127,6 @@ fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
 
 fn run_witness(path: PathBuf) -> anyhow::Result<()> {
     let witness = read_witness(&path)?;
-    if let Err(e) = catch_unwind(|| utils::verify(&witness)).map_err(|e| {
-        e.downcast_ref::<&str>()
-            .map(|s| anyhow!("task panics with: {s}"))
-            .or_else(|| {
-                e.downcast_ref::<String>()
-                    .map(|s| anyhow!("task panics with: {s}"))
-            })
-            .unwrap_or_else(|| anyhow!("task panics"))
-    }) {
-        dev_error!(
-            "Error occurs when verifying block ({}): {:?}",
-            path.display(),
-            e
-        );
-        return Err(e);
-    }
+    verify_catch_panics(&witness)?;
     Ok(())
 }

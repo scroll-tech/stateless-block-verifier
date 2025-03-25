@@ -8,7 +8,6 @@ members = [
     "crates/sbv",
     "crates/trie",
     "crates/utils",
-    "crates/utils-cli",
 ]
 resolver = "2"
 

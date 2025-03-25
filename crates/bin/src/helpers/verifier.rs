@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use sbv::{
     core::{EvmDatabase, EvmExecutor, VerificationError},
     kv::nohash::NoHashMap,
@@ -8,6 +9,28 @@ use sbv::{
     },
     trie::BlockWitnessTrieExt,
 };
+use std::panic::{UnwindSafe, catch_unwind};
+
+pub fn verify_catch_panics<
+    T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt + UnwindSafe,
+>(
+    witness: T,
+) -> anyhow::Result<()> {
+    let block_number = witness.number();
+    if let Err(e) = catch_unwind(|| verify(witness)).map_err(|e| {
+        e.downcast_ref::<&str>()
+            .map(|s| anyhow!("task panics with: {s}"))
+            .or_else(|| {
+                e.downcast_ref::<String>()
+                    .map(|s| anyhow!("task panics with: {s}"))
+            })
+            .unwrap_or_else(|| anyhow!("task panics"))
+    }) {
+        dev_error!("Error occurs when verifying block#{block_number}: {e:?}");
+        return Err(e);
+    }
+    Ok(())
+}
 
 pub fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
