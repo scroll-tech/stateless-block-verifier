@@ -4,7 +4,11 @@ use pumps::{Concurrency, Pipeline};
 use sbv::{primitives::BlockWitness, utils::rpc::ProviderExt};
 use std::{
     iter,
-    sync::{Arc, atomic::AtomicBool},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, AtomicUsize},
+    },
+    time::Instant,
 };
 
 #[derive(Args, Debug)]
@@ -20,6 +24,9 @@ impl RunRpcCommand {
         let max_concurrency = self.rpc_args.max_concurrency;
         let provider = self.rpc_args.into_provider();
         let running = Arc::new(AtomicBool::new(true));
+
+        let last_time = Mutex::new(Instant::now());
+        let processed_blocks = Arc::new(AtomicUsize::new(0));
 
         let blocks = {
             let running = running.clone();
@@ -63,7 +70,7 @@ impl RunRpcCommand {
                 Concurrency::concurrent_unordered(max_concurrency),
             )
             .backpressure(max_concurrency)
-            .filter_map(
+            .map(
                 |witness| async move {
                     let number = witness.number();
                     if let Err(e) =
@@ -71,9 +78,34 @@ impl RunRpcCommand {
                     {
                         dev_error!("cannot join verification task #{number}: {e:?}");
                     }
-                    None::<()>
                 },
                 Concurrency::concurrent_unordered(num_cpus::get()),
+            )
+            .filter_map(
+                move |_| {
+                    processed_blocks.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    if processed_blocks
+                        .compare_exchange(
+                            100,
+                            0,
+                            std::sync::atomic::Ordering::SeqCst,
+                            std::sync::atomic::Ordering::SeqCst,
+                        )
+                        .is_ok()
+                    {
+                        let now = Instant::now();
+                        let elapsed = {
+                            let mut last = last_time.lock().unwrap();
+                            let elapsed = now.duration_since(*last);
+                            *last = now;
+                            elapsed.as_secs_f64()
+                        };
+                        let bps = 100.0 / elapsed;
+                        dev_warn!("bps: {bps:.2}");
+                    }
+                    async { None::<()> }
+                },
+                Concurrency::concurrent_unordered(usize::MAX),
             )
             .build();
 
