@@ -174,5 +174,6 @@ alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch =
 #scroll-alloy-network = { path = "../reth/crates/scroll/alloy/network" }
 
 
-#[profile.release]
-#debug-assertions = true
+[profile.release]
+lto = true
+codegen-units = 1
