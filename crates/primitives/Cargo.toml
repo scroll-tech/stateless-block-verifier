@@ -48,7 +48,10 @@ sbv-kv.workspace = true
 
 [features]
 # serialization
-rkyv = ["dep:rkyv"]
+rkyv = [
+  "dep:rkyv",
+  "alloy-primitives/rkyv",
+]
 serde = [
   "dep:alloy-serde",
   "dep:serde",
