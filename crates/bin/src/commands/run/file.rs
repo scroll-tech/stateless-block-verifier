@@ -1,5 +1,7 @@
 use crate::helpers::verifier::*;
 use clap::Args;
+#[cfg(feature = "dev")]
+use sbv::helpers::tracing;
 use sbv::primitives::types::BlockWitness;
 use std::path::PathBuf;
 
@@ -125,8 +127,10 @@ fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
     Ok(witness)
 }
 
+#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(path = %path.display()), err))]
 fn run_witness(path: PathBuf) -> anyhow::Result<()> {
     let witness = read_witness(&path)?;
     verify_catch_panics(&witness)?;
+    dev_info!("verified");
     Ok(())
 }
