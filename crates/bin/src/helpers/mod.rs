@@ -63,8 +63,8 @@ impl RpcArgs {
         );
         let limit_layer = ConcurrencyLimitLayer::new(self.max_concurrency);
         let client = ClientBuilder::default()
-            .layer(retry_layer)
             .layer(limit_layer)
+            .layer(retry_layer)
             .http(self.rpc);
 
         ProviderBuilder::<_, _, Network>::default().on_client(client)
