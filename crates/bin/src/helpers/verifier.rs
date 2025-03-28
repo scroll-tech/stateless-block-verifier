@@ -19,15 +19,18 @@ pub fn verify_catch_panics<
 >(
     witness: T,
 ) -> anyhow::Result<()> {
-    if let Err(e) = catch_unwind(|| verify(witness)).map_err(|e| {
-        e.downcast_ref::<&str>()
-            .map(|s| anyhow!("task panics with: {s}"))
-            .or_else(|| {
-                e.downcast_ref::<String>()
-                    .map(|s| anyhow!("task panics with: {s}"))
-            })
-            .unwrap_or_else(|| anyhow!("task panics"))
-    }) {
+    if let Err(e) = catch_unwind(|| verify(witness))
+        .map_err(|e| {
+            e.downcast_ref::<&str>()
+                .map(|s| anyhow!("task panics with: {s}"))
+                .or_else(|| {
+                    e.downcast_ref::<String>()
+                        .map(|s| anyhow!("task panics with: {s}"))
+                })
+                .unwrap_or_else(|| anyhow!("task panics"))
+        })
+        .and_then(|r| r.map_err(anyhow::Error::from))
+    {
         return Err(e);
     }
     Ok(())
