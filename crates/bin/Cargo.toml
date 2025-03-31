@@ -1,5 +1,5 @@
 [package]
-name = "stateless-block-verifier"
+name = "sbv-cli"
 homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/bin"
 
 version.workspace = true

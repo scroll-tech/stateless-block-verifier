@@ -4583,6 +4583,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "sbv-cli"
+version = "2.0.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "clap",
+ "console",
+ "indicatif",
+ "num_cpus",
+ "pprof",
+ "pumps",
+ "rkyv",
+ "sbv",
+ "serde_json",
+ "serde_path_to_error",
+ "tokio",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
 name = "sbv-core"
 version = "2.0.0"
 dependencies = [
@@ -5074,29 +5097,6 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
-
-[[package]]
-name = "stateless-block-verifier"
-version = "2.0.0"
-dependencies = [
- "alloy",
- "anyhow",
- "clap",
- "console",
- "indicatif",
- "num_cpus",
- "pprof",
- "pumps",
- "rkyv",
- "sbv",
- "serde_json",
- "serde_path_to_error",
- "tokio",
- "tower",
- "tracing",
- "tracing-subscriber",
- "url",
-]
 
 [[package]]
 name = "static_assertions"
