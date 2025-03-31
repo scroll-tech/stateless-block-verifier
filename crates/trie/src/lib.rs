@@ -7,7 +7,7 @@ use sbv_helpers::tracing;
 
 use alloy_rlp::{Decodable, Encodable};
 use alloy_trie::{
-    EMPTY_ROOT_HASH, Nibbles, TrieMask,
+    Nibbles, TrieMask,
     nodes::{CHILD_INDEX_RANGE, RlpNode},
 };
 use reth_trie_sparse::RevealedSparseTrie;
@@ -17,7 +17,7 @@ use sbv_primitives::{
 };
 use std::cell::RefCell;
 
-pub use alloy_trie::{TrieAccount, nodes::TrieNode};
+pub use alloy_trie::{EMPTY_ROOT_HASH, TrieAccount, nodes::TrieNode};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
 
 /// Extension trait for BlockWitness
