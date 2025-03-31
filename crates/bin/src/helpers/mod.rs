@@ -14,14 +14,33 @@ pub mod retry;
 pub mod tower;
 pub mod verifier;
 
+#[cfg(feature = "scroll")]
+const MAINNET_RPC: &str = "https://euclid-l2-mpt.scroll.systems";
+#[cfg(feature = "scroll")]
+const SEPOLIA_RPC: &str = "https://sepolia-rpc.scroll.io";
+const LOCAL_RPC: &str = "http://localhost:8545";
+
 #[derive(Debug, Args)]
 pub struct RpcArgs {
-    #[arg(
-        long,
-        help = "URL to the RPC server",
-        default_value = "http://localhost:8545"
+    #[arg(long, help = "URL to the RPC server, defaults to localhost:8545")]
+    pub rpc: Option<Url>,
+
+    #[cfg_attr(
+        feature = "scroll",
+        arg(
+            long,
+            help = "using mainnet default rpc url: https://euclid-l2-mpt.scroll.systems"
+        )
     )]
-    pub rpc: Url,
+    pub mainnet: bool,
+    #[cfg_attr(
+        feature = "scroll",
+        arg(
+            long,
+            help = "using sepolia default rpc url: https://sepolia-rpc.scroll.io"
+        )
+    )]
+    pub sepolia: bool,
 
     // Concurrency Limit
     #[arg(
@@ -55,6 +74,19 @@ pub struct RpcArgs {
 impl RpcArgs {
     /// Construct a provider from the rpc arguments
     pub fn into_provider(self) -> RootProvider<Network> {
+        #[cfg(feature = "scroll")]
+        let rpc = self.rpc.unwrap_or_else(|| {
+            if self.mainnet {
+                MAINNET_RPC.parse().unwrap()
+            } else if self.sepolia {
+                SEPOLIA_RPC.parse().unwrap()
+            } else {
+                LOCAL_RPC.parse().unwrap()
+            }
+        });
+        #[cfg(not(feature = "scroll"))]
+        let rpc = self.rpc.unwrap_or_else(|| LOCAL_RPC.parse().unwrap());
+        dev_info!("Using RPC: {}", rpc);
         let retry_layer = RetryBackoffLayer::new_with_policy(
             self.max_retry,
             self.backoff,
@@ -65,7 +97,7 @@ impl RpcArgs {
         let client = ClientBuilder::default()
             .layer(limit_layer)
             .layer(retry_layer)
-            .http(self.rpc);
+            .http(rpc);
 
         ProviderBuilder::<_, _, Network>::default().on_client(client)
     }
