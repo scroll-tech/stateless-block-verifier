@@ -9,8 +9,7 @@ use clap::Parser;
 use tracing_subscriber::EnvFilter;
 
 mod commands;
-
-mod utils;
+mod helpers;
 
 #[derive(Parser)]
 #[command(version, about = "Stateless Block Verifier")]

@@ -1,7 +1,6 @@
 //! Stateless Block Verifier utils library.
 
 #[cfg(any(feature = "dev", test))]
-#[doc(hidden)]
 pub use tracing;
 
 #[macro_use]

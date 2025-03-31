@@ -1,27 +1,16 @@
-use crate::helpers::tower::ConcurrencyLimitLayer;
-use alloy::{
-    providers::ProviderBuilder, rpc::client::ClientBuilder, transports::layers::RetryBackoffLayer,
-};
+use crate::helpers::RpcArgs;
 use clap::Args;
 use console::{Emoji, style};
 use indicatif::{HumanBytes, HumanDuration, ProgressBar, ProgressStyle};
 use rkyv::rancor;
-use sbv_primitives::types::Network;
-use sbv_utils::rpc::ProviderExt;
+use sbv::utils::rpc::ProviderExt;
 use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
-use url::Url;
 
 #[derive(Debug, Args)]
 pub struct DumpWitnessCommand {
-    #[arg(
-        long,
-        help = "URL to the RPC server",
-        default_value = "http://localhost:8545"
-    )]
-    pub rpc: Url,
     #[arg(long, help = "Block number")]
     pub block: u64,
     #[arg(long, help = "Ancestor blocks", default_value_t = 256)]
@@ -34,33 +23,8 @@ pub struct DumpWitnessCommand {
     #[arg(long, help = "Output rkyv")]
     pub rkyv: bool,
 
-    // Concurrency Limit
-    #[arg(
-        long,
-        help = "Concurrency Limit: maximum number of concurrent requests",
-        default_value = "10"
-    )]
-    pub max_concurrency: usize,
-
-    // Retry parameters
-    #[arg(
-        long,
-        help = "Retry Backoff: maximum number of retries",
-        default_value = "10"
-    )]
-    pub max_retry: u32,
-    #[arg(
-        long,
-        help = "Retry Backoff: backoff duration in milliseconds",
-        default_value = "100"
-    )]
-    pub backoff: u64,
-    #[arg(
-        long,
-        help = "Retry Backoff: compute units per second",
-        default_value = "100"
-    )]
-    pub cups: u64,
+    #[command(flatten)]
+    pub rpc_args: RpcArgs,
 }
 
 impl DumpWitnessCommand {
@@ -83,14 +47,7 @@ impl DumpWitnessCommand {
         let mut steps = 1;
         let total_steps = 1 + self.json as usize + self.rkyv as usize;
 
-        let retry_layer = RetryBackoffLayer::new(self.max_retry, self.backoff, self.cups);
-        let limit_layer = ConcurrencyLimitLayer::new(self.max_concurrency);
-        let client = ClientBuilder::default()
-            .layer(retry_layer)
-            .layer(limit_layer)
-            .http(self.rpc);
-
-        let provider = ProviderBuilder::<_, _, Network>::default().on_client(client);
+        let provider = self.rpc_args.into_provider();
 
         let pb = ProgressBar::new_spinner();
         pb.set_style(ProgressStyle::with_template("{prefix}{msg} {spinner}").unwrap());

@@ -1,17 +1,21 @@
 use clap::Subcommand;
 
-mod run_file;
-#[derive(Subcommand)]
+mod run;
+mod witness;
+
+#[derive(Debug, Subcommand)]
 pub enum Commands {
-    /// Run and verify a trace file
-    #[command(name = "run-file")]
-    RunFile(run_file::RunFileCommand),
+    #[command(subcommand, about = "Run and verify witness")]
+    Run(run::RunCommands),
+    #[command(subcommand, about = "Witness helpers")]
+    Witness(witness::WitnessCommands),
 }
 
 impl Commands {
     pub fn run(self) -> anyhow::Result<()> {
         match self {
-            Commands::RunFile(cmd) => cmd.run(),
+            Commands::Run(cmd) => cmd.run(),
+            Commands::Witness(cmd) => cmd.run(),
         }
     }
 }

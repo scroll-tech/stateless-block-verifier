@@ -1,3 +1,6 @@
+use anyhow::anyhow;
+#[cfg(feature = "dev")]
+use sbv::helpers::tracing;
 use sbv::{
     core::{EvmDatabase, EvmExecutor, VerificationError},
     kv::nohash::NoHashMap,
@@ -8,7 +11,32 @@ use sbv::{
     },
     trie::BlockWitnessTrieExt,
 };
+use std::panic::{UnwindSafe, catch_unwind};
 
+#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
+pub fn verify_catch_panics<
+    T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt + UnwindSafe,
+>(
+    witness: T,
+) -> anyhow::Result<()> {
+    if let Err(e) = catch_unwind(|| verify(witness))
+        .map_err(|e| {
+            e.downcast_ref::<&str>()
+                .map(|s| anyhow!("task panics with: {s}"))
+                .or_else(|| {
+                    e.downcast_ref::<String>()
+                        .map(|s| anyhow!("task panics with: {s}"))
+                })
+                .unwrap_or_else(|| anyhow!("task panics"))
+        })
+        .and_then(|r| r.map_err(anyhow::Error::from))
+    {
+        return Err(e);
+    }
+    Ok(())
+}
+
+#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
 pub fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
 ) -> Result<(), VerificationError> {
@@ -64,8 +92,11 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
 
     let output = EvmExecutor::new(chain_spec, &db, &block)
         .execute()
-        .inspect_err(|e| {
-            dev_error!("Error occurs when executing block #{}: {e:?}", block.number);
+        .inspect_err(|_e| {
+            dev_error!(
+                "Error occurs when executing block #{}: {_e:?}",
+                block.number
+            );
 
             update_metrics_counter!(verification_error);
         })?;
@@ -100,6 +131,5 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
             post_state_root,
         ));
     }
-    dev_info!("Block #{} verified successfully", block.number);
     Ok(())
 }

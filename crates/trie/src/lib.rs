@@ -2,6 +2,9 @@
 #[macro_use]
 extern crate sbv_helpers;
 
+#[cfg(feature = "dev")]
+use sbv_helpers::tracing;
+
 use alloy_rlp::{Decodable, Encodable};
 use alloy_trie::{
     EMPTY_ROOT_HASH, Nibbles, TrieMask,
@@ -124,6 +127,7 @@ impl PartialStateTrie {
 
     /// Get account
     #[must_use]
+    #[cfg_attr(feature = "dev", tracing::instrument(level = tracing::Level::TRACE, skip(self), ret))]
     pub fn get_account(&self, address: Address) -> Option<&TrieAccount> {
         cycle_track!(
             self.get_account_inner(address),
@@ -142,6 +146,10 @@ impl PartialStateTrie {
     }
 
     /// Get storage
+    #[cfg_attr(
+        feature = "dev",
+        tracing::instrument(level = tracing::Level::TRACE, skip(self, nodes_provider), ret, err)
+    )]
     pub fn get_storage<P: sbv_kv::KeyValueStoreGet<B256, TrieNode> + Copy>(
         &self,
         nodes_provider: P,
@@ -172,8 +180,10 @@ impl PartialStateTrie {
             .entry(hashed_address)
             .or_insert_with(|| {
                 dev_trace!("open storage trie of {address} at {storage_root}");
-                PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp).inspect_err(|_| {
-                    dev_trace!("failed to open storage trie of {address} at {storage_root}")
+                PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp).inspect_err(|_e| {
+                    dev_error!(
+                        "failed to open storage trie of {address} at {storage_root}, cause: {_e}"
+                    )
                 })
             })
             .as_mut()
@@ -184,11 +194,13 @@ impl PartialStateTrie {
 
     /// Commit state changes and calculate the new state root
     #[must_use]
+    #[cfg_attr(feature = "dev", tracing::instrument(level = tracing::Level::TRACE, skip_all, ret))]
     pub fn commit_state(&mut self) -> B256 {
         self.state.trie.root()
     }
 
     /// Update the trie with the new state
+    #[cfg_attr(feature = "dev", tracing::instrument(level = tracing::Level::TRACE, skip_all, err))]
     pub fn update<'a, P: sbv_kv::KeyValueStoreGet<B256, TrieNode> + Copy>(
         &mut self,
         nodes_provider: P,
@@ -219,9 +231,9 @@ impl PartialStateTrie {
                             .unwrap_or(EMPTY_ROOT_HASH);
                         dev_trace!("open storage trie of {address} at {storage_root}");
                         PartialTrie::open(nodes_provider, storage_root, decode_u256_rlp)
-                            .inspect_err(|_| {
-                                dev_trace!(
-                                    "failed to open storage trie of {address} at {storage_root}"
+                            .inspect_err(|_e| {
+                                dev_error!(
+                                    "failed to open storage trie of {address} at {storage_root}, cause: {_e}"
                                 )
                             })
                     })

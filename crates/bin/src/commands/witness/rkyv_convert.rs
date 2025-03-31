@@ -1,6 +1,6 @@
 use clap::Args;
 use rkyv::{rancor, vec::ArchivedVec};
-use sbv_primitives::types::{ArchivedBlockWitness, BlockWitness};
+use sbv::primitives::types::{ArchivedBlockWitness, BlockWitness};
 use std::path::PathBuf;
 
 #[derive(Debug, Args)]
@@ -16,7 +16,7 @@ pub struct RkyvConvertCommand {
 }
 
 impl RkyvConvertCommand {
-    pub async fn run(self) -> anyhow::Result<()> {
+    pub fn run(self) -> anyhow::Result<()> {
         if self.witnesses.is_empty() {
             anyhow::bail!("No witness files provided");
         }

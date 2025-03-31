@@ -1,5 +1,5 @@
 [package]
-name = "stateless-block-verifier"
+name = "sbv-cli"
 homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/bin"
 
 version.workspace = true
@@ -13,16 +13,25 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+alloy = { workspace = true, features = ["provider-http", "transport-http", "reqwest", "reqwest-rustls-tls", "json-rpc"] }
+
 anyhow.workspace = true
 clap = { workspace = true, features = ["derive"] }
-serde = { workspace = true, features = ["derive"] }
+console.workspace = true
+indicatif.workspace = true
+num_cpus = "1.16"
+pumps = "0.0.4"
+rkyv.workspace = true
 serde_json.workspace = true
 serde_path_to_error.workspace = true
-
-sbv.workspace = true
+tower = { workspace = true, features = ["limit"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+url.workspace = true
 
 pprof = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, optional = true }
+
+sbv.workspace = true
 
 [dev-dependencies]
 tracing.workspace = true
