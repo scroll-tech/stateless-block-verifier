@@ -29,6 +29,8 @@ alloy-serde = { workspace = true, optional = true }
 alloy-primitives.workspace = true
 
 revm = { workspace = true, optional = true }
+revm-bytecode = { workspace = true, optional = true }
+
 reth-chainspec = { workspace = true, optional = true }
 reth-ethereum-forks = { workspace = true, optional = true }
 reth-primitives = { workspace = true, optional = true }
@@ -71,7 +73,10 @@ reth-types = [
   "dep:reth-primitives",
   "dep:reth-primitives-traits",
 ]
-revm-types = ["dep:revm"]
+revm-types = [
+  "dep:revm",
+  "dep:revm-bytecode"
+]
 rpc-types = ["dep:alloy-rpc-types-eth", "eips"]
 ethereum-all = [
     "chainspec",
@@ -107,12 +112,10 @@ scroll-reth-types = [
   "scroll-revm", # This is a bug
   "scroll-consensus-types",
   "dep:reth-scroll-primitives",
-  "reth-scroll-primitives/scroll",
 ]
 scroll-revm = [
   "scroll",
   "revm-types",
-  "revm/scroll-default-handler",
   "revm/optional_no_base_fee",
 ]
 scroll-rpc-types = ["scroll", "rpc-types", "dep:scroll-alloy-rpc-types"]
@@ -133,4 +136,4 @@ dev = ["sbv-helpers/dev"]
 sp1 = []
 cycle-tracker = []
 
-openvm = ["revm/openvm"]
+#openvm = ["revm/openvm"]

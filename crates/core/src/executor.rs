@@ -7,7 +7,7 @@ use sbv_primitives::{
     chainspec::ChainSpec,
     types::{
         reth::{Block, Receipt, RecoveredBlock},
-        revm::db::CacheDB,
+        revm::database::CacheDB,
     },
 };
 use sbv_trie::TrieNode;

@@ -28,9 +28,9 @@ metrics = ["sbv-core/metrics", "sbv-helpers/metrics"]
 sp1 = ["sbv-core/sp1", "sbv-primitives/sp1"]
 cycle-tracker = ["sbv-core/cycle-tracker", "sbv-primitives/cycle-tracker"]
 
-openvm = [
-    "sbv-core/openvm",
-    "sbv-helpers/openvm",
-    "sbv-primitives/openvm",
-    "sbv-trie/openvm"
-]
+#openvm = [
+#    "sbv-core/openvm",
+#    "sbv-helpers/openvm",
+#    "sbv-primitives/openvm",
+#    "sbv-trie/openvm"
+#]

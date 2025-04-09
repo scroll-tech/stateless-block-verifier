@@ -10,10 +10,10 @@ use alloy_trie::{
     EMPTY_ROOT_HASH, Nibbles, TrieMask,
     nodes::{CHILD_INDEX_RANGE, RlpNode},
 };
-use reth_trie_sparse::RevealedSparseTrie;
+use reth_trie_sparse::{RevealedSparseTrie, TrieMasks};
 use sbv_kv::{HashMap, nohash::NoHashMap};
 use sbv_primitives::{
-    Address, B256, BlockWitness, U256, keccak256, types::revm::db::BundleAccount,
+    Address, B256, BlockWitness, U256, keccak256, types::revm::database::BundleAccount,
 };
 use std::cell::RefCell;
 
@@ -334,7 +334,7 @@ impl<T: Default> PartialTrie<T> {
             .ok_or(PartialStateTrieError::MissingWitness(root))?
             .clone();
         let mut state = cycle_track!(
-            RevealedSparseTrie::from_root(root.clone(), None, None, true),
+            RevealedSparseTrie::from_root(root.clone(), TrieMasks::none(), true),
             "RevealedSparseTrie::from_root"
         )
         .map_err(|e| {
@@ -416,15 +416,15 @@ fn traverse_import_partial_trie<
     trie: &mut RevealedSparseTrie,
     store_leaf: &mut F,
 ) -> Result<Option<TrieMask>> {
-    let trie_mask = match node {
+    let tree_mask = match node {
         TrieNode::EmptyRoot => None,
         TrieNode::Branch(ref branch) => {
-            let mut trie_mask = TrieMask::default();
+            let mut tree_mask = TrieMask::default();
 
             let mut stack_ptr = branch.as_ref().first_child_index();
             for idx in CHILD_INDEX_RANGE {
                 if branch.state_mask.is_bit_set(idx) {
-                    trie_mask.set_bit(idx);
+                    tree_mask.set_bit(idx);
                     let mut child_path = path.clone();
                     child_path.push(idx);
                     let child_node = decode_rlp_node(nodes, &branch.stack[stack_ptr])?;
@@ -441,7 +441,7 @@ fn traverse_import_partial_trie<
                     }
                 }
             }
-            Some(trie_mask)
+            Some(tree_mask)
         }
         TrieNode::Leaf(ref leaf) => {
             let mut full = path.clone();
@@ -461,13 +461,16 @@ fn traverse_import_partial_trie<
         }
     };
 
-    trie.reveal_node(path.clone(), node, trie_mask, None) // FIXME: is this correct?
-        .map_err(|e| {
-            dev_error!("failed to reveal node: {e}");
-            PartialStateTrieError::Impl(format!("{e:?}"))
-        })?;
+    trie.reveal_node(path.clone(), node, TrieMasks {
+        hash_mask: None,
+        tree_mask,
+    }) // FIXME: is this correct?
+    .map_err(|e| {
+        dev_error!("failed to reveal node: {e}");
+        PartialStateTrieError::Impl(format!("{e:?}"))
+    })?;
 
-    Ok(trie_mask)
+    Ok(tree_mask)
 }
 
 fn decode_trie_account(mut buf: &[u8]) -> Result<TrieAccount> {

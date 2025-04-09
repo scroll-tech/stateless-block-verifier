@@ -31,14 +31,15 @@ impl<'a> ChunkInfoBuilder<'a> {
     ) -> Self {
         assert!(!blocks.is_empty(), "blocks must not be empty");
 
-        assert!(
-            blocks
-                .iter()
-                .map(|b| chain_spec.is_euclid_v2_active_at_timestamp(b.timestamp))
-                .tuple_windows()
-                .all(|(a, b)| a == b),
-            "all blocks must have the same hardfork enabled"
-        );
+        // FIXME: enable this when scroll reth support euclid v2
+        // assert!(
+        //     blocks
+        //         .iter()
+        //         .map(|b| chain_spec.is_euclid_v2_active_at_timestamp(b.timestamp))
+        //         .tuple_windows()
+        //         .all(|(a, b)| a == b),
+        //     "all blocks must have the same hardfork enabled"
+        // );
 
         ChunkInfoBuilder {
             chain_spec,
@@ -48,24 +49,26 @@ impl<'a> ChunkInfoBuilder<'a> {
         }
     }
 
-    /// Check if EuclidV2 is enabled on this chunk
-    #[inline]
-    pub fn is_euclid_v2(&self) -> bool {
-        self.chain_spec
-            .is_euclid_v2_active_at_timestamp(self.blocks[0].timestamp)
-    }
+    // FIXME: enable this when scroll reth support euclid v2
+    // /// Check if EuclidV2 is enabled on this chunk
+    // #[inline]
+    // pub fn is_euclid_v2(&self) -> bool {
+    //     self.chain_spec
+    //         .is_euclid_v2_active_at_timestamp(self.blocks[0].timestamp)
+    // }
 
-    /// Set the prev msg queue hash
-    #[inline]
-    pub fn set_prev_msg_queue_hash(&mut self, prev_msg_queue_hash: B256) -> &mut Self {
-        assert!(
-            self.is_euclid_v2(),
-            "prev_msg_queue_hash is only for EuclidV2"
-        );
-
-        self.prev_msg_queue_hash = Some(prev_msg_queue_hash);
-        self
-    }
+    // FIXME: enable this when scroll reth support euclid v2
+    // /// Set the prev msg queue hash
+    // #[inline]
+    // pub fn set_prev_msg_queue_hash(&mut self, prev_msg_queue_hash: B256) -> &mut Self {
+    //     assert!(
+    //         self.is_euclid_v2(),
+    //         "prev_msg_queue_hash is only for EuclidV2"
+    //     );
+    //
+    //     self.prev_msg_queue_hash = Some(prev_msg_queue_hash);
+    //     self
+    // }
 
     /// Get the previous state root
     #[inline]
@@ -91,58 +94,59 @@ impl<'a> ChunkInfoBuilder<'a> {
             .flat_map(|b| b.body().transactions.iter())
             .tx_bytes_hash();
 
-        if self.is_euclid_v2() {
-            let initial_block_number = self.blocks.first().expect("at least one block").number;
-            let prev_msg_queue_hash = self
-                .prev_msg_queue_hash
-                .expect("msg queue hash is required");
-            let post_msg_queue_hash = cycle_track!(
-                {
-                    let mut rolling_hash = prev_msg_queue_hash;
-                    for block in self.blocks.iter() {
-                        rolling_hash = block.hash_msg_queue(&rolling_hash);
-                    }
-                    rolling_hash
-                },
-                "Keccak::v256"
-            );
-            ChunkInfo::EuclidV2(EuclidV2ChunkInfo {
-                chain_id,
-                prev_state_root,
-                post_state_root,
-                withdraw_root,
-                tx_data_length,
-                tx_data_digest,
-                prev_msg_queue_hash,
-                post_msg_queue_hash,
-                initial_block_number,
-                block_ctxs: self.blocks.iter().map(BlockContextV2::from_block).collect(),
-            })
-        } else {
-            let data_hash = cycle_track!(
-                {
-                    let mut data_hasher = Keccak::v256();
-                    for block in self.blocks.iter() {
-                        block.legacy_hash_da_header(&mut data_hasher);
-                    }
-                    for block in self.blocks.iter() {
-                        block.legacy_hash_l1_msg(&mut data_hasher);
-                    }
-                    let mut data_hash = B256::ZERO;
-                    data_hasher.finalize(&mut data_hash.0);
-                    data_hash
-                },
-                "Keccak::v256"
-            );
-            ChunkInfo::Legacy(LegacyChunkInfo {
-                chain_id,
-                prev_state_root,
-                post_state_root,
-                withdraw_root,
-                data_hash,
-                tx_data_digest,
-            })
-        }
+        // FIXME: enable this when scroll reth support euclid v2
+        // if self.is_euclid_v2() {
+        //     let initial_block_number = self.blocks.first().expect("at least one block").number;
+        //     let prev_msg_queue_hash = self
+        //         .prev_msg_queue_hash
+        //         .expect("msg queue hash is required");
+        //     let post_msg_queue_hash = cycle_track!(
+        //         {
+        //             let mut rolling_hash = prev_msg_queue_hash;
+        //             for block in self.blocks.iter() {
+        //                 rolling_hash = block.hash_msg_queue(&rolling_hash);
+        //             }
+        //             rolling_hash
+        //         },
+        //         "Keccak::v256"
+        //     );
+        //     ChunkInfo::EuclidV2(EuclidV2ChunkInfo {
+        //         chain_id,
+        //         prev_state_root,
+        //         post_state_root,
+        //         withdraw_root,
+        //         tx_data_length,
+        //         tx_data_digest,
+        //         prev_msg_queue_hash,
+        //         post_msg_queue_hash,
+        //         initial_block_number,
+        //         block_ctxs: self.blocks.iter().map(BlockContextV2::from_block).collect(),
+        //     })
+        // } else {
+        let data_hash = cycle_track!(
+            {
+                let mut data_hasher = Keccak::v256();
+                for block in self.blocks.iter() {
+                    block.legacy_hash_da_header(&mut data_hasher);
+                }
+                for block in self.blocks.iter() {
+                    block.legacy_hash_l1_msg(&mut data_hasher);
+                }
+                let mut data_hash = B256::ZERO;
+                data_hasher.finalize(&mut data_hash.0);
+                data_hash
+            },
+            "Keccak::v256"
+        );
+        ChunkInfo::Legacy(LegacyChunkInfo {
+            chain_id,
+            prev_state_root,
+            post_state_root,
+            withdraw_root,
+            data_hash,
+            tx_data_digest,
+        })
+        // }
     }
 }
 

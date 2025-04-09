@@ -76,21 +76,23 @@ impl RunFileCommand {
             .collect::<Result<Vec<_>, _>>()?;
 
         let chain_spec = get_chain_spec_or_build(Chain::from_id(witnesses.chain_id()), |_spec| {
-            #[cfg(feature = "scroll")]
-            {
-                use sbv::primitives::hardforks::{ForkCondition, ScrollHardfork};
-                _spec
-                    .inner
-                    .hardforks
-                    .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
-            }
+            // FIXME: enable this when scroll reth support euclid v2
+            // #[cfg(feature = "scroll")]
+            // {
+            //     use sbv::primitives::hardforks::{ForkCondition, ScrollHardfork};
+            //     _spec
+            //         .inner
+            //         .hardforks
+            //         .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+            // }
         });
 
         let mut chunk_info_builder =
             ChunkInfoBuilder::new(&chain_spec, witnesses.prev_state_root(), &blocks);
-        if let Some(prev_msg_queue_hash) = self.prev_msg_queue_hash {
-            chunk_info_builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
-        }
+        // FIXME: enable this when scroll reth support euclid v2
+        // if let Some(prev_msg_queue_hash) = self.prev_msg_queue_hash {
+        //     chunk_info_builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
+        // }
 
         let mut code_db = NoHashMap::default();
         witnesses.import_codes(&mut code_db);
