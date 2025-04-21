@@ -1,5 +1,5 @@
 use crate::{
-    Withdrawal,
+    Address, Withdrawal,
     alloy_primitives::SignatureError,
     types::{
         Transaction,
@@ -29,19 +29,17 @@ pub trait BlockWitnessRethExt: BlockWitnessConsensusExt {
         &self,
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>>;
 
+    /// Transactions
+    #[must_use]
+    fn recover_signers(&self) -> impl ExactSizeIterator<Item = Address>;
+
     /// Build a reth block
     fn build_reth_block(&self) -> Result<RecoveredBlock<Block>, SignatureError> {
-        use reth_primitives_traits::transaction::signed::SignedTransaction;
-
         let header = self.build_alloy_header();
         let transactions = self
             .build_typed_transactions()
             .collect::<Result<Vec<_>, _>>()?;
-        let senders = transactions
-            .iter()
-            .map(|tx| tx.recover_signer())
-            .collect::<Result<Vec<_>, _>>()
-            .expect("Failed to recover signer");
+        let senders = self.recover_signers().collect::<Vec<_>>();
 
         let body = BlockBody {
             transactions,
@@ -341,6 +339,10 @@ impl BlockWitnessRethExt for super::BlockWitness {
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>> {
         self.transaction.iter().map(|tx| tx.try_into())
     }
+
+    fn recover_signers(&self) -> impl ExactSizeIterator<Item = Address> {
+        self.transaction.iter().map(|tx| tx.from)
+    }
 }
 
 #[cfg(feature = "rkyv")]
@@ -349,6 +351,10 @@ impl BlockWitnessRethExt for super::ArchivedBlockWitness {
         &self,
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>> {
         self.transaction.iter().map(|tx| tx.try_into())
+    }
+
+    fn recover_signers(&self) -> impl ExactSizeIterator<Item = Address> {
+        self.transaction.iter().map(|tx| tx.from.into())
     }
 }
 
