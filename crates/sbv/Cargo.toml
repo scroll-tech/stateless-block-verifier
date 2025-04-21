@@ -18,6 +18,9 @@ sbv-helpers.workspace = true
 sbv-utils.workspace = true
 
 [features]
+rkyv = ["sbv-primitives/rkyv"]
+serde = ["sbv-primitives/serde"]
+
 scroll = ["sbv-core/scroll", "sbv-primitives/scroll", "sbv-utils/scroll"]
 debug-account = ["sbv-core/debug-account", "sbv-helpers/debug-account"]
 debug-storage = ["sbv-core/debug-storage", "sbv-helpers/debug-storage"]
