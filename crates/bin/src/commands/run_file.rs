@@ -34,9 +34,11 @@ impl RunFileCommand {
     }
 
     fn run_witnesses(self) -> anyhow::Result<()> {
+        let mut gas_used = 0;
         for path in self.path.into_iter() {
-            run_witness(path)?
+            gas_used += run_witness(path)?
         }
+        dev_info!("Gas used: {}", gas_used);
 
         Ok(())
     }
@@ -126,23 +128,24 @@ fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
     Ok(witness)
 }
 
-fn run_witness(path: PathBuf) -> anyhow::Result<()> {
+fn run_witness(path: PathBuf) -> anyhow::Result<u64> {
     let witness = read_witness(&path)?;
-    if let Err(e) = catch_unwind(|| utils::verify(&witness)).map_err(|e| {
-        e.downcast_ref::<&str>()
-            .map(|s| anyhow!("task panics with: {s}"))
-            .or_else(|| {
-                e.downcast_ref::<String>()
-                    .map(|s| anyhow!("task panics with: {s}"))
-            })
-            .unwrap_or_else(|| anyhow!("task panics"))
-    }) {
-        dev_error!(
-            "Error occurs when verifying block ({}): {:?}",
-            path.display(),
-            e
-        );
-        return Err(e);
-    }
-    Ok(())
+    catch_unwind(|| utils::verify(&witness))
+        .map_err(|e| {
+            e.downcast_ref::<&str>()
+                .map(|s| anyhow!("task panics with: {s}"))
+                .or_else(|| {
+                    e.downcast_ref::<String>()
+                        .map(|s| anyhow!("task panics with: {s}"))
+                })
+                .unwrap_or_else(|| anyhow!("task panics"))
+        })
+        .and_then(|r| r.map_err(anyhow::Error::from))
+        .inspect_err(|e| {
+            dev_error!(
+                "Error occurs when verifying block ({}): {:?}",
+                path.display(),
+                e
+            )
+        })
 }
