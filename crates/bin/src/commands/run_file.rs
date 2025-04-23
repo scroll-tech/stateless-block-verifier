@@ -128,15 +128,18 @@ fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
 
 fn run_witness(path: PathBuf) -> anyhow::Result<()> {
     let witness = read_witness(&path)?;
-    if let Err(e) = catch_unwind(|| utils::verify(&witness)).map_err(|e| {
-        e.downcast_ref::<&str>()
-            .map(|s| anyhow!("task panics with: {s}"))
-            .or_else(|| {
-                e.downcast_ref::<String>()
-                    .map(|s| anyhow!("task panics with: {s}"))
-            })
-            .unwrap_or_else(|| anyhow!("task panics"))
-    }) {
+    if let Err(e) = catch_unwind(|| utils::verify(&witness))
+        .map_err(|e| {
+            e.downcast_ref::<&str>()
+                .map(|s| anyhow!("task panics with: {s}"))
+                .or_else(|| {
+                    e.downcast_ref::<String>()
+                        .map(|s| anyhow!("task panics with: {s}"))
+                })
+                .unwrap_or_else(|| anyhow!("task panics"))
+        })
+        .and_then(|r| r.map_err(anyhow::Error::from))
+    {
         dev_error!(
             "Error occurs when verifying block ({}): {:?}",
             path.display(),
