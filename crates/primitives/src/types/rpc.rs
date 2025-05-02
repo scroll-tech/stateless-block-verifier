@@ -36,7 +36,7 @@ impl crate::types::Transaction {
         Self {
             hash: tx.inner.trie_hash(),
             nonce: tx.nonce(),
-            from: tx.from,
+            from: tx.inner.signer(),
             to: tx.to(),
             value: tx.value(),
             gas_price: tx.gas_price(),
@@ -45,7 +45,7 @@ impl crate::types::Transaction {
             max_priority_fee_per_gas: tx.max_priority_fee_per_gas(),
             max_fee_per_blob_gas: tx.max_fee_per_blob_gas(),
             input: tx.input().clone(),
-            signature: TxEnvelopeExt::signature(&tx.inner).map(Into::into),
+            signature: TxEnvelopeExt::signature(tx.inner.inner()).map(Into::into),
             chain_id: tx.chain_id(),
             blob_versioned_hashes: tx.blob_versioned_hashes().map(Vec::from),
             access_list: tx.access_list().map(Into::into),

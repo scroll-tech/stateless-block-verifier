@@ -34,10 +34,7 @@ pub trait ProviderExt: Provider<Network> {
         #[cfg(not(feature = "scroll"))] ancestors: Option<usize>,
     ) -> TransportResult<Option<BlockWitness>> {
         let builder = crate::witness::WitnessBuilder::new();
-        let Some(block) = self
-            .get_block_by_number(number, BlockTransactionsKind::Full)
-            .await?
-        else {
+        let Some(block) = self.get_block_by_number(number).full().await? else {
             return Ok(None);
         };
         let number = block.header.number;

@@ -5,9 +5,11 @@ use crate::{
         Transaction,
         consensus::{
             BlockWitnessConsensusExt, SignableTransaction, TxEip1559, TxEip2930, TxLegacy,
+            TypedTransaction,
         },
     },
 };
+use alloy_consensus::Signed;
 use auto_impl::auto_impl;
 
 pub use reth_primitives::RecoveredBlock;
@@ -84,8 +86,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                     value: tx.value,
                     input: tx.input.clone(),
                 };
-
-                tx.into_signed(sig).into()
+                TransactionSigned::new(tx.into(), sig)
             }
             0x01 => {
                 let sig = tx.signature.expect("missing signature").into();
@@ -99,8 +100,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                     access_list: tx.access_list.clone().expect("missing access_list").into(),
                     input: tx.input.clone(),
                 };
-
-                tx.into_signed(sig).into()
+                TransactionSigned::new(tx.into(), sig)
             }
             0x02 => {
                 let sig = tx.signature.expect("missing signature").into();
@@ -117,8 +117,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                     access_list: tx.access_list.clone().expect("missing access_list").into(),
                     input: tx.input.clone(),
                 };
-
-                tx.into_signed(sig).into()
+                TransactionSigned::new(tx.into(), sig)
             }
             #[cfg(not(feature = "scroll"))]
             0x03 => {
@@ -143,33 +142,34 @@ impl TryFrom<&Transaction> for TransactionSigned {
                         .max_fee_per_blob_gas
                         .expect("missing max_fee_per_blob_gas"),
                 };
-                tx.into_signed(sig).into()
+                TransactionSigned::new(tx.into(), sig)
             }
-            0x04 => {
-                let sig = tx.signature.expect("missing signature").into();
-                let tx = super::consensus::TxEip7702 {
-                    chain_id: tx.chain_id.expect("missing chain_id"),
-                    nonce: tx.nonce,
-                    gas_limit: tx.gas,
-                    max_fee_per_gas: tx.max_fee_per_gas,
-                    max_priority_fee_per_gas: tx
-                        .max_priority_fee_per_gas
-                        .expect("missing max_priority_fee_per_gas"),
-                    to: tx.to.expect("missing to"),
-                    value: tx.value,
-                    access_list: tx.access_list.clone().expect("missing access_list").into(),
-                    authorization_list: tx
-                        .authorization_list
-                        .as_ref()
-                        .expect("missing authorization_list")
-                        .iter()
-                        .cloned()
-                        .map(|x| x.into())
-                        .collect(),
-                    input: tx.input.clone(),
-                };
-                tx.into_signed(sig).into()
-            }
+            // FIXME: enable this when scroll reth support euclid v2
+            // 0x04 => {
+            //     let sig = tx.signature.expect("missing signature").into();
+            //     let tx = super::consensus::TxEip7702 {
+            //         chain_id: tx.chain_id.expect("missing chain_id"),
+            //         nonce: tx.nonce,
+            //         gas_limit: tx.gas,
+            //         max_fee_per_gas: tx.max_fee_per_gas,
+            //         max_priority_fee_per_gas: tx
+            //             .max_priority_fee_per_gas
+            //             .expect("missing max_priority_fee_per_gas"),
+            //         to: tx.to.expect("missing to"),
+            //         value: tx.value,
+            //         access_list: tx.access_list.clone().expect("missing access_list").into(),
+            //         authorization_list: tx
+            //             .authorization_list
+            //             .as_ref()
+            //             .expect("missing authorization_list")
+            //             .iter()
+            //             .cloned()
+            //             .map(|x| x.into())
+            //             .collect(),
+            //         input: tx.input.clone(),
+            //     };
+            //     TransactionSigned::new(tx.into(), sig)
+            // }
             #[cfg(feature = "scroll")]
             0x7e => {
                 use super::consensus::TxL1Message;
@@ -181,7 +181,6 @@ impl TryFrom<&Transaction> for TransactionSigned {
                     sender: tx.from,
                     input: tx.input.clone(),
                 };
-
                 TransactionSigned::new_unhashed(tx.into(), TxL1Message::signature())
             }
             _ => unimplemented!("unsupported tx type: {}", tx_type),
@@ -212,8 +211,7 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
                     value: tx.value.into(),
                     input,
                 };
-
-                tx.into_signed(sig).into()
+                TransactionSigned::new(tx.into(), sig)
             }
             0x01 => {
                 let sig = tx.signature.as_ref().expect("missing signature").into();
@@ -227,8 +225,7 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
                     access_list: tx.access_list.as_ref().expect("missing access_list").into(),
                     input,
                 };
-
-                tx.into_signed(sig).into()
+                TransactionSigned::new(tx.into(), sig)
             }
             0x02 => {
                 let sig = tx.signature.as_ref().expect("missing signature").into();
@@ -247,8 +244,7 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
                     access_list: tx.access_list.as_ref().expect("missing access_list").into(),
                     input,
                 };
-
-                tx.into_signed(sig).into()
+                TransactionSigned::new(tx.into(), sig)
             }
             #[cfg(not(feature = "scroll"))]
             0x03 => {
@@ -280,34 +276,35 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
                         .expect("missing max_fee_per_blob_gas")
                         .to_native(),
                 };
-                tx.into_signed(sig).into()
+                TransactionSigned::new(tx.into(), sig)
             }
-            0x04 => {
-                let sig = tx.signature.as_ref().expect("missing signature").into();
-                let tx = super::consensus::TxEip7702 {
-                    chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
-                    nonce: tx.nonce.to_native(),
-                    gas_limit: tx.gas.to_native(),
-                    max_fee_per_gas: tx.max_fee_per_gas.to_native(),
-                    max_priority_fee_per_gas: tx
-                        .max_priority_fee_per_gas
-                        .as_ref()
-                        .expect("missing max_priority_fee_per_gas")
-                        .to_native(),
-                    to: to.expect("missing to"),
-                    value: tx.value.into(),
-                    access_list: tx.access_list.as_ref().expect("missing access_list").into(),
-                    authorization_list: tx
-                        .authorization_list
-                        .as_ref()
-                        .expect("missing authorization_list")
-                        .iter()
-                        .map(|x| x.into())
-                        .collect(),
-                    input,
-                };
-                tx.into_signed(sig).into()
-            }
+            // FIXME: enable this when scroll reth support euclid v2
+            // 0x04 => {
+            //     let sig = tx.signature.as_ref().expect("missing signature").into();
+            //     let tx = super::consensus::TxEip7702 {
+            //         chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
+            //         nonce: tx.nonce.to_native(),
+            //         gas_limit: tx.gas.to_native(),
+            //         max_fee_per_gas: tx.max_fee_per_gas.to_native(),
+            //         max_priority_fee_per_gas: tx
+            //             .max_priority_fee_per_gas
+            //             .as_ref()
+            //             .expect("missing max_priority_fee_per_gas")
+            //             .to_native(),
+            //         to: to.expect("missing to"),
+            //         value: tx.value.into(),
+            //         access_list: tx.access_list.as_ref().expect("missing access_list").into(),
+            //         authorization_list: tx
+            //             .authorization_list
+            //             .as_ref()
+            //             .expect("missing authorization_list")
+            //             .iter()
+            //             .map(|x| x.into())
+            //             .collect(),
+            //         input,
+            //     };
+            //     TransactionSigned::new(tx.into(), sig)
+            // }
             #[cfg(feature = "scroll")]
             0x7e => {
                 let tx = super::consensus::TxL1Message {
@@ -322,7 +319,6 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
                     sender: crate::Address::from(tx.from),
                     input,
                 };
-
                 TransactionSigned::new_unhashed(
                     tx.into(),
                     super::consensus::TxL1Message::signature(),

@@ -1,4 +1,4 @@
-use crate::{PrimitiveSignature, U256};
+use crate::{AlloySignature, U256};
 
 /// An Ethereum ECDSA signature.
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -29,8 +29,8 @@ pub struct Signature {
     pub y_parity: bool,
 }
 
-impl From<&PrimitiveSignature> for Signature {
-    fn from(sig: &PrimitiveSignature) -> Self {
+impl From<&AlloySignature> for Signature {
+    fn from(sig: &AlloySignature) -> Self {
         Self {
             r: sig.r(),
             s: sig.s(),
@@ -39,14 +39,14 @@ impl From<&PrimitiveSignature> for Signature {
     }
 }
 
-impl From<Signature> for PrimitiveSignature {
+impl From<Signature> for AlloySignature {
     fn from(sig: Signature) -> Self {
         Self::new(sig.r, sig.s, sig.y_parity)
     }
 }
 
 #[cfg(feature = "rkyv")]
-impl From<&ArchivedSignature> for PrimitiveSignature {
+impl From<&ArchivedSignature> for AlloySignature {
     fn from(sig: &ArchivedSignature) -> Self {
         Self::new(sig.r.into(), sig.s.into(), sig.y_parity)
     }

@@ -3,13 +3,13 @@ use sbv_primitives::{
     Address, B256, Bytes, U256,
     types::{
         AccountInfo, Bytecode,
-        revm::{db::BundleAccount, interpreter::analysis::to_analysed},
+        revm::database::{BundleAccount, DBErrorMarker},
     },
 };
 use sbv_trie::{PartialStateTrie, TrieNode};
 use std::{cell::RefCell, fmt};
 
-pub use sbv_primitives::types::revm::db::DatabaseRef;
+pub use sbv_primitives::types::revm::database::DatabaseRef;
 
 /// A database that consists of account and storage information.
 pub struct EvmDatabase<CodeDb, NodesProvider, BlockHashProvider> {
@@ -114,12 +114,7 @@ impl<
         if let Some(code) = code_cache.get(&hash) {
             code.clone()
         } else {
-            let code = self
-                .code_db
-                .get(&hash)
-                .cloned()
-                .map(Bytecode::new_raw)
-                .map(to_analysed);
+            let code = self.code_db.get(&hash).cloned().map(Bytecode::new_raw);
             code_cache.insert(hash, code.clone());
             code
         }
@@ -144,8 +139,8 @@ impl<
         let info = AccountInfo {
             balance: account.balance,
             nonce: account.nonce,
-            #[cfg(feature = "scroll")]
-            code_size: code.as_ref().map(|c| c.len()).unwrap_or(0), // FIXME: this should be remove
+            // #[cfg(feature = "scroll")]
+            // code_size: code.as_ref().map(|c| c.len()).unwrap_or(0), // FIXME: this should be remove
             code_hash: account.code_hash,
             code,
         };
@@ -186,8 +181,10 @@ impl<
     }
 }
 
-impl From<DatabaseError> for reth_storage_errors::provider::ProviderError {
-    fn from(e: DatabaseError) -> Self {
-        reth_storage_errors::provider::ProviderError::TrieWitnessError(e.to_string())
-    }
-}
+// impl From<DatabaseError> for reth_storage_errors::provider::ProviderError {
+//     fn from(e: DatabaseError) -> Self {
+//         reth_storage_errors::provider::ProviderError::TrieWitnessError(e.to_string())
+//     }
+// }
+
+impl DBErrorMarker for DatabaseError {}

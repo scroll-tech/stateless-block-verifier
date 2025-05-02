@@ -35,4 +35,4 @@ debug-storage = ["dep:csv", "dep:serde", "revm/serde"]
 dev = ["dep:tracing"]
 metrics = ["dep:hyper", "dep:hyper-util", "dep:http-body-util", "dep:once_cell", "dep:prometheus-client", "dep:tokio", "tokio/macros", "tokio/signal"]
 
-openvm = ["revm/openvm"]
+#openvm = ["revm/openvm"]

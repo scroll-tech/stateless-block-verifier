@@ -34,10 +34,6 @@ tracing-subscriber.workspace = true
 [features]
 scroll = [
     "dep:reth-scroll-evm",
-    "reth-evm/scroll",
-    "reth-evm-ethereum/scroll",
-    "reth-execution-types/scroll",
-    "reth-scroll-evm/scroll",
     "sbv-primitives/scroll-all",
 ]
 debug-account = ["sbv-helpers/debug-account"]
@@ -49,4 +45,4 @@ metrics = ["sbv-helpers/metrics"]
 sp1 = ["sbv-trie/sp1"]
 cycle-tracker = ["sbv-trie/cycle-tracker"]
 
-openvm = ["sbv-primitives/openvm"]
+#openvm = ["sbv-primitives/openvm"]

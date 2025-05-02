@@ -27,10 +27,7 @@ thiserror.workspace = true
 serde_json.workspace = true
 
 [features]
-scroll = [
-    "reth-trie/scroll",
-    "sbv-primitives/scroll-all",
-]
+scroll = ["sbv-primitives/scroll-all"]
 dev = [
     "sbv-primitives/dev",
     "sbv-helpers/dev"
@@ -39,7 +36,7 @@ dev = [
 sp1 = []
 cycle-tracker = []
 
-openvm = [
-    "sbv-primitives/openvm",
-    "sbv-helpers/openvm",
-]
+#openvm = [
+#    "sbv-primitives/openvm",
+#    "sbv-helpers/openvm",
+#]
