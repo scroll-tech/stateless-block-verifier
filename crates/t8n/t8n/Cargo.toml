@@ -1,0 +1,27 @@
+[package]
+name = "sbv-t8n"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+reth-evm.workspace = true
+reth-evm-ethereum.workspace = true
+reth-execution-types.workspace = true
+reth-primitives-traits.workspace = true
+
+sbv-core = { workspace = true }
+sbv-kv.workspace = true
+sbv-primitives = { workspace = true, features = ["ethereum-all"] }
+
+t8n-types.workspace = true
+
+[dev-dependencies]
+serde_json = "1"
