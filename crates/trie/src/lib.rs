@@ -15,7 +15,7 @@ use sbv_kv::{HashMap, nohash::NoHashMap};
 use sbv_primitives::{
     Address, B256, BlockWitness, U256, keccak256, types::revm::db::BundleAccount,
 };
-use std::{cell::RefCell, collections::BTreeMap};
+use std::cell::RefCell;
 
 pub use alloy_trie::{TrieAccount, nodes::TrieNode};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
@@ -260,7 +260,7 @@ impl PartialStateTrie {
                     .map_err(|e| e.clone())?;
                 dev_trace!("opened storage trie of {address} at {}", trie.trie.root());
 
-                for (key, slot) in BTreeMap::from_iter(account.storage.clone()) {
+                for (key, slot) in account.storage.iter() {
                     let key_hash = keccak256(key.to_be_bytes::<{ U256::BYTES }>());
                     let path = Nibbles::unpack(key_hash);
 

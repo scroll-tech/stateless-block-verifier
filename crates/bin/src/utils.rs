@@ -8,7 +8,6 @@ use sbv::{
     },
     trie::BlockWitnessTrieExt,
 };
-use std::collections::BTreeMap;
 
 pub fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
@@ -71,10 +70,7 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
             update_metrics_counter!(verification_error);
         })?;
 
-    db.update(
-        &nodes_provider,
-        BTreeMap::from_iter(output.state.state.clone()).iter(),
-    )?;
+    db.update(&nodes_provider, output.state.state.iter())?;
     let post_state_root = db.commit_changes();
 
     #[cfg(feature = "profiling")]
