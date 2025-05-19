@@ -48,11 +48,7 @@ impl RunRpcCommand {
                     let provider = provider.clone();
                     async move {
                         loop {
-                            #[cfg(feature = "scroll")]
-                            let fut = provider.dump_block_witness(block_number.into());
-                            #[cfg(not(feature = "scroll"))]
-                            let fut = provider.dump_block_witness(block_number.into(), None);
-                            match fut.await {
+                            match provider.dump_block_witness(block_number.into()).await {
                                 Ok(Some(w)) => {
                                     dev_info!("dumped block witness for #{block_number}");
                                     return Some(w);

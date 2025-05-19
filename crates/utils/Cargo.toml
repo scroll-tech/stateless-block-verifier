@@ -15,12 +15,27 @@ workspace = true
 [dependencies]
 alloy-provider.workspace = true
 alloy-transport.workspace = true
+tiny-keccak.workspace = true
 
+anyhow.workspace = true
 async-trait.workspace = true
 futures.workspace = true
 thiserror.workspace = true
+tracing.workspace = true
 
-sbv-primitives.workspace = true
+pprof = { workspace = true, optional = true }
+
+sbv-core.workspace = true
+sbv-helpers.workspace = true
+sbv-kv.workspace = true
+sbv-primitives = { workspace = true, features = ["chainspec", "reth-types"] }
+sbv-trie.workspace = true
 
 [features]
-scroll = ["sbv-primitives/scroll-all"]
+dev = ["sbv-core/dev", "sbv-primitives/dev", "sbv-trie/dev"]
+profiling = ["dep:pprof"]
+metrics = ["sbv-core/metrics", "sbv-helpers/metrics"]
+scroll = [
+    "sbv-core/scroll",
+    "sbv-primitives/scroll-all"
+]

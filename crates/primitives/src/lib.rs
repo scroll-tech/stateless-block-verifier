@@ -1,3 +1,4 @@
+#![feature(lazy_get)]
 //! Stateless Block Verifier primitives library.
 
 use auto_impl::auto_impl;

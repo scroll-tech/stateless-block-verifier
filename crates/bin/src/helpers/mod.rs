@@ -12,7 +12,6 @@ use url::Url;
 pub mod retry;
 /// Helper functions for the tower
 pub mod tower;
-pub mod verifier;
 
 #[cfg(feature = "scroll")]
 const MAINNET_RPC: &str = "https://euclid-l2-mpt.scroll.systems";

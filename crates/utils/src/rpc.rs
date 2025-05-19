@@ -3,6 +3,53 @@ use alloy_provider::{Provider, network::primitives::BlockTransactionsKind};
 use alloy_transport::TransportResult;
 use sbv_primitives::types::{BlockWitness, ExecutionWitness, Network, eips::BlockNumberOrTag};
 
+/// Options for [`dump_block_witness`](ProviderExt::dump_block_witness).
+#[derive(Debug, Copy, Clone)]
+pub struct DumpBlockWitnessOptions {
+    number: BlockNumberOrTag,
+    #[cfg(not(feature = "scroll"))]
+    ancestors: usize,
+    auto_fix: bool,
+}
+
+impl DumpBlockWitnessOptions {
+    /// Create a new [`DumpBlockWitnessOptions`]
+    pub fn new<N: Into<BlockNumberOrTag>>(number: N) -> Self {
+        Self {
+            number: number.into(),
+            #[cfg(not(feature = "scroll"))]
+            ancestors: 256,
+            auto_fix: true,
+        }
+    }
+
+    /// Set the number of ancestors to dump.
+    ///
+    /// This is no-op if the `scroll` feature is enabled.
+    #[allow(unused_mut, unused_variables)]
+    pub fn ancestors(mut self, ancestors: usize) -> Self {
+        #[cfg(not(feature = "scroll"))]
+        {
+            self.ancestors = ancestors;
+        }
+        self
+    }
+
+    /// Set the auto-fix option, default is `true`.
+    ///
+    /// If `true`, the witness will be executed and missing states will be fetched.
+    pub fn auto_fix(mut self, auto_fix: bool) -> Self {
+        self.auto_fix = auto_fix;
+        self
+    }
+}
+
+impl<N: Into<BlockNumberOrTag>> From<N> for DumpBlockWitnessOptions {
+    fn from(number: N) -> Self {
+        Self::new(number)
+    }
+}
+
 /// Extension trait for [`Provider`](Provider).
 #[async_trait::async_trait]
 pub trait ProviderExt: Provider<Network> {
@@ -30,12 +77,11 @@ pub trait ProviderExt: Provider<Network> {
     /// Dump the block witness for a block.
     async fn dump_block_witness(
         &self,
-        number: BlockNumberOrTag,
-        #[cfg(not(feature = "scroll"))] ancestors: Option<usize>,
+        options: DumpBlockWitnessOptions,
     ) -> TransportResult<Option<BlockWitness>> {
         let builder = crate::witness::WitnessBuilder::new();
         let Some(block) = self
-            .get_block_by_number(number, BlockTransactionsKind::Full)
+            .get_block_by_number(options.number, BlockTransactionsKind::Full)
             .await?
         else {
             return Ok(None);
@@ -49,7 +95,11 @@ pub trait ProviderExt: Provider<Network> {
 
         #[cfg(not(feature = "scroll"))]
         let builder = builder
-            .ancestor_blocks(self.dump_block_ancestors(number, ancestors).await?.unwrap())
+            .ancestor_blocks(
+                self.dump_block_ancestors(number, options.ancestors)
+                    .await?
+                    .unwrap(),
+            )
             .unwrap();
 
         #[cfg(feature = "scroll")]
@@ -58,7 +108,11 @@ pub trait ProviderExt: Provider<Network> {
             .unwrap()
             .prev_state_root(self.scroll_disk_root((number - 1).into()).await?.disk_root);
 
-        Ok(Some(builder.build().unwrap()))
+        let mut witness = builder.build().unwrap();
+
+        if options.auto_fix {}
+
+        Ok(Some(witness))
     }
 
     /// Dump the ancestor blocks for a block.
@@ -67,11 +121,9 @@ pub trait ProviderExt: Provider<Network> {
     async fn dump_block_ancestors(
         &self,
         number: sbv_primitives::BlockNumber,
-        ancestors: Option<usize>,
+        ancestors: usize,
     ) -> TransportResult<Option<Vec<sbv_primitives::types::rpc::Block>>> {
-        let ancestors = ancestors
-            .unwrap_or_default()
-            .clamp(1, (number as usize).min(256));
+        let ancestors = ancestors.clamp(1, (number as usize).min(256));
 
         let ancestors = futures::future::try_join_all((1..=ancestors).map(|offset| {
             let block_number = number - offset as sbv_primitives::BlockNumber;

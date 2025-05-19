@@ -4597,7 +4597,6 @@ dependencies = [
  "console",
  "indicatif",
  "num_cpus",
- "pprof",
  "pumps",
  "rkyv",
  "sbv",
@@ -4707,10 +4706,18 @@ version = "2.0.0"
 dependencies = [
  "alloy-provider",
  "alloy-transport",
+ "anyhow",
  "async-trait",
  "futures",
+ "pprof",
+ "sbv-core",
+ "sbv-helpers",
+ "sbv-kv",
  "sbv-primitives",
+ "sbv-trie",
  "thiserror 1.0.69",
+ "tiny-keccak",
+ "tracing",
 ]
 
 [[package]]

@@ -28,7 +28,6 @@ tower = { workspace = true, features = ["limit"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 url.workspace = true
 
-pprof = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, optional = true }
 
 sbv.workspace = true
@@ -42,6 +41,5 @@ default = ["dev"]
 dev = ["sbv/dev", "dep:tracing-subscriber"]
 debug-account = ["sbv/debug-account"]
 debug-storage = ["sbv/debug-storage"]
-profiling = ["dep:pprof"]
 scroll = ["sbv/scroll"]
 metrics = ["sbv/metrics"]

@@ -3,7 +3,7 @@ use clap::Args;
 use console::{Emoji, style};
 use indicatif::{HumanBytes, HumanDuration, ProgressBar, ProgressStyle};
 use rkyv::rancor;
-use sbv::utils::rpc::ProviderExt;
+use sbv::utils::rpc::{DumpBlockWitnessOptions, ProviderExt};
 use std::{
     path::PathBuf,
     time::{Duration, Instant},
@@ -60,12 +60,10 @@ impl DumpWitnessCommand {
         pb.set_message(format!("Dumping witness for block {}", self.block));
         steps += 1;
 
+        let options = DumpBlockWitnessOptions::new(self.block);
         #[cfg(not(feature = "scroll"))]
-        let witness = provider
-            .dump_block_witness(self.block.into(), Some(self.ancestors))
-            .await?;
-        #[cfg(feature = "scroll")]
-        let witness = provider.dump_block_witness(self.block.into()).await?;
+        let options = options.ancestors(self.ancestors);
+        let witness = provider.dump_block_witness(options).await?;
 
         pb.finish_with_message(format!("Dumped witness for block {}", self.block));
         println!();

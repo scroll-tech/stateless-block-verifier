@@ -147,7 +147,8 @@ impl<'a> ChunkInfoBuilder<'a> {
 }
 
 impl BlockContextV2 {
-    fn from_block(block: &RecoveredBlock<Block>) -> Self {
+    /// Create a new BlockContextV2 from a RecoveredBlock
+    pub fn from_block(block: &RecoveredBlock<Block>) -> Self {
         BlockContextV2 {
             timestamp: block.timestamp,
             base_fee: U256::from_limbs([
