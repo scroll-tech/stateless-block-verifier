@@ -130,9 +130,7 @@ fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
 }
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(path = %path.display()), err))]
-fn run_witness(path: PathBuf) -> anyhow::Result<()> {
+fn run_witness(path: PathBuf) -> anyhow::Result<u64> {
     let witness = read_witness(&path)?;
-    verify_catch_panics(&witness)?;
-    dev_info!("verified");
-    Ok(())
+    verify_catch_panics(&witness).inspect(|_| dev_info!("verified"))
 }
