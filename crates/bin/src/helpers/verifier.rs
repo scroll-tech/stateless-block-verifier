@@ -18,8 +18,8 @@ pub fn verify_catch_panics<
     T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt + UnwindSafe,
 >(
     witness: T,
-) -> anyhow::Result<()> {
-    if let Err(e) = catch_unwind(|| verify(witness))
+) -> anyhow::Result<u64> {
+    catch_unwind(|| verify(witness))
         .map_err(|e| {
             e.downcast_ref::<&str>()
                 .map(|s| anyhow!("task panics with: {s}"))
@@ -30,10 +30,6 @@ pub fn verify_catch_panics<
                 .unwrap_or_else(|| anyhow!("task panics"))
         })
         .and_then(|r| r.map_err(anyhow::Error::from))
-    {
-        return Err(e);
-    }
-    Ok(())
 }
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
