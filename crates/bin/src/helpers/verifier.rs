@@ -39,7 +39,7 @@ pub fn verify_catch_panics<
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
 pub fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
-) -> Result<(), VerificationError> {
+) -> Result<u64, VerificationError> {
     measure_duration_millis!(
         total_block_verification_duration_milliseconds,
         verify_inner(witness)
@@ -48,7 +48,7 @@ pub fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
 
 fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
-) -> Result<(), VerificationError> {
+) -> Result<u64, VerificationError> {
     dev_trace!("{witness:#?}");
 
     #[cfg(feature = "profiling")]
@@ -131,5 +131,7 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
             post_state_root,
         ));
     }
-    Ok(())
+    dev_info!("Block #{} verified successfully", block.number);
+
+    Ok(output.gas_used)
 }

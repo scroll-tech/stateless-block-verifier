@@ -35,9 +35,11 @@ impl RunFileCommand {
     }
 
     fn run_witnesses(self) -> anyhow::Result<()> {
+        let mut gas_used = 0;
         for path in self.path.into_iter() {
-            run_witness(path)?
+            gas_used += run_witness(path)?
         }
+        dev_info!("Gas used: {}", gas_used);
 
         Ok(())
     }
