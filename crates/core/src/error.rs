@@ -49,10 +49,7 @@ impl VerificationError {
         use sbv_trie::PartialStateTrieError::BlindedNode;
 
         match self {
-            DatabaseCreation(PartialStateTrie(BlindedNode { hash, .. }))
-            | DatabaseUpdate(PartialStateTrie(BlindedNode { hash, .. }))
-            | GetWithdrawRoot(PartialStateTrie(BlindedNode { hash, .. }))
-            | BlockExecution(Database(PartialStateTrie(BlindedNode { hash, .. }))) => Some(*hash),
+            Database(PartialStateTrie(BlindedNode { hash, .. })) => Some(*hash),
             _ => None,
         }
     }

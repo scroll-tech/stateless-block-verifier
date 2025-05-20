@@ -1,3 +1,4 @@
+//! Verifier helpers
 use anyhow::anyhow;
 use sbv_core::{EvmDatabase, EvmExecutor, VerificationError};
 #[cfg(feature = "dev")]
@@ -5,12 +6,15 @@ use sbv_helpers::tracing;
 use sbv_kv::nohash::NoHashMap;
 use sbv_primitives::{
     B256, BlockWitness, Bytes,
-    chainspec::{Chain, SCROLL_DEV, get_chain_spec},
+    chainspec::{Chain, ChainSpec, get_chain_spec},
     ext::{BlockWitnessChunkExt, BlockWitnessExt},
     types::reth::{Block, BlockWitnessRethExt, RecoveredBlock},
 };
 use sbv_trie::{BlockWitnessTrieExt, TrieNode};
-use std::panic::{UnwindSafe, catch_unwind};
+use std::{
+    panic::{UnwindSafe, catch_unwind},
+    sync::Arc,
+};
 
 /// The code database provider
 pub type CodeDb = NoHashMap<B256, Bytes>;
@@ -31,7 +35,10 @@ pub type BlockHashProvider = sbv_kv::null::NullProvider;
 pub struct VerifyOutput {
     /// The gas used measured by the executor
     pub gas_used: u64,
+    /// The chainspec built from the witnesses
+    pub chain_spec: Arc<ChainSpec>,
     /// The root of the withdraw tree
+    #[cfg(feature = "scroll")]
     pub withdraw_root: B256,
     /// The built blocks from the witnesses
     pub blocks: Vec<RecoveredBlock<Block>>,
@@ -103,11 +110,9 @@ pub fn make_providers<W: BlockWitness>(
     };
     #[cfg(not(feature = "scroll"))]
     let block_hashes = {
-        let mut block_hashes = NoHashMap::with_capacity_and_hasher(
-            witnesses.block_hashes_iter().len(),
-            Default::default(),
-        );
-        witness.import_block_hashes(&mut block_hashes);
+        let mut block_hashes =
+            NoHashMap::with_capacity_and_hasher(witnesses.len(), Default::default());
+        witnesses.import_block_hashes(&mut block_hashes);
         block_hashes
     };
     #[cfg(feature = "scroll")]
@@ -127,7 +132,7 @@ fn verify_inner<W: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     if !witnesses.has_same_chain_id() {
         return Err(VerificationError::ExpectSameChainId);
     }
-    if witnesses.has_seq_block_number() {
+    if !witnesses.has_seq_block_number() {
         return Err(VerificationError::ExpectSequentialBlockNumber);
     }
 
@@ -146,7 +151,14 @@ fn verify_inner<W: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
 
     let chain_spec = get_chain_spec(chain).unwrap_or_else(|| {
         dev_warn!("chain not found, defaults to dev");
-        SCROLL_DEV.clone()
+        #[cfg(not(feature = "scroll"))]
+        {
+            sbv_primitives::chainspec::DEV.clone()
+        }
+        #[cfg(feature = "scroll")]
+        {
+            sbv_primitives::chainspec::SCROLL_DEV.clone()
+        }
     });
 
     let (code_db, nodes_provider, block_hashes) = make_providers(witnesses);
@@ -176,6 +188,7 @@ fn verify_inner<W: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     }
 
     let post_state_root = db.commit_changes();
+    #[cfg(feature = "scroll")]
     let withdraw_root = db.withdraw_root()?;
 
     #[cfg(feature = "profiling")]
@@ -207,6 +220,8 @@ fn verify_inner<W: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
 
     Ok(VerifyOutput {
         gas_used,
+        chain_spec,
+        #[cfg(feature = "scroll")]
         withdraw_root,
         blocks,
     })

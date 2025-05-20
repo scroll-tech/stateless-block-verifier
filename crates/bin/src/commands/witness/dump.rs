@@ -60,10 +60,10 @@ impl DumpWitnessCommand {
         pb.set_message(format!("Dumping witness for block {}", self.block));
         steps += 1;
 
-        let options = DumpBlockWitnessOptions::new(self.block);
+        let options = DumpBlockWitnessOptions::default();
         #[cfg(not(feature = "scroll"))]
         let options = options.ancestors(self.ancestors);
-        let witness = provider.dump_block_witness(options).await?;
+        let witness = provider.dump_block_witness(self.block, options).await?;
 
         pb.finish_with_message(format!("Dumped witness for block {}", self.block));
         println!();

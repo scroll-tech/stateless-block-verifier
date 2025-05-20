@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use sbv_kv::{HashMap, KeyValueStoreGet};
 use sbv_primitives::{
     Address, B256, Bytes, U256,
@@ -85,7 +86,10 @@ impl<
         nodes_provider: P,
         post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
     ) -> Result<()> {
-        self.state.update(nodes_provider, post_state)?;
+        self.state.update(
+            nodes_provider,
+            post_state.into_iter().sorted_by_key(|(addr, _)| *addr),
+        )?;
         Ok(())
     }
 
@@ -188,6 +192,13 @@ impl<
 
 impl From<DatabaseError> for reth_storage_errors::provider::ProviderError {
     fn from(e: DatabaseError) -> Self {
-        reth_storage_errors::provider::ProviderError::TrieWitnessError(e.to_string())
+        match e {
+            DatabaseError::CodeNotLoaded(_) => reth_storage_errors::provider::ProviderError::Other(
+                reth_storage_errors::any::AnyError::new(e),
+            ),
+            _ => unreachable!(
+                "any error going to reth should only be CodeNotLoaded error, otherwise it's a bug"
+            ),
+        }
     }
 }

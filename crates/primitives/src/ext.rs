@@ -1,11 +1,9 @@
 use crate::{B256, BlockWitness, Bytes, keccak256};
-#[cfg(feature = "scroll")]
 use itertools::Itertools;
 use sbv_helpers::cycle_track;
 use sbv_kv::KeyValueStore;
 
 /// BlockWitnessCodeExt trait
-#[cfg(feature = "scroll")]
 pub trait BlockWitnessChunkExt {
     /// Get the chain id.
     fn chain_id(&self) -> crate::ChainId;
@@ -17,7 +15,6 @@ pub trait BlockWitnessChunkExt {
     fn has_seq_block_number(&self) -> bool;
 }
 
-#[cfg(feature = "scroll")]
 impl<T: BlockWitness> BlockWitnessChunkExt for [T] {
     #[inline(always)]
     fn chain_id(&self) -> crate::ChainId {

@@ -4614,6 +4614,7 @@ name = "sbv-core"
 version = "2.0.0"
 dependencies = [
  "ctor",
+ "itertools 0.14.0",
  "reth-evm",
  "reth-evm-ethereum",
  "reth-execution-types",
@@ -4691,6 +4692,7 @@ version = "2.0.0"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
+ "itertools 0.14.0",
  "reth-trie",
  "reth-trie-sparse",
  "sbv-helpers",

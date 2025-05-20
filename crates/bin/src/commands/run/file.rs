@@ -1,8 +1,7 @@
-use crate::helpers::verifier::*;
 use clap::Args;
 #[cfg(feature = "dev")]
 use sbv::helpers::tracing;
-use sbv::primitives::types::BlockWitness;
+use sbv::{primitives::types::BlockWitness, utils::verifier::*};
 use std::path::PathBuf;
 
 #[derive(Args, Debug)]
@@ -37,7 +36,7 @@ impl RunFileCommand {
     fn run_witnesses(self) -> anyhow::Result<()> {
         let mut gas_used = 0;
         for path in self.path.into_iter() {
-            gas_used += run_witness(path)?
+            gas_used += run_witness(path)?.gas_used
         }
         dev_info!("Gas used: {}", gas_used);
 
@@ -47,15 +46,9 @@ impl RunFileCommand {
     #[cfg(feature = "scroll")]
     fn run_chunk(self) -> anyhow::Result<()> {
         use anyhow::bail;
-        use sbv::{
-            core::{EvmDatabase, EvmExecutor},
-            kv::{nohash::NoHashMap, null::NullProvider},
-            primitives::{
-                chainspec::{Chain, get_chain_spec_or_build},
-                ext::{BlockWitnessChunkExt, BlockWitnessExt},
-                types::{BlockWitness, reth::BlockWitnessRethExt, scroll::ChunkInfoBuilder},
-            },
-            trie::BlockWitnessTrieExt,
+        use sbv::primitives::{
+            ext::BlockWitnessChunkExt,
+            types::{BlockWitness, scroll::ChunkInfoBuilder},
         };
 
         let witnesses = self
@@ -72,49 +65,17 @@ impl RunFileCommand {
             bail!("All traces must have sequential block numbers in chunk mode");
         }
 
-        let blocks = witnesses
-            .iter()
-            .map(|w| w.build_reth_block())
-            .collect::<Result<Vec<_>, _>>()?;
+        let output = verify_catch_panics(&witnesses)?;
 
-        let chain_spec = get_chain_spec_or_build(Chain::from_id(witnesses.chain_id()), |_spec| {
-            #[cfg(feature = "scroll")]
-            {
-                use sbv::primitives::hardforks::{ForkCondition, ScrollHardfork};
-                _spec
-                    .inner
-                    .hardforks
-                    .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
-            }
-        });
-
-        let mut chunk_info_builder =
-            ChunkInfoBuilder::new(&chain_spec, witnesses.prev_state_root(), &blocks);
+        let mut chunk_info_builder = ChunkInfoBuilder::new(
+            &output.chain_spec,
+            witnesses.prev_state_root(),
+            &output.blocks,
+        );
         if let Some(prev_msg_queue_hash) = self.prev_msg_queue_hash {
             chunk_info_builder.set_prev_msg_queue_hash(prev_msg_queue_hash);
         }
-
-        let mut code_db = NoHashMap::default();
-        witnesses.import_codes(&mut code_db);
-        let mut nodes_provider = NoHashMap::default();
-        witnesses.import_nodes(&mut nodes_provider)?;
-
-        let mut db = EvmDatabase::new_from_root(
-            &code_db,
-            chunk_info_builder.prev_state_root(),
-            &nodes_provider,
-            &NullProvider,
-        )?;
-        for block in blocks.iter() {
-            let output = EvmExecutor::new(chain_spec.clone(), &db, block).execute()?;
-            db.update(&nodes_provider, output.state.state.iter())?;
-        }
-        let post_state_root = db.commit_changes();
-        if post_state_root != chunk_info_builder.post_state_root() {
-            bail!("post state root mismatch");
-        }
-
-        let chunk_info = chunk_info_builder.build(db.withdraw_root()?);
+        let chunk_info = chunk_info_builder.build(output.withdraw_root);
         let _public_input_hash = chunk_info.pi_hash();
         dev_info!("[chunk mode] public input hash: {_public_input_hash:?}");
 
@@ -130,7 +91,7 @@ fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
 }
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(path = %path.display()), err))]
-fn run_witness(path: PathBuf) -> anyhow::Result<u64> {
+fn run_witness(path: PathBuf) -> anyhow::Result<VerifyOutput> {
     let witness = read_witness(&path)?;
-    verify_catch_panics(&witness).inspect(|_| dev_info!("verified"))
+    verify_catch_panics(&[witness]).inspect(|_| dev_info!("verified"))
 }

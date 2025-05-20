@@ -1,7 +1,10 @@
-use crate::helpers::{RpcArgs, verifier::verify_catch_panics};
+use crate::helpers::RpcArgs;
 use clap::Args;
 use pumps::{Concurrency, Pipeline};
-use sbv::{primitives::BlockWitness, utils::rpc::ProviderExt};
+use sbv::{
+    primitives::BlockWitness,
+    utils::{rpc::ProviderExt, verifier::verify_catch_panics},
+};
 use std::{
     iter,
     sync::{
@@ -48,7 +51,10 @@ impl RunRpcCommand {
                     let provider = provider.clone();
                     async move {
                         loop {
-                            match provider.dump_block_witness(block_number.into()).await {
+                            match provider
+                                .dump_block_witness(block_number, Default::default())
+                                .await
+                            {
                                 Ok(Some(w)) => {
                                     dev_info!("dumped block witness for #{block_number}");
                                     return Some(w);
@@ -74,7 +80,7 @@ impl RunRpcCommand {
                 |witness| async move {
                     let _number = witness.number();
 
-                    match tokio::task::spawn_blocking(move || verify_catch_panics(witness))
+                    match tokio::task::spawn_blocking(move || verify_catch_panics(&[witness]))
                         .await
                         .map_err(anyhow::Error::from)
                         .and_then(|e| e)
