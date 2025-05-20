@@ -4597,14 +4597,12 @@ dependencies = [
  "console",
  "indicatif",
  "num_cpus",
- "pprof",
  "pumps",
  "rkyv",
  "sbv",
  "serde_json",
  "serde_path_to_error",
  "tokio",
- "tower",
  "tracing",
  "tracing-subscriber",
  "url",
@@ -4615,6 +4613,7 @@ name = "sbv-core"
 version = "2.0.0"
 dependencies = [
  "ctor",
+ "itertools 0.14.0",
  "reth-evm",
  "reth-evm-ethereum",
  "reth-execution-types",
@@ -4692,6 +4691,7 @@ version = "2.0.0"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
+ "itertools 0.14.0",
  "reth-trie",
  "reth-trie-sparse",
  "sbv-helpers",
@@ -4705,12 +4705,21 @@ dependencies = [
 name = "sbv-utils"
 version = "2.0.0"
 dependencies = [
+ "alloy-json-rpc",
  "alloy-provider",
  "alloy-transport",
+ "anyhow",
  "async-trait",
  "futures",
+ "pprof",
+ "sbv-core",
+ "sbv-helpers",
+ "sbv-kv",
  "sbv-primitives",
+ "sbv-trie",
  "thiserror 1.0.69",
+ "tower",
+ "tracing",
 ]
 
 [[package]]

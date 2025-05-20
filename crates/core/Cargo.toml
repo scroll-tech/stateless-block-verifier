@@ -19,6 +19,7 @@ reth-execution-types.workspace = true
 reth-scroll-evm = { workspace = true, optional = true }
 reth-storage-errors.workspace = true
 
+itertools.workspace = true
 thiserror.workspace = true
 
 sbv-primitives = { workspace = true, features = ["ethereum-all", "rkyv", "serde"] }

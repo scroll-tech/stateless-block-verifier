@@ -167,3 +167,21 @@ macro_rules! update_metrics_counter {
         }
     };
 }
+
+/// This macro is for intentionally not dropping a value on zkvm.
+#[macro_export]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
+macro_rules! manually_drop_on_zkvm {
+    ($e:expr) => {
+        std::mem::ManuallyDrop::new($e)
+    };
+}
+
+/// This macro is for intentionally not dropping a value on zkvm.
+#[macro_export]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
+macro_rules! manually_drop_on_zkvm {
+    ($e:expr) => {
+        $e
+    };
+}
