@@ -13,9 +13,10 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
+alloy-json-rpc.workspace = true
 alloy-provider.workspace = true
 alloy-transport.workspace = true
-tiny-keccak.workspace = true
+tower = { workspace = true, features = ["limit"] }
 
 anyhow.workspace = true
 async-trait.workspace = true

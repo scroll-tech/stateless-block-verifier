@@ -4603,7 +4603,6 @@ dependencies = [
  "serde_json",
  "serde_path_to_error",
  "tokio",
- "tower",
  "tracing",
  "tracing-subscriber",
  "url",
@@ -4706,6 +4705,7 @@ dependencies = [
 name = "sbv-utils"
 version = "2.0.0"
 dependencies = [
+ "alloy-json-rpc",
  "alloy-provider",
  "alloy-transport",
  "anyhow",
@@ -4718,7 +4718,7 @@ dependencies = [
  "sbv-primitives",
  "sbv-trie",
  "thiserror 1.0.69",
- "tiny-keccak",
+ "tower",
  "tracing",
 ]
 

@@ -24,7 +24,6 @@ pumps = "0.0.4"
 rkyv.workspace = true
 serde_json.workspace = true
 serde_path_to_error.workspace = true
-tower = { workspace = true, features = ["limit"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 url.workspace = true
 

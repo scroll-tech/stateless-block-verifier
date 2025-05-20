@@ -11,6 +11,9 @@ use sbv_primitives::{
     },
 };
 
+mod layers;
+pub use layers::{AlwaysRetryPolicy, ConcurrencyLimit, ConcurrencyLimitLayer};
+
 const MAX_AUTO_FIX_ATTEMPTS: usize = 100;
 
 /// Options for [`dump_block_witness`](ProviderExt::dump_block_witness).

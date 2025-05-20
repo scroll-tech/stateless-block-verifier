@@ -1,17 +1,15 @@
-use crate::helpers::{retry::RateLimitRetryPolicy, tower::ConcurrencyLimitLayer};
 use alloy::{
     providers::{ProviderBuilder, RootProvider},
     rpc::client::ClientBuilder,
     transports::layers::RetryBackoffLayer,
 };
 use clap::Args;
-use sbv::primitives::types::Network;
+use sbv::{
+    primitives::types::Network,
+    utils::rpc::{AlwaysRetryPolicy, ConcurrencyLimitLayer},
+};
 use std::future::Future;
 use url::Url;
-
-pub mod retry;
-/// Helper functions for the tower
-pub mod tower;
 
 #[cfg(feature = "scroll")]
 const MAINNET_RPC: &str = "https://euclid-l2-mpt.scroll.systems";
@@ -90,7 +88,7 @@ impl RpcArgs {
             self.max_retry,
             self.backoff,
             self.cups,
-            RateLimitRetryPolicy,
+            AlwaysRetryPolicy,
         );
         let limit_layer = ConcurrencyLimitLayer::new(self.max_concurrency);
         let client = ClientBuilder::default()

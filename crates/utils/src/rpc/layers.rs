@@ -1,11 +1,27 @@
-use alloy::{
-    rpc::json_rpc::{RequestPacket, ResponsePacket},
-    transports::{TransportError, TransportFut},
-};
+use alloy_json_rpc::{RequestPacket, ResponsePacket};
+use alloy_transport::{TransportError, TransportFut, layers};
+use std::time::Duration;
 use tower::{Layer, Service};
+
+/// A retry policy that always retries on errors.
+#[derive(Debug, Copy, Clone)]
+pub struct AlwaysRetryPolicy;
+
+impl layers::RetryPolicy for AlwaysRetryPolicy {
+    fn should_retry(&self, _error: &TransportError) -> bool {
+        dev_trace!("going to retry on err: {_error}");
+        true
+    }
+
+    fn backoff_hint(&self, _error: &TransportError) -> Option<Duration> {
+        None
+    }
+}
 
 /// Enforces a limit on the concurrent number of requests the underlying
 /// service can handle.
+///
+/// Defaults to 5 concurrent requests.
 #[derive(Debug, Clone)]
 pub struct ConcurrencyLimitLayer {
     max: usize,
@@ -15,6 +31,12 @@ impl ConcurrencyLimitLayer {
     /// Create a new concurrency limit layer.
     pub const fn new(max: usize) -> Self {
         Self { max }
+    }
+}
+
+impl Default for ConcurrencyLimitLayer {
+    fn default() -> Self {
+        Self::new(5)
     }
 }
 
@@ -34,7 +56,7 @@ pub struct ConcurrencyLimit<S> {
 }
 
 impl<S> ConcurrencyLimit<S> {
-    pub fn new(inner: S, max: usize) -> Self {
+    fn new(inner: S, max: usize) -> Self {
         ConcurrencyLimit {
             inner: tower::limit::ConcurrencyLimit::new(inner, max),
         }
