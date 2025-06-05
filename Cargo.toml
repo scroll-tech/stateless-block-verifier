@@ -135,9 +135,9 @@ revm-state = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-
 
 ## for local development
 #reth-chainspec = { path = "../reth/crates/chainspec" }
-#reth-evm = { path = "../reth/crates/evm" }
+#reth-evm = { path = "../reth/crates/evm/evm" }
 #reth-evm-ethereum = { path = "../reth/crates/ethereum/evm" }
-#reth-ethereum-forks = { path = "../reth/crates/ethereum-forks" }
+#reth-ethereum-forks = { path = "../reth/crates/ethereum/hardforks" }
 #reth-execution-types = { path = "../reth/crates/evm/execution-types" }
 #reth-primitives = { path = "../reth/crates/primitives" }
 #reth-primitives-traits = { path = "../reth/crates/primitives-traits" }
@@ -167,9 +167,9 @@ revm-state = { git = "https://github.com/scroll-tech/revm", branch = "feat/reth-
 #
 #[patch."https://github.com/scroll-tech/reth"]
 #reth-chainspec = { path = "../reth/crates/chainspec" }
-#reth-evm = { path = "../reth/crates/evm" }
+#reth-evm = { path = "../reth/crates/evm/evm" }
 #reth-evm-ethereum = { path = "../reth/crates/ethereum/evm" }
-#reth-ethereum-forks = { path = "../reth/crates/ethereum-forks" }
+#reth-ethereum-forks = { path = "../reth/crates/ethereum/hardforks" }
 #reth-execution-types = { path = "../reth/crates/evm/execution-types" }
 #reth-primitives = { path = "../reth/crates/primitives" }
 #reth-primitives-traits = { path = "../reth/crates/primitives-traits" }

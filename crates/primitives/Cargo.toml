@@ -91,7 +91,6 @@ scroll-consensus-types = [
   "consensus-types",
   "dep:scroll-alloy-consensus",
   "scroll-alloy-consensus/serde", # This is a bug
-  "scroll-alloy-consensus/reth-codec", # This is a bug
 ]
 scroll-hardforks = [
   "scroll",
