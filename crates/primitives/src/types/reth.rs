@@ -4,10 +4,12 @@ use crate::{
     types::{
         Transaction,
         consensus::{
-            BlockWitnessConsensusExt, SignableTransaction, TxEip1559, TxEip2930, TxLegacy,
+            BlockWitnessConsensusExt, SignableTransaction, SignerRecoverable, TxEip1559, TxEip2930,
+            TxLegacy,
         },
     },
 };
+
 use auto_impl::auto_impl;
 
 pub use reth_primitives::RecoveredBlock;
@@ -31,8 +33,6 @@ pub trait BlockWitnessRethExt: BlockWitnessConsensusExt {
 
     /// Build a reth block
     fn build_reth_block(&self) -> Result<RecoveredBlock<Block>, SignatureError> {
-        use reth_primitives_traits::transaction::signed::SignedTransaction;
-
         let header = self.build_alloy_header();
         let transactions = self
             .build_typed_transactions()

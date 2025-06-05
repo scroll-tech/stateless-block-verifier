@@ -1,5 +1,5 @@
 use crate::{database::EvmDatabase, error::VerificationError};
-use reth_evm::execute::{BlockExecutorProvider, Executor};
+use reth_evm::{ConfigureEvm, execute::Executor};
 use reth_execution_types::BlockExecutionOutput;
 use sbv_kv::KeyValueStoreGet;
 use sbv_primitives::{
@@ -7,7 +7,7 @@ use sbv_primitives::{
     chainspec::ChainSpec,
     types::{
         reth::{Block, Receipt, RecoveredBlock},
-        revm::db::CacheDB,
+        revm::database::CacheDB,
     },
 };
 use sbv_trie::TrieNode;

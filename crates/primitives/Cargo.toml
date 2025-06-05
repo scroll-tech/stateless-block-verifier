@@ -50,7 +50,7 @@ sbv-kv.workspace = true
 # serialization
 rkyv = [
   "dep:rkyv",
-  "alloy-primitives/rkyv",
+#  "alloy-primitives/rkyv",
 ]
 serde = [
   "dep:alloy-serde",
@@ -107,12 +107,10 @@ scroll-reth-types = [
   "scroll-revm", # This is a bug
   "scroll-consensus-types",
   "dep:reth-scroll-primitives",
-  "reth-scroll-primitives/scroll",
 ]
 scroll-revm = [
   "scroll",
   "revm-types",
-  "revm/scroll-default-handler",
   "revm/optional_no_base_fee",
 ]
 scroll-rpc-types = ["scroll", "rpc-types", "dep:scroll-alloy-rpc-types"]
@@ -134,6 +132,6 @@ sp1 = []
 cycle-tracker = []
 
 openvm = [
-  "alloy-primitives/openvm",
-  "revm/openvm"
+  #  "alloy-primitives/openvm",
+  #  "revm/openvm"
 ]

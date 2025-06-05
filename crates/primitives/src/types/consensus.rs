@@ -1,9 +1,10 @@
-use crate::{Address, B64, B256, BlockNumber, Bloom, Bytes, PrimitiveSignature, U256};
+use crate::{Address, B64, B256, BlockNumber, Bloom, Bytes, Signature, U256};
 use auto_impl::auto_impl;
 
 pub use alloy_consensus::{
     BlockHeader, Header, SignableTransaction, Transaction, TxEip1559, TxEip2930, TxEip4844,
     TxEip4844Variant, TxEip4844WithSidecar, TxEip7702, TxLegacy, Typed2718,
+    transaction::SignerRecoverable,
 };
 
 #[cfg(not(feature = "scroll"))]
@@ -17,7 +18,7 @@ pub use scroll_alloy_consensus::{
 /// Extension trait for `TxEnvelope`
 pub trait TxEnvelopeExt {
     /// get the signature of the transaction
-    fn signature(&self) -> Option<&PrimitiveSignature>;
+    fn signature(&self) -> Option<&Signature>;
 
     /// get the index of the transaction in the queue
     fn queue_index(&self) -> Option<u64> {
@@ -69,14 +70,14 @@ pub(crate) trait ToHelper: BlockHeader {
 
 #[cfg(not(feature = "scroll"))]
 impl TxEnvelopeExt for TxEnvelope {
-    fn signature(&self) -> Option<&PrimitiveSignature> {
+    fn signature(&self) -> Option<&Signature> {
         Some(TxEnvelope::signature(self))
     }
 }
 
 #[cfg(feature = "scroll")]
 impl TxEnvelopeExt for TxEnvelope {
-    fn signature(&self) -> Option<&PrimitiveSignature> {
+    fn signature(&self) -> Option<&Signature> {
         match self {
             TxEnvelope::Legacy(tx) => Some(tx.signature()),
             TxEnvelope::Eip2930(tx) => Some(tx.signature()),

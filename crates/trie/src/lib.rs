@@ -7,13 +7,13 @@ use sbv_helpers::tracing;
 
 use alloy_rlp::{Decodable, Encodable};
 use alloy_trie::{
-    EMPTY_ROOT_HASH, Nibbles, TrieMask,
+    EMPTY_ROOT_HASH, Nibbles,
     nodes::{CHILD_INDEX_RANGE, RlpNode},
 };
-use reth_trie_sparse::RevealedSparseTrie;
+use reth_trie_sparse::{RevealedSparseTrie, TrieMasks};
 use sbv_kv::{HashMap, nohash::NoHashMap};
 use sbv_primitives::{
-    Address, B256, BlockWitness, U256, keccak256, types::revm::db::BundleAccount,
+    Address, B256, BlockWitness, U256, keccak256, types::revm::database::BundleAccount,
 };
 use std::cell::RefCell;
 
@@ -334,7 +334,7 @@ impl<T: Default> PartialTrie<T> {
             .ok_or(PartialStateTrieError::MissingWitness(root))?
             .clone();
         let mut state = cycle_track!(
-            RevealedSparseTrie::from_root(root.clone(), None, None, true),
+            RevealedSparseTrie::from_root(root.clone(), TrieMasks::none(), true),
             "RevealedSparseTrie::from_root"
         )
         .map_err(|e| {
@@ -415,16 +415,13 @@ fn traverse_import_partial_trie<
     nodes: P,
     trie: &mut RevealedSparseTrie,
     store_leaf: &mut F,
-) -> Result<Option<TrieMask>> {
-    let trie_mask = match node {
-        TrieNode::EmptyRoot => None,
+) -> Result<()> {
+    match node {
+        TrieNode::EmptyRoot => {}
         TrieNode::Branch(ref branch) => {
-            let mut trie_mask = TrieMask::default();
-
             let mut stack_ptr = branch.as_ref().first_child_index();
             for idx in CHILD_INDEX_RANGE {
                 if branch.state_mask.is_bit_set(idx) {
-                    trie_mask.set_bit(idx);
                     let mut child_path = path.clone();
                     child_path.push(idx);
                     let child_node = decode_rlp_node(nodes, &branch.stack[stack_ptr])?;
@@ -441,13 +438,11 @@ fn traverse_import_partial_trie<
                     }
                 }
             }
-            Some(trie_mask)
         }
         TrieNode::Leaf(ref leaf) => {
             let mut full = path.clone();
             full.extend_from_slice_unchecked(&leaf.key);
             store_leaf(full, &leaf.value)?;
-            None
         }
         TrieNode::Extension(ref extension) => {
             let mut child_path = path.clone();
@@ -456,18 +451,16 @@ fn traverse_import_partial_trie<
             if let Some(child_node) = decode_rlp_node(nodes, &extension.child)? {
                 traverse_import_partial_trie(&child_path, child_node, nodes, trie, store_leaf)?;
             }
-
-            None
         }
     };
 
-    trie.reveal_node(path.clone(), node, trie_mask, None) // FIXME: is this correct?
+    trie.reveal_node(path.clone(), node, TrieMasks::none()) // FIXME: is this correct?
         .map_err(|e| {
             dev_error!("failed to reveal node: {e}");
             PartialStateTrieError::Impl(format!("{e:?}"))
         })?;
 
-    Ok(trie_mask)
+    Ok(())
 }
 
 fn decode_trie_account(mut buf: &[u8]) -> Result<TrieAccount> {

@@ -57,7 +57,7 @@ pub use network::*;
 #[cfg(feature = "revm-types")]
 pub use revm;
 #[cfg(feature = "revm-types")]
-pub use revm::primitives::{AccountInfo, Bytecode};
+pub use revm::{bytecode::Bytecode, state::AccountInfo};
 
 /// re-export types from reth_primitives
 #[cfg(feature = "reth-types")]
