@@ -31,7 +31,7 @@ url.workspace = true
 pprof = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, optional = true }
 
-sbv.workspace = true
+sbv = { workspace = true, features = ["serde", "rkyv"] }
 
 [dev-dependencies]
 tracing.workspace = true

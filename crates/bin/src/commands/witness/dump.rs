@@ -2,6 +2,7 @@ use crate::helpers::RpcArgs;
 use clap::Args;
 use console::{Emoji, style};
 use indicatif::{HumanBytes, HumanDuration, ProgressBar, ProgressStyle};
+use rkyv::rancor;
 use sbv::utils::rpc::ProviderExt;
 use std::{
     path::PathBuf,
@@ -17,11 +18,10 @@ pub struct DumpWitnessCommand {
     pub ancestors: usize,
     #[arg(long, help = "Output directory", default_value_os_t = std::env::current_dir().unwrap())]
     pub out_dir: PathBuf,
-    // TODO: determine if we want to keep this
-    // #[arg(long, help = "Output json")]
-    // pub json: bool,
-    // #[arg(long, help = "Output rkyv")]
-    // pub rkyv: bool,
+    #[arg(long, help = "Output json")]
+    pub json: bool,
+    #[arg(long, help = "Output rkyv")]
+    pub rkyv: bool,
     #[command(flatten)]
     pub rpc_args: RpcArgs,
 }
@@ -34,10 +34,9 @@ impl DumpWitnessCommand {
             anyhow::bail!("Output path is a file");
         }
         std::fs::create_dir_all(&self.out_dir)?;
-        // TODO: determine if we want to keep this
-        // if !self.json && !self.rkyv {
-        //     eprintln!("{}No output format specified", Emoji("⚠️  ", ""));
-        // }
+        if !self.json && !self.rkyv {
+            eprintln!("{}No output format specified", Emoji("⚠️  ", ""));
+        }
 
         #[cfg(not(feature = "scroll"))]
         if self.ancestors < 1 || self.ancestors > 256 {
@@ -45,9 +44,7 @@ impl DumpWitnessCommand {
         }
 
         let mut steps = 1;
-        // TODO: determine if we want to keep this
-        // let total_steps = 1 + self.json as usize + self.rkyv as usize;
-        let total_steps = 2;
+        let total_steps = 1 + self.json as usize + self.rkyv as usize;
 
         let provider = self.rpc_args.into_provider();
 
@@ -72,35 +69,34 @@ impl DumpWitnessCommand {
         pb.finish_with_message(format!("Dumped witness for block {}", self.block));
         println!();
 
-        // if self.json {
-        let json = serde_json::to_string_pretty(&witness)?;
-        let path = self.out_dir.join(format!("{}.json", self.block));
-        std::fs::write(&path, json)?;
-        let size = HumanBytes(std::fs::metadata(&path)?.len());
-        println!(
-            "{} {}JSON witness({}) saved to {}",
-            style(format!("[{}/{}]", steps, total_steps)).bold().dim(),
-            Emoji("📃  ", ""),
-            size,
-            path.display()
-        );
-        //     steps += 1;
-        // }
+        if self.json {
+            let json = serde_json::to_string_pretty(&witness)?;
+            let path = self.out_dir.join(format!("{}.json", self.block));
+            std::fs::write(&path, json)?;
+            let size = HumanBytes(std::fs::metadata(&path)?.len());
+            println!(
+                "{} {}JSON witness({}) saved to {}",
+                style(format!("[{}/{}]", steps, total_steps)).bold().dim(),
+                Emoji("📃  ", ""),
+                size,
+                path.display()
+            );
+            steps += 1;
+        }
 
-        // TODO: determine if we want to keep this
-        // if self.rkyv {
-        //     let serialized = rkyv::to_bytes::<rancor::Error>(&witness)?;
-        //     let path = self.out_dir.join(format!("{}.rkyv", self.block));
-        //     std::fs::write(&path, serialized)?;
-        //     let size = HumanBytes(std::fs::metadata(&path)?.len());
-        //     println!(
-        //         "{} {}rkyv witness({}) saved to {}",
-        //         style(format!("[{}/{}]", steps, total_steps)).bold().dim(),
-        //         Emoji("🏛  ", ""),
-        //         size,
-        //         path.display()
-        //     );
-        // }
+        if self.rkyv {
+            let serialized = rkyv::to_bytes::<rancor::Error>(&witness)?;
+            let path = self.out_dir.join(format!("{}.rkyv", self.block));
+            std::fs::write(&path, serialized)?;
+            let size = HumanBytes(std::fs::metadata(&path)?.len());
+            println!(
+                "{} {}rkyv witness({}) saved to {}",
+                style(format!("[{}/{}]", steps, total_steps)).bold().dim(),
+                Emoji("🏛  ", ""),
+                size,
+                path.display()
+            );
+        }
 
         println!(
             "{} Done in {}",

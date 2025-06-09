@@ -180,9 +180,3 @@ impl<
 }
 
 impl DBErrorMarker for DatabaseError {}
-
-// impl From<DatabaseError> for reth_storage_errors::provider::ProviderError {
-//     fn from(e: DatabaseError) -> Self {
-//         reth_storage_errors::provider::ProviderError::TrieWitnessError(e.to_string())
-//     }
-// }

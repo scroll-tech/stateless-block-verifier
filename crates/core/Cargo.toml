@@ -21,7 +21,7 @@ reth-storage-errors.workspace = true
 
 thiserror.workspace = true
 
-sbv-primitives = { workspace = true, features = ["ethereum-all", "serde"] }
+sbv-primitives = { workspace = true, features = ["ethereum-all"] }
 sbv-helpers.workspace = true
 sbv-kv.workspace = true
 sbv-trie.workspace = true
@@ -32,6 +32,9 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [features]
+rkyv = ["sbv-primitives/rkyv"]
+serde = ["sbv-primitives/serde"]
+
 scroll = [
     "dep:reth-scroll-evm",
     "sbv-primitives/scroll-all",
