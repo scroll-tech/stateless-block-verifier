@@ -154,15 +154,34 @@ alloy-primitives = { git = "https://github.com/scroll-tech/alloy-core", branch =
 #scroll-alloy-network = { path = "../reth/crates/scroll/alloy/network" }
 #
 #revm = { path = "../revm/crates/revm" }
+#revm-bytecode = { path = "../revm/crates/bytecode" }
+#revm-context = { path = "../revm/crates/context" }
+#revm-context-interface = { path = "../revm/crates/context/interface" }
+#revm-database = { path = "../revm/crates/database" }
+#revm-database-interface = { path = "../revm/crates/database/interface" }
+#revm-handler = { path = "../revm/crates/handler" }
+#revm-inspector = { path = "../revm/crates/inspector" }
 #revm-interpreter = { path = "../revm/crates/interpreter" }
 #revm-precompile = { path = "../revm/crates/precompile" }
 #revm-primitives = { path = "../revm/crates/primitives" }
+#revm-state = { path = "../revm/crates/state" }
 #
 #[patch."https://github.com/scroll-tech/revm"]
 #revm = { path = "../revm/crates/revm" }
+#revm-bytecode = { path = "../revm/crates/bytecode" }
+#revm-context = { path = "../revm/crates/context" }
+#revm-context-interface = { path = "../revm/crates/context/interface" }
+#revm-database = { path = "../revm/crates/database" }
+#revm-database-interface = { path = "../revm/crates/database/interface" }
+#revm-handler = { path = "../revm/crates/handler" }
+#revm-inspector = { path = "../revm/crates/inspector" }
 #revm-interpreter = { path = "../revm/crates/interpreter" }
 #revm-precompile = { path = "../revm/crates/precompile" }
 #revm-primitives = { path = "../revm/crates/primitives" }
+#revm-state = { path = "../revm/crates/state" }
+#
+#[patch."https://github.com/scroll-tech/scroll-revm"]
+#revm-scroll = { path = "../scroll-revm" }
 #
 #[patch."https://github.com/scroll-tech/reth"]
 #reth-chainspec = { path = "../reth/crates/chainspec" }

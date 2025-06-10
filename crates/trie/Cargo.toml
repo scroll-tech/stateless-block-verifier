@@ -22,6 +22,7 @@ sbv-kv.workspace = true
 sbv-helpers.workspace = true
 
 thiserror.workspace = true
+tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json.workspace = true
@@ -31,10 +32,7 @@ sbv-primitives = { workspace = true, features = ["serde"] }
 scroll = [
     "sbv-primitives/scroll-all",
 ]
-dev = [
-    "sbv-primitives/dev",
-    "sbv-helpers/dev"
-]
+dev = ["dep:tracing", "sbv-primitives/dev"]
 
 sp1 = []
 cycle-tracker = []

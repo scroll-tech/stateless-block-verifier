@@ -19,6 +19,7 @@ tiny-keccak.workspace = true
 
 rkyv = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
 
 alloy-consensus = { workspace = true, optional = true }
 alloy-eips = { workspace = true, optional = true }
@@ -125,7 +126,7 @@ scroll-all = [
   "scroll-rpc-types",
 ]
 
-dev = ["sbv-helpers/dev"]
+dev = ["dep:tracing"]
 
 sp1 = []
 cycle-tracker = []

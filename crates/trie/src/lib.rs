@@ -2,9 +2,6 @@
 #[macro_use]
 extern crate sbv_helpers;
 
-#[cfg(feature = "dev")]
-use sbv_helpers::tracing;
-
 use alloy_rlp::{Decodable, Encodable};
 use alloy_trie::{
     EMPTY_ROOT_HASH, Nibbles,
