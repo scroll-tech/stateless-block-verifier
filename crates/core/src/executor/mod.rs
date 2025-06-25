@@ -1,3 +1,4 @@
+use self::factory::ExecutorProvider;
 use crate::{database::EvmDatabase, error::VerificationError};
 use reth_evm::{ConfigureEvm, execute::Executor};
 use reth_execution_types::BlockExecutionOutput;
@@ -13,10 +14,7 @@ use sbv_primitives::{
 use sbv_trie::TrieNode;
 use std::{fmt::Debug, sync::Arc};
 
-#[cfg(not(feature = "scroll"))]
-use reth_evm_ethereum::execute::EthExecutorProvider as ExecutorProvider;
-#[cfg(feature = "scroll")]
-use reth_scroll_evm::ScrollExecutorProvider as ExecutorProvider;
+mod factory;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
@@ -54,7 +52,7 @@ impl<
         #[cfg(not(feature = "scroll"))]
         let provider = ExecutorProvider::ethereum(self.chain_spec.clone());
         #[cfg(feature = "scroll")]
-        let provider = ExecutorProvider::scroll(self.chain_spec.clone());
+        let provider = ExecutorProvider::new(self.chain_spec.clone(), Default::default());
 
         #[allow(clippy::let_and_return)]
         let output = measure_duration_millis!(

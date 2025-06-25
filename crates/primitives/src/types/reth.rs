@@ -15,11 +15,11 @@ use auto_impl::auto_impl;
 pub use reth_primitives::RecoveredBlock;
 
 #[cfg(not(feature = "scroll"))]
-pub use reth_primitives::{Block, BlockBody, Receipt, TransactionSigned};
+pub use reth_primitives::{Block, BlockBody, EthPrimitives, Receipt, TransactionSigned};
 #[cfg(feature = "scroll")]
 pub use reth_scroll_primitives::{
-    ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollReceipt as Receipt,
-    ScrollTransactionSigned as TransactionSigned,
+    ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollPrimitives as EthPrimitives,
+    ScrollReceipt as Receipt, ScrollTransactionSigned as TransactionSigned,
 };
 
 /// BlockWitnessRethExt trait
