@@ -685,15 +685,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
-name = "arbitrary"
-version = "1.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dde20b3d026af13f561bdd0f15edf01fc734f0dafcedbaf42bba506a9517f223"
-dependencies = [
- "derive_arbitrary",
-]
-
-[[package]]
 name = "ark-bls12-381"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1650,17 +1641,6 @@ name = "derive-where"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "510c292c8cf384b1a340b816a9a6cf2599eb8f566a44949024af88418000c50b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.104",
-]
-
-[[package]]
-name = "derive_arbitrary"
-version = "1.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30542c1ad912e0e3d22a1935c290e12e8a29d704a420177a31faad4a601a0800"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4203,7 +4183,6 @@ dependencies = [
  "alloy-primitives",
  "auto_impl",
  "once_cell",
- "rustc-hash",
 ]
 
 [[package]]
@@ -4214,10 +4193,8 @@ dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "modular-bitfield",
  "reth-codecs",
  "reth-primitives-traits",
- "reth-zstd-compressors",
  "serde",
  "serde_with",
 ]
@@ -4321,10 +4298,8 @@ dependencies = [
  "alloy-rlp",
  "alloy-trie",
  "auto_impl",
- "byteorder",
  "bytes",
  "derive_more",
- "modular-bitfield",
  "once_cell",
  "op-alloy-consensus",
  "reth-codecs",
@@ -4418,13 +4393,10 @@ dependencies = [
  "alloy-eips",
  "alloy-primitives",
  "alloy-rlp",
- "arbitrary",
  "bytes",
- "modular-bitfield",
  "once_cell",
  "reth-codecs",
  "reth-primitives-traits",
- "reth-zstd-compressors",
  "scroll-alloy-consensus",
  "serde",
 ]
@@ -4515,7 +4487,6 @@ dependencies = [
  "derive_more",
  "itertools 0.14.0",
  "nybbles",
- "rayon",
  "reth-primitives-traits",
  "revm-database",
 ]
@@ -4991,9 +4962,7 @@ dependencies = [
  "alloy-evm",
  "ctor",
  "reth-evm",
- "reth-evm-ethereum",
  "reth-execution-types",
- "reth-scroll-evm",
  "reth-storage-errors",
  "revm",
  "revm-scroll",
@@ -5002,7 +4971,6 @@ dependencies = [
  "sbv-precompile",
  "sbv-primitives",
  "sbv-trie",
- "scroll-alloy-evm",
  "thiserror 1.0.69",
  "tracing",
  "tracing-subscriber 0.3.19",
@@ -5060,9 +5028,11 @@ dependencies = [
  "itertools 0.14.0",
  "reth-chainspec",
  "reth-ethereum-forks",
+ "reth-evm-ethereum",
  "reth-primitives",
  "reth-primitives-traits",
  "reth-scroll-chainspec",
+ "reth-scroll-evm",
  "reth-scroll-forks",
  "reth-scroll-primitives",
  "revm",
@@ -5144,9 +5114,7 @@ dependencies = [
  "alloy-rlp",
  "alloy-serde",
  "derive_more",
- "modular-bitfield",
  "reth-codecs",
- "reth-codecs-derive",
  "serde",
  "serde_with",
 ]

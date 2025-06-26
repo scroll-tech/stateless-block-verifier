@@ -33,10 +33,12 @@ alloy-primitives.workspace = true
 revm = { workspace = true, optional = true }
 revm-scroll = { workspace = true, optional = true }
 reth-chainspec = { workspace = true, optional = true }
+reth-evm-ethereum = { workspace = true, optional = true }
 reth-ethereum-forks = { workspace = true, optional = true }
 reth-primitives = { workspace = true, optional = true }
 reth-primitives-traits = { workspace = true, optional = true }
 reth-scroll-chainspec = { workspace = true, optional = true }
+reth-scroll-evm = { workspace = true, optional = true }
 reth-scroll-forks = { workspace = true, optional = true }
 reth-scroll-primitives = { workspace = true, optional = true }
 
@@ -76,18 +78,23 @@ reth-types = [
   "dep:reth-primitives",
   "dep:reth-primitives-traits",
 ]
+reth-evm-types = [
+  "reth-types",
+  "dep:reth-evm-ethereum"
+]
 revm-types = ["dep:revm"]
 rpc-types = ["dep:alloy-rpc-types-eth", "eips"]
 ethereum-all = [
-    "chainspec",
-    "consensus-types",
-    "eips",
-    "evm-types",
-    "network-types",
-    "hardforks",
-    "reth-types",
-    "revm-types",
-    "rpc-types",
+  "chainspec",
+  "consensus-types",
+  "eips",
+  "evm-types",
+  "network-types",
+  "hardforks",
+  "reth-types",
+  "reth-evm-types",
+  "revm-types",
+  "rpc-types",
 ]
 
 scroll = []
@@ -107,6 +114,12 @@ scroll-hardforks = [
 ]
 scroll-network-types = ["scroll", "network-types", "dep:scroll-alloy-network"]
 scroll-pre-deployed = ["scroll"]
+scroll-reth-evm-types = [
+  "scroll",
+  "reth-evm-types",
+  "scroll-reth-types",
+  "dep:reth-scroll-evm",
+]
 scroll-reth-types = [
   "scroll",
   "reth-types",
@@ -129,6 +142,7 @@ scroll-all = [
   "scroll-hardforks",
   "scroll-pre-deployed",
   "scroll-network-types",
+  "scroll-reth-evm-types",
   "scroll-reth-types",
   "scroll-revm",
   "scroll-rpc-types",

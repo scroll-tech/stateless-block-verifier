@@ -1,8 +1,9 @@
-use self::factory::ExecutorProvider;
 use crate::{database::EvmDatabase, error::VerificationError};
 use reth_evm::{ConfigureEvm, execute::Executor};
 use reth_execution_types::BlockExecutionOutput;
 use sbv_kv::KeyValueStoreGet;
+use sbv_primitives::types::reth::EthPrimitives;
+use sbv_primitives::types::reth::evm;
 use sbv_primitives::{
     B256, Bytes,
     chainspec::ChainSpec,
@@ -14,7 +15,16 @@ use sbv_primitives::{
 use sbv_trie::TrieNode;
 use std::{fmt::Debug, sync::Arc};
 
-mod factory;
+#[cfg(not(feature = "scroll"))]
+pub type ExecutorProvider = EthEvmConfig;
+
+#[cfg(feature = "scroll")]
+pub type ExecutorProvider = evm::EthEvmConfig<
+    ChainSpec,
+    EthPrimitives,
+    evm::RethReceiptBuilder,
+    sbv_precompile::PrecompileProvider,
+>;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]

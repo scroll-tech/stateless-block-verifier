@@ -44,6 +44,9 @@ pub use eips::eip4895::{Withdrawal as AlloyWithdrawal, Withdrawals as AlloyWithd
 #[cfg(feature = "evm-types")]
 pub mod evm {
     pub use alloy_evm::precompiles;
+
+    #[cfg(feature = "scroll")]
+    pub use scroll_alloy_evm::ScrollPrecompilesFactory;
 }
 
 /// re-export types from alloy_network
@@ -62,7 +65,7 @@ pub use network::*;
 /// re-export types from revm
 #[cfg(feature = "revm-types")]
 pub mod revm {
-    pub use revm::{bytecode::Bytecode, precompile, state::AccountInfo};
+    pub use revm::{bytecode::Bytecode, database, precompile, state::AccountInfo};
 
     #[cfg(not(feature = "scroll"))]
     pub use revm::primitives::hardfork::SpecId;
