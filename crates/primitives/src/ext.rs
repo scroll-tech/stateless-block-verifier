@@ -119,13 +119,10 @@ pub trait TxBytesHashExt {
 }
 
 #[cfg(all(feature = "scroll", feature = "eips"))]
-impl<'a, I: IntoIterator<Item = &'a Tx>, Tx: crate::types::eips::eip2718::Encodable2718 + 'a>
-    TxBytesHashExt for I
+impl<'a, I: IntoIterator<Item = &'a reth_scroll_primitives::ScrollTransactionSigned>> TxBytesHashExt
+    for I
 where
-    I: IntoIterator<Item = &'a Tx>,
-    Tx: 'a
-        + crate::types::eips::eip2718::Encodable2718
-        + reth_scroll_primitives::transaction::signed::IsL1Message,
+    I: IntoIterator<Item = &'a reth_scroll_primitives::ScrollTransactionSigned>,
 {
     fn tx_bytes_hash(self) -> (usize, B256) {
         let mut rlp_buffer = Vec::new();
@@ -133,7 +130,9 @@ where
     }
 
     fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256) {
+        use alloy_eips::Encodable2718;
         use tiny_keccak::{Hasher, Keccak};
+
         let mut tx_bytes_hasher = Keccak::v256();
         let mut len = 0;
 

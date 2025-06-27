@@ -15,12 +15,24 @@ use auto_impl::auto_impl;
 pub use reth_primitives::RecoveredBlock;
 
 #[cfg(not(feature = "scroll"))]
-pub use reth_primitives::{Block, BlockBody, Receipt, TransactionSigned};
+pub use reth_primitives::{Block, BlockBody, EthPrimitives, Receipt, TransactionSigned};
 #[cfg(feature = "scroll")]
 pub use reth_scroll_primitives::{
-    ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollReceipt as Receipt,
-    ScrollTransactionSigned as TransactionSigned,
+    ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollPrimitives as EthPrimitives,
+    ScrollReceipt as Receipt, ScrollTransactionSigned as TransactionSigned,
 };
+
+/// Re-export types from `reth-evm-ethereum`
+#[cfg(feature = "reth-evm-types")]
+pub mod evm {
+    #[cfg(not(feature = "scroll"))]
+    pub use reth_evm_ethereum::{EthEvm, EthEvmConfig, RethReceiptBuilder};
+
+    #[cfg(feature = "scroll")]
+    pub use reth_scroll_evm::{
+        ScrollEvmConfig as EthEvmConfig, ScrollRethReceiptBuilder as RethReceiptBuilder,
+    };
+}
 
 /// BlockWitnessRethExt trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
@@ -182,7 +194,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                     input: tx.input.clone(),
                 };
 
-                TransactionSigned::new_unhashed(tx.into(), TxL1Message::signature())
+                TransactionSigned::from(tx)
             }
             _ => unimplemented!("unsupported tx type: {}", tx_type),
         };
@@ -323,10 +335,7 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
                     input,
                 };
 
-                TransactionSigned::new_unhashed(
-                    tx.into(),
-                    super::consensus::TxL1Message::signature(),
-                )
+                TransactionSigned::from(tx)
             }
             _ => unimplemented!("unsupported tx type: {}", tx_type),
         };

@@ -49,14 +49,17 @@ impl DebugRecorder {
     #[cfg(feature = "debug-account")]
     #[allow(clippy::too_many_arguments)]
     pub fn record_account(&mut self, addr: Address, info: AccountInfo, storage_root: B256) {
-        self.accounts.insert(addr, AccountData {
+        self.accounts.insert(
             addr,
-            nonce: info.nonce,
-            balance: info.balance,
-            code_hash: info.code_hash,
-            code_size: info.code_size as u64,
-            storage_root,
-        });
+            AccountData {
+                addr,
+                nonce: info.nonce,
+                balance: info.balance,
+                code_hash: info.code_hash,
+                code_size: info.code_size as u64,
+                storage_root,
+            },
+        );
     }
 
     /// Record the storage root of an account.
@@ -70,17 +73,23 @@ impl DebugRecorder {
     pub fn record_storage(&mut self, addr: Address, key: U256, value: U256) {
         let entry = self.storages.entry(addr).or_default();
         if !value.is_zero() {
-            entry.insert(key, StorageOps {
-                kind: "update",
+            entry.insert(
                 key,
-                value: Some(value),
-            });
+                StorageOps {
+                    kind: "update",
+                    key,
+                    value: Some(value),
+                },
+            );
         } else {
-            entry.insert(key, StorageOps {
-                kind: "delete",
+            entry.insert(
                 key,
-                value: None,
-            });
+                StorageOps {
+                    kind: "delete",
+                    key,
+                    value: None,
+                },
+            );
         }
     }
 

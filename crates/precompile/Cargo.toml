@@ -1,0 +1,24 @@
+[package]
+name = "sbv-precompile"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+sbv-primitives = { workspace = true, features = ["evm-types", "revm-types"] }
+
+[lints]
+workspace = true
+
+[features]
+scroll = [
+    "sbv-primitives/scroll-evm-types",
+    "sbv-primitives/scroll-reth-types"
+]
+openvm = [
+    "sbv-primitives/openvm",
+]
