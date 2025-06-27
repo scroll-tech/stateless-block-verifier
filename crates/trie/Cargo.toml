@@ -29,15 +29,7 @@ serde_json.workspace = true
 sbv-primitives = { workspace = true, features = ["serde"] }
 
 [features]
-scroll = [
-    "sbv-primitives/scroll-all",
-]
 dev = ["dep:tracing", "sbv-primitives/dev"]
 
 sp1 = []
 cycle-tracker = []
-
-openvm = [
-    "sbv-primitives/openvm",
-    "sbv-helpers/openvm",
-]

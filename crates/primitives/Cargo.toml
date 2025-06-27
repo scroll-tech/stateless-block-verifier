@@ -33,8 +33,10 @@ alloy-primitives.workspace = true
 revm = { workspace = true, optional = true }
 revm-scroll = { workspace = true, optional = true }
 reth-chainspec = { workspace = true, optional = true }
+reth-evm = { workspace = true, optional = true }
 reth-evm-ethereum = { workspace = true, optional = true }
 reth-ethereum-forks = { workspace = true, optional = true }
+reth-execution-types = { workspace = true, optional = true }
 reth-primitives = { workspace = true, optional = true }
 reth-primitives-traits = { workspace = true, optional = true }
 reth-scroll-chainspec = { workspace = true, optional = true }
@@ -54,15 +56,8 @@ sbv-kv.workspace = true
 
 [features]
 # serialization
-rkyv = [
-  "dep:rkyv",
-  "alloy-primitives/rkyv",
-]
-serde = [
-  "dep:alloy-serde",
-  "dep:serde",
-  "reth-scroll-primitives?/serde",
-]
+rkyv = ["dep:rkyv", "alloy-primitives/rkyv"]
+serde = ["dep:alloy-serde", "dep:serde", "reth-scroll-primitives?/serde"]
 
 # core features switch
 chainspec = ["dep:reth-chainspec"]
@@ -71,17 +66,15 @@ eips = ["dep:alloy-eips"]
 evm-types = ["dep:alloy-evm"]
 network-types = ["dep:alloy-network"]
 hardforks = ["dep:reth-ethereum-forks"]
-reth-types = [
-  "serde",
+reth-types = []
+reth-primitives-types = [
   "consensus-types",
   "eips",
   "dep:reth-primitives",
   "dep:reth-primitives-traits",
 ]
-reth-evm-types = [
-  "reth-types",
-  "dep:reth-evm-ethereum"
-]
+reth-evm-types = ["reth-types", "dep:reth-evm", "dep:reth-evm-ethereum"]
+reth-execution-types = ["reth-types", "dep:reth-execution-types"]
 revm-types = ["dep:revm"]
 rpc-types = ["dep:alloy-rpc-types-eth", "eips"]
 ethereum-all = [
@@ -92,7 +85,9 @@ ethereum-all = [
   "network-types",
   "hardforks",
   "reth-types",
+  "reth-primitives-types",
   "reth-evm-types",
+  "reth-execution-types",
   "revm-types",
   "rpc-types",
 ]
@@ -120,14 +115,12 @@ scroll-reth-evm-types = [
   "scroll-reth-types",
   "dep:reth-scroll-evm",
 ]
-scroll-reth-types = [
-  "scroll",
-  "reth-types",
-  "scroll-revm", # This is a bug
+scroll-reth-types = ["scroll", "reth-types"]
+scroll-reth-primitives-types = [
   "scroll-consensus-types",
   "dep:reth-scroll-primitives",
 ]
-scroll-revm = [
+scroll-revm-types = [
   "scroll",
   "revm-types",
   "dep:revm-scroll",
@@ -135,6 +128,7 @@ scroll-revm = [
 ]
 scroll-rpc-types = ["scroll", "rpc-types", "dep:scroll-alloy-rpc-types"]
 scroll-all = [
+  "ethereum-all",
   "scroll",
   "scroll-chainspec",
   "scroll-consensus-types",
@@ -144,7 +138,8 @@ scroll-all = [
   "scroll-network-types",
   "scroll-reth-evm-types",
   "scroll-reth-types",
-  "scroll-revm",
+  "scroll-reth-primitives-types",
+  "scroll-revm-types",
   "scroll-rpc-types",
 ]
 
@@ -152,8 +147,3 @@ dev = ["dep:tracing"]
 
 sp1 = []
 cycle-tracker = []
-
-openvm = [
-  #  "alloy-primitives/openvm",
-  #  "revm/openvm"
-]

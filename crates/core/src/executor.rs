@@ -1,14 +1,14 @@
 use crate::{database::EvmDatabase, error::VerificationError};
-use reth_evm::{ConfigureEvm, execute::Executor};
-use reth_execution_types::BlockExecutionOutput;
 use sbv_kv::KeyValueStoreGet;
-use sbv_primitives::types::reth::EthPrimitives;
-use sbv_primitives::types::reth::evm;
 use sbv_primitives::{
     B256, Bytes,
     chainspec::ChainSpec,
     types::{
-        reth::{Block, Receipt, RecoveredBlock},
+        reth::{
+            evm::{ConfigureEvm, EthEvmConfig, RethReceiptBuilder, execute::Executor},
+            execution_types::BlockExecutionOutput,
+            primitives::{Block, EthPrimitives, Receipt, RecoveredBlock},
+        },
         revm::database::CacheDB,
     },
 };
@@ -19,7 +19,7 @@ use std::{fmt::Debug, sync::Arc};
 pub type ExecutorProvider = EthEvmConfig;
 
 #[cfg(feature = "scroll")]
-pub type ExecutorProvider = evm::EthEvmConfig<ChainSpec, EthPrimitives, evm::RethReceiptBuilder>;
+pub type ExecutorProvider = EthEvmConfig<ChainSpec, EthPrimitives, RethReceiptBuilder>;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]

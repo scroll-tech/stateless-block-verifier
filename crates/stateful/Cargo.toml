@@ -10,7 +10,11 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-alloy = { workspace = true, features = ["provider-http", "serde", "transport-http"] }
+alloy = { workspace = true, features = [
+  "provider-http",
+  "serde",
+  "transport-http",
+] }
 anyhow.workspace = true
 clap = { workspace = true, features = ["derive"] }
 revm.workspace = true
@@ -18,11 +22,19 @@ sled.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 thiserror.workspace = true
-tokio = { workspace = true, features = ["fs", "io-util", "macros", "rt-multi-thread", "signal", "sync", "time"] }
+tokio = { workspace = true, features = [
+  "fs",
+  "io-util",
+  "macros",
+  "rt-multi-thread",
+  "signal",
+  "sync",
+  "time",
+] }
 tokio-retry.workspace = true
 url.workspace = true
 
-sbv = { workspace = true, features = ["sled"]}
+sbv = { workspace = true, features = ["sled"] }
 
 tracing-subscriber = { workspace = true, optional = true }
 
@@ -34,4 +46,3 @@ debug-storage = ["sbv/debug-storage"]
 
 [lints]
 workspace = true
-

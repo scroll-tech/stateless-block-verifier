@@ -13,18 +13,16 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-alloy-evm.workspace = true
-
-revm.workspace = true
-revm-scroll = { workspace = true, optional = true }
-
-reth-evm.workspace = true
-reth-execution-types.workspace = true
-
 thiserror.workspace = true
 tracing = { workspace = true, optional = true }
 
-sbv-primitives = { workspace = true, features = ["ethereum-all"] }
+sbv-primitives = { workspace = true, features = [
+  "chainspec",
+  "revm-types",
+  "reth-primitives-types",
+  "reth-evm-types",
+  "reth-execution-types",
+] }
 sbv-precompile.workspace = true
 sbv-helpers.workspace = true
 sbv-kv.workspace = true
@@ -40,9 +38,11 @@ rkyv = ["sbv-primitives/rkyv"]
 serde = ["sbv-primitives/serde"]
 
 scroll = [
-    "dep:revm-scroll",
-    "sbv-primitives/scroll-all",
-    "sbv-precompile/scroll",
+  "sbv-primitives/scroll-chainspec",
+  "sbv-primitives/scroll-pre-deployed",
+  "sbv-primitives/scroll-reth-evm-types",
+  "sbv-primitives/scroll-reth-primitives-types",
+  "sbv-precompile/scroll",
 ]
 debug-account = ["sbv-helpers/debug-account"]
 debug-storage = ["sbv-helpers/debug-storage"]
@@ -53,7 +53,4 @@ metrics = ["sbv-helpers/metrics"]
 sp1 = ["sbv-trie/sp1"]
 cycle-tracker = ["sbv-trie/cycle-tracker"]
 
-openvm = [
-    "sbv-primitives/openvm",
-    "sbv-precompile/openvm",
-]
+openvm = ["sbv-precompile/openvm"]

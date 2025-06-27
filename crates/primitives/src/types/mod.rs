@@ -67,7 +67,7 @@ pub mod revm {
     #[cfg(not(feature = "scroll"))]
     pub use revm::primitives::hardfork::SpecId;
 
-    #[cfg(feature = "scroll")]
+    #[cfg(feature = "scroll-revm-types")]
     pub use revm_scroll::{ScrollSpecId as SpecId, precompile::ScrollPrecompileProvider};
 }
 

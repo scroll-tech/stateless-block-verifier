@@ -4,7 +4,7 @@ use crate::{
     ext::{BlockChunkExt, TxBytesHashExt},
     hardforks::ScrollHardforks,
     types::{
-        reth::{Block, RecoveredBlock},
+        reth::primitives::{Block, RecoveredBlock},
         scroll::{BlockContextV2, ChunkInfo, EuclidV2ChunkInfo, LegacyChunkInfo},
     },
 };

@@ -15,10 +15,5 @@ sbv-primitives = { workspace = true, features = ["evm-types", "revm-types"] }
 workspace = true
 
 [features]
-scroll = [
-    "sbv-primitives/scroll-evm-types",
-    "sbv-primitives/scroll-reth-types"
-]
-openvm = [
-    "sbv-primitives/openvm",
-]
+scroll = ["sbv-primitives/scroll-evm-types", "sbv-primitives/scroll-reth-types"]
+openvm = []

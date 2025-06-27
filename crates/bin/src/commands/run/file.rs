@@ -52,8 +52,8 @@ impl RunFileCommand {
             kv::{nohash::NoHashMap, null::NullProvider},
             primitives::{
                 chainspec::{Chain, get_chain_spec_or_build},
-                ext::{BlockWitnessChunkExt, BlockWitnessExt},
-                types::{BlockWitness, reth::BlockWitnessRethExt, scroll::ChunkInfoBuilder},
+                ext::{BlockWitnessChunkExt, BlockWitnessExt, BlockWitnessRethExt},
+                types::{BlockWitness, scroll::ChunkInfoBuilder},
             },
             trie::BlockWitnessTrieExt,
         };
