@@ -194,7 +194,9 @@ dependencies = [
  "alloy-sol-types",
  "auto_impl",
  "derive_more",
- "revm",
+ "op-alloy-consensus",
+ "op-revm",
+ "revm 24.0.0",
  "thiserror 2.0.12",
 ]
 
@@ -3078,6 +3080,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "op-revm"
+version = "5.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0e8a3830a2be82166fbe9ead34361149ff4320743ed7ee5502ab779de221361"
+dependencies = [
+ "auto_impl",
+ "once_cell",
+ "revm 24.0.1",
+ "serde",
+]
+
+[[package]]
 name = "opaque-debug"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3915,7 +3929,7 @@ dependencies = [
  "reth-storage-api",
  "reth-storage-errors",
  "reth-trie-common",
- "revm",
+ "revm 24.0.0",
  "scroll-alloy-evm",
 ]
 
@@ -3934,7 +3948,7 @@ dependencies = [
  "reth-evm",
  "reth-execution-types",
  "reth-primitives-traits",
- "revm",
+ "revm 24.0.0",
 ]
 
 [[package]]
@@ -3963,7 +3977,7 @@ dependencies = [
  "reth-ethereum-primitives",
  "reth-primitives-traits",
  "reth-trie-common",
- "revm",
+ "revm 24.0.0",
 ]
 
 [[package]]
@@ -4070,7 +4084,7 @@ dependencies = [
  "reth-scroll-chainspec",
  "reth-scroll-forks",
  "reth-scroll-primitives",
- "revm",
+ "revm 24.0.0",
  "revm-primitives",
  "revm-scroll",
  "scroll-alloy-consensus",
@@ -4237,12 +4251,31 @@ version = "24.0.0"
 source = "git+https://github.com/scroll-tech/revm?branch=feat/reth-v74#774616019e9562b12cbe1c3f1cdd110793f8084c"
 dependencies = [
  "revm-bytecode",
- "revm-context",
+ "revm-context 5.0.0",
  "revm-context-interface",
  "revm-database",
  "revm-database-interface",
- "revm-handler",
- "revm-inspector",
+ "revm-handler 5.0.0",
+ "revm-inspector 5.0.0",
+ "revm-interpreter",
+ "revm-precompile",
+ "revm-primitives",
+ "revm-state",
+]
+
+[[package]]
+name = "revm"
+version = "24.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01d277408ff8d6f747665ad9e52150ab4caf8d5eaf0d787614cf84633c8337b4"
+dependencies = [
+ "revm-bytecode",
+ "revm-context 5.0.1",
+ "revm-context-interface",
+ "revm-database",
+ "revm-database-interface",
+ "revm-handler 5.0.1",
+ "revm-inspector 5.0.1",
  "revm-interpreter",
  "revm-precompile",
  "revm-primitives",
@@ -4265,6 +4298,22 @@ dependencies = [
 name = "revm-context"
 version = "5.0.0"
 source = "git+https://github.com/scroll-tech/revm?branch=feat/reth-v74#774616019e9562b12cbe1c3f1cdd110793f8084c"
+dependencies = [
+ "cfg-if",
+ "derive-where",
+ "revm-bytecode",
+ "revm-context-interface",
+ "revm-database-interface",
+ "revm-primitives",
+ "revm-state",
+ "serde",
+]
+
+[[package]]
+name = "revm-context"
+version = "5.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b01aad49e1233f94cebda48a4e5cef022f7c7ed29b4edf0d202b081af23435ef"
 dependencies = [
  "cfg-if",
  "derive-where",
@@ -4322,7 +4371,25 @@ source = "git+https://github.com/scroll-tech/revm?branch=feat/reth-v74#774616019
 dependencies = [
  "auto_impl",
  "revm-bytecode",
- "revm-context",
+ "revm-context 5.0.0",
+ "revm-context-interface",
+ "revm-database-interface",
+ "revm-interpreter",
+ "revm-precompile",
+ "revm-primitives",
+ "revm-state",
+ "serde",
+]
+
+[[package]]
+name = "revm-handler"
+version = "5.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "481e8c3290ff4fa1c066592fdfeb2b172edfd14d12e6cade6f6f5588cad9359a"
+dependencies = [
+ "auto_impl",
+ "revm-bytecode",
+ "revm-context 5.0.1",
  "revm-context-interface",
  "revm-database-interface",
  "revm-interpreter",
@@ -4338,9 +4405,26 @@ version = "5.0.0"
 source = "git+https://github.com/scroll-tech/revm?branch=feat/reth-v74#774616019e9562b12cbe1c3f1cdd110793f8084c"
 dependencies = [
  "auto_impl",
- "revm-context",
+ "revm-context 5.0.0",
  "revm-database-interface",
- "revm-handler",
+ "revm-handler 5.0.0",
+ "revm-interpreter",
+ "revm-primitives",
+ "revm-state",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "revm-inspector"
+version = "5.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdc1167ef8937d8867888e63581d8ece729a72073d322119ef4627d813d99ecb"
+dependencies = [
+ "auto_impl",
+ "revm-context 5.0.1",
+ "revm-database-interface",
+ "revm-handler 5.0.1",
  "revm-interpreter",
  "revm-primitives",
  "revm-state",
@@ -4400,9 +4484,10 @@ dependencies = [
  "auto_impl",
  "enumn",
  "once_cell",
- "revm",
- "revm-inspector",
+ "revm 24.0.0",
+ "revm-inspector 5.0.0",
  "revm-primitives",
+ "serde",
 ]
 
 [[package]]
@@ -4700,7 +4785,7 @@ dependencies = [
  "prometheus-client",
  "rand 0.8.5",
  "reqwest",
- "revm",
+ "revm 24.0.0",
  "serde",
  "tokio",
  "tracing",
@@ -4746,7 +4831,7 @@ dependencies = [
  "reth-scroll-evm",
  "reth-scroll-forks",
  "reth-scroll-primitives",
- "revm",
+ "revm 24.0.0",
  "revm-scroll",
  "rkyv",
  "sbv-helpers",
@@ -4841,10 +4926,12 @@ dependencies = [
  "alloy-evm",
  "alloy-primitives",
  "auto_impl",
- "revm",
+ "revm 24.0.0",
  "revm-scroll",
  "scroll-alloy-consensus",
  "scroll-alloy-hardforks",
+ "serde",
+ "zstd",
 ]
 
 [[package]]

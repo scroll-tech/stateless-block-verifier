@@ -93,6 +93,12 @@ ethereum-all = [
 ]
 
 scroll = []
+scroll-compress-ratio = [
+  "scroll",
+  "dep:scroll-alloy-evm",
+  "scroll-alloy-evm/std",
+  "scroll-alloy-evm/zstd_compression"
+]
 scroll-chainspec = ["scroll", "chainspec", "dep:reth-scroll-chainspec"]
 scroll-consensus-types = [
   "scroll",
