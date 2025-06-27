@@ -13,14 +13,11 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-alloy-evm.workspace = true
-
 revm.workspace = true
 revm-scroll = { workspace = true, optional = true }
 
 reth-evm.workspace = true
 reth-execution-types.workspace = true
-reth-storage-errors.workspace = true
 
 thiserror.workspace = true
 tracing = { workspace = true, optional = true }

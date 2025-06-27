@@ -9,8 +9,10 @@ pub struct PrecompileProvider;
 #[cfg(feature = "scroll")]
 mod scroll {
     use super::PrecompileProvider;
-    use sbv_primitives::types::evm::{ScrollPrecompilesFactory, precompiles::PrecompilesMap};
-    use sbv_primitives::types::revm::{ScrollPrecompileProvider, SpecId};
+    use sbv_primitives::types::{
+        evm::{ScrollPrecompilesFactory, precompiles::PrecompilesMap},
+        revm::{ScrollPrecompileProvider, SpecId},
+    };
 
     #[cfg(not(feature = "openvm"))]
     impl ScrollPrecompilesFactory for PrecompileProvider {
