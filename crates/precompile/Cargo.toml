@@ -19,10 +19,7 @@ openvm-pairing = { workspace = true, optional = true }
 workspace = true
 
 [features]
-scroll = [
-    "sbv-primitives/scroll-evm-types",
-    "sbv-primitives/scroll-reth-types"
-]
+scroll = ["sbv-primitives/scroll-evm-types", "sbv-primitives/scroll-reth-types"]
 openvm = [
     "dep:openvm-ecc-guest",
     "dep:openvm-sha2",

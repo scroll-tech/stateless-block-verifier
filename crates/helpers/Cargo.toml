@@ -32,8 +32,13 @@ reqwest.workspace = true
 [features]
 debug-account = ["dep:csv", "dep:serde", "revm/serde"]
 debug-storage = ["dep:csv", "dep:serde", "revm/serde"]
-metrics = ["dep:hyper", "dep:hyper-util", "dep:http-body-util", "dep:once_cell", "dep:prometheus-client", "dep:tokio", "tokio/macros", "tokio/signal"]
-
-openvm = [
-#    "revm/openvm"
+metrics = [
+  "dep:hyper",
+  "dep:hyper-util",
+  "dep:http-body-util",
+  "dep:once_cell",
+  "dep:prometheus-client",
+  "dep:tokio",
+  "tokio/macros",
+  "tokio/signal",
 ]

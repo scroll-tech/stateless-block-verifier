@@ -6,8 +6,7 @@ use sbv::{
     kv::nohash::NoHashMap,
     primitives::{
         chainspec::{Chain, get_chain_spec_or_build},
-        ext::BlockWitnessExt,
-        types::reth::BlockWitnessRethExt,
+        ext::{BlockWitnessExt, BlockWitnessRethExt},
     },
     trie::BlockWitnessTrieExt,
 };

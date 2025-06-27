@@ -9,7 +9,7 @@ pub use alloy_consensus::{
 
 #[cfg(not(feature = "scroll"))]
 pub use alloy_consensus::{TxEnvelope, TxType, TypedTransaction};
-#[cfg(feature = "scroll")]
+#[cfg(feature = "scroll-consensus-types")]
 pub use scroll_alloy_consensus::{
     ScrollReceiptEnvelope as ReceiptEnvelope, ScrollTxEnvelope as TxEnvelope,
     ScrollTxType as TxType, ScrollTypedTransaction as TypedTransaction, TxL1Message,
@@ -75,7 +75,7 @@ impl TxEnvelopeExt for TxEnvelope {
     }
 }
 
-#[cfg(feature = "scroll")]
+#[cfg(feature = "scroll-consensus-types")]
 impl TxEnvelopeExt for TxEnvelope {
     fn signature(&self) -> Option<&Signature> {
         match self {

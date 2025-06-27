@@ -18,8 +18,8 @@ pub mod predeployed;
 pub mod types;
 
 pub use alloy_primitives::{
-    self, Address, B64, B256, BlockHash, BlockNumber, Bloom, Bytes, ChainId, Signature, TxHash, U8,
-    U256, address, b256, keccak256,
+    self, Address, B64, B256, BlockHash, BlockNumber, Bloom, Bytes, ChainId, Signature,
+    SignatureError, TxHash, U8, U256, address, b256, keccak256,
 };
 
 /// BlockWitness trait

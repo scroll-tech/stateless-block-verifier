@@ -13,7 +13,13 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-alloy = { workspace = true, features = ["provider-http", "transport-http", "reqwest", "reqwest-rustls-tls", "json-rpc"] }
+alloy = { workspace = true, features = [
+  "provider-http",
+  "transport-http",
+  "reqwest",
+  "reqwest-rustls-tls",
+  "json-rpc",
+] }
 
 anyhow.workspace = true
 clap = { workspace = true, features = ["derive"] }

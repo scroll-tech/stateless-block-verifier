@@ -20,7 +20,17 @@ async-trait.workspace = true
 futures.workspace = true
 thiserror.workspace = true
 
-sbv-primitives.workspace = true
+sbv-primitives = { workspace = true, features = [
+  "serde",
+  "eips",
+  "consensus-types",
+  "network-types",
+  "rpc-types",
+] }
 
 [features]
-scroll = ["sbv-primitives/scroll-all"]
+scroll = [
+  "sbv-primitives/scroll-consensus-types",
+  "sbv-primitives/scroll-network-types",
+  "sbv-primitives/scroll-rpc-types",
+]
