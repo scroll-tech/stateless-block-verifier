@@ -10,7 +10,10 @@ use sbv::{
     },
     trie::BlockWitnessTrieExt,
 };
-use std::panic::{UnwindSafe, catch_unwind};
+use std::{
+    collections::BTreeMap,
+    panic::{UnwindSafe, catch_unwind},
+};
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
 pub fn verify_catch_panics<
@@ -97,7 +100,10 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
             update_metrics_counter!(verification_error);
         })?;
 
-    db.update(&nodes_provider, output.state.state.iter())?;
+    db.update(
+        &nodes_provider,
+        BTreeMap::from_iter(output.state.state.clone()).iter(),
+    )?;
     let post_state_root = db.commit_changes();
 
     #[cfg(feature = "profiling")]
