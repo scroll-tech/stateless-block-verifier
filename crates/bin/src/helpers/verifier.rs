@@ -84,8 +84,9 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     )?;
 
     let block = witness.build_reth_block()?;
+    let compression_ratios = witness.compression_ratios_iter();
 
-    let output = EvmExecutor::new(chain_spec, &db, &block)
+    let output = EvmExecutor::new(chain_spec, &db, &block, compression_ratios)
         .execute()
         .inspect_err(|_e| {
             dev_error!(

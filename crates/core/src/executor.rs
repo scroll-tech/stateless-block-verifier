@@ -1,11 +1,11 @@
 use crate::{database::EvmDatabase, error::VerificationError};
 use sbv_kv::KeyValueStoreGet;
 use sbv_primitives::{
-    B256, Bytes,
+    B256, Bytes, U256,
     chainspec::ChainSpec,
     types::{
         reth::{
-            evm::{ConfigureEvm, EthEvmConfig, RethReceiptBuilder, execute::Executor},
+            evm::{ConfigureEvm, EthEvmConfig, RethReceiptBuilder},
             execution_types::BlockExecutionOutput,
             primitives::{Block, EthPrimitives, Receipt, RecoveredBlock},
         },
@@ -23,29 +23,41 @@ pub type ExecutorProvider = EthEvmConfig<ChainSpec, EthPrimitives, RethReceiptBu
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
-pub struct EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider> {
+pub struct EvmExecutor<
+    'a,
+    CodeDb,
+    NodesProvider,
+    BlockHashProvider,
+    #[cfg(feature = "scroll")] CompressionRatios,
+> {
     chain_spec: Arc<ChainSpec>,
     db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
     block: &'a RecoveredBlock<Block>,
+    #[cfg(feature = "scroll")]
+    compression_ratios: CompressionRatios,
 }
 
-impl<'a, CodeDb, NodesProvider, BlockHashProvider>
-    EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider>
+impl<'a, CodeDb, NodesProvider, BlockHashProvider, #[cfg(feature = "scroll")] CompressionRatios>
+    EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
 {
     /// Create a new EVM executor
     pub fn new(
         chain_spec: Arc<ChainSpec>,
         db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
         block: &'a RecoveredBlock<Block>,
+        #[cfg(feature = "scroll")] compression_ratios: CompressionRatios,
     ) -> Self {
         Self {
             chain_spec,
             db,
             block,
+            #[cfg(feature = "scroll")]
+            compression_ratios,
         }
     }
 }
 
+#[cfg(not(feature = "scroll"))]
 impl<
     CodeDb: KeyValueStoreGet<B256, Bytes>,
     NodesProvider: KeyValueStoreGet<B256, TrieNode>,
@@ -54,12 +66,8 @@ impl<
 {
     /// Handle the block with the given witness
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
-        #[cfg(not(feature = "scroll"))]
         let provider = ExecutorProvider::ethereum(self.chain_spec.clone());
-        #[cfg(feature = "scroll")]
-        let provider = ExecutorProvider::new(self.chain_spec.clone(), Default::default());
 
-        #[allow(clippy::let_and_return)]
         let output = measure_duration_millis!(
             handle_block_duration_milliseconds,
             cycle_track!(
@@ -72,5 +80,54 @@ impl<
         sbv_helpers::metrics::REGISTRY.block_counter.inc();
 
         Ok(output)
+    }
+}
+
+#[cfg(feature = "scroll")]
+impl<
+    CodeDb: KeyValueStoreGet<B256, Bytes>,
+    NodesProvider: KeyValueStoreGet<B256, TrieNode>,
+    BlockHashProvider: KeyValueStoreGet<u64, B256>,
+    CompressionRatios: IntoIterator<Item = U256>,
+> EvmExecutor<'_, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
+{
+    /// Handle the block with the given witness
+
+    pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
+        use sbv_primitives::types::evm::ScrollBlockExecutor;
+        use sbv_primitives::types::revm::database::State;
+
+        let provider = ExecutorProvider::new(self.chain_spec.clone(), Default::default());
+        let factory = provider.block_executor_factory();
+
+        let mut db = State::builder()
+            .with_database(CacheDB::new(self.db))
+            .with_bundle_update()
+            .without_state_clear()
+            .build();
+
+        let evm = provider.evm_for_block(&mut db, self.block.header());
+        let ctx = provider.context_for_block(&self.block);
+        let executor =
+            ScrollBlockExecutor::new(evm, ctx, factory.spec(), factory.receipt_builder());
+
+        let result = measure_duration_millis!(
+            handle_block_duration_milliseconds,
+            cycle_track!(
+                executor.execute_block_with_compression_cache(
+                    self.block.transactions_recovered(),
+                    self.compression_ratios,
+                ),
+                "handle_block"
+            )
+        )?;
+
+        #[cfg(feature = "metrics")]
+        sbv_helpers::metrics::REGISTRY.block_counter.inc();
+
+        Ok(BlockExecutionOutput {
+            result,
+            state: db.take_bundle(),
+        })
     }
 }

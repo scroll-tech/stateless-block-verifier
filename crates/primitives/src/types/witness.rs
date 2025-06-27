@@ -1,9 +1,8 @@
 use crate::{
-    B256, Bytes, ChainId,
+    B256, BlockNumber, Bytes, ChainId, U256,
     alloy_primitives::map::B256HashMap,
     types::{BlockHeader, Transaction, Withdrawal},
 };
-use alloy_primitives::BlockNumber;
 
 /// Represents the execution witness of a block. Contains an optional map of state preimages.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -55,6 +54,10 @@ pub struct BlockWitness {
     /// Code bytecodes
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Code bytecodes")))]
     pub codes: Vec<Bytes>,
+    /// Transaction compression ratios
+    #[cfg(feature = "scroll")]
+    #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Transaction compression ratios")))]
+    pub compression_ratios: Vec<U256>,
 }
 
 impl crate::BlockWitness for BlockWitness {
@@ -88,6 +91,10 @@ impl crate::BlockWitness for BlockWitness {
     }
     fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>> {
         self.codes.iter().map(|c| c.as_ref())
+    }
+    #[cfg(feature = "scroll")]
+    fn compression_ratios_iter(&self) -> impl ExactSizeIterator<Item = U256> {
+        self.compression_ratios.iter().copied()
     }
 }
 
@@ -123,5 +130,9 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     }
     fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>> {
         self.codes.iter().map(|c| c.as_ref())
+    }
+    #[cfg(feature = "scroll")]
+    fn compression_ratios_iter(&self) -> impl ExactSizeIterator<Item = U256> {
+        self.compression_ratios.iter().map(|c| c.into())
     }
 }

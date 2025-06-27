@@ -95,6 +95,7 @@ ethereum-all = [
 scroll = []
 scroll-compress-ratio = [
   "scroll",
+  "scroll-evm-types",
   "dep:scroll-alloy-evm",
   "scroll-alloy-evm/std",
   "scroll-alloy-evm/zstd_compression"

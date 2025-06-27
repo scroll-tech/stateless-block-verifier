@@ -105,8 +105,14 @@ impl RunFileCommand {
             &nodes_provider,
             &NullProvider,
         )?;
-        for block in blocks.iter() {
-            let output = EvmExecutor::new(chain_spec.clone(), &db, block).execute()?;
+        for (block, witness) in blocks.iter().zip(witnesses.iter()) {
+            let output = EvmExecutor::new(
+                chain_spec.clone(),
+                &db,
+                block,
+                witness.compression_ratios.iter().copied(),
+            )
+            .execute()?;
             db.update(&nodes_provider, output.state.state.iter())?;
         }
         let post_state_root = db.commit_changes();

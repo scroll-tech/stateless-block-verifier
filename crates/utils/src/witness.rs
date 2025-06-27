@@ -112,7 +112,9 @@ impl WitnessBuilder {
                 .ok_or(WitnessBuildError::MissingField("prev_state_root"))?,
             transaction: block
                 .transactions
-                .into_transactions()
+                .as_transactions()
+                .expect("expect transactions, got hashes")
+                .iter()
                 .map(Transaction::from_rpc)
                 .collect(),
             #[cfg(not(feature = "scroll"))]
@@ -124,6 +126,18 @@ impl WitnessBuilder {
                 .map(|w| w.iter().map(From::from).collect()),
             states: execution_witness.state.into_values().collect(),
             codes: execution_witness.codes.into_values().collect(),
+            #[cfg(feature = "scroll")]
+            compression_ratios: {
+                use sbv_primitives::types::{eips::Encodable2718, evm::compute_compression_ratio};
+
+                block
+                    .transactions
+                    .as_transactions()
+                    .expect("expect transactions, got hashes")
+                    .iter()
+                    .map(|tx| compute_compression_ratio(&tx.as_recovered().encoded_2718()))
+                    .collect()
+            },
         })
     }
 }
