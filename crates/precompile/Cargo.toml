@@ -25,5 +25,4 @@ openvm = [
     "dep:openvm-sha2",
     "dep:openvm-pairing",
     "openvm-pairing/bn254",
-    "sbv-primitives/openvm",
 ]
