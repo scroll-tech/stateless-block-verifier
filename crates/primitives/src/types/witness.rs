@@ -57,6 +57,7 @@ pub struct BlockWitness {
     /// Transaction compression ratios
     #[cfg(feature = "scroll")]
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Transaction compression ratios")))]
+    #[cfg_attr(feature = "serde", serde(default))]
     pub compression_ratios: Vec<U256>,
 }
 
