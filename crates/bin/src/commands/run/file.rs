@@ -2,7 +2,7 @@ use crate::helpers::verifier::*;
 use clap::Args;
 #[cfg(feature = "dev")]
 use sbv::helpers::tracing;
-use sbv::primitives::types::BlockWitness;
+use sbv::primitives::types::{reth::primitives::TransactionSigned, BlockWitness};
 use std::{collections::BTreeMap, path::PathBuf};
 
 #[derive(Args, Debug)]
@@ -140,7 +140,26 @@ impl RunFileCommand {
 fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
     let witness = std::fs::File::open(path)?;
     let jd = &mut serde_json::Deserializer::from_reader(&witness);
-    let witness = serde_path_to_error::deserialize::<_, BlockWitness>(jd)?;
+    let mut witness = serde_path_to_error::deserialize::<_, BlockWitness>(jd)?;
+    // adhoc FIXME
+    if witness.compression_ratios.is_empty() {
+        println!("computing compression_ratios");
+        //if cfg!(feature = "scroll-compress-ratio") {
+            witness.compression_ratios = {
+                use sbv::primitives::types::{eips::Encodable2718, evm::compute_compression_ratio};
+
+                witness
+                    .transaction
+                    .iter()
+                    .map(|tx| {
+                        let tx: TransactionSigned = tx.try_into().unwrap();
+                        compute_compression_ratio(&tx.encoded_2718())
+                    })
+                    .collect()
+            }
+        //}
+    }
+    println!("compression_ratios {:?}", witness.compression_ratios);
     Ok(witness)
 }
 
