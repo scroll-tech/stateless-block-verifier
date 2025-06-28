@@ -121,6 +121,7 @@ impl<
                 "handle_block"
             )
         )?;
+        db.merge_transitions(BundleRetention::Reverts);
 
         #[cfg(feature = "metrics")]
         sbv_helpers::metrics::REGISTRY.block_counter.inc();
