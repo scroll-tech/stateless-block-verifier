@@ -64,6 +64,10 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
                 .inner
                 .hardforks
                 .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+            _spec
+                .inner
+                .hardforks
+                .insert(ScrollHardfork::Feynman, ForkCondition::Never);
         }
     });
 

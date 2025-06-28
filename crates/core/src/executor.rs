@@ -94,6 +94,20 @@ impl<
     /// Handle the block with the given witness
 
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
+        if false {
+            use sbv_primitives::types::reth::evm::execute::Executor;
+            let provider = ExecutorProvider::new(self.chain_spec.clone(), Default::default());
+            let output = measure_duration_millis!(
+                handle_block_duration_milliseconds,
+                cycle_track!(
+                    provider.executor(CacheDB::new(self.db)).execute(self.block),
+                    "handle_block"
+                )
+            )?;
+            #[cfg(feature = "metrics")]
+            sbv_helpers::metrics::REGISTRY.block_counter.inc();
+            return Ok(output);
+        }
         use sbv_primitives::types::evm::ScrollBlockExecutor;
         use sbv_primitives::types::revm::database::State;
 

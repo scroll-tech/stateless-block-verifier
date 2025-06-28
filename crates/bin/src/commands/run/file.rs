@@ -85,8 +85,14 @@ impl RunFileCommand {
                     .inner
                     .hardforks
                     .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+                // FIXME
+                _spec
+                    .inner
+                    .hardforks
+                    .insert(ScrollHardfork::Feynman, ForkCondition::Never);
             }
         });
+        println!("{:?}", chain_spec.hardforks);
 
         let mut chunk_info_builder =
             ChunkInfoBuilder::new(&chain_spec, witnesses.prev_state_root(), &blocks);

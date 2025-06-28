@@ -29,6 +29,7 @@ sbv-primitives = { workspace = true, features = [
 ] }
 
 [features]
+default = ["scroll"]
 scroll = [
   "sbv-primitives/scroll-consensus-types",
   "sbv-primitives/scroll-network-types",

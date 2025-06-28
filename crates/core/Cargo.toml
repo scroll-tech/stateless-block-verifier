@@ -34,6 +34,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [features]
+default = ["scroll"]
 rkyv = ["sbv-primitives/rkyv"]
 serde = ["sbv-primitives/serde"]
 
