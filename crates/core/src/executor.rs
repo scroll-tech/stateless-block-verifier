@@ -34,7 +34,7 @@ pub struct EvmExecutor<
     db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
     block: &'a RecoveredBlock<Block>,
     #[cfg(feature = "scroll")]
-    compression_ratios: CompressionRatios,
+    compression_ratios: Option<CompressionRatios>,
 }
 
 impl<'a, CodeDb, NodesProvider, BlockHashProvider, #[cfg(feature = "scroll")] CompressionRatios>
@@ -45,7 +45,7 @@ impl<'a, CodeDb, NodesProvider, BlockHashProvider, #[cfg(feature = "scroll")] Co
         chain_spec: Arc<ChainSpec>,
         db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
         block: &'a RecoveredBlock<Block>,
-        #[cfg(feature = "scroll")] compression_ratios: CompressionRatios,
+        #[cfg(feature = "scroll")] compression_ratios: Option<CompressionRatios>,
     ) -> Self {
         Self {
             chain_spec,
@@ -76,8 +76,6 @@ impl<
             )
         )?;
 
-        db.merge_transitions(BundleRetention::Reverts);
-
         #[cfg(feature = "metrics")]
         sbv_helpers::metrics::REGISTRY.block_counter.inc();
 
@@ -97,8 +95,9 @@ impl<
 
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
         use sbv_primitives::types::evm::ScrollBlockExecutor;
-        use sbv_primitives::types::revm::database::states::bundle_state::BundleRetention;
+        use sbv_primitives::types::reth::evm::execute::BlockExecutor;
         use sbv_primitives::types::revm::database::State;
+        use sbv_primitives::types::revm::database::states::bundle_state::BundleRetention;
 
         let provider = ExecutorProvider::new(self.chain_spec.clone(), Default::default());
         let factory = provider.block_executor_factory();
@@ -117,10 +116,16 @@ impl<
         let result = measure_duration_millis!(
             handle_block_duration_milliseconds,
             cycle_track!(
-                executor.execute_block_with_compression_cache(
-                    self.block.transactions_recovered(),
-                    self.compression_ratios,
-                ),
+                match self.compression_ratios {
+                    None => {
+                        println!("exec none");
+                        executor.execute_block(self.block.transactions_recovered())
+                    }
+                    Some(compression_ratios) => executor.execute_block_with_compression_cache(
+                        self.block.transactions_recovered(),
+                        compression_ratios,
+                    ),
+                },
                 "handle_block"
             )
         )?;
