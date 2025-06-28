@@ -76,6 +76,8 @@ impl<
             )
         )?;
 
+        db.merge_transitions(BundleRetention::Reverts);
+
         #[cfg(feature = "metrics")]
         sbv_helpers::metrics::REGISTRY.block_counter.inc();
 
@@ -95,6 +97,7 @@ impl<
 
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
         use sbv_primitives::types::evm::ScrollBlockExecutor;
+        use sbv_primitives::types::revm::database::states::bundle_state::BundleRetention;
         use sbv_primitives::types::revm::database::State;
 
         let provider = ExecutorProvider::new(self.chain_spec.clone(), Default::default());
