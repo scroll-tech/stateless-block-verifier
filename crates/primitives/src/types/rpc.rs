@@ -22,17 +22,17 @@ use crate::types::{
 impl crate::types::Transaction {
     /// Create a transaction from a rpc transaction
     #[cfg(feature = "scroll")]
-    pub fn from_rpc(tx: Transaction) -> Self {
-        crate::types::Transaction::from_rpc_inner(tx.inner)
+    pub fn from_rpc(tx: &Transaction) -> Self {
+        crate::types::Transaction::from_rpc_inner(&tx.inner)
     }
 
     /// Create a transaction from a rpc transaction
     #[cfg(not(feature = "scroll"))]
-    pub fn from_rpc(tx: Transaction) -> Self {
+    pub fn from_rpc(tx: &Transaction) -> Self {
         crate::types::Transaction::from_rpc_inner(tx)
     }
 
-    fn from_rpc_inner(tx: AlloyRpcTransaction<TxEnvelope>) -> Self {
+    fn from_rpc_inner(tx: &AlloyRpcTransaction<TxEnvelope>) -> Self {
         Self {
             hash: tx.inner.trie_hash(),
             nonce: tx.nonce(),

@@ -5,7 +5,8 @@ use sbv::{
     core::{EvmDatabase, EvmExecutor, VerificationError},
     kv::nohash::NoHashMap,
     primitives::{
-        chainspec::{Chain, get_chain_spec_or_build},
+        U256,
+        chainspec::{Chain, ChainSpec, get_chain_spec_or_build},
         ext::{BlockWitnessExt, BlockWitnessRethExt},
     },
     trie::BlockWitnessTrieExt,
@@ -13,6 +14,7 @@ use sbv::{
 use std::{
     collections::BTreeMap,
     panic::{UnwindSafe, catch_unwind},
+    sync::Arc,
 };
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
@@ -44,6 +46,23 @@ pub fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     )
 }
 
+pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {
+    get_chain_spec_or_build(Chain::from_id(chain_id), |_spec| {
+        #[cfg(feature = "scroll")]
+        {
+            use sbv::primitives::hardforks::{ForkCondition, ScrollHardfork};
+            _spec
+                .inner
+                .hardforks
+                .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
+            _spec
+                .inner
+                .hardforks
+                .insert(ScrollHardfork::Feynman, ForkCondition::Never);
+        }
+    })
+}
+
 fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
 ) -> Result<u64, VerificationError> {
@@ -56,16 +75,7 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
         .build()
         .unwrap();
 
-    let chain_spec = get_chain_spec_or_build(Chain::from_id(witness.chain_id()), |_spec| {
-        #[cfg(feature = "scroll")]
-        {
-            use sbv::primitives::hardforks::{ForkCondition, ScrollHardfork};
-            _spec
-                .inner
-                .hardforks
-                .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
-        }
-    });
+    let chain_spec = get_chain_spec(witness.chain_id());
 
     let mut code_db = NoHashMap::default();
     witness.import_codes(&mut code_db);
@@ -88,7 +98,7 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
 
     let block = witness.build_reth_block()?;
 
-    let output = EvmExecutor::new(chain_spec, &db, &block)
+    let output = EvmExecutor::new(chain_spec, &db, &block, None::<Vec<U256>>)
         .execute()
         .inspect_err(|_e| {
             dev_error!(

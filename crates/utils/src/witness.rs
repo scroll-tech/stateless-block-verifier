@@ -112,7 +112,9 @@ impl WitnessBuilder {
                 .ok_or(WitnessBuildError::MissingField("prev_state_root"))?,
             transaction: block
                 .transactions
-                .into_transactions()
+                .as_transactions()
+                .expect("expect transactions, got hashes")
+                .iter()
                 .map(Transaction::from_rpc)
                 .collect(),
             #[cfg(not(feature = "scroll"))]
