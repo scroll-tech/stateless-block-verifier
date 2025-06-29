@@ -94,10 +94,11 @@ impl<
     /// Handle the block with the given witness
 
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
-        use sbv_primitives::types::evm::ScrollBlockExecutor;
-        use sbv_primitives::types::reth::evm::execute::BlockExecutor;
-        use sbv_primitives::types::revm::database::State;
-        use sbv_primitives::types::revm::database::states::bundle_state::BundleRetention;
+        use sbv_primitives::types::{
+            evm::ScrollBlockExecutor,
+            reth::evm::execute::BlockExecutor,
+            revm::database::{State, states::bundle_state::BundleRetention},
+        };
 
         let provider = ExecutorProvider::new(self.chain_spec.clone(), Default::default());
         let factory = provider.block_executor_factory();
