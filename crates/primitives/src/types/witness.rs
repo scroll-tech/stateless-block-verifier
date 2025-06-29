@@ -54,11 +54,6 @@ pub struct BlockWitness {
     /// Code bytecodes
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Code bytecodes")))]
     pub codes: Vec<Bytes>,
-    /// Transaction compression ratios
-    #[cfg(feature = "scroll")]
-    #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Transaction compression ratios")))]
-    #[cfg_attr(feature = "serde", serde(default))]
-    pub compression_ratios: Vec<U256>,
 }
 
 impl BlockWitness {
