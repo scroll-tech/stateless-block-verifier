@@ -118,7 +118,6 @@ impl<
             cycle_track!(
                 match self.compression_ratios {
                     None => {
-                        println!("exec none");
                         executor.execute_block(self.block.transactions_recovered())
                     }
                     Some(compression_ratios) => executor.execute_block_with_compression_cache(

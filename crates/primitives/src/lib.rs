@@ -50,10 +50,6 @@ pub trait BlockWitness: fmt::Debug {
     /// Codes
     #[must_use]
     fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>>;
-    /// Codes
-    #[must_use]
-    #[cfg(feature = "scroll")]
-    fn compression_ratios_iter(&self) -> impl ExactSizeIterator<Item = U256>;
 
     // provided methods
 

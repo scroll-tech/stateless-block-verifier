@@ -61,6 +61,35 @@ pub struct BlockWitness {
     pub compression_ratios: Vec<U256>,
 }
 
+impl BlockWitness {
+    /// Calculates compression ratios for all transactions in the block witness.
+    ///
+    /// # Panics
+    /// Panics if called without the "scroll-compress-ratio" feature enabled, as this
+    /// functionality is not intended to be used in guest environments.
+    pub fn compression_ratios(&self) -> Vec<U256> {
+        #[cfg(feature = "scroll-compress-ratio")]
+        {
+            use crate::types::{
+                eips::Encodable2718, evm::compute_compression_ratio,
+                reth::primitives::TransactionSigned,
+            };
+
+            self.transaction
+                .iter()
+                .map(|tx| {
+                    let tx: TransactionSigned = tx.try_into().unwrap();
+                    compute_compression_ratio(&tx.encoded_2718())
+                })
+                .collect()
+        }
+        #[cfg(not(feature = "scroll-compress-ratio"))]
+        {
+            unimplemented!("you should not build ChunkWitness in guest?");
+        }
+    }
+}
+
 impl crate::BlockWitness for BlockWitness {
     fn chain_id(&self) -> ChainId {
         self.chain_id
@@ -92,10 +121,6 @@ impl crate::BlockWitness for BlockWitness {
     }
     fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>> {
         self.codes.iter().map(|c| c.as_ref())
-    }
-    #[cfg(feature = "scroll")]
-    fn compression_ratios_iter(&self) -> impl ExactSizeIterator<Item = U256> {
-        self.compression_ratios.iter().copied()
     }
 }
 
@@ -131,9 +156,5 @@ impl crate::BlockWitness for ArchivedBlockWitness {
     }
     fn codes_iter(&self) -> impl ExactSizeIterator<Item = impl AsRef<[u8]>> {
         self.codes.iter().map(|c| c.as_ref())
-    }
-    #[cfg(feature = "scroll")]
-    fn compression_ratios_iter(&self) -> impl ExactSizeIterator<Item = U256> {
-        self.compression_ratios.iter().map(|c| c.into())
     }
 }
