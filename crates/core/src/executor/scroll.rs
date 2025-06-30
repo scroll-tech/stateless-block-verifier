@@ -55,7 +55,6 @@ impl<
 > EvmExecutor<'_, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
 {
     /// Handle the block with the given witness
-
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
         use sbv_primitives::types::{
             evm::ScrollBlockExecutor,
@@ -73,7 +72,7 @@ impl<
             .build();
 
         let evm = provider.evm_for_block(&mut db, self.block.header());
-        let ctx = provider.context_for_block(&self.block);
+        let ctx = provider.context_for_block(self.block);
         let executor =
             ScrollBlockExecutor::new(evm, ctx, factory.spec(), factory.receipt_builder());
 
