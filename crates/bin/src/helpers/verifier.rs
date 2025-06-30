@@ -5,7 +5,6 @@ use sbv::{
     core::{EvmDatabase, EvmExecutor, VerificationError},
     kv::nohash::NoHashMap,
     primitives::{
-        U256,
         chainspec::{Chain, ChainSpec, get_chain_spec_or_build},
         ext::{BlockWitnessExt, BlockWitnessRethExt},
     },
@@ -98,16 +97,19 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
 
     let block = witness.build_reth_block()?;
 
-    let output = EvmExecutor::new(chain_spec, &db, &block, None::<Vec<U256>>)
-        .execute()
-        .inspect_err(|_e| {
-            dev_error!(
-                "Error occurs when executing block #{}: {_e:?}",
-                block.number
-            );
+    #[cfg(not(feature = "scroll"))]
+    let executor = EvmExecutor::new(chain_spec, &db, &block);
+    #[cfg(feature = "scroll")]
+    let executor = EvmExecutor::new(chain_spec, &db, &block, None::<Vec<sbv::primitives::U256>>);
 
-            update_metrics_counter!(verification_error);
-        })?;
+    let output = executor.execute().inspect_err(|_e| {
+        dev_error!(
+            "Error occurs when executing block #{}: {_e:?}",
+            block.number
+        );
+
+        update_metrics_counter!(verification_error);
+    })?;
 
     db.update(
         &nodes_provider,

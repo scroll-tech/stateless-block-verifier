@@ -12,7 +12,7 @@ pub enum VerificationError {
     /// Error encountered from database.
     #[error(transparent)]
     Database(#[from] DatabaseError),
-    /// Error encountered from [`revm`].
+    /// Error encountered from [`revm`](sbv_primitives::types::revm).
     #[error(transparent)]
     Execution(#[from] BlockExecutionError),
     /// Root mismatch error

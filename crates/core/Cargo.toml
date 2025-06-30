@@ -44,8 +44,6 @@ scroll = [
   "sbv-primitives/scroll-reth-primitives-types",
   "sbv-precompile/scroll",
 ]
-debug-account = ["sbv-helpers/debug-account"]
-debug-storage = ["sbv-helpers/debug-storage"]
 dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
 metrics = ["sbv-helpers/metrics"]
 
@@ -53,4 +51,5 @@ metrics = ["sbv-helpers/metrics"]
 sp1 = ["sbv-trie/sp1"]
 cycle-tracker = ["sbv-trie/cycle-tracker"]
 
-openvm = ["sbv-precompile/openvm"]
+scroll-openvm = ["sbv-precompile/scroll-openvm"]
+ethereum-openvm = ["sbv-precompile/ethereum-openvm"]

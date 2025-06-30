@@ -3,7 +3,7 @@ use clap::Args;
 #[cfg(feature = "dev")]
 use sbv::helpers::tracing;
 use sbv::primitives::types::BlockWitness;
-use std::{collections::BTreeMap, path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(Args, Debug)]
 pub struct RunFileCommand {
@@ -102,7 +102,7 @@ impl RunFileCommand {
                 EvmExecutor::new(chain_spec.clone(), &db, block, None::<Vec<U256>>).execute()?;
             db.update(
                 &nodes_provider,
-                BTreeMap::from_iter(output.state.state).iter(),
+                std::collections::BTreeMap::from_iter(output.state.state).iter(),
             )?;
         }
         let post_state_root = db.commit_changes();
