@@ -13,25 +13,20 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-revm.workspace = true
-
-csv = { workspace = true, optional = true }
 hyper = { workspace = true, optional = true }
 hyper-util = { workspace = true, optional = true }
 http-body-util = { workspace = true, optional = true }
 once_cell = { workspace = true, optional = true }
 prometheus-client = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
-tracing = { workspace = true }
+tracing.workspace = true
 
 [dev-dependencies]
 rand.workspace = true
 reqwest.workspace = true
 
 [features]
-debug-account = ["dep:csv", "dep:serde", "revm/serde"]
-debug-storage = ["dep:csv", "dep:serde", "revm/serde"]
+dev = []
 metrics = [
   "dep:hyper",
   "dep:hyper-util",
