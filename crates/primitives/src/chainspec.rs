@@ -12,7 +12,7 @@ pub use reth_scroll_chainspec::{SCROLL_DEV, SCROLL_MAINNET, SCROLL_SEPOLIA};
 /// A chain specification describes:
 ///
 /// - Meta-information about the chain (the chain ID)
-/// - The genesis block of the chain ([`Genesis`])
+/// - The genesis block of the chain (Genesis)
 /// - What hardforks are activated, and under which conditions
 #[cfg(not(feature = "scroll-chainspec"))]
 pub type ChainSpec = reth_chainspec::ChainSpec;

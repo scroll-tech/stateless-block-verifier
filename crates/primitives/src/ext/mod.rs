@@ -2,11 +2,13 @@ use crate::{B256, Bytes};
 use sbv_kv::KeyValueStore;
 
 mod imps;
+#[cfg(feature = "reth-primitives-types")]
+mod reth;
+#[cfg(feature = "reth-primitives-types")]
+pub use reth::BlockWitnessRethExt;
 
 #[cfg(feature = "scroll")]
 mod scroll;
-#[cfg(feature = "scroll-reth-primitives-types")]
-pub use scroll::reth::BlockWitnessRethExt;
 #[cfg(feature = "scroll")]
 pub use scroll::{BlockChunkExt, BlockWitnessChunkExt, TxBytesHashExt};
 
