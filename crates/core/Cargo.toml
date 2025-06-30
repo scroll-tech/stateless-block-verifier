@@ -13,15 +13,17 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-reth-evm.workspace = true
-reth-evm-ethereum.workspace = true
-reth-execution-types.workspace = true
-reth-scroll-evm = { workspace = true, optional = true }
-reth-storage-errors.workspace = true
-
 thiserror.workspace = true
+tracing = { workspace = true, optional = true }
 
-sbv-primitives = { workspace = true, features = ["ethereum-all", "rkyv", "serde"] }
+sbv-primitives = { workspace = true, features = [
+  "chainspec",
+  "revm-types",
+  "reth-primitives-types",
+  "reth-evm-types",
+  "reth-execution-types",
+] }
+sbv-precompile.workspace = true
 sbv-helpers.workspace = true
 sbv-kv.workspace = true
 sbv-trie.workspace = true
@@ -32,21 +34,22 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 [features]
+rkyv = ["sbv-primitives/rkyv"]
+serde = ["sbv-primitives/serde"]
+
 scroll = [
-    "dep:reth-scroll-evm",
-    "reth-evm/scroll",
-    "reth-evm-ethereum/scroll",
-    "reth-execution-types/scroll",
-    "reth-scroll-evm/scroll",
-    "sbv-primitives/scroll-all",
+  "sbv-primitives/scroll-chainspec",
+  "sbv-primitives/scroll-pre-deployed",
+  "sbv-primitives/scroll-reth-evm-types",
+  "sbv-primitives/scroll-reth-primitives-types",
+  "sbv-precompile/scroll",
 ]
-debug-account = ["sbv-helpers/debug-account"]
-debug-storage = ["sbv-helpers/debug-storage"]
-dev = ["sbv-primitives/dev", "sbv-helpers/dev", "sbv-trie/dev"]
+dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
 metrics = ["sbv-helpers/metrics"]
 
 # sp1 related
 sp1 = ["sbv-trie/sp1"]
 cycle-tracker = ["sbv-trie/cycle-tracker"]
 
-openvm = ["sbv-primitives/openvm"]
+scroll-openvm = ["sbv-precompile/scroll-openvm"]
+ethereum-openvm = ["sbv-precompile/ethereum-openvm"]

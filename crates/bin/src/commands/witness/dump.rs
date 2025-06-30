@@ -22,7 +22,6 @@ pub struct DumpWitnessCommand {
     pub json: bool,
     #[arg(long, help = "Output rkyv")]
     pub rkyv: bool,
-
     #[command(flatten)]
     pub rpc_args: RpcArgs,
 }

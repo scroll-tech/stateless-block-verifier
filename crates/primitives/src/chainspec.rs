@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 pub use reth_chainspec::{self, *};
 
-#[cfg(feature = "scroll")]
+#[cfg(feature = "scroll-chainspec")]
 pub use reth_scroll_chainspec as scroll;
-#[cfg(feature = "scroll")]
+#[cfg(feature = "scroll-chainspec")]
 pub use reth_scroll_chainspec::{SCROLL_DEV, SCROLL_MAINNET, SCROLL_SEPOLIA};
 
 /// An Ethereum chain specification.
@@ -12,16 +12,16 @@ pub use reth_scroll_chainspec::{SCROLL_DEV, SCROLL_MAINNET, SCROLL_SEPOLIA};
 /// A chain specification describes:
 ///
 /// - Meta-information about the chain (the chain ID)
-/// - The genesis block of the chain ([`Genesis`])
+/// - The genesis block of the chain (Genesis)
 /// - What hardforks are activated, and under which conditions
-#[cfg(not(feature = "scroll"))]
+#[cfg(not(feature = "scroll-chainspec"))]
 pub type ChainSpec = reth_chainspec::ChainSpec;
 /// Scroll chain spec type.
-#[cfg(feature = "scroll")]
+#[cfg(feature = "scroll-chainspec")]
 pub type ChainSpec = scroll::ScrollChainSpec;
 
 /// Get chain spec
-#[cfg(not(feature = "scroll"))]
+#[cfg(not(feature = "scroll-chainspec"))]
 pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
     if chain == Chain::from_named(NamedChain::Mainnet) {
         return Some(MAINNET.clone());
@@ -39,7 +39,7 @@ pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
 }
 
 /// Get chain spec
-#[cfg(feature = "scroll")]
+#[cfg(feature = "scroll-chainspec")]
 pub fn get_chain_spec(chain: Chain) -> Option<Arc<ChainSpec>> {
     if chain == Chain::from_named(NamedChain::Scroll) {
         return Some(SCROLL_MAINNET.clone());
@@ -59,13 +59,13 @@ where
     F: Fn(&mut ChainSpec),
 {
     get_chain_spec(chain).unwrap_or_else(|| {
-        #[cfg(not(feature = "scroll"))]
+        #[cfg(not(feature = "scroll-chainspec"))]
         let mut spec = {
             let mut spec = (**DEV).clone();
             spec.chain = chain;
             spec
         };
-        #[cfg(feature = "scroll")]
+        #[cfg(feature = "scroll-chainspec")]
         let mut spec = {
             let mut spec = (**SCROLL_DEV).clone();
             spec.inner.chain = chain;
@@ -80,7 +80,7 @@ where
 #[cfg(test)]
 mod tests {
 
-    #[cfg(feature = "scroll")]
+    #[cfg(feature = "scroll-chainspec")]
     #[test]
     fn test_build_chain_spec() {
         use super::*;

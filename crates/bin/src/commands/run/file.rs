@@ -51,9 +51,8 @@ impl RunFileCommand {
             core::{EvmDatabase, EvmExecutor},
             kv::{nohash::NoHashMap, null::NullProvider},
             primitives::{
-                chainspec::{Chain, get_chain_spec_or_build},
-                ext::{BlockWitnessChunkExt, BlockWitnessExt},
-                types::{BlockWitness, reth::BlockWitnessRethExt, scroll::ChunkInfoBuilder},
+                ext::{BlockWitnessChunkExt, BlockWitnessExt, BlockWitnessRethExt},
+                types::{BlockWitness, scroll::ChunkInfoBuilder},
             },
             trie::BlockWitnessTrieExt,
         };
@@ -77,16 +76,7 @@ impl RunFileCommand {
             .map(|w| w.build_reth_block())
             .collect::<Result<Vec<_>, _>>()?;
 
-        let chain_spec = get_chain_spec_or_build(Chain::from_id(witnesses.chain_id()), |_spec| {
-            #[cfg(feature = "scroll")]
-            {
-                use sbv::primitives::hardforks::{ForkCondition, ScrollHardfork};
-                _spec
-                    .inner
-                    .hardforks
-                    .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
-            }
-        });
+        let chain_spec = get_chain_spec(witnesses.chain_id());
 
         let mut chunk_info_builder =
             ChunkInfoBuilder::new(&chain_spec, witnesses.prev_state_root(), &blocks);
@@ -105,9 +95,15 @@ impl RunFileCommand {
             &nodes_provider,
             &NullProvider,
         )?;
-        for block in blocks.iter() {
-            let output = EvmExecutor::new(chain_spec.clone(), &db, block).execute()?;
-            db.update(&nodes_provider, output.state.state.iter())?;
+        for block in &blocks {
+            use sbv::primitives::U256;
+
+            let output =
+                EvmExecutor::new(chain_spec.clone(), &db, block, None::<Vec<U256>>).execute()?;
+            db.update(
+                &nodes_provider,
+                std::collections::BTreeMap::from_iter(output.state.state).iter(),
+            )?;
         }
         let post_state_root = db.commit_changes();
         if post_state_root != chunk_info_builder.post_state_root() {

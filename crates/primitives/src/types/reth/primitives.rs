@@ -1,70 +1,20 @@
 use crate::{
-    Withdrawal,
-    alloy_primitives::SignatureError,
+    SignatureError,
     types::{
         Transaction,
-        consensus::{
-            BlockWitnessConsensusExt, SignableTransaction, TxEip1559, TxEip2930, TxLegacy,
-        },
+        consensus::{SignableTransaction, TxEip1559, TxEip2930, TxEip7702, TxLegacy},
     },
 };
-use auto_impl::auto_impl;
 
 pub use reth_primitives::RecoveredBlock;
 
 #[cfg(not(feature = "scroll"))]
-pub use reth_primitives::{Block, BlockBody, Receipt, TransactionSigned};
-#[cfg(feature = "scroll")]
+pub use reth_primitives::{Block, BlockBody, EthPrimitives, Receipt, TransactionSigned};
+#[cfg(feature = "scroll-reth-primitives-types")]
 pub use reth_scroll_primitives::{
-    ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollReceipt as Receipt,
-    ScrollTransactionSigned as TransactionSigned,
+    ScrollBlock as Block, ScrollBlockBody as BlockBody, ScrollPrimitives as EthPrimitives,
+    ScrollReceipt as Receipt, ScrollTransactionSigned as TransactionSigned,
 };
-
-/// BlockWitnessRethExt trait
-#[auto_impl(&, &mut, Box, Rc, Arc)]
-pub trait BlockWitnessRethExt: BlockWitnessConsensusExt {
-    /// Transactions
-    #[must_use]
-    fn build_typed_transactions(
-        &self,
-    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>>;
-
-    /// Build a reth block
-    fn build_reth_block(&self) -> Result<RecoveredBlock<Block>, SignatureError> {
-        use reth_primitives_traits::transaction::signed::SignedTransaction;
-
-        let header = self.build_alloy_header();
-        let transactions = self
-            .build_typed_transactions()
-            .collect::<Result<Vec<_>, _>>()?;
-        let senders = transactions
-            .iter()
-            .map(|tx| tx.recover_signer())
-            .collect::<Result<Vec<_>, _>>()
-            .expect("Failed to recover signer");
-
-        let body = BlockBody {
-            transactions,
-            ommers: vec![],
-            withdrawals: self.withdrawals_iter().map(|iter| {
-                super::eips::eip4895::Withdrawals(
-                    iter.map(|w| super::eips::eip4895::Withdrawal {
-                        index: w.index(),
-                        validator_index: w.validator_index(),
-                        address: w.address(),
-                        amount: w.amount(),
-                    })
-                    .collect(),
-                )
-            }),
-        };
-
-        Ok(RecoveredBlock::new_unhashed(
-            Block { header, body },
-            senders,
-        ))
-    }
-}
 
 impl TryFrom<&Transaction> for TransactionSigned {
     type Error = SignatureError;
@@ -120,7 +70,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
-            #[cfg(not(feature = "scroll"))]
+            #[cfg(not(feature = "consensus-types"))]
             0x03 => {
                 let sig = tx.signature.expect("missing signature").into();
                 let tx = super::consensus::TxEip4844 {
@@ -147,7 +97,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
             }
             0x04 => {
                 let sig = tx.signature.expect("missing signature").into();
-                let tx = super::consensus::TxEip7702 {
+                let tx = TxEip7702 {
                     chain_id: tx.chain_id.expect("missing chain_id"),
                     nonce: tx.nonce,
                     gas_limit: tx.gas,
@@ -170,9 +120,9 @@ impl TryFrom<&Transaction> for TransactionSigned {
                 };
                 tx.into_signed(sig).into()
             }
-            #[cfg(feature = "scroll")]
+            #[cfg(feature = "scroll-consensus-types")]
             0x7e => {
-                use super::consensus::TxL1Message;
+                use crate::types::consensus::TxL1Message;
                 let tx = TxL1Message {
                     queue_index: tx.queue_index.expect("missing queue_index"),
                     gas_limit: tx.gas,
@@ -182,8 +132,10 @@ impl TryFrom<&Transaction> for TransactionSigned {
                     input: tx.input.clone(),
                 };
 
-                TransactionSigned::new_unhashed(tx.into(), TxL1Message::signature())
+                TransactionSigned::from(tx)
             }
+            #[cfg(all(feature = "scroll", not(feature = "scroll-consensus-types")))]
+            0x7e => compile_error!("unreachable"),
             _ => unimplemented!("unsupported tx type: {}", tx_type),
         };
 
@@ -192,10 +144,10 @@ impl TryFrom<&Transaction> for TransactionSigned {
 }
 
 #[cfg(feature = "rkyv")]
-impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
+impl TryFrom<&crate::types::ArchivedTransaction> for TransactionSigned {
     type Error = SignatureError;
 
-    fn try_from(tx: &super::ArchivedTransaction) -> Result<Self, Self::Error> {
+    fn try_from(tx: &crate::types::ArchivedTransaction) -> Result<Self, Self::Error> {
         let tx_type = tx.transaction_type;
         let input = crate::Bytes::copy_from_slice(tx.input.as_slice());
         let to = tx.to.as_ref().map(|to| crate::Address::from(*to));
@@ -250,7 +202,7 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
-            #[cfg(not(feature = "scroll"))]
+            #[cfg(not(feature = "consensus-types"))]
             0x03 => {
                 let sig = tx.signature.as_ref().expect("missing signature").into();
                 let tx = super::consensus::TxEip4844 {
@@ -284,7 +236,7 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
             }
             0x04 => {
                 let sig = tx.signature.as_ref().expect("missing signature").into();
-                let tx = super::consensus::TxEip7702 {
+                let tx = TxEip7702 {
                     chain_id: tx.chain_id.as_ref().expect("missing chain_id").to_native(),
                     nonce: tx.nonce.to_native(),
                     gas_limit: tx.gas.to_native(),
@@ -308,9 +260,9 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
                 };
                 tx.into_signed(sig).into()
             }
-            #[cfg(feature = "scroll")]
+            #[cfg(feature = "scroll-consensus-types")]
             0x7e => {
-                let tx = super::consensus::TxL1Message {
+                let tx = crate::types::consensus::TxL1Message {
                     queue_index: tx
                         .queue_index
                         .as_ref()
@@ -323,67 +275,13 @@ impl TryFrom<&super::ArchivedTransaction> for TransactionSigned {
                     input,
                 };
 
-                TransactionSigned::new_unhashed(
-                    tx.into(),
-                    super::consensus::TxL1Message::signature(),
-                )
+                TransactionSigned::from(tx)
             }
+            #[cfg(all(feature = "scroll", not(feature = "scroll-consensus-types")))]
+            0x7e => compile_error!("unreachable"),
             _ => unimplemented!("unsupported tx type: {}", tx_type),
         };
 
         Ok(tx)
-    }
-}
-
-impl BlockWitnessRethExt for super::BlockWitness {
-    fn build_typed_transactions(
-        &self,
-    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>> {
-        self.transaction.iter().map(|tx| tx.try_into())
-    }
-}
-
-#[cfg(feature = "rkyv")]
-impl BlockWitnessRethExt for super::ArchivedBlockWitness {
-    fn build_typed_transactions(
-        &self,
-    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>> {
-        self.transaction.iter().map(|tx| tx.try_into())
-    }
-}
-
-#[cfg(feature = "rpc-types")]
-impl super::BlockWitness {
-    /// Creates a new block witness from a block, pre-state root, execution witness.
-    pub fn new_from_block(
-        chain_id: crate::ChainId,
-        block: super::rpc::Block,
-        pre_state_root: crate::B256,
-        #[cfg(not(feature = "scroll"))] block_hashes: Vec<crate::B256>,
-        witness: super::ExecutionWitness,
-    ) -> Self {
-        let header = super::BlockHeader::from(block.header);
-
-        let transaction = block
-            .transactions
-            .into_transactions()
-            .map(Transaction::from_rpc)
-            .collect();
-        let withdrawals = block
-            .withdrawals
-            .map(|w| w.iter().map(super::Withdrawal::from).collect());
-        let states = witness.state.into_values().collect();
-        let codes = witness.codes.into_values().collect();
-        Self {
-            chain_id,
-            header,
-            transaction,
-            #[cfg(not(feature = "scroll"))]
-            block_hashes,
-            withdrawals,
-            pre_state_root,
-            states,
-            codes,
-        }
     }
 }

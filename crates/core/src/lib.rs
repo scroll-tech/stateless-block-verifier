@@ -2,7 +2,6 @@
 
 #[macro_use]
 extern crate sbv_helpers;
-extern crate core;
 
 mod database;
 pub use database::{DatabaseError, DatabaseRef, EvmDatabase};
@@ -11,7 +10,9 @@ mod error;
 pub use error::VerificationError;
 
 mod executor;
-pub use executor::EvmExecutor;
+#[cfg(not(feature = "scroll"))]
+pub use executor::SbvEthEvmFactory;
+pub use executor::{EvmConfig, EvmExecutor};
 
 #[cfg(test)]
 #[ctor::ctor]

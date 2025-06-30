@@ -22,21 +22,21 @@ use crate::types::{
 impl crate::types::Transaction {
     /// Create a transaction from a rpc transaction
     #[cfg(feature = "scroll")]
-    pub fn from_rpc(tx: Transaction) -> Self {
-        crate::types::Transaction::from_rpc_inner(tx.inner)
+    pub fn from_rpc(tx: &Transaction) -> Self {
+        crate::types::Transaction::from_rpc_inner(&tx.inner)
     }
 
     /// Create a transaction from a rpc transaction
     #[cfg(not(feature = "scroll"))]
-    pub fn from_rpc(tx: Transaction) -> Self {
+    pub fn from_rpc(tx: &Transaction) -> Self {
         crate::types::Transaction::from_rpc_inner(tx)
     }
 
-    fn from_rpc_inner(tx: AlloyRpcTransaction<TxEnvelope>) -> Self {
+    fn from_rpc_inner(tx: &AlloyRpcTransaction<TxEnvelope>) -> Self {
         Self {
             hash: tx.inner.trie_hash(),
             nonce: tx.nonce(),
-            from: tx.from,
+            from: tx.inner.signer(),
             to: tx.to(),
             value: tx.value(),
             gas_price: tx.gas_price(),
@@ -45,7 +45,7 @@ impl crate::types::Transaction {
             max_priority_fee_per_gas: tx.max_priority_fee_per_gas(),
             max_fee_per_blob_gas: tx.max_fee_per_blob_gas(),
             input: tx.input().clone(),
-            signature: TxEnvelopeExt::signature(&tx.inner).map(Into::into),
+            signature: TxEnvelopeExt::signature(tx.inner.inner()).map(Into::into),
             chain_id: tx.chain_id(),
             blob_versioned_hashes: tx.blob_versioned_hashes().map(Vec::from),
             access_list: tx.access_list().map(Into::into),

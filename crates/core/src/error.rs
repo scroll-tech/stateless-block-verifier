@@ -1,6 +1,7 @@
 use crate::database::DatabaseError;
-use reth_evm::execute::BlockExecutionError;
-use sbv_primitives::{B256, alloy_primitives::SignatureError};
+use sbv_primitives::{
+    B256, alloy_primitives::SignatureError, types::reth::evm::execute::BlockExecutionError,
+};
 
 /// Error variants encountered during verification of transactions in a L2 block.
 #[derive(Debug, thiserror::Error)]
@@ -11,7 +12,7 @@ pub enum VerificationError {
     /// Error encountered from database.
     #[error(transparent)]
     Database(#[from] DatabaseError),
-    /// Error encountered from [`revm`].
+    /// Error encountered from [`revm`](sbv_primitives::types::revm).
     #[error(transparent)]
     Execution(#[from] BlockExecutionError),
     /// Root mismatch error

@@ -1,5 +1,6 @@
 //! Rpc Extension
-use alloy_provider::{Provider, network::primitives::BlockTransactionsKind};
+
+use alloy_provider::Provider;
 use alloy_transport::TransportResult;
 use sbv_primitives::types::{BlockWitness, ExecutionWitness, Network, eips::BlockNumberOrTag};
 
@@ -34,10 +35,7 @@ pub trait ProviderExt: Provider<Network> {
         #[cfg(not(feature = "scroll"))] ancestors: Option<usize>,
     ) -> TransportResult<Option<BlockWitness>> {
         let builder = crate::witness::WitnessBuilder::new();
-        let Some(block) = self
-            .get_block_by_number(number, BlockTransactionsKind::Full)
-            .await?
-        else {
+        let Some(block) = self.get_block_by_number(number).full().await? else {
             return Ok(None);
         };
         let number = block.header.number;
@@ -69,13 +67,15 @@ pub trait ProviderExt: Provider<Network> {
         number: sbv_primitives::BlockNumber,
         ancestors: Option<usize>,
     ) -> TransportResult<Option<Vec<sbv_primitives::types::rpc::Block>>> {
+        use std::future::IntoFuture;
+
         let ancestors = ancestors
             .unwrap_or_default()
             .clamp(1, (number as usize).min(256));
 
         let ancestors = futures::future::try_join_all((1..=ancestors).map(|offset| {
             let block_number = number - offset as sbv_primitives::BlockNumber;
-            self.get_block_by_number(block_number.into(), BlockTransactionsKind::Hashes)
+            self.get_block_by_number(block_number.into()).into_future()
         }))
         .await?;
 

@@ -1,9 +1,8 @@
 use crate::{
-    B256, Bytes, ChainId,
+    B256, BlockNumber, Bytes, ChainId, U256,
     alloy_primitives::map::B256HashMap,
     types::{BlockHeader, Transaction, Withdrawal},
 };
-use alloy_primitives::BlockNumber;
 
 /// Represents the execution witness of a block. Contains an optional map of state preimages.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -55,6 +54,28 @@ pub struct BlockWitness {
     /// Code bytecodes
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Code bytecodes")))]
     pub codes: Vec<Bytes>,
+}
+
+impl BlockWitness {
+    /// Calculates compression ratios for all transactions in the block witness.
+    ///
+    /// # Panics
+    ///
+    /// Panics if called without the "scroll-compress-ratio" feature enabled, as this
+    /// functionality is not intended to be used in guest environments.
+    pub fn compression_ratios(&self) -> Vec<U256> {
+        #[cfg(feature = "scroll-compress-ratio")]
+        {
+            self.transaction
+                .iter()
+                .map(|tx| crate::types::evm::compute_compression_ratio(&tx.input))
+                .collect()
+        }
+        #[cfg(not(feature = "scroll-compress-ratio"))]
+        {
+            unimplemented!("you should not build ChunkWitness in guest?");
+        }
+    }
 }
 
 impl crate::BlockWitness for BlockWitness {

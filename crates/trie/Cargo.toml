@@ -17,29 +17,19 @@ alloy-trie.workspace = true
 reth-trie.workspace = true
 reth-trie-sparse.workspace = true
 
-sbv-primitives.workspace = true
+sbv-primitives = { workspace = true, features = ["revm-types"] }
 sbv-kv.workspace = true
 sbv-helpers.workspace = true
 
 thiserror.workspace = true
+tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json.workspace = true
+sbv-primitives = { workspace = true, features = ["serde"] }
 
 [features]
-scroll = [
-    "reth-trie/scroll",
-    "sbv-primitives/scroll-all",
-]
-dev = [
-    "sbv-primitives/dev",
-    "sbv-helpers/dev"
-]
+dev = ["dep:tracing", "sbv-primitives/dev"]
 
 sp1 = []
 cycle-tracker = []
-
-openvm = [
-    "sbv-primitives/openvm",
-    "sbv-helpers/openvm",
-]

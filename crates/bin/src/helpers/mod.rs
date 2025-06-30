@@ -99,7 +99,7 @@ impl RpcArgs {
             .layer(retry_layer)
             .http(rpc);
 
-        ProviderBuilder::<_, _, Network>::default().on_client(client)
+        ProviderBuilder::<_, _, Network>::default().connect_client(client)
     }
 }
 

@@ -13,5 +13,7 @@ workspace = true
 
 [dependencies]
 auto_impl.workspace = true
-hashbrown = { workspace = true, features = ["rayon"] } # reth use rayon::IntoParallelIterator
+hashbrown = { workspace = true, features = [
+  "rayon",
+] } # reth use rayon::IntoParallelIterator
 rustc-hash.workspace = true
