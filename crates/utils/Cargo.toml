@@ -33,4 +33,5 @@ scroll = [
   "sbv-primitives/scroll-consensus-types",
   "sbv-primitives/scroll-network-types",
   "sbv-primitives/scroll-rpc-types",
+  "sbv-primitives/scroll-compress-ratio",
 ]

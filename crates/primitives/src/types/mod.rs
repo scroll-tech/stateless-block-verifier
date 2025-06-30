@@ -45,8 +45,11 @@ pub use eips::eip4895::{Withdrawal as AlloyWithdrawal, Withdrawals as AlloyWithd
 pub mod evm {
     pub use alloy_evm::precompiles;
 
-    #[cfg(feature = "scroll")]
-    pub use scroll_alloy_evm::ScrollPrecompilesFactory;
+    #[cfg(feature = "scroll-evm-types")]
+    pub use scroll_alloy_evm::{ScrollBlockExecutor, ScrollPrecompilesFactory, ScrollTxCompressionRatios};
+
+    #[cfg(feature = "scroll-compress-ratio")]
+    pub use scroll_alloy_evm::compute_compression_ratio;
 }
 
 /// re-export types from alloy_network
