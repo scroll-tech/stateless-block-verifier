@@ -207,7 +207,7 @@ dependencies = [
  "derive_more",
  "op-alloy-consensus",
  "op-revm",
- "revm 24.0.1",
+ "revm 24.0.0",
  "thiserror 2.0.12",
 ]
 
@@ -1186,6 +1186,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "blake2b_simd"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06e903a20b159e944f91ec8499fe1e55651480c541ea0a584f5d967c49ad9d99"
+dependencies = [
+ "arrayref",
+ "arrayvec",
+ "constant_time_eq",
+]
+
+[[package]]
+name = "blake3"
+version = "1.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3888aaa89e4b2a40fca9848e400f6a658a5a3978de7be858e209cafa8be9a4a0"
+dependencies = [
+ "arrayref",
+ "arrayvec",
+ "cc",
+ "cfg-if",
+ "constant_time_eq",
+]
+
+[[package]]
 name = "block-buffer"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1890,6 +1914,9 @@ version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0b50bfb653653f9ca9095b427bed08ab8d75a137839d9ad64eb11810d5b6393"
 dependencies = [
+ "bitvec",
+ "byteorder",
+ "ff_derive",
  "rand_core 0.6.4",
  "subtle",
 ]
@@ -2157,6 +2184,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "halo2curves-axiom"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd8309e4638b4f1bcf6613d72265a84074d26034c35edc5d605b5688e580b8b8"
+dependencies = [
+ "blake2b_simd",
+ "digest 0.10.7",
+ "ff",
+ "group",
+ "hex",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "pairing",
+ "pasta_curves",
+ "paste",
+ "rand 0.8.5",
+ "rand_core 0.6.4",
+ "rayon",
+ "serde",
+ "serde_arrays 0.1.0",
+ "sha2 0.10.9",
+ "static_assertions",
+ "subtle",
+ "unroll",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2210,6 +2265,18 @@ checksum = "5313b072ce3c597065a808dbf612c4c8e8590bdbf8b579508bf7a762c5eae6cd"
 dependencies = [
  "arrayvec",
 ]
+
+[[package]]
+name = "hex-literal"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
+
+[[package]]
+name = "hex-literal"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcaaec4551594c969335c98c903c1397853d4198408ea609190f420500f6be71"
 
 [[package]]
 name = "hmac"
@@ -2668,18 +2735,18 @@ dependencies = [
 [[package]]
 name = "k256"
 version = "0.13.4"
-source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
 dependencies = [
  "ecdsa",
  "elliptic-curve",
  "ff",
  "hex-literal 0.4.1",
  "num-bigint 0.4.6",
- "openvm",
- "openvm-algebra-guest",
- "openvm-algebra-moduli-macros",
- "openvm-ecc-guest",
- "openvm-ecc-sw-macros",
+ "openvm 1.3.0-rc.1",
+ "openvm-algebra-guest 1.3.0-rc.1",
+ "openvm-algebra-moduli-macros 1.3.0-rc.1",
+ "openvm-ecc-guest 1.3.0-rc.1",
+ "openvm-ecc-sw-macros 1.3.0-rc.1",
  "serde",
 ]
 
@@ -2721,6 +2788,9 @@ name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+dependencies = [
+ "spin 0.9.8",
+]
 
 [[package]]
 name = "libc"
@@ -3054,6 +3124,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-modular"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64a5fe11d4135c3bcdf3a95b18b194afa9608a5f6ff034f5d857bc9a27fb0119"
+dependencies = [
+ "num-bigint 0.4.6",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-prime"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e238432a7881ec7164503ccc516c014bf009be7984cde1ba56837862543bdec3"
+dependencies = [
+ "bitvec",
+ "either",
+ "lru 0.12.5",
+ "num-bigint 0.4.6",
+ "num-integer",
+ "num-modular",
+ "num-traits",
+ "rand 0.8.5",
+]
+
+[[package]]
 name = "num-rational"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3111,6 +3208,18 @@ name = "number_prefix"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
+
+[[package]]
+name = "nums"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf3c74f925fb8cfc49a8022f2afce48a0683b70f9e439885594e84c5edbf5b01"
+dependencies = [
+ "num-bigint 0.4.6",
+ "num-integer",
+ "num-traits",
+ "rand 0.8.5",
+]
 
 [[package]]
 name = "nybbles"
@@ -3243,6 +3352,380 @@ dependencies = [
 ]
 
 [[package]]
+name = "openvm"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "bytemuck",
+ "num-bigint 0.4.6",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7)",
+ "openvm-platform 1.2.1-rc.0",
+ "openvm-rv32im-guest 1.2.1-rc.0",
+ "serde",
+]
+
+[[package]]
+name = "openvm"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "bytemuck",
+ "num-bigint 0.4.6",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549)",
+ "openvm-platform 1.3.0-rc.1",
+ "openvm-rv32im-guest 1.3.0-rc.1",
+ "serde",
+]
+
+[[package]]
+name = "openvm-algebra-complex-macros"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "openvm-macros-common 1.2.1-rc.0",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-algebra-complex-macros"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "openvm-macros-common 1.3.0-rc.1",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-algebra-guest"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "halo2curves-axiom",
+ "num-bigint 0.4.6",
+ "once_cell",
+ "openvm-algebra-complex-macros 1.2.1-rc.0",
+ "openvm-algebra-moduli-macros 1.2.1-rc.0",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7)",
+ "openvm-rv32im-guest 1.2.1-rc.0",
+ "serde-big-array",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "openvm-algebra-guest"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "halo2curves-axiom",
+ "num-bigint 0.4.6",
+ "once_cell",
+ "openvm-algebra-complex-macros 1.3.0-rc.1",
+ "openvm-algebra-moduli-macros 1.3.0-rc.1",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549)",
+ "openvm-rv32im-guest 1.3.0-rc.1",
+ "serde-big-array",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "openvm-algebra-moduli-macros"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "num-bigint 0.4.6",
+ "num-prime",
+ "openvm-macros-common 1.2.1-rc.0",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-algebra-moduli-macros"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "num-bigint 0.4.6",
+ "num-prime",
+ "openvm-macros-common 1.3.0-rc.1",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-custom-insn"
+version = "0.1.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-custom-insn"
+version = "0.1.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-ecc-guest"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "ecdsa",
+ "elliptic-curve",
+ "group",
+ "halo2curves-axiom",
+ "once_cell",
+ "openvm 1.2.1-rc.0",
+ "openvm-algebra-guest 1.2.1-rc.0",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7)",
+ "openvm-ecc-sw-macros 1.2.1-rc.0",
+ "openvm-rv32im-guest 1.2.1-rc.0",
+ "serde",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "openvm-ecc-guest"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "ecdsa",
+ "elliptic-curve",
+ "group",
+ "halo2curves-axiom",
+ "once_cell",
+ "openvm 1.3.0-rc.1",
+ "openvm-algebra-guest 1.3.0-rc.1",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549)",
+ "openvm-ecc-sw-macros 1.3.0-rc.1",
+ "openvm-rv32im-guest 1.3.0-rc.1",
+ "serde",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "openvm-ecc-sw-macros"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "openvm-macros-common 1.2.1-rc.0",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-ecc-sw-macros"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "openvm-macros-common 1.3.0-rc.1",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-keccak256"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "openvm-keccak256-guest",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "openvm-keccak256-guest"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "openvm-platform 1.3.0-rc.1",
+]
+
+[[package]]
+name = "openvm-kzg"
+version = "0.1.0-alpha"
+source = "git+https://github.com/axiom-crypto/openvm-kzg.git?rev=56751b25b4f18ba9988355faa288918db0ab3fde#56751b25b4f18ba9988355faa288918db0ab3fde"
+dependencies = [
+ "bls12_381",
+ "hex",
+ "hex-literal 1.0.0",
+ "openvm-algebra-guest 1.2.1-rc.0",
+ "openvm-ecc-guest 1.2.1-rc.0",
+ "openvm-pairing 1.2.1-rc.0",
+ "serde",
+ "serde-big-array",
+ "spin 0.10.0",
+]
+
+[[package]]
+name = "openvm-macros-common"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-macros-common"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "syn 2.0.104",
+]
+
+[[package]]
+name = "openvm-pairing"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "group",
+ "hex-literal 0.4.1",
+ "itertools 0.14.0",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "openvm 1.2.1-rc.0",
+ "openvm-algebra-complex-macros 1.2.1-rc.0",
+ "openvm-algebra-guest 1.2.1-rc.0",
+ "openvm-algebra-moduli-macros 1.2.1-rc.0",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7)",
+ "openvm-ecc-guest 1.2.1-rc.0",
+ "openvm-ecc-sw-macros 1.2.1-rc.0",
+ "openvm-pairing-guest 1.2.1-rc.0",
+ "openvm-platform 1.2.1-rc.0",
+ "openvm-rv32im-guest 1.2.1-rc.0",
+ "rand 0.8.5",
+ "serde",
+]
+
+[[package]]
+name = "openvm-pairing"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "group",
+ "hex-literal 0.4.1",
+ "itertools 0.14.0",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "openvm 1.3.0-rc.1",
+ "openvm-algebra-complex-macros 1.3.0-rc.1",
+ "openvm-algebra-guest 1.3.0-rc.1",
+ "openvm-algebra-moduli-macros 1.3.0-rc.1",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549)",
+ "openvm-ecc-guest 1.3.0-rc.1",
+ "openvm-ecc-sw-macros 1.3.0-rc.1",
+ "openvm-pairing-guest 1.3.0-rc.1",
+ "openvm-platform 1.3.0-rc.1",
+ "openvm-rv32im-guest 1.3.0-rc.1",
+ "rand 0.8.5",
+ "serde",
+]
+
+[[package]]
+name = "openvm-pairing-guest"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "hex-literal 0.4.1",
+ "itertools 0.14.0",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "openvm 1.2.1-rc.0",
+ "openvm-algebra-guest 1.2.1-rc.0",
+ "openvm-algebra-moduli-macros 1.2.1-rc.0",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7)",
+ "openvm-ecc-guest 1.2.1-rc.0",
+ "rand 0.8.5",
+ "serde",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "openvm-pairing-guest"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "hex-literal 0.4.1",
+ "itertools 0.14.0",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "openvm 1.3.0-rc.1",
+ "openvm-algebra-guest 1.3.0-rc.1",
+ "openvm-algebra-moduli-macros 1.3.0-rc.1",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549)",
+ "openvm-ecc-guest 1.3.0-rc.1",
+ "rand 0.8.5",
+ "serde",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "openvm-platform"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "libm",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7)",
+ "openvm-rv32im-guest 1.2.1-rc.0",
+]
+
+[[package]]
+name = "openvm-platform"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "libm",
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549)",
+ "openvm-rv32im-guest 1.3.0-rc.1",
+]
+
+[[package]]
+name = "openvm-rv32im-guest"
+version = "1.2.1-rc.0"
+source = "git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7#9ef822c947f14eb436e293971c969cfcb688dbe7"
+dependencies = [
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=9ef822c947f14eb436e293971c969cfcb688dbe7)",
+ "p3-field 0.1.0",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "openvm-rv32im-guest"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "openvm-custom-insn 0.1.0 (git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549)",
+ "p3-field 0.1.0",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "openvm-sha2"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "openvm-sha256-guest",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "openvm-sha256-guest"
+version = "1.3.0-rc.1"
+source = "git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549#3c800070d363237832a66dbe5501d3c365f3c549"
+dependencies = [
+ "openvm-platform 1.3.0-rc.1",
+]
+
+[[package]]
 name = "overload"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3258,6 +3741,157 @@ dependencies = [
  "elliptic-curve",
  "primeorder",
  "sha2 0.10.9",
+]
+
+[[package]]
+name = "p3-baby-bear"
+version = "0.2.3-succinct"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7521838ecab2ddf4f7bc4ceebad06ec02414729598485c1ada516c39900820e8"
+dependencies = [
+ "num-bigint 0.4.6",
+ "p3-field 0.2.3-succinct",
+ "p3-mds",
+ "p3-poseidon2",
+ "p3-symmetric",
+ "rand 0.8.5",
+ "serde",
+]
+
+[[package]]
+name = "p3-dft"
+version = "0.2.3-succinct"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46414daedd796f1eefcdc1811c0484e4bced5729486b6eaba9521c572c76761a"
+dependencies = [
+ "p3-field 0.2.3-succinct",
+ "p3-matrix",
+ "p3-maybe-rayon 0.2.3-succinct",
+ "p3-util 0.2.3-succinct",
+ "tracing",
+]
+
+[[package]]
+name = "p3-field"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=539bbc84085efb609f4f62cb03cf49588388abdb#539bbc84085efb609f4f62cb03cf49588388abdb"
+dependencies = [
+ "itertools 0.14.0",
+ "num-bigint 0.4.6",
+ "num-integer",
+ "num-traits",
+ "nums",
+ "p3-maybe-rayon 0.1.0",
+ "p3-util 0.1.0",
+ "rand 0.8.5",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "p3-field"
+version = "0.2.3-succinct"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48948a0516b349e9d1cdb95e7236a6ee010c44e68c5cc78b4b92bf1c4022a0d9"
+dependencies = [
+ "itertools 0.12.1",
+ "num-bigint 0.4.6",
+ "num-traits",
+ "p3-util 0.2.3-succinct",
+ "rand 0.8.5",
+ "serde",
+]
+
+[[package]]
+name = "p3-matrix"
+version = "0.2.3-succinct"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e4de3f373589477cb735ea58e125898ed20935e03664b4614c7fac258b3c42f"
+dependencies = [
+ "itertools 0.12.1",
+ "p3-field 0.2.3-succinct",
+ "p3-maybe-rayon 0.2.3-succinct",
+ "p3-util 0.2.3-succinct",
+ "rand 0.8.5",
+ "serde",
+ "tracing",
+]
+
+[[package]]
+name = "p3-maybe-rayon"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=539bbc84085efb609f4f62cb03cf49588388abdb#539bbc84085efb609f4f62cb03cf49588388abdb"
+
+[[package]]
+name = "p3-maybe-rayon"
+version = "0.2.3-succinct"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3968ad1160310296eb04f91a5f4edfa38fe1d6b2b8cd6b5c64e6f9b7370979e"
+
+[[package]]
+name = "p3-mds"
+version = "0.2.3-succinct"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2356b1ed0add6d5dfbf7a338ce534a6fde827374394a52cec16a0840af6e97c9"
+dependencies = [
+ "itertools 0.12.1",
+ "p3-dft",
+ "p3-field 0.2.3-succinct",
+ "p3-matrix",
+ "p3-symmetric",
+ "p3-util 0.2.3-succinct",
+ "rand 0.8.5",
+]
+
+[[package]]
+name = "p3-poseidon2"
+version = "0.2.3-succinct"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7da1eec7e1b6900581bedd95e76e1ef4975608dd55be9872c9d257a8a9651c3a"
+dependencies = [
+ "gcd",
+ "p3-field 0.2.3-succinct",
+ "p3-mds",
+ "p3-symmetric",
+ "rand 0.8.5",
+ "serde",
+]
+
+[[package]]
+name = "p3-symmetric"
+version = "0.2.3-succinct"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edb439bea1d822623b41ff4b51e3309e80d13cadf8b86d16ffd5e6efb9fdc360"
+dependencies = [
+ "itertools 0.12.1",
+ "p3-field 0.2.3-succinct",
+ "serde",
+]
+
+[[package]]
+name = "p3-util"
+version = "0.1.0"
+source = "git+https://github.com/Plonky3/Plonky3.git?rev=539bbc84085efb609f4f62cb03cf49588388abdb#539bbc84085efb609f4f62cb03cf49588388abdb"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "p3-util"
+version = "0.2.3-succinct"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6c2c2010678b9332b563eaa38364915b585c1a94b5ca61e2c7541c087ddda5c"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "pairing"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81fec4625e73cf41ef4bb6846cafa6d44736525f442ba45e407c4a000a13996f"
+dependencies = [
+ "group",
 ]
 
 [[package]]
@@ -3944,7 +4578,7 @@ dependencies = [
 [[package]]
 name = "reth-chainspec"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -3964,7 +4598,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -3982,7 +4616,7 @@ dependencies = [
 [[package]]
 name = "reth-codecs-derive"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -3993,7 +4627,7 @@ dependencies = [
 [[package]]
 name = "reth-db-models"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -4003,7 +4637,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-forks"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-eip2124",
  "alloy-hardforks",
@@ -4015,7 +4649,7 @@ dependencies = [
 [[package]]
 name = "reth-ethereum-primitives"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4030,7 +4664,7 @@ dependencies = [
 [[package]]
 name = "reth-evm"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4052,7 +4686,7 @@ dependencies = [
 [[package]]
 name = "reth-evm-ethereum"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4070,7 +4704,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-errors"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-evm",
  "alloy-primitives",
@@ -4083,7 +4717,7 @@ dependencies = [
 [[package]]
 name = "reth-execution-types"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4099,7 +4733,7 @@ dependencies = [
 [[package]]
 name = "reth-network-peers"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -4111,7 +4745,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "once_cell",
@@ -4124,7 +4758,7 @@ dependencies = [
 [[package]]
 name = "reth-primitives-traits"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4151,7 +4785,7 @@ dependencies = [
 [[package]]
 name = "reth-prune-types"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-primitives",
  "derive_more",
@@ -4161,7 +4795,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-chainspec"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-chains",
  "alloy-consensus",
@@ -4185,7 +4819,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-evm"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4213,7 +4847,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-forks"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-chains",
  "alloy-primitives",
@@ -4227,7 +4861,7 @@ dependencies = [
 [[package]]
 name = "reth-scroll-primitives"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4244,7 +4878,7 @@ dependencies = [
 [[package]]
 name = "reth-stages-types"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-primitives",
  "reth-trie-common",
@@ -4253,7 +4887,7 @@ dependencies = [
 [[package]]
 name = "reth-static-file-types"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-primitives",
  "derive_more",
@@ -4264,7 +4898,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-api"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4286,7 +4920,7 @@ dependencies = [
 [[package]]
 name = "reth-storage-errors"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-eips",
  "alloy-primitives",
@@ -4302,7 +4936,7 @@ dependencies = [
 [[package]]
 name = "reth-trie"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -4324,7 +4958,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-common"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-primitives",
@@ -4340,7 +4974,7 @@ dependencies = [
 [[package]]
 name = "reth-trie-sparse"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-primitives",
  "alloy-rlp",
@@ -4356,7 +4990,7 @@ dependencies = [
 [[package]]
 name = "reth-zstd-compressors"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "zstd",
 ]
@@ -4918,6 +5552,12 @@ dependencies = [
 name = "sbv-precompile"
 version = "2.0.0"
 dependencies = [
+ "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?rev=3c800070d363237832a66dbe5501d3c365f3c549)",
+ "openvm-ecc-guest 1.3.0-rc.1",
+ "openvm-keccak256",
+ "openvm-kzg",
+ "openvm-pairing 1.3.0-rc.1",
+ "openvm-sha2",
  "sbv-primitives",
 ]
 
@@ -5017,7 +5657,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 [[package]]
 name = "scroll-alloy-consensus"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5033,7 +5673,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-evm"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5051,7 +5691,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-hardforks"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-hardforks",
  "auto_impl",
@@ -5061,7 +5701,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-network"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-network",
@@ -5076,7 +5716,7 @@ dependencies = [
 [[package]]
 name = "scroll-alloy-rpc-types"
 version = "1.4.8"
-source = "git+https://github.com/scroll-tech/reth?branch=scroll#e77d88c3f764bac203b90c51ea0a04b2b97d0f7a"
+source = "git+https://github.com/scroll-tech/reth?branch=scroll#b2377df23567e57f1068911d947d2ca0f9c34252"
 dependencies = [
  "alloy-consensus",
  "alloy-eips",
@@ -5180,6 +5820,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f0e2c6ed6606019b4e29e69dbaba95b11854410e5347d525002456dbbb786b6"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-big-array"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11fc7cc2c76d73e0f27ee52abbd64eec84d46f370c88371120433196934e4b7f"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "serde_arrays"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38636132857f68ec3d5f3eb121166d2af33cb55174c4d5ff645db6165cbef0fd"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "serde_arrays"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94a16b99c5ea4fe3daccd14853ad260ec00ea043b2708d1fd1da3106dcd8d9df"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -5383,6 +6050,64 @@ dependencies = [
  "libc",
  "windows-sys 0.52.0",
 ]
+
+[[package]]
+name = "sp1-lib"
+version = "5.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0fd8bc101e5603ccf2dc1836ea06410f25ce2298755b2dac626add9be2424b4"
+dependencies = [
+ "bincode",
+ "serde",
+ "sp1-primitives",
+]
+
+[[package]]
+name = "sp1-primitives"
+version = "5.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "699935774a5131c1a8b371108d0666c0c80c43611045fb77fae43f2f242676d5"
+dependencies = [
+ "bincode",
+ "blake3",
+ "cfg-if",
+ "hex",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "p3-baby-bear",
+ "p3-field 0.2.3-succinct",
+ "p3-poseidon2",
+ "p3-symmetric",
+ "serde",
+ "sha2 0.10.9",
+]
+
+[[package]]
+name = "sp1_bls12_381"
+version = "0.8.0-sp1-5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac255e1704ebcdeec5e02f6a0ebc4d2e9e6b802161938330b6810c13a610c583"
+dependencies = [
+ "cfg-if",
+ "ff",
+ "group",
+ "pairing",
+ "rand_core 0.6.4",
+ "sp1-lib",
+ "subtle",
+]
+
+[[package]]
+name = "spin"
+version = "0.9.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
+
+[[package]]
+name = "spin"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5fe4ccb98d9c292d56fec89a5e07da7fc4cf0dc11e156b41793132775d3e591"
 
 [[package]]
 name = "spki"
