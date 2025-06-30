@@ -68,7 +68,7 @@ openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "3c80007
 openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
 openvm-k256 = { package = "k256", git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
 openvm-p256 = { package = "p256", git = "https://github.com/openvm-org/openvm.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549" }
-openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", rev = "3c800070d363237832a66dbe5501d3c365f3c549", default-features = false }
+openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", rev = "56751b25b4f18ba9988355faa288918db0ab3fde", default-features = false }
 
 async-trait = "0.1"
 auto_impl = "1.2"
