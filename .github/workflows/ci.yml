@@ -63,9 +63,13 @@ jobs:
         run: cargo clippy --workspace --features dev -- -D warnings
       - name: clippy metrics
         run: cargo clippy --workspace --features metrics -- -D warnings
+      - name: clippy scroll
+        run: cargo clippy --workspace --features scroll -- -D warnings
       - name: clippy all
         run: cargo clippy --workspace --all-features -- -D warnings
       - name: clippy test
         run: cargo clippy --workspace --tests -- -D warnings
+      - name: clippy test scroll
+        run: cargo clippy --workspace --tests --features scroll -- -D warnings
       - name: clippy test all
         run: cargo clippy --workspace --tests --all-features -- -D warnings

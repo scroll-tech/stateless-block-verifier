@@ -1,5 +1,8 @@
 use super::PrecompileProvider;
-use sbv_primitives::types::{evm::precompiles::PrecompilesMap, revm::precompile::PrecompileSpecId};
+use sbv_primitives::types::{
+    evm::precompiles::PrecompilesMap,
+    revm::precompile::{PrecompileSpecId, Precompiles},
+};
 
 #[cfg(not(feature = "ethereum-openvm"))]
 impl PrecompileProvider {
@@ -14,6 +17,7 @@ impl PrecompileProvider {
 impl PrecompileProvider {
     /// Returns the precompiles map for the given spec.
     pub fn with_spec(_spec: PrecompileSpecId) -> PrecompilesMap {
+        let _ = Precompiles::new(_spec);
         todo!()
     }
 }

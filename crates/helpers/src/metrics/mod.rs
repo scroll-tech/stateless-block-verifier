@@ -41,7 +41,7 @@ async fn start_metrics_server_inner(metrics_addr: SocketAddr) {
                         Box::pin(async move {
                             let mut buf = String::new();
                             encode(&mut buf, &REGISTRY.registry)
-                                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+                                .map_err(io::Error::other)
                                 .map(|_| {
                                     let body = Full::new(Bytes::from(buf)).boxed();
                                     Response::builder()

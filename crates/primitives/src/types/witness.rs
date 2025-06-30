@@ -60,22 +60,15 @@ impl BlockWitness {
     /// Calculates compression ratios for all transactions in the block witness.
     ///
     /// # Panics
+    ///
     /// Panics if called without the "scroll-compress-ratio" feature enabled, as this
     /// functionality is not intended to be used in guest environments.
     pub fn compression_ratios(&self) -> Vec<U256> {
         #[cfg(feature = "scroll-compress-ratio")]
         {
-            use crate::types::{
-                eips::Encodable2718, evm::compute_compression_ratio,
-                reth::primitives::TransactionSigned,
-            };
-
             self.transaction
                 .iter()
-                .map(|tx| {
-                    let tx: TransactionSigned = tx.try_into().unwrap();
-                    compute_compression_ratio(&tx.encoded_2718())
-                })
+                .map(|tx| crate::types::evm::compute_compression_ratio(&tx.input))
                 .collect()
         }
         #[cfg(not(feature = "scroll-compress-ratio"))]
