@@ -21,9 +21,10 @@ sbv-utils.workspace = true
 rkyv = ["sbv-primitives/rkyv"]
 serde = ["sbv-primitives/serde"]
 
+c-kzg = ["sbv-primitives/c-kzg"]
+kzg-rs = ["sbv-primitives/kzg-rs"]
+
 scroll = ["sbv-core/scroll", "sbv-primitives/scroll-all", "sbv-utils/scroll"]
-debug-account = ["sbv-core/debug-account", "sbv-helpers/debug-account"]
-debug-storage = ["sbv-core/debug-storage", "sbv-helpers/debug-storage"]
 dev = ["sbv-core/dev", "sbv-primitives/dev", "sbv-trie/dev"]
 metrics = ["sbv-core/metrics", "sbv-helpers/metrics"]
 
@@ -31,4 +32,5 @@ metrics = ["sbv-core/metrics", "sbv-helpers/metrics"]
 sp1 = ["sbv-core/sp1", "sbv-primitives/sp1"]
 cycle-tracker = ["sbv-core/cycle-tracker", "sbv-primitives/cycle-tracker"]
 
-openvm = ["sbv-core/openvm"]
+scroll-openvm = ["sbv-core/scroll-openvm"]
+ethereum-openvm = ["sbv-core/ethereum-openvm"]

@@ -59,6 +59,10 @@ sbv-kv.workspace = true
 rkyv = ["dep:rkyv", "alloy-primitives/rkyv"]
 serde = ["dep:alloy-serde", "dep:serde", "reth-scroll-primitives?/serde"]
 
+# features proxy
+c-kzg = ["revm/c-kzg"]
+kzg-rs = ["revm/kzg-rs"]
+
 # core features switch
 chainspec = ["dep:reth-chainspec"]
 consensus-types = ["dep:alloy-consensus"]

@@ -1,11 +1,12 @@
-use crate::{database::EvmDatabase, error::VerificationError};
+use crate::{EvmDatabase, VerificationError};
 use sbv_kv::KeyValueStoreGet;
+use sbv_primitives::types::reth::evm::ConfigureEvm;
 use sbv_primitives::{
     B256, Bytes, U256,
     chainspec::ChainSpec,
     types::{
         reth::{
-            evm::{ConfigureEvm, EthEvmConfig, RethReceiptBuilder},
+            evm::{EthEvmConfig, RethReceiptBuilder},
             execution_types::BlockExecutionOutput,
             primitives::{Block, EthPrimitives, Receipt, RecoveredBlock},
         },
@@ -13,31 +14,22 @@ use sbv_primitives::{
     },
 };
 use sbv_trie::TrieNode;
-use std::{fmt::Debug, sync::Arc};
+use std::sync::Arc;
 
-#[cfg(not(feature = "scroll"))]
-pub type ExecutorProvider = EthEvmConfig;
-
-#[cfg(feature = "scroll")]
-pub type ExecutorProvider = EthEvmConfig<ChainSpec, EthPrimitives, RethReceiptBuilder>;
+/// Ethereum-related EVM configuration.
+pub type EvmConfig =
+    EthEvmConfig<ChainSpec, EthPrimitives, RethReceiptBuilder, sbv_precompile::PrecompileProvider>;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
-pub struct EvmExecutor<
-    'a,
-    CodeDb,
-    NodesProvider,
-    BlockHashProvider,
-    #[cfg(feature = "scroll")] CompressionRatios,
-> {
+pub struct EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios> {
     chain_spec: Arc<ChainSpec>,
     db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
     block: &'a RecoveredBlock<Block>,
-    #[cfg(feature = "scroll")]
     compression_ratios: Option<CompressionRatios>,
 }
 
-impl<'a, CodeDb, NodesProvider, BlockHashProvider, #[cfg(feature = "scroll")] CompressionRatios>
+impl<'a, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
     EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
 {
     /// Create a new EVM executor
@@ -45,45 +37,17 @@ impl<'a, CodeDb, NodesProvider, BlockHashProvider, #[cfg(feature = "scroll")] Co
         chain_spec: Arc<ChainSpec>,
         db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
         block: &'a RecoveredBlock<Block>,
-        #[cfg(feature = "scroll")] compression_ratios: Option<CompressionRatios>,
+        compression_ratios: Option<CompressionRatios>,
     ) -> Self {
         Self {
             chain_spec,
             db,
             block,
-            #[cfg(feature = "scroll")]
             compression_ratios,
         }
     }
 }
 
-#[cfg(not(feature = "scroll"))]
-impl<
-    CodeDb: KeyValueStoreGet<B256, Bytes>,
-    NodesProvider: KeyValueStoreGet<B256, TrieNode>,
-    BlockHashProvider: KeyValueStoreGet<u64, B256>,
-> EvmExecutor<'_, CodeDb, NodesProvider, BlockHashProvider>
-{
-    /// Handle the block with the given witness
-    pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
-        let provider = ExecutorProvider::ethereum(self.chain_spec.clone());
-
-        let output = measure_duration_millis!(
-            handle_block_duration_milliseconds,
-            cycle_track!(
-                provider.executor(CacheDB::new(self.db)).execute(self.block),
-                "handle_block"
-            )
-        )?;
-
-        #[cfg(feature = "metrics")]
-        sbv_helpers::metrics::REGISTRY.block_counter.inc();
-
-        Ok(output)
-    }
-}
-
-#[cfg(feature = "scroll")]
 impl<
     CodeDb: KeyValueStoreGet<B256, Bytes>,
     NodesProvider: KeyValueStoreGet<B256, TrieNode>,
@@ -100,7 +64,7 @@ impl<
             revm::database::{State, states::bundle_state::BundleRetention},
         };
 
-        let provider = ExecutorProvider::new(self.chain_spec.clone(), Default::default());
+        let provider = crate::executor::EvmConfig::new(self.chain_spec.clone(), Default::default());
         let factory = provider.block_executor_factory();
 
         let mut db = State::builder()
