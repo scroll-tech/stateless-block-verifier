@@ -1,7 +1,8 @@
-use crate::B256;
-use crate::ext::BlockChunkExt;
-use crate::types::reth::primitives::TransactionSigned;
-use crate::types::reth::primitives::{Block, RecoveredBlock};
+use crate::{
+    B256,
+    ext::BlockChunkExt,
+    types::reth::primitives::{Block, RecoveredBlock, TransactionSigned},
+};
 
 impl<'a, I: IntoIterator<Item = &'a TransactionSigned>> crate::ext::scroll::TxBytesHashExt for I
 where

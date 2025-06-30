@@ -1,12 +1,11 @@
 use crate::{EvmDatabase, VerificationError};
 use sbv_kv::KeyValueStoreGet;
-use sbv_primitives::types::reth::evm::ConfigureEvm;
 use sbv_primitives::{
     B256, Bytes, U256,
     chainspec::ChainSpec,
     types::{
         reth::{
-            evm::{EthEvmConfig, RethReceiptBuilder},
+            evm::{ConfigureEvm, EthEvmConfig, RethReceiptBuilder},
             execution_types::BlockExecutionOutput,
             primitives::{Block, EthPrimitives, Receipt, RecoveredBlock},
         },
