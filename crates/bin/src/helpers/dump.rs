@@ -50,11 +50,11 @@ pub fn dump_bundle_state(bundle_state: &BundleState, out_dir: &Path) -> anyhow::
     })?;
 
     let mut states_changed = csv::Writer::from_writer(
-        File::create(&out_dir.join("states-changed.csv"))
+        File::create(out_dir.join("states-changed.csv"))
             .inspect_err(|_e| dev_error!("Failed to create states-changed.csv: {_e}"))?,
     );
     let mut storages_changed = csv::Writer::from_writer(
-        File::create(&out_dir.join("storage-changed.csv"))
+        File::create(out_dir.join("storage-changed.csv"))
             .inspect_err(|_e| dev_error!("Failed to create storage-changed.csv: {_e}"))?,
     );
 
@@ -102,7 +102,7 @@ pub fn dump_bundle_state(bundle_state: &BundleState, out_dir: &Path) -> anyhow::
     }
 
     let mut contracts = csv::Writer::from_writer(
-        File::create(&out_dir.join("contracts.csv"))
+        File::create(out_dir.join("contracts.csv"))
             .inspect_err(|_e| dev_error!("Failed to create contracts.csv: {_e}"))?,
     );
 
