@@ -9,6 +9,7 @@ use sbv::primitives::types::Network;
 use std::future::Future;
 use url::Url;
 
+mod dump;
 pub mod retry;
 /// Helper functions for the tower
 pub mod tower;

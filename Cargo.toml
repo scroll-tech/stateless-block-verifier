@@ -40,7 +40,7 @@ alloy-primitives = { version = "1.1", default-features = false, features = ["map
 # https://github.com/alloy-rs/evm
 alloy-evm = { version = "0.10", default-features = false }
 
-revm-scroll = { git = "https://github.com/scroll-tech/scroll-revm", rev = "6ccb897197d7ed319463df487f428fce0a77b47f", default-features = false }
+revm-scroll = { git = "https://github.com/scroll-tech/scroll-revm", rev = "6c1942f9a8eaf7aae1807654c4ee99d771150fbd", default-features = false }
 
 reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
 reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }

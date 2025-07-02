@@ -1,3 +1,4 @@
+use crate::helpers::dump::dump_bundle_state;
 use anyhow::anyhow;
 #[cfg(feature = "dev")]
 use sbv::helpers::tracing;
@@ -12,6 +13,7 @@ use sbv::{
 };
 use std::{
     collections::BTreeMap,
+    env,
     panic::{UnwindSafe, catch_unwind},
     sync::Arc,
 };
@@ -57,7 +59,7 @@ pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {
             _spec
                 .inner
                 .hardforks
-                .insert(ScrollHardfork::Feynman, ForkCondition::Never);
+                .insert(ScrollHardfork::Feynman, ForkCondition::Timestamp(0));
         }
     })
 }
@@ -136,6 +138,22 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
             block.state_root,
             post_state_root
         );
+
+        let dump_dir =
+            env::temp_dir()
+                .join("dumps")
+                .join(format!("{}-{}", witness.chain_id(), block.number));
+        dump_bundle_state(&output.state, &dump_dir)
+            .inspect(|_| {
+                dev_info!("Dumped bundle state to: {}", dump_dir.display());
+            })
+            .inspect_err(|_e| {
+                dev_error!(
+                    "Failed to dump bundle state to {}: {_e}",
+                    dump_dir.display(),
+                );
+            })
+            .ok();
 
         update_metrics_counter!(verification_error);
 
