@@ -30,7 +30,7 @@ use sbv_trie::TrieNode;
 use std::sync::Arc;
 
 /// Ethereum-related EVM configuration with [`SbvEthEvmFactory`] as the factory.
-pub type EvmConfig = EthEvmConfig<SbvEthEvmFactory>;
+pub type EvmConfig = EthEvmConfig<ChainSpec, SbvEthEvmFactory>;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
