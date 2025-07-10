@@ -1,6 +1,5 @@
 use sbv_primitives::types::revm::precompile::{
     PrecompileError, PrecompileOutput, PrecompileResult, kzg_point_evaluation,
-    kzg_point_evaluation::{GAS_COST, RETURN_VALUE, kzg_to_versioned_hash},
 };
 
 /// Verify KZG proof with openvm precompile.
