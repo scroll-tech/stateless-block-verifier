@@ -341,7 +341,7 @@ impl<T: Default> PartialTrie<T> {
         // traverse the partial trie
         cycle_track!(
             traverse_import_partial_trie(
-                &Nibbles::default(),
+                Nibbles::default(),
                 root,
                 nodes_provider,
                 &mut state,
@@ -382,12 +382,10 @@ impl<T: Default> PartialTrie<T> {
         value: T,
         mut encode: F,
     ) -> Result<()> {
-        self.trie
-            .update_leaf(path.clone(), encode(&value))
-            .map_err(|e| {
-                dev_error!("failed to update leaf: {e}");
-                PartialStateTrieError::Impl(format!("{e:?}"))
-            })?;
+        self.trie.update_leaf(path, encode(&value)).map_err(|e| {
+            dev_error!("failed to update leaf: {e}");
+            PartialStateTrieError::Impl(format!("{e:?}"))
+        })?;
         self.leafs.insert(path, value);
         Ok(())
     }
@@ -406,7 +404,7 @@ fn traverse_import_partial_trie<
     P: sbv_kv::KeyValueStoreGet<B256, TrieNode> + Copy,
     F: FnMut(Nibbles, &Vec<u8>) -> Result<()>,
 >(
-    path: &Nibbles,
+    path: Nibbles,
     node: TrieNode,
     nodes: P,
     trie: &mut RevealedSparseTrie,
@@ -418,39 +416,35 @@ fn traverse_import_partial_trie<
             let mut stack_ptr = branch.as_ref().first_child_index();
             for idx in CHILD_INDEX_RANGE {
                 if branch.state_mask.is_bit_set(idx) {
-                    let mut child_path = path.clone();
+                    let mut child_path = path;
                     child_path.push(idx);
                     let child_node = decode_rlp_node(nodes, &branch.stack[stack_ptr])?;
                     stack_ptr += 1;
 
                     if let Some(child_node) = child_node {
                         traverse_import_partial_trie(
-                            &child_path,
-                            child_node,
-                            nodes,
-                            trie,
-                            store_leaf,
+                            child_path, child_node, nodes, trie, store_leaf,
                         )?;
                     }
                 }
             }
         }
         TrieNode::Leaf(ref leaf) => {
-            let mut full = path.clone();
+            let mut full = path;
             full.extend(&leaf.key);
             store_leaf(full, &leaf.value)?;
         }
         TrieNode::Extension(ref extension) => {
-            let mut child_path = path.clone();
+            let mut child_path = path;
             child_path.extend(&extension.key);
 
             if let Some(child_node) = decode_rlp_node(nodes, &extension.child)? {
-                traverse_import_partial_trie(&child_path, child_node, nodes, trie, store_leaf)?;
+                traverse_import_partial_trie(child_path, child_node, nodes, trie, store_leaf)?;
             }
         }
     };
 
-    trie.reveal_node(path.clone(), node, TrieMasks::none()) // FIXME: is this correct?
+    trie.reveal_node(path, node, TrieMasks::none()) // FIXME: is this correct?
         .map_err(|e| {
             dev_error!("failed to reveal node: {e}");
             PartialStateTrieError::Impl(format!("{e:?}"))
