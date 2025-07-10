@@ -437,12 +437,12 @@ fn traverse_import_partial_trie<
         }
         TrieNode::Leaf(ref leaf) => {
             let mut full = path.clone();
-            full.extend_from_slice_unchecked(&leaf.key);
+            full.extend(&leaf.key);
             store_leaf(full, &leaf.value)?;
         }
         TrieNode::Extension(ref extension) => {
             let mut child_path = path.clone();
-            child_path.extend_from_slice_unchecked(&extension.key);
+            child_path.extend(&extension.key);
 
             if let Some(child_node) = decode_rlp_node(nodes, &extension.child)? {
                 traverse_import_partial_trie(&child_path, child_node, nodes, trie, store_leaf)?;
