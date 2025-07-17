@@ -30,7 +30,7 @@ pub trait ProviderExt: Provider<Network> {
             return Ok(None);
         };
         let parent_block = self
-            .get_block_by_hash(block.header.parent_hash)
+            .get_block_by_hash(block.header.parent_hash, BlockTransactionsKind::Hashes)
             .await?
             .expect("parent block should exist");
         let number = block.header.number;
