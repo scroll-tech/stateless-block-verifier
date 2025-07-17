@@ -16,17 +16,6 @@ pub trait ProviderExt: Provider<Network> {
             .await
     }
 
-    /// Get the disk root for a block.
-    #[cfg(feature = "scroll")]
-    async fn scroll_disk_root(
-        &self,
-        number: BlockNumberOrTag,
-    ) -> TransportResult<sbv_primitives::types::scroll::DiskRoot> {
-        self.client()
-            .request::<_, sbv_primitives::types::scroll::DiskRoot>("scroll_diskRoot", (number,))
-            .await
-    }
-
     /// Dump the block witness for a block.
     async fn dump_block_witness(
         &self,
@@ -40,10 +29,15 @@ pub trait ProviderExt: Provider<Network> {
         else {
             return Ok(None);
         };
+        let parent_block = self
+            .get_block_by_hash(block.header.parent_hash)
+            .await?
+            .expect("parent block should exist");
         let number = block.header.number;
 
         let builder = builder
             .block(block)
+            .prev_state_root(parent_block.header.state_root)
             .chain_id(self.get_chain_id().await?)
             .execution_witness(self.debug_execution_witness(number.into()).await?);
 
@@ -51,12 +45,6 @@ pub trait ProviderExt: Provider<Network> {
         let builder = builder
             .ancestor_blocks(self.dump_block_ancestors(number, ancestors).await?.unwrap())
             .unwrap();
-
-        #[cfg(feature = "scroll")]
-        let builder = builder
-            .state_root(self.scroll_disk_root(number.into()).await?.disk_root)
-            .unwrap()
-            .prev_state_root(self.scroll_disk_root((number - 1).into()).await?.disk_root);
 
         Ok(Some(builder.build().unwrap()))
     }
