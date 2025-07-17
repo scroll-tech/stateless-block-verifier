@@ -59,34 +59,7 @@ impl WitnessBuilder {
     where
         I: IntoIterator<Item = RpcBlock>,
     {
-        let mut iter = iter.into_iter();
-        let parent = iter
-            .next()
-            .ok_or(WitnessBuildError::AtLeastOneAncestorBlock)?;
-
-        self.prev_state_root = Some(parent.header.state_root);
-        self.blocks_hash = Some(
-            std::iter::once(parent.header.hash)
-                .chain(iter.map(|b| b.header.hash))
-                .collect(),
-        );
-
-        Ok(self)
-    }
-
-    /// Set the state root.
-    ///
-    /// This is only available when the `scroll` feature is enabled.
-    ///
-    /// If the state root in block is not the one you want to use, you can override it with this method.
-    #[cfg(feature = "scroll")]
-    pub fn state_root(mut self, state_root: B256) -> Result<Self, WitnessBuildError> {
-        self.block
-            .as_mut()
-            .ok_or(WitnessBuildError::MissingField("block"))?
-            .header
-            .state_root = state_root;
-
+        self.blocks_hash = Some(iter.into_iter().map(|b| b.header.hash).collect());
         Ok(self)
     }
 
