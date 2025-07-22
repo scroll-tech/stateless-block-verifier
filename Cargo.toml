@@ -42,25 +42,25 @@ alloy-evm = { version = "0.12", default-features = false }
 
 revm-scroll = { git = "https://github.com/scroll-tech/scroll-revm", branch = "main", default-features = false }
 
-reth-chainspec = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-evm = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-ethereum-forks = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-execution-types = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-primitives = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-trie = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
+reth-chainspec = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-evm = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-ethereum-forks = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-execution-types = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-primitives = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-trie = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
 
-reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-scroll-forks = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
+reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-scroll-forks = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
 
-scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
-scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", rev = "9fe19092523d5ec4071cd12b5ce924d4c39e46c8", default-features = false }
+scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
+scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
 
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
 openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
