@@ -62,12 +62,12 @@ scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", rev = "0
 scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
 scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", rev = "090d7950d169abbfb896875a7b1ff3f8ca356ac8", default-features = false }
 
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-k256 = { package = "k256", git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-p256 = { package = "p256", git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+openvm-k256 = { package = "k256", git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
+openvm-p256 = { package = "p256", git = "https://github.com/openvm-org/openvm.git", branch = "feat/new-execution" }
 openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", rev = "56751b25b4f18ba9988355faa288918db0ab3fde", default-features = false }
 
 async-trait = "0.1"
