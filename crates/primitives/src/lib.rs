@@ -32,17 +32,14 @@ pub mod consensus;
 pub use consensus::{Header as AlloyHeader, TypedTransaction as AlloyTypedTransaction};
 
 /// re-export types from alloy_eips
-#[cfg(feature = "eips")]
 pub use alloy_eips as eips;
 
-#[cfg(feature = "eips")]
 pub use eips::eip4895::{Withdrawal, Withdrawals};
 
-#[cfg(feature = "eips")]
 pub use eips::eip2930::{AccessList, AccessListItem};
 
-#[cfg(feature = "eips")]
-pub use eips::eip7702::{Authorization, SignedAuthorization};
+mod auth_list;
+pub use auth_list::{Authorization, SignedAuthorization};
 
 /// re-export types from alloy-evm
 #[cfg(feature = "evm-types")]

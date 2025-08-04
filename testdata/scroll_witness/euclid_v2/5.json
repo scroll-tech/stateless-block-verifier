@@ -34,7 +34,7 @@
       "access_list": [],
       "authorization_list": [
         {
-          "yParity": "0x1",
+          "y_parity": true,
           "r": "0x4ccb90d1b3df98057fd248b0c6625a5d0deba57bb7ee5bd9d2080eb2c4979da6",
           "s": "0x38d124cd9051080ee3d0ddd2aedf4427afe92730e253b7e3ac8cae16b69e3a94",
           "inner": {
@@ -48,7 +48,7 @@
       "signature": {
         "r": "0x616ed4ee45177a8c63447f401d239947da5877afbc4d49144d09c58d2136f3bc",
         "s": "0x29e168f0595b7712cf4b533fcc435480879a3d3988d2a0699a20fcd3aa58a0dc",
-        "yParity": "0x1"
+        "y_parity": true
       }
     }
   ],

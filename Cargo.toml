@@ -84,6 +84,8 @@ tiny-keccak = "2.0"
 tower = "0.5"
 url = ">=2.5.3"
 bincode = { version = "2.0", features = ["serde"] }
+rstest = "0.26"
+convert_case = "0.8.0"
 
 # binary dependencies
 anyhow = "1.0"

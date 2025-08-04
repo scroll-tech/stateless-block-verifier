@@ -6,6 +6,7 @@ use crate::{
 /// Block header representation.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct BlockHeader {
     /// The Keccak 256-bit hash of the parent
     /// block’s header, in its entirety; formally Hp.

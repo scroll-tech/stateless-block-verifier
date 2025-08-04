@@ -52,7 +52,9 @@ impl crate::Transaction {
             blob_versioned_hashes: tx.blob_versioned_hashes().map(ToOwned::to_owned),
             access_list: tx.access_list().map(ToOwned::to_owned),
             transaction_type: tx.ty(),
-            authorization_list: tx.authorization_list().map(ToOwned::to_owned),
+            authorization_list: tx
+                .authorization_list()
+                .map(|list| list.into_iter().map(Into::into).collect()),
             #[cfg(feature = "scroll")]
             queue_index: tx.inner.as_l1_message().map(|tx| tx.queue_index),
         }

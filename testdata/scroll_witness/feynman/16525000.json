@@ -40,7 +40,7 @@
       "signature": {
         "r": "0xe5d5a702676d0e38864fb478274e8761058667175ca312d0d0ae527ff79bcad9",
         "s": "0x31322bffcd73b20034ed47124a887661d5fa6541e76a6b535f04d9c5ae8554fd",
-        "yParity": "0x0"
+        "y_parity": false
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -64,7 +64,7 @@
       "signature": {
         "r": "0x42e01e55b1c079f83a069ee2bef4beec66b0ea409d5ed504fd9605522804875b",
         "s": "0x3d5d653eacddd497b68ab85897bd7fe93df636dac23a25c212a92117e6f3f0b6",
-        "yParity": "0x1"
+        "y_parity": true
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -88,7 +88,7 @@
       "signature": {
         "r": "0xfea1b26eba9413d1ac91953c0eaf115c91abb4d8ce1d030c222a6990669ec5f0",
         "s": "0x4f79abc5d2d0c0dba509b6f02b7c81f44919785c21a9985328720e25c6c55c59",
-        "yParity": "0x0"
+        "y_parity": false
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -112,7 +112,7 @@
       "signature": {
         "r": "0x94a0fbb2105b7f14c541e347af9eedc013b40269c32717bf4cb60f38c5b74a3",
         "s": "0x2455ec363e7d9cd6049cb022877896497665f86524fdcc4e759c1ec09af992",
-        "yParity": "0x1"
+        "y_parity": true
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -136,7 +136,7 @@
       "signature": {
         "r": "0xf9d70edc702973ea9ef95ba2a39b070fc44d5040facaa1b7517dff1d0f8dbc43",
         "s": "0x54d191025391b63c13d797f027fc6e92c6ed5c5e7c030bfd6f387c3b15a3fd4a",
-        "yParity": "0x1"
+        "y_parity": true
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -160,7 +160,7 @@
       "signature": {
         "r": "0x80a06e0cea9ee6d7f9ff840d4e01a9077f6ee5680861b2f44f9ca96ed4ebee68",
         "s": "0x3fc7832d38741b55f1cd7fdbfe8641d0df407b5037e11934374b744059740e52",
-        "yParity": "0x1"
+        "y_parity": true
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -184,7 +184,7 @@
       "signature": {
         "r": "0x2ce6e4308f1758114149375b857d7680634d0e09f217177599b83b7d9ef7c344",
         "s": "0x2a86b1d04eec8aee0417067bf18384919c600ec179d4cd61a31823763e0a7cb9",
-        "yParity": "0x1"
+        "y_parity": true
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -208,7 +208,7 @@
       "signature": {
         "r": "0xb1f77ceb55df073dc91eb19045fc08cff65441791b899b219f704a7645d23489",
         "s": "0x1710402a6fb0151ffd22d71254a4eb4e367449738391198e4687f77c5b7e1126",
-        "yParity": "0x1"
+        "y_parity": true
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -232,7 +232,7 @@
       "signature": {
         "r": "0x34fc7bdc76340c7926ad750ad12987a3c5fde532446be6b5e276982fdab5f301",
         "s": "0x6fe8f25701509178974f4c57a162011996624a58f27d0acd52f125b3b7abace8",
-        "yParity": "0x1"
+        "y_parity": true
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -256,7 +256,7 @@
       "signature": {
         "r": "0x532c51eedcaf2c8c93fa9b09e6e3c37278ef4eb51e0e68b5781b44a19fe37986",
         "s": "0x2b53bc238600813466de3206e184929491c0151446d3b5cd85609b0443b605a7",
-        "yParity": "0x0"
+        "y_parity": false
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -280,7 +280,7 @@
       "signature": {
         "r": "0xe68052e5e07c8d782197ba33d44fb94f6031395fc7ebff3ae5b4488eadf51543",
         "s": "0x17584c453bad3014d5c0c37fbde35aeba7a66094960710ff64e901435bfdedac",
-        "yParity": "0x1"
+        "y_parity": true
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -304,7 +304,7 @@
       "signature": {
         "r": "0x76f195db2b294457e69a80f27ccc4dcfdf649f31a293d6e471c16ac64c3aecec",
         "s": "0x62894c961078056e30d7dad42528f0fc412af91a1a3099d86069f4b03bdb3f4",
-        "yParity": "0x0"
+        "y_parity": false
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -328,7 +328,7 @@
       "signature": {
         "r": "0x497fe2ea1c2dadaee5b290ae419bbe569c36c7900f05cb59d2fa86532dbeac5a",
         "s": "0x79e210373232ac33990fd4265c238bc55425c724beac74b2d066c7fb949f193e",
-        "yParity": "0x0"
+        "y_parity": false
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,

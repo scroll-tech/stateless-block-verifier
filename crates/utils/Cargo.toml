@@ -22,7 +22,6 @@ thiserror.workspace = true
 
 sbv-primitives = { workspace = true, features = [
   "serde",
-  "eips",
   "consensus-types",
   "network-types",
   "rpc-types",

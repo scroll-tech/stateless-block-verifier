@@ -18,10 +18,12 @@ itertools.workspace = true
 tiny-keccak.workspace = true
 
 serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+convert_case = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 
 alloy-consensus = { workspace = true, optional = true }
-alloy-eips = { workspace = true, optional = true }
+alloy-eips.workspace = true
 alloy-evm = { workspace = true, optional = true }
 alloy-network = { workspace = true, optional = true }
 alloy-rpc-types-eth = { workspace = true, optional = true }
@@ -54,10 +56,18 @@ sbv-kv.workspace = true
 [dev-dependencies]
 bincode.workspace = true
 serde_json.workspace = true
+rstest.workspace = true
 
 [features]
 # serialization
-serde = ["dep:alloy-serde", "dep:serde", "reth-scroll-primitives?/serde"]
+serde = [
+  "dep:alloy-serde",
+  "dep:serde",
+  "dep:serde_json",
+  "dep:convert_case",
+  "alloy-eips/serde",
+  "reth-scroll-primitives?/serde"
+]
 
 # features proxy
 c-kzg = ["revm/c-kzg"]
@@ -66,25 +76,22 @@ kzg-rs = ["revm/kzg-rs"]
 # core features switch
 chainspec = ["dep:reth-chainspec"]
 consensus-types = ["dep:alloy-consensus"]
-eips = ["dep:alloy-eips"]
 evm-types = ["dep:alloy-evm"]
 network-types = ["dep:alloy-network"]
 hardforks = ["dep:reth-ethereum-forks"]
 reth-types = []
 reth-primitives-types = [
   "consensus-types",
-  "eips",
   "dep:reth-primitives",
   "dep:reth-primitives-traits",
 ]
 reth-evm-types = ["reth-types", "dep:reth-evm", "dep:reth-evm-ethereum"]
 reth-execution-types = ["reth-types", "dep:reth-execution-types"]
 revm-types = ["dep:revm"]
-rpc-types = ["dep:alloy-rpc-types-eth", "eips"]
+rpc-types = ["dep:alloy-rpc-types-eth"]
 ethereum-all = [
   "chainspec",
   "consensus-types",
-  "eips",
   "evm-types",
   "network-types",
   "hardforks",

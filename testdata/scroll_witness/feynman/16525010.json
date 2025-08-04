@@ -40,7 +40,7 @@
       "signature": {
         "r": "0x9c0074041c64df22532711d2c5f436912c8e88149a23a4df301322743f6b591c",
         "s": "0xaed3fa04dd12525ccba13c360b48338940672f1d77af93816d455ab7a7ead15",
-        "yParity": "0x1"
+        "y_parity": true
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,

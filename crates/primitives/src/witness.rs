@@ -5,6 +5,7 @@ use crate::{
 /// Represents the execution witness of a block. Contains an optional map of state preimages.
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct ExecutionWitness {
     /// Map of all hashed trie nodes to their preimages that were required during the execution of
     /// the block, including during state root recomputation.
@@ -21,6 +22,7 @@ pub struct ExecutionWitness {
 /// Witness for a block.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct BlockWitness {
     /// Chain id
     pub chain_id: ChainId,
@@ -52,17 +54,96 @@ impl BlockWitness {
     }
 }
 
+#[cfg(feature = "serde")]
+impl BlockWitness {
+    /// Deserialize a new `BlockWitness` from a JSON string,
+    /// trying to convert from snake_case to camelCase if necessary.
+    pub fn from_json_str(s: &str) -> Result<Self, serde_json::Error> {
+        if let Ok(raw) = serde_json::from_str::<Self>(s) {
+            return Ok(raw);
+        }
+
+        Self::from_json_value(serde_json::from_str(s)?)
+    }
+
+    /// Creates a new `BlockWitness` from a JSON byte slice,
+    /// trying to convert from snake_case to camelCase if necessary.
+    pub fn from_json_slice(v: &[u8]) -> Result<Self, serde_json::Error> {
+        if let Ok(raw) = serde_json::from_slice::<Self>(v) {
+            return Ok(raw);
+        }
+
+        Self::from_json_value(serde_json::from_slice(v)?)
+    }
+
+    /// Creates a new `BlockWitness` from a JSON value,
+    /// trying to convert from snake_case to camelCase if necessary.
+    pub fn from_json_value(mut raw: serde_json::Value) -> Result<Self, serde_json::Error> {
+        use convert_case::{Case, Casing};
+
+        fn to_camel_recursive(s: &mut serde_json::Value) {
+            if let Some(array) = s.as_array_mut() {
+                for item in array.iter_mut() {
+                    to_camel_recursive(item);
+                }
+                return;
+            }
+            let Some(map) = s.as_object_mut() else { return };
+            let old = std::mem::take(map);
+            for (key, mut v) in old.into_iter() {
+                let new_key = key.to_case(Case::Camel);
+
+                if key == "y_parity" || new_key == "yParity" {
+                    if let Some(value) = v.as_bool() {
+                        v = serde_json::Value::String(
+                            if value { "0x1" } else { "0x0" }.to_string(),
+                        );
+                    }
+                }
+
+                to_camel_recursive(&mut v);
+                map.insert(new_key, v);
+            }
+        }
+
+        to_camel_recursive(&mut raw);
+
+        serde_json::from_value(raw)
+    }
+}
+
 #[cfg(test)]
+#[cfg(feature = "serde")]
 mod tests {
-    #[test]
+    use super::*;
+    use rstest::rstest;
+
+    #[cfg(not(feature = "scroll"))]
+    #[rstest]
+    fn test_bincode_serde(
+        #[files("../../testdata/holesky_witness/**/*.json")]
+        #[mode = str]
+        witness_json: &str,
+    ) {
+        let witness: BlockWitness = BlockWitness::from_json_str(witness_json).unwrap();
+
+        let bincode_serialized =
+            bincode::serde::encode_to_vec(&witness, bincode::config::standard()).unwrap();
+        let (bincode_deserialized, bytes_read): (BlockWitness, usize) =
+            bincode::serde::decode_from_slice(&bincode_serialized, bincode::config::standard())
+                .unwrap();
+        assert_eq!(witness, bincode_deserialized);
+        assert_eq!(bytes_read, bincode_serialized.len());
+    }
+
     #[cfg(feature = "scroll")]
-    fn test_bincode_serde() {
-        use super::*;
-
-        const WITNESS: &str =
-            include_str!("../../../testdata/scroll_witness/feynman/16523690.json");
-
-        let witness: BlockWitness = serde_json::from_str(WITNESS).unwrap();
+    #[rstest]
+    fn test_bincode_serde(
+        #[files("../../testdata/scroll_witness/**/*.json")]
+        #[mode = str]
+        witness_json: &str,
+    ) {
+        let witness: BlockWitness = BlockWitness::from_json_str(witness_json).unwrap();
 
         let bincode_serialized =
             bincode::serde::encode_to_vec(&witness, bincode::config::standard()).unwrap();

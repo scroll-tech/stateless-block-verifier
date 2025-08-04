@@ -32,7 +32,7 @@
       "input": "0x",
       "r": "0x363d7997e0f78aebe571280845938df6f181da5fb3280d32794e0d75080cbb52",
       "s": "0x7247681bb07d278eed847965e7d054a16094c060051aadb67c1b417f2e48686c",
-      "yParity": "0x0",
+      "y_parity": false,
       "chain_id": "0x82750",
       "transaction_type": 0
     }

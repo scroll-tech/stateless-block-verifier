@@ -107,8 +107,11 @@ impl TryFrom<&Transaction> for TransactionSigned {
                     access_list: tx.access_list.clone().expect("missing access_list"),
                     authorization_list: tx
                         .authorization_list
-                        .clone()
-                        .expect("missing authorization_list"),
+                        .as_ref()
+                        .expect("missing authorization_list")
+                        .into_iter()
+                        .map(Into::into)
+                        .collect(),
                     input: tx.input.clone(),
                 };
                 tx.into_signed(sig).into()

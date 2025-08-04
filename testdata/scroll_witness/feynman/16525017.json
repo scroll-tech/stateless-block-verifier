@@ -40,7 +40,7 @@
       "signature": {
         "r": "0x756340cee70f1dac5fb7ad7970c7109cd12bf6a184e5db46f7357c9389643793",
         "s": "0x59707b4e954245a6b6dc6ad9ba5ae54ac57b353993bfbe1e5c00ef73ea3a2d10",
-        "yParity": "0x0"
+        "y_parity": false
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,
@@ -64,7 +64,7 @@
       "signature": {
         "r": "0x7a3c308a8b6e8627dfd09dc43e24af241716eae0d8f05948c9149f5b2fba87e5",
         "s": "0x609ae8243154f6fa22289369c3efccd4e48d327ad2e76213d172444db2c4f2c7",
-        "yParity": "0x0"
+        "y_parity": false
       },
       "chain_id": "0x82750",
       "blob_versioned_hashes": null,

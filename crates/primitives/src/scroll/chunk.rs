@@ -5,6 +5,7 @@ use tiny_keccak::{Hasher, Keccak};
 /// ChunkInfo is metadata of chunk.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub enum ChunkInfo {
     /// ChunkInfo before EuclidV2 hardfork
     Legacy(LegacyChunkInfo),
@@ -15,6 +16,7 @@ pub enum ChunkInfo {
 /// ChunkInfo before EuclidV2 hardfork
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct LegacyChunkInfo {
     /// The EIP-155 chain ID for all txs in the chunk.
     pub chain_id: u64,
@@ -33,6 +35,7 @@ pub struct LegacyChunkInfo {
 /// ChunkInfo after EuclidV2 hardfork
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct EuclidV2ChunkInfo {
     /// The EIP-155 chain ID for all txs in the chunk.
     pub chain_id: u64,
@@ -61,6 +64,7 @@ pub struct EuclidV2ChunkInfo {
 /// The difference between v2 and v1 is that the block number field has been removed since v2.
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct BlockContextV2 {
     /// The timestamp of the block.
     pub timestamp: u64,

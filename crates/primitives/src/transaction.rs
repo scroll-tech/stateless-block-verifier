@@ -5,6 +5,7 @@ use crate::{
 /// Transaction object used in RPC
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 pub struct Transaction {
     /// Hash
     pub hash: TxHash,
@@ -30,16 +31,10 @@ pub struct Transaction {
     #[cfg_attr(feature = "serde", serde(with = "alloy_serde::quantity"))]
     pub max_fee_per_gas: u128,
     /// The miner's tip.
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, with = "alloy_serde::quantity::opt",)
-    )]
+    #[cfg_attr(feature = "serde", serde(default, with = "alloy_serde::quantity::opt"))]
     pub max_priority_fee_per_gas: Option<u128>,
     /// Configured max fee per blob gas for eip-4844 transactions
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, with = "alloy_serde::quantity::opt",)
-    )]
+    #[cfg_attr(feature = "serde", serde(default, with = "alloy_serde::quantity::opt"))]
     pub max_fee_per_blob_gas: Option<u128>,
     /// Data
     pub input: Bytes,
