@@ -1,5 +1,4 @@
-use crate::B256;
-use crate::BlockWitness;
+use crate::{B256, BlockWitness};
 use auto_impl::auto_impl;
 use itertools::Itertools;
 

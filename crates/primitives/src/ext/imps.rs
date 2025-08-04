@@ -1,5 +1,4 @@
-use crate::BlockWitness;
-use crate::{B256, Bytes, ext::BlockWitnessExt, keccak256};
+use crate::{B256, BlockWitness, Bytes, ext::BlockWitnessExt, keccak256};
 use sbv_helpers::cycle_track;
 use sbv_kv::KeyValueStore;
 
