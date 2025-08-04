@@ -61,8 +61,6 @@ jobs:
         run: cargo clippy --workspace -- -D warnings
       - name: clippy dev
         run: cargo clippy --workspace --features dev -- -D warnings
-      - name: clippy metrics
-        run: cargo clippy --workspace --features metrics -- -D warnings
       - name: clippy scroll
         run: cargo clippy --workspace --features scroll -- -D warnings
       - name: clippy all
