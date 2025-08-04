@@ -51,3 +51,25 @@ impl BlockWitness {
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    #[cfg(feature = "scroll")]
+    fn test_bincode_serde() {
+        use super::*;
+
+        const WITNESS: &str =
+            include_str!("../../../testdata/scroll_witness/feynman/16523690.json");
+
+        let witness: BlockWitness = serde_json::from_str(WITNESS).unwrap();
+
+        let bincode_serialized =
+            bincode::serde::encode_to_vec(&witness, bincode::config::standard()).unwrap();
+        let (bincode_deserialized, bytes_read): (BlockWitness, usize) =
+            bincode::serde::decode_from_slice(&bincode_serialized, bincode::config::standard())
+                .unwrap();
+        assert_eq!(witness, bincode_deserialized);
+        assert_eq!(bytes_read, bincode_serialized.len());
+    }
+}

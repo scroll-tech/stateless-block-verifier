@@ -52,6 +52,8 @@ sbv-helpers.workspace = true
 sbv-kv.workspace = true
 
 [dev-dependencies]
+bincode.workspace = true
+serde_json.workspace = true
 
 [features]
 # serialization

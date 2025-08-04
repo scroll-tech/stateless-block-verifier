@@ -83,6 +83,7 @@ thiserror = "1.0"
 tiny-keccak = "2.0"
 tower = "0.5"
 url = ">=2.5.3"
+bincode = { version = "2.0", features = ["serde"] }
 
 # binary dependencies
 anyhow = "1.0"
