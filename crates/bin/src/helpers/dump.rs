@@ -1,4 +1,4 @@
-use sbv::primitives::{Address, B256, Bytes, U256, types::revm::database::BundleState};
+use sbv::primitives::{Address, B256, Bytes, U256, revm::database::BundleState};
 use serde::Serialize;
 use serde_json::json;
 use std::{

@@ -21,6 +21,7 @@ sbv-primitives = { workspace = true, features = ["revm-types"] }
 sbv-kv.workspace = true
 sbv-helpers.workspace = true
 
+auto_impl.workspace = true
 thiserror.workspace = true
 tracing = { workspace = true, optional = true }
 

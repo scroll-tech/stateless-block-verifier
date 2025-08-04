@@ -1,8 +1,7 @@
 //! Witness builder.
 
 use sbv_primitives::{
-    B256, ChainId,
-    types::{BlockWitness, ExecutionWitness, Transaction, rpc::Block as RpcBlock},
+    B256, BlockWitness, ChainId, ExecutionWitness, Transaction, rpc::Block as RpcBlock,
 };
 
 /// Block witness builder.
@@ -94,9 +93,7 @@ impl WitnessBuilder {
             block_hashes: self
                 .blocks_hash
                 .ok_or(WitnessBuildError::MissingField("ancestor_blocks"))?,
-            withdrawals: block
-                .withdrawals
-                .map(|w| w.iter().map(From::from).collect()),
+            withdrawals: block.withdrawals,
             states: execution_witness.state.into_values().collect(),
             codes: execution_witness.codes.into_values().collect(),
         })

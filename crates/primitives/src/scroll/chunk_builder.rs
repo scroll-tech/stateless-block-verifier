@@ -3,10 +3,8 @@ use crate::{
     chainspec::ChainSpec,
     ext::{BlockChunkExt, TxBytesHashExt},
     hardforks::ScrollHardforks,
-    types::{
-        reth::primitives::{Block, RecoveredBlock},
-        scroll::{BlockContextV2, ChunkInfo, EuclidV2ChunkInfo, LegacyChunkInfo},
-    },
+    reth::primitives::{Block, RecoveredBlock},
+    scroll::{BlockContextV2, ChunkInfo, EuclidV2ChunkInfo, LegacyChunkInfo},
 };
 use alloy_primitives::U256;
 use itertools::Itertools;

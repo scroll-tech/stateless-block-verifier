@@ -6,24 +6,16 @@ use sbv::{
     core::{EvmDatabase, EvmExecutor, VerificationError},
     kv::nohash::NoHashMap,
     primitives::{
+        BlockWitness,
         chainspec::{Chain, ChainSpec, get_chain_spec_or_build},
         ext::{BlockWitnessExt, BlockWitnessRethExt},
     },
     trie::BlockWitnessTrieExt,
 };
-use std::{
-    collections::BTreeMap,
-    env,
-    panic::{UnwindSafe, catch_unwind},
-    sync::Arc,
-};
+use std::{collections::BTreeMap, env, panic::catch_unwind, sync::Arc};
 
-#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
-pub fn verify_catch_panics<
-    T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt + UnwindSafe,
->(
-    witness: T,
-) -> anyhow::Result<u64> {
+#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.header.number), err))]
+pub fn verify_catch_panics(witness: &BlockWitness) -> anyhow::Result<u64> {
     catch_unwind(|| verify(witness))
         .map_err(|e| {
             e.downcast_ref::<&str>()
@@ -37,10 +29,8 @@ pub fn verify_catch_panics<
         .and_then(|r| r.map_err(anyhow::Error::from))
 }
 
-#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
-pub fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
-    witness: T,
-) -> Result<u64, VerificationError> {
+#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.header.number), err))]
+pub fn verify(witness: &BlockWitness) -> Result<u64, VerificationError> {
     measure_duration_millis!(
         total_block_verification_duration_milliseconds,
         verify_inner(witness)
@@ -64,9 +54,7 @@ pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {
     })
 }
 
-fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
-    witness: T,
-) -> Result<u64, VerificationError> {
+fn verify_inner(witness: &BlockWitness) -> Result<u64, VerificationError> {
     dev_trace!("{witness:#?}");
 
     #[cfg(feature = "profiling")]
@@ -76,7 +64,7 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
         .build()
         .unwrap();
 
-    let chain_spec = get_chain_spec(witness.chain_id());
+    let chain_spec = get_chain_spec(witness.chain_id);
 
     let mut code_db = NoHashMap::default();
     witness.import_codes(&mut code_db);
@@ -92,7 +80,7 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     let block_hashes = &sbv::kv::null::NullProvider;
     let mut db = EvmDatabase::new_from_root(
         code_db,
-        witness.pre_state_root(),
+        witness.pre_state_root,
         &nodes_provider,
         &block_hashes,
     )?;
@@ -139,10 +127,9 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
             post_state_root
         );
 
-        let dump_dir =
-            env::temp_dir()
-                .join("dumps")
-                .join(format!("{}-{}", witness.chain_id(), block.number));
+        let dump_dir = env::temp_dir()
+            .join("dumps")
+            .join(format!("{}-{}", witness.chain_id, block.number));
         dump_bundle_state(&output.state, &dump_dir)
             .inspect(|_| {
                 dev_info!("Dumped bundle state to: {}", dump_dir.display());

@@ -2,7 +2,7 @@ use crate::helpers::verifier::*;
 use clap::Args;
 #[cfg(feature = "dev")]
 use sbv::helpers::tracing;
-use sbv::primitives::types::BlockWitness;
+use sbv::primitives::BlockWitness;
 use std::path::PathBuf;
 
 #[derive(Args, Debug)]
@@ -35,11 +35,11 @@ impl RunFileCommand {
     }
 
     fn run_witnesses(self) -> anyhow::Result<()> {
-        let mut gas_used = 0;
+        let mut _gas_used = 0;
         for path in self.path.into_iter() {
-            gas_used += run_witness(path)?
+            _gas_used += run_witness(path)?
         }
-        dev_info!("Gas used: {}", gas_used);
+        dev_info!("Gas used: {_gas_used}");
 
         Ok(())
     }
@@ -51,8 +51,9 @@ impl RunFileCommand {
             core::{EvmDatabase, EvmExecutor},
             kv::{nohash::NoHashMap, null::NullProvider},
             primitives::{
+                BlockWitness,
                 ext::{BlockWitnessChunkExt, BlockWitnessExt, BlockWitnessRethExt},
-                types::{BlockWitness, scroll::ChunkInfoBuilder},
+                scroll::ChunkInfoBuilder,
             },
             trie::BlockWitnessTrieExt,
         };

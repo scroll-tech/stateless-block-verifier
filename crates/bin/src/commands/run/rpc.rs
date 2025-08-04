@@ -1,7 +1,7 @@
 use crate::helpers::{RpcArgs, verifier::verify_catch_panics};
 use clap::Args;
 use pumps::{Concurrency, Pipeline};
-use sbv::{primitives::BlockWitness, utils::rpc::ProviderExt};
+use sbv::utils::rpc::ProviderExt;
 use std::{
     iter,
     sync::{
@@ -76,9 +76,9 @@ impl RunRpcCommand {
             .backpressure(max_concurrency)
             .map(
                 |witness| async move {
-                    let _number = witness.number();
+                    let _number = witness.header.number;
 
-                    match tokio::task::spawn_blocking(move || verify_catch_panics(witness))
+                    match tokio::task::spawn_blocking(move || verify_catch_panics(&witness))
                         .await
                         .map_err(anyhow::Error::from)
                         .and_then(|e| e)

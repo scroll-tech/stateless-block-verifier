@@ -4,27 +4,25 @@ use sbv_precompile::PrecompileProvider;
 use sbv_primitives::{
     B256, Bytes,
     chainspec::ChainSpec,
-    types::{
-        evm::precompiles::PrecompilesMap,
-        reth::{
-            evm::{
-                ConfigureEvm, Database, EthEvm, EthEvmConfig, EvmEnv, EvmFactory,
-                eth::EthEvmContext,
-                execute::Executor,
-                revm::{
-                    Context, Inspector, MainBuilder, MainContext,
-                    context::{
-                        BlockEnv, CfgEnv, TxEnv,
-                        result::{EVMError, HaltReason},
-                    },
-                    inspector::NoOpInspector,
+    evm::precompiles::PrecompilesMap,
+    reth::{
+        evm::{
+            ConfigureEvm, Database, EthEvm, EthEvmConfig, EvmEnv, EvmFactory,
+            eth::EthEvmContext,
+            execute::Executor,
+            revm::{
+                Context, Inspector, MainBuilder, MainContext,
+                context::{
+                    BlockEnv, CfgEnv, TxEnv,
+                    result::{EVMError, HaltReason},
                 },
+                inspector::NoOpInspector,
             },
-            execution_types::BlockExecutionOutput,
-            primitives::{Block, Receipt, RecoveredBlock},
         },
-        revm::{SpecId, database::CacheDB, precompile::PrecompileSpecId},
+        execution_types::BlockExecutionOutput,
+        primitives::{Block, Receipt, RecoveredBlock},
     },
+    revm::{SpecId, database::CacheDB, precompile::PrecompileSpecId},
 };
 use sbv_trie::TrieNode;
 use std::sync::Arc;

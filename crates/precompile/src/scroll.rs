@@ -1,5 +1,5 @@
 use super::PrecompileProvider;
-use sbv_primitives::types::{
+use sbv_primitives::{
     evm::{ScrollPrecompilesFactory, precompiles::PrecompilesMap},
     revm::{ScrollPrecompileProvider, SpecId},
 };

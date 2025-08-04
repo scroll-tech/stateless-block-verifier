@@ -8,15 +8,17 @@ use alloy_trie::{
     nodes::{CHILD_INDEX_RANGE, RlpNode},
 };
 pub use alloy_trie::{TrieAccount, nodes::TrieNode};
+use auto_impl::auto_impl;
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
-use reth_trie_sparse::{RevealedSparseTrie, TrieMasks};
+use reth_trie_sparse::provider::DefaultTrieNodeProvider;
+use reth_trie_sparse::{SerialSparseTrie, SparseTrieInterface, TrieMasks};
 use sbv_kv::{HashMap, nohash::NoHashMap};
-use sbv_primitives::{
-    Address, B256, BlockWitness, U256, keccak256, types::revm::database::BundleAccount,
-};
+use sbv_primitives::BlockWitness;
+use sbv_primitives::{Address, B256, U256, keccak256, revm::database::BundleAccount};
 use std::{cell::RefCell, collections::BTreeMap};
 
 /// Extension trait for BlockWitness
+#[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockWitnessTrieExt {
     /// Import nodes into a KeyValueStore
     fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
@@ -25,21 +27,21 @@ pub trait BlockWitnessTrieExt {
     ) -> Result<(), alloy_rlp::Error>;
 }
 
-impl<T: BlockWitness> BlockWitnessTrieExt for T {
+impl BlockWitnessTrieExt for BlockWitness {
     fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
         &self,
         provider: &mut P,
     ) -> Result<(), alloy_rlp::Error> {
-        decode_nodes(provider, self.states_iter())
+        decode_nodes(provider, self.states.iter())
     }
 }
 
-impl<T: BlockWitness> BlockWitnessTrieExt for [T] {
+impl BlockWitnessTrieExt for [BlockWitness] {
     fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
         &self,
         provider: &mut P,
     ) -> Result<(), alloy_rlp::Error> {
-        decode_nodes(provider, self.iter().flat_map(|w| w.states_iter()))
+        decode_nodes(provider, self.iter().flat_map(|w| w.states.iter()))
     }
 }
 
@@ -307,7 +309,7 @@ impl PartialStateTrie {
 /// A partial trie that can be updated
 #[derive(Debug, Default)]
 struct PartialTrie<T> {
-    trie: RevealedSparseTrie,
+    trie: SerialSparseTrie,
     /// FIXME: `RevealedSparseTrie` did not expose API to get the leafs
     leafs: HashMap<Nibbles, T>,
 }
@@ -330,7 +332,7 @@ impl<T: Default> PartialTrie<T> {
             .ok_or(PartialStateTrieError::MissingWitness(root))?
             .clone();
         let mut state = cycle_track!(
-            RevealedSparseTrie::from_root(root.clone(), TrieMasks::none(), true),
+            SerialSparseTrie::from_root(root.clone(), TrieMasks::none(), true),
             "RevealedSparseTrie::from_root"
         )
         .map_err(|e| {
@@ -382,19 +384,23 @@ impl<T: Default> PartialTrie<T> {
         value: T,
         mut encode: F,
     ) -> Result<()> {
-        self.trie.update_leaf(path, encode(&value)).map_err(|e| {
-            dev_error!("failed to update leaf: {e}");
-            PartialStateTrieError::Impl(format!("{e:?}"))
-        })?;
+        self.trie
+            .update_leaf(path, encode(&value), DefaultTrieNodeProvider)
+            .map_err(|e| {
+                dev_error!("failed to update leaf: {e}");
+                PartialStateTrieError::Impl(format!("{e:?}"))
+            })?;
         self.leafs.insert(path, value);
         Ok(())
     }
 
     fn remove_leaf_inner(&mut self, path: &Nibbles) -> Result<()> {
-        self.trie.remove_leaf(path).map_err(|e| {
-            dev_error!("failed to remove leaf: {e}");
-            PartialStateTrieError::Impl(format!("{e:?}"))
-        })?;
+        self.trie
+            .remove_leaf(path, DefaultTrieNodeProvider)
+            .map_err(|e| {
+                dev_error!("failed to remove leaf: {e}");
+                PartialStateTrieError::Impl(format!("{e:?}"))
+            })?;
         self.leafs.remove(path);
         Ok(())
     }
@@ -407,7 +413,7 @@ fn traverse_import_partial_trie<
     path: Nibbles,
     node: TrieNode,
     nodes: P,
-    trie: &mut RevealedSparseTrie,
+    trie: &mut SerialSparseTrie,
     store_leaf: &mut F,
 ) -> Result<()> {
     match node {
@@ -498,7 +504,7 @@ fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
 mod tests {
     use super::*;
     use sbv_kv::nohash::NoHashMap;
-    use sbv_primitives::types::BlockWitness;
+    use sbv_primitives::BlockWitness;
 
     const BLOCK: &str = include_str!("../../../testdata/holesky_witness/2971844.json");
 

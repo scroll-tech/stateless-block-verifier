@@ -3,14 +3,12 @@ use sbv_kv::KeyValueStoreGet;
 use sbv_primitives::{
     B256, Bytes, U256,
     chainspec::ChainSpec,
-    types::{
-        reth::{
-            evm::{ConfigureEvm, EthEvmConfig, RethReceiptBuilder},
-            execution_types::BlockExecutionOutput,
-            primitives::{Block, EthPrimitives, Receipt, RecoveredBlock},
-        },
-        revm::database::CacheDB,
+    reth::{
+        evm::{ConfigureEvm, EthEvmConfig, RethReceiptBuilder},
+        execution_types::BlockExecutionOutput,
+        primitives::{Block, EthPrimitives, Receipt, RecoveredBlock},
     },
+    revm::database::CacheDB,
 };
 use sbv_trie::TrieNode;
 use std::sync::Arc;
@@ -56,13 +54,13 @@ impl<
 {
     /// Handle the block with the given witness
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
-        use sbv_primitives::types::{
+        use sbv_primitives::{
             evm::ScrollBlockExecutor,
             reth::evm::execute::BlockExecutor,
             revm::database::{State, states::bundle_state::BundleRetention},
         };
 
-        let provider = crate::executor::EvmConfig::new(self.chain_spec.clone(), Default::default());
+        let provider = EvmConfig::new(self.chain_spec.clone(), Default::default());
         let factory = provider.block_executor_factory();
 
         let mut db = State::builder()

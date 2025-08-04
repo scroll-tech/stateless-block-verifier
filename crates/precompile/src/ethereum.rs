@@ -1,5 +1,5 @@
 use super::PrecompileProvider;
-use sbv_primitives::types::{
+use sbv_primitives::{
     evm::precompiles::PrecompilesMap,
     revm::precompile::{PrecompileSpecId, Precompiles},
 };

@@ -28,7 +28,7 @@ pub trait TxEnvelopeExt {
 
 /// BlockWitnessConsensusExt trait
 #[auto_impl(&, &mut, Box, Rc, Arc)]
-pub trait BlockWitnessConsensusExt: crate::BlockWitness {
+pub trait BlockWitnessConsensusExt {
     /// Header
     fn header(&self) -> impl BlockHeader;
     /// Build alloy header
@@ -104,16 +104,6 @@ impl BlockWitnessConsensusExt for super::BlockWitness {
     }
 }
 
-#[cfg(feature = "rkyv")]
-impl BlockWitnessConsensusExt for super::ArchivedBlockWitness {
-    fn header(&self) -> impl BlockHeader {
-        &self.header
-    }
-    fn build_alloy_header(&self) -> Header {
-        self.header.to_alloy()
-    }
-}
-
 #[cfg(feature = "rpc-types")]
 impl FromHelper for alloy_rpc_types_eth::Header {}
 impl FromHelper for Header {}
@@ -147,8 +137,6 @@ impl<T: FromHelper> From<T> for super::BlockHeader {
 }
 
 impl ToHelper for super::BlockHeader {}
-#[cfg(feature = "rkyv")]
-impl ToHelper for super::ArchivedBlockHeader {}
 
 impl BlockHeader for super::BlockHeader {
     fn parent_hash(&self) -> B256 {
@@ -233,94 +221,5 @@ impl BlockHeader for super::BlockHeader {
 
     fn extra_data(&self) -> &Bytes {
         &self.extra_data
-    }
-}
-
-#[cfg(feature = "rkyv")]
-impl BlockHeader for super::ArchivedBlockHeader {
-    fn parent_hash(&self) -> B256 {
-        self.parent_hash.into()
-    }
-
-    fn ommers_hash(&self) -> B256 {
-        self.ommers_hash.into()
-    }
-
-    fn beneficiary(&self) -> Address {
-        self.beneficiary.into()
-    }
-
-    fn state_root(&self) -> B256 {
-        self.state_root.into()
-    }
-
-    fn transactions_root(&self) -> B256 {
-        self.transactions_root.into()
-    }
-
-    fn receipts_root(&self) -> B256 {
-        self.receipts_root.into()
-    }
-
-    fn withdrawals_root(&self) -> Option<B256> {
-        self.withdrawals_root.as_ref().map(|x| x.0.into())
-    }
-
-    fn logs_bloom(&self) -> Bloom {
-        self.logs_bloom.into()
-    }
-
-    fn difficulty(&self) -> U256 {
-        self.difficulty.into()
-    }
-
-    fn number(&self) -> BlockNumber {
-        self.number.into()
-    }
-
-    fn gas_limit(&self) -> u64 {
-        self.gas_limit.to_native()
-    }
-
-    fn gas_used(&self) -> u64 {
-        self.gas_used.to_native()
-    }
-
-    fn timestamp(&self) -> u64 {
-        self.timestamp.to_native()
-    }
-
-    fn mix_hash(&self) -> Option<B256> {
-        Some(self.mix_hash.into())
-    }
-
-    fn nonce(&self) -> Option<B64> {
-        Some(self.nonce.into())
-    }
-
-    fn base_fee_per_gas(&self) -> Option<u64> {
-        self.base_fee_per_gas.as_ref().map(|x| x.to_native())
-    }
-
-    fn blob_gas_used(&self) -> Option<u64> {
-        self.blob_gas_used.as_ref().map(|x| x.to_native())
-    }
-
-    fn excess_blob_gas(&self) -> Option<u64> {
-        self.excess_blob_gas.as_ref().map(|x| x.to_native())
-    }
-
-    fn parent_beacon_block_root(&self) -> Option<B256> {
-        self.parent_beacon_block_root.as_ref().map(|x| x.0.into())
-    }
-
-    fn requests_hash(&self) -> Option<B256> {
-        self.requests_hash.as_ref().map(|x| x.0.into())
-    }
-
-    fn extra_data(&self) -> &Bytes {
-        use std::sync::OnceLock;
-        static BYTES: OnceLock<Bytes> = OnceLock::new();
-        BYTES.get_or_init(|| Bytes::copy_from_slice(self.extra_data.as_slice()))
     }
 }

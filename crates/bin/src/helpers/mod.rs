@@ -5,7 +5,7 @@ use alloy::{
     transports::layers::RetryBackoffLayer,
 };
 use clap::Args;
-use sbv::primitives::types::Network;
+use sbv::primitives::Network;
 use std::future::Future;
 use url::Url;
 

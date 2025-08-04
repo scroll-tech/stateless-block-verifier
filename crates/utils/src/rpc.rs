@@ -2,7 +2,7 @@
 
 use alloy_provider::Provider;
 use alloy_transport::TransportResult;
-use sbv_primitives::types::{BlockWitness, ExecutionWitness, Network, eips::BlockNumberOrTag};
+use sbv_primitives::{BlockWitness, ExecutionWitness, Network, eips::BlockNumberOrTag};
 
 /// Extension trait for [`Provider`](Provider).
 #[async_trait::async_trait]
@@ -54,7 +54,7 @@ pub trait ProviderExt: Provider<Network> {
         &self,
         number: sbv_primitives::BlockNumber,
         ancestors: Option<usize>,
-    ) -> TransportResult<Option<Vec<sbv_primitives::types::rpc::Block>>> {
+    ) -> TransportResult<Option<Vec<sbv_primitives::rpc::Block>>> {
         use std::future::IntoFuture;
 
         let ancestors = ancestors

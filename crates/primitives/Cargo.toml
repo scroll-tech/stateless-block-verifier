@@ -17,7 +17,6 @@ auto_impl.workspace = true
 itertools.workspace = true
 tiny-keccak.workspace = true
 
-rkyv = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 
@@ -56,7 +55,6 @@ sbv-kv.workspace = true
 
 [features]
 # serialization
-rkyv = ["dep:rkyv", "alloy-primitives/rkyv"]
 serde = ["dep:alloy-serde", "dep:serde", "reth-scroll-primitives?/serde"]
 
 # features proxy

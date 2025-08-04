@@ -1,11 +1,7 @@
 use crate::{
-    SignatureError, Withdrawal,
-    types::{
-        BlockWitness,
-        consensus::{BlockWitnessConsensusExt, SignerRecoverable},
-        eips::eip4895,
-        reth::primitives::{Block, BlockBody, RecoveredBlock, TransactionSigned},
-    },
+    BlockWitness, SignatureError,
+    consensus::{BlockWitnessConsensusExt, SignerRecoverable},
+    reth::primitives::{Block, BlockBody, RecoveredBlock, TransactionSigned},
 };
 use auto_impl::auto_impl;
 
@@ -17,6 +13,17 @@ pub trait BlockWitnessRethExt: BlockWitnessConsensusExt {
     fn build_typed_transactions(
         &self,
     ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>>;
+
+    /// Build a reth block
+    fn build_reth_block(&self) -> Result<RecoveredBlock<Block>, SignatureError>;
+}
+
+impl BlockWitnessRethExt for BlockWitness {
+    fn build_typed_transactions(
+        &self,
+    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>> {
+        self.transaction.iter().map(|tx| tx.try_into())
+    }
 
     /// Build a reth block
     fn build_reth_block(&self) -> Result<RecoveredBlock<Block>, SignatureError> {
@@ -33,39 +40,12 @@ pub trait BlockWitnessRethExt: BlockWitnessConsensusExt {
         let body = BlockBody {
             transactions,
             ommers: vec![],
-            withdrawals: self.withdrawals_iter().map(|iter| {
-                eip4895::Withdrawals(
-                    iter.map(|w| eip4895::Withdrawal {
-                        index: w.index(),
-                        validator_index: w.validator_index(),
-                        address: w.address(),
-                        amount: w.amount(),
-                    })
-                    .collect(),
-                )
-            }),
+            withdrawals: self.withdrawals.clone(),
         };
 
         Ok(RecoveredBlock::new_unhashed(
             Block { header, body },
             senders,
         ))
-    }
-}
-
-impl BlockWitnessRethExt for BlockWitness {
-    fn build_typed_transactions(
-        &self,
-    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>> {
-        self.transaction.iter().map(|tx| tx.try_into())
-    }
-}
-
-#[cfg(feature = "rkyv")]
-impl BlockWitnessRethExt for crate::types::ArchivedBlockWitness {
-    fn build_typed_transactions(
-        &self,
-    ) -> impl ExactSizeIterator<Item = Result<TransactionSigned, SignatureError>> {
-        self.transaction.iter().map(|tx| tx.try_into())
     }
 }

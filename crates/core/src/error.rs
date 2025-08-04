@@ -1,6 +1,6 @@
 use crate::database::DatabaseError;
 use sbv_primitives::{
-    B256, alloy_primitives::SignatureError, types::reth::evm::execute::BlockExecutionError,
+    B256, alloy_primitives::SignatureError, reth::evm::execute::BlockExecutionError,
 };
 
 /// Error variants encountered during verification of transactions in a L2 block.

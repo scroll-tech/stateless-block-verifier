@@ -1,10 +1,13 @@
-use crate::{B256, BlockWitness};
+use crate::B256;
+use crate::BlockWitness;
+use auto_impl::auto_impl;
 use itertools::Itertools;
 
 #[cfg(feature = "scroll-reth-primitives-types")]
 pub mod reth;
 
 /// BlockWitnessCodeExt trait
+#[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockWitnessChunkExt {
     /// Get the chain id.
     fn chain_id(&self) -> crate::ChainId;
@@ -30,6 +33,7 @@ pub trait TxBytesHashExt {
 }
 
 /// Chunk related extension methods for Block
+#[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockChunkExt {
     /// Hash the header of the block
     fn legacy_hash_da_header(&self, hasher: &mut impl tiny_keccak::Hasher);
@@ -41,26 +45,26 @@ pub trait BlockChunkExt {
     fn num_l1_msgs(&self) -> usize;
 }
 
-impl<T: BlockWitness> BlockWitnessChunkExt for [T] {
+impl BlockWitnessChunkExt for [BlockWitness] {
     #[inline(always)]
     fn chain_id(&self) -> crate::ChainId {
         debug_assert!(self.has_same_chain_id(), "chain id mismatch");
-        self.first().expect("empty witnesses").chain_id()
+        self.first().expect("empty witnesses").chain_id
     }
     #[inline(always)]
     fn prev_state_root(&self) -> B256 {
-        self.first().expect("empty witnesses").pre_state_root()
+        self.first().expect("empty witnesses").pre_state_root
     }
     #[inline(always)]
     fn has_same_chain_id(&self) -> bool {
         self.iter()
             .tuple_windows()
-            .all(|(a, b)| a.chain_id() == b.chain_id())
+            .all(|(a, b)| a.chain_id == b.chain_id)
     }
     #[inline(always)]
     fn has_seq_block_number(&self) -> bool {
         self.iter()
             .tuple_windows()
-            .all(|(a, b)| a.number() + 1 == b.number())
+            .all(|(a, b)| a.header.number + 1 == b.header.number)
     }
 }

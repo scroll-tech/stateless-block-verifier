@@ -1,7 +1,7 @@
 use crate::{
     B256,
     ext::BlockChunkExt,
-    types::reth::primitives::{Block, RecoveredBlock, TransactionSigned},
+    reth::primitives::{Block, RecoveredBlock, TransactionSigned},
 };
 
 impl<'a, I: IntoIterator<Item = &'a TransactionSigned>> crate::ext::scroll::TxBytesHashExt for I
@@ -14,7 +14,7 @@ where
     }
 
     fn tx_bytes_hash_in(self, rlp_buffer: &mut Vec<u8>) -> (usize, B256) {
-        use crate::types::eips::Encodable2718;
+        use crate::eips::Encodable2718;
         use tiny_keccak::{Hasher, Keccak};
 
         let mut tx_bytes_hasher = Keccak::v256();
