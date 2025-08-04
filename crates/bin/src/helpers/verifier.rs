@@ -29,14 +29,6 @@ pub fn verify_catch_panics(witness: &BlockWitness) -> anyhow::Result<u64> {
         .and_then(|r| r.map_err(anyhow::Error::from))
 }
 
-#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.header.number), err))]
-pub fn verify(witness: &BlockWitness) -> Result<u64, VerificationError> {
-    measure_duration_millis!(
-        total_block_verification_duration_milliseconds,
-        verify_inner(witness)
-    )
-}
-
 pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {
     get_chain_spec_or_build(Chain::from_id(chain_id), |_spec| {
         #[cfg(feature = "scroll")]
@@ -54,7 +46,8 @@ pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {
     })
 }
 
-fn verify_inner(witness: &BlockWitness) -> Result<u64, VerificationError> {
+#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.header.number), err))]
+pub fn verify(witness: &BlockWitness) -> Result<u64, VerificationError> {
     dev_trace!("{witness:#?}");
 
     #[cfg(feature = "profiling")]
@@ -97,8 +90,6 @@ fn verify_inner(witness: &BlockWitness) -> Result<u64, VerificationError> {
             "Error occurs when executing block #{}: {_e:?}",
             block.number
         );
-
-        update_metrics_counter!(verification_error);
     })?;
 
     db.update(
@@ -141,8 +132,6 @@ fn verify_inner(witness: &BlockWitness) -> Result<u64, VerificationError> {
                 );
             })
             .ok();
-
-        update_metrics_counter!(verification_error);
 
         return Err(VerificationError::root_mismatch(
             block.state_root,

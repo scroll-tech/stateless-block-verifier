@@ -16,14 +16,6 @@ mod helpers;
 struct Cli {
     #[command(subcommand)]
     commands: commands::Commands,
-    /// Start metrics server
-    #[cfg(feature = "metrics")]
-    #[arg(long)]
-    metrics: bool,
-    /// Metrics server address
-    #[cfg(feature = "metrics")]
-    #[arg(long, default_value = "127.0.0.1:9090")]
-    metrics_addr: std::net::SocketAddr,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -37,11 +29,6 @@ fn main() -> anyhow::Result<()> {
         .init();
 
     let cmd = Cli::parse();
-
-    #[cfg(feature = "metrics")]
-    if cmd.metrics {
-        sbv::helpers::metrics::start_metrics_server(cmd.metrics_addr);
-    }
 
     cmd.commands.run()?;
 

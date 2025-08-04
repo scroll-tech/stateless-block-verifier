@@ -13,12 +13,6 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-hyper = { workspace = true, optional = true }
-hyper-util = { workspace = true, optional = true }
-http-body-util = { workspace = true, optional = true }
-once_cell = { workspace = true, optional = true }
-prometheus-client = { workspace = true, optional = true }
-tokio = { workspace = true, optional = true }
 tracing.workspace = true
 
 [dev-dependencies]
@@ -27,13 +21,3 @@ reqwest.workspace = true
 
 [features]
 dev = []
-metrics = [
-  "dep:hyper",
-  "dep:hyper-util",
-  "dep:http-body-util",
-  "dep:once_cell",
-  "dep:prometheus-client",
-  "dep:tokio",
-  "tokio/macros",
-  "tokio/signal",
-]
