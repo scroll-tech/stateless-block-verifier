@@ -1,5 +1,5 @@
 //! BN128 precompiles added in [`EIP-1962`](https://eips.ethereum.org/EIPS/eip-1962)
-use sbv_primitives::types::revm::precompile::{PrecompileWithAddress, bn128};
+use sbv_primitives::revm::precompile::{PrecompileWithAddress, bn128};
 
 #[cfg(not(feature = "openvm-bn128"))]
 pub use bn128::{run_add, run_mul, run_pair};
@@ -85,7 +85,7 @@ pub mod pair {
     mod scroll {
         use super::*;
         use bn128::PAIR_ELEMENT_LEN;
-        use sbv_primitives::types::revm::precompile::{PrecompileError, PrecompileResult};
+        use sbv_primitives::revm::precompile::{PrecompileError, PrecompileResult};
 
         /// The number of pairing inputs per pairing operation. If the inputs provided to the precompile
         /// call are < 4, we append (G1::infinity, G2::generator) until we have the required no. of
@@ -126,7 +126,7 @@ mod imps {
         encode_g1_point, g1_point_add, g1_point_mul, pairing_check, read_g1_point, read_g2_point,
         read_scalar,
     };
-    use sbv_primitives::types::revm::precompile::{
+    use sbv_primitives::revm::precompile::{
         PrecompileError, PrecompileOutput, PrecompileResult,
         bn128::{ADD_INPUT_LEN, MUL_INPUT_LEN, PAIR_ELEMENT_LEN},
         utilities::{bool_to_bytes32, right_pad},

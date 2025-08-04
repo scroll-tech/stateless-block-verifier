@@ -1,5 +1,5 @@
 //! `ecrecover` precompile.
-use sbv_primitives::types::revm::precompile::{self, PrecompileWithAddress, secp256k1};
+use sbv_primitives::revm::precompile::{self, PrecompileWithAddress, secp256k1};
 
 #[cfg(feature = "openvm-secp256k1")]
 mod openvm;
@@ -21,7 +21,7 @@ pub fn ec_recover_run(input: &[u8], gas_limit: u64) -> precompile::PrecompileRes
     use sbv_primitives::{
         B256, Bytes,
         alloy_primitives::B512,
-        types::revm::precompile::{PrecompileError, PrecompileOutput, utilities::right_pad},
+        revm::precompile::{PrecompileError, PrecompileOutput, utilities::right_pad},
     };
 
     const ECRECOVER_BASE: u64 = 3_000;

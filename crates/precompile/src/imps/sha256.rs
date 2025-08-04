@@ -1,6 +1,6 @@
 //! Hash precompiles, it contains SHA-256 hash precompile
 //! More details in [`sha256_run`]
-use sbv_primitives::types::revm::precompile::{self, PrecompileWithAddress, hash};
+use sbv_primitives::revm::precompile::{self, PrecompileWithAddress, hash};
 
 #[cfg(not(feature = "openvm-sha256"))]
 pub use hash::sha256_run;
