@@ -36,7 +36,7 @@
       "signature": {
         "r": "0x46ebf50743ce9a1d90ab42952373e50cc6fadd5b7c6e0331962feb9648afb030",
         "s": "0x497b36360dbaf92ded051f34e4b45883bfdc881d91dbd9b56d6ea636d30d824a",
-        "y_parity": false
+        "yParity": "0x0"
       }
     },
     {
@@ -55,7 +55,7 @@
       "signature": {
         "r": "0xd2a81c1a107acefda7512ff57124e64430e6976ae04d4591517ea554fab96577",
         "s": "0x754aaea2817491db269d1189e8cf4cebb5acc462cc91c4045b83a92bbb05d9b",
-        "y_parity": true
+        "yParity": "0x1"
       }
     },
     {
@@ -74,7 +74,7 @@
       "signature": {
         "r": "0x4a228148c6cc653ac74b1c45d20aabe8686106bbacfb023f52f07be26fcf9d1e",
         "s": "0x68350a31097b54db9370b78d0d91738682a747f310bd3a954c3440ca45fb0e0b",
-        "y_parity": true
+        "yParity": "0x1"
       }
     },
     {
@@ -93,7 +93,7 @@
       "signature": {
         "r": "0x385c30794917338d3301c9ca3a93f56d6f6d0d2dfff136cd0a9c597980eb493b",
         "s": "0x14f07248e6a8dbd676c3576fcb7d49ab4d6f8bcd124eb071907831ceb52bfe50",
-        "y_parity": true
+        "yParity": "0x1"
       }
     },
     {
@@ -112,7 +112,7 @@
       "signature": {
         "r": "0xc2de0d5111ed370802ec6549c63eb4cd64f0b36628b74773cf21908a9a043e38",
         "s": "0x6eadaf8e1cf402578bf4695f4d40477aa1c1327757013f7e92311789a0e3191a",
-        "y_parity": false
+        "yParity": "0x0"
       }
     },
     {
@@ -131,7 +131,7 @@
       "signature": {
         "r": "0x94d7b30351deb61158398597f81c888b3d24db2c88f09091fbfd4a23f1da4999",
         "s": "0x17a2df719e21b4b23ea06ce52414ee5062283f755c2691e36f7e448ba8677aa6",
-        "y_parity": true
+        "yParity": "0x1"
       }
     },
     {
@@ -150,7 +150,7 @@
       "signature": {
         "r": "0xc390036a156f1cbcb06ec04dbb031c9f4d87843399a8dd1b650190ead16150c6",
         "s": "0x3dea83877425cd265840a6acd1b4a732ecb2d17687b0d2760b35abb4f5fd23fc",
-        "y_parity": false
+        "yParity": "0x0"
       }
     },
     {
@@ -169,7 +169,7 @@
       "signature": {
         "r": "0x86bf5a768e794c374445d8df3f504a80fc9fc2aea67f5079e95904d8ff20d222",
         "s": "0x4f022f362ebfdf3ce82e500c9fd7f0a4fa60858c348660cfa647ce64038b4677",
-        "y_parity": false
+        "yParity": "0x0"
       }
     }
   ],

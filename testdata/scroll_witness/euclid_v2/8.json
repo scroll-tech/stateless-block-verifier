@@ -36,7 +36,7 @@
       "signature": {
         "r": "0x15c0b59f613d197d01f67cee9ac2300f7ad624b73dac16677aa87b6b2bb4129b",
         "s": "0x38a580d316edc8f28f6e9512f4f355b2dbaa0863406e39d1e911576be1d049b7",
-        "y_parity": false
+        "yParity": "0x0"
       }
     }
   ],

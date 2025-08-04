@@ -48,7 +48,7 @@
       "signature": {
         "r": "0x97430388f4eeb5a0ddc66fb50950acab5b3b769491631eebb7adfd2e44316526",
         "s": "0x1f8a7a95cc723657bcc06ce2a19f5cab3744875b9586f133f9375585b14ba8cd",
-        "y_parity": false
+        "yParity": "0x0"
       }
     }
   ],
