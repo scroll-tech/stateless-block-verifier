@@ -59,7 +59,7 @@ pub fn dump_bundle_state(bundle_state: &BundleState, out_dir: &Path) -> anyhow::
     );
 
     for (address, account) in BTreeMap::from_iter(bundle_state.state.clone()).into_iter() {
-        let original = account.original_info.unwrap();
+        let original = account.original_info.unwrap_or_default();
         let after = account.info.unwrap();
         if original != after {
             states_changed

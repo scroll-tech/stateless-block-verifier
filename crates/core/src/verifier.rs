@@ -75,16 +75,33 @@ pub fn verify(
 }
 
 #[cfg(test)]
-#[cfg(feature = "scroll")]
+#[cfg(feature = "scroll-hardforks")]
 mod tests {
     use super::*;
     use rstest::rstest;
-    use sbv_primitives::chainspec::ForkCondition;
     use sbv_primitives::chainspec::SCROLL_DEV;
+    use sbv_primitives::chainspec::{Chain, ForkCondition};
     use sbv_primitives::hardforks::ScrollHardfork;
 
-    fn get_chain_spec_euclid_v2() -> Arc<ChainSpec> {
+    fn get_chain_spec_euclid_v1(chain_id: u64) -> Arc<ChainSpec> {
         let mut spec = (**SCROLL_DEV).clone();
+        spec.inner.chain = Chain::from_id(chain_id);
+        spec.inner
+            .hardforks
+            .insert(ScrollHardfork::Euclid, ForkCondition::Timestamp(0));
+        spec.inner
+            .hardforks
+            .insert(ScrollHardfork::EuclidV2, ForkCondition::Never);
+        spec.inner
+            .hardforks
+            .insert(ScrollHardfork::Feynman, ForkCondition::Never);
+
+        Arc::new(spec)
+    }
+
+    fn get_chain_spec_euclid_v2(chain_id: u64) -> Arc<ChainSpec> {
+        let mut spec = (**SCROLL_DEV).clone();
+        spec.inner.chain = Chain::from_id(chain_id);
         spec.inner
             .hardforks
             .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
@@ -95,8 +112,9 @@ mod tests {
         Arc::new(spec)
     }
 
-    fn get_chain_spec_feynman() -> Arc<ChainSpec> {
+    fn get_chain_spec_feynman(chain_id: u64) -> Arc<ChainSpec> {
         let mut spec = (**SCROLL_DEV).clone();
+        spec.inner.chain = Chain::from_id(chain_id);
         spec.inner
             .hardforks
             .insert(ScrollHardfork::EuclidV2, ForkCondition::Timestamp(0));
@@ -108,13 +126,24 @@ mod tests {
     }
 
     #[rstest]
+    fn test_euclid_v1(
+        #[files("../../testdata/scroll_witness/euclid_v1/**/*.json")]
+        #[mode = str]
+        witness_json: &str,
+    ) {
+        let witness: BlockWitness = BlockWitness::from_json_str(witness_json).unwrap();
+        let chain_spec = get_chain_spec_euclid_v1(witness.chain_id);
+        verify(&witness, chain_spec).unwrap();
+    }
+
+    #[rstest]
     fn test_euclid_v2(
         #[files("../../testdata/scroll_witness/euclid_v2/**/*.json")]
         #[mode = str]
         witness_json: &str,
     ) {
         let witness: BlockWitness = BlockWitness::from_json_str(witness_json).unwrap();
-        let chain_spec = get_chain_spec_euclid_v2();
+        let chain_spec = get_chain_spec_euclid_v2(witness.chain_id);
         verify(&witness, chain_spec).unwrap();
     }
 
@@ -125,7 +154,7 @@ mod tests {
         witness_json: &str,
     ) {
         let witness: BlockWitness = BlockWitness::from_json_str(witness_json).unwrap();
-        let chain_spec = get_chain_spec_feynman();
+        let chain_spec = get_chain_spec_feynman(witness.chain_id);
         verify(&witness, chain_spec).unwrap();
     }
 }
