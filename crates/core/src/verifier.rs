@@ -83,7 +83,7 @@ mod tests {
     use sbv_primitives::chainspec::SCROLL_DEV;
     use sbv_primitives::hardforks::ScrollHardfork;
 
-    fn get_chain_spec_euclidv2() -> Arc<ChainSpec> {
+    fn get_chain_spec_euclid_v2() -> Arc<ChainSpec> {
         let mut spec = (**SCROLL_DEV).clone();
         spec.inner
             .hardforks
@@ -114,7 +114,7 @@ mod tests {
         witness_json: &str,
     ) {
         let witness: BlockWitness = BlockWitness::from_json_str(witness_json).unwrap();
-        let chain_spec = get_chain_spec_euclidv2();
+        let chain_spec = get_chain_spec_euclid_v2();
         verify(&witness, chain_spec).unwrap();
     }
 
