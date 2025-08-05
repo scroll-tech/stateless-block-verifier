@@ -1,12 +1,13 @@
 //! Verifier helper functions for stateless block verification.
 use crate::{EvmDatabase, EvmExecutor, VerificationError};
 use sbv_kv::nohash::NoHashMap;
-use sbv_primitives::BlockWitness;
-use sbv_primitives::chainspec::ChainSpec;
-use sbv_primitives::ext::{BlockWitnessExt, BlockWitnessRethExt};
+use sbv_primitives::{
+    BlockWitness,
+    chainspec::ChainSpec,
+    ext::{BlockWitnessExt, BlockWitnessRethExt},
+};
 use sbv_trie::BlockWitnessTrieExt;
-use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 /// Verify a block witness.
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.header.number), err))]
@@ -79,9 +80,10 @@ pub fn verify(
 mod tests {
     use super::*;
     use rstest::rstest;
-    use sbv_primitives::chainspec::SCROLL_DEV;
-    use sbv_primitives::chainspec::{Chain, ForkCondition};
-    use sbv_primitives::hardforks::ScrollHardfork;
+    use sbv_primitives::{
+        chainspec::{Chain, ForkCondition, SCROLL_DEV},
+        hardforks::ScrollHardfork,
+    };
 
     fn get_chain_spec_euclid_v1(chain_id: u64) -> Arc<ChainSpec> {
         let mut spec = (**SCROLL_DEV).clone();

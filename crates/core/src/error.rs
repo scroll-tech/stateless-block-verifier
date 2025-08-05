@@ -1,7 +1,7 @@
 use crate::database::DatabaseError;
-use sbv_primitives::revm::database::BundleState;
 use sbv_primitives::{
     B256, alloy_primitives::SignatureError, reth::evm::execute::BlockExecutionError,
+    revm::database::BundleState,
 };
 
 /// Error variants encountered during verification of transactions in a L2 block.
