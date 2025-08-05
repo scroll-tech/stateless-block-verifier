@@ -120,10 +120,7 @@ impl RunFileCommand {
 }
 
 fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
-    let witness = std::fs::File::open(path)?;
-    let jd = &mut serde_json::Deserializer::from_reader(&witness);
-    let witness = serde_path_to_error::deserialize::<_, BlockWitness>(jd)?;
-    Ok(witness)
+    Ok(BlockWitness::from_json_slice(&std::fs::read(path)?)?)
 }
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(path = %path.display()), err))]

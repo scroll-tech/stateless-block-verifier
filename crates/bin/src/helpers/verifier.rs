@@ -3,16 +3,13 @@ use anyhow::anyhow;
 #[cfg(feature = "dev")]
 use sbv::helpers::tracing;
 use sbv::{
-    core::{EvmDatabase, EvmExecutor, VerificationError},
-    kv::nohash::NoHashMap,
+    core::VerificationError,
     primitives::{
         BlockWitness,
         chainspec::{Chain, ChainSpec, get_chain_spec_or_build},
-        ext::{BlockWitnessExt, BlockWitnessRethExt},
     },
-    trie::BlockWitnessTrieExt,
 };
-use std::{collections::BTreeMap, env, panic::catch_unwind, sync::Arc};
+use std::{env, panic::catch_unwind, sync::Arc};
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.header.number), err))]
 pub fn verify_catch_panics(witness: &BlockWitness) -> anyhow::Result<u64> {
@@ -47,98 +44,31 @@ pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {
 }
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.header.number), err))]
-pub fn verify(witness: &BlockWitness) -> Result<u64, VerificationError> {
-    dev_trace!("{witness:#?}");
-
-    #[cfg(feature = "profiling")]
-    let guard = pprof::ProfilerGuardBuilder::default()
-        .frequency(1000)
-        .blocklist(&["libc", "libgcc", "pthread", "vdso"])
-        .build()
-        .unwrap();
-
+fn verify(witness: &BlockWitness) -> Result<u64, VerificationError> {
     let chain_spec = get_chain_spec(witness.chain_id);
-
-    let mut code_db = NoHashMap::default();
-    witness.import_codes(&mut code_db);
-    let mut nodes_provider = NoHashMap::default();
-    witness.import_nodes(&mut nodes_provider).unwrap();
-    #[cfg(not(feature = "scroll"))]
-    let block_hashes = {
-        let mut block_hashes = NoHashMap::default();
-        witness.import_block_hashes(&mut block_hashes);
-        block_hashes
-    };
-    #[cfg(feature = "scroll")]
-    let block_hashes = &sbv::kv::null::NullProvider;
-    let mut db = EvmDatabase::new_from_root(
-        code_db,
-        witness.pre_state_root,
-        &nodes_provider,
-        &block_hashes,
-    )?;
-
-    let block = witness.build_reth_block()?;
-
-    #[cfg(not(feature = "scroll"))]
-    let executor = EvmExecutor::new(chain_spec, &db, &block);
-    #[cfg(feature = "scroll")]
-    let executor = EvmExecutor::new(chain_spec, &db, &block, None::<Vec<sbv::primitives::U256>>);
-
-    let output = executor.execute().inspect_err(|_e| {
-        dev_error!(
-            "Error occurs when executing block #{}: {_e:?}",
-            block.number
-        );
-    })?;
-
-    db.update(
-        &nodes_provider,
-        BTreeMap::from_iter(output.state.state.clone()).iter(),
-    )?;
-    let post_state_root = db.commit_changes();
-
-    #[cfg(feature = "profiling")]
-    if let Ok(report) = guard.report().build() {
-        let dir = std::env::temp_dir()
-            .join(env!("CARGO_PKG_NAME"))
-            .join("profiling");
-        std::fs::create_dir_all(&dir).unwrap();
-        let path = dir.join(format!("block-{}.svg", block.number));
-        let file = std::fs::File::create(&path).unwrap();
-        report.flamegraph(file).unwrap();
-        dev_info!("Profiling report saved to: {:?}", path);
+    match sbv::core::verifier::verify(&witness, chain_spec) {
+        Ok(gas_used) => Ok(gas_used),
+        Err(VerificationError::RootMismatch {
+            expected,
+            actual,
+            state,
+        }) => {
+            let dump_dir = env::temp_dir()
+                .join("dumps")
+                .join(format!("{}-{}", witness.chain_id, witness.header.number));
+            dump_bundle_state(&state, &dump_dir)
+                .inspect(|_| {
+                    dev_info!("Dumped bundle state to: {}", dump_dir.display());
+                })
+                .inspect_err(|_e| {
+                    dev_error!(
+                        "Failed to dump bundle state to {}: {_e}",
+                        dump_dir.display(),
+                    );
+                })
+                .ok();
+            Err(VerificationError::root_mismatch(expected, actual, state))
+        }
+        Err(e) => Err(e),
     }
-
-    if block.state_root != post_state_root {
-        dev_error!(
-            "Block #{} root mismatch: root after in trace = {:x}, root after in reth = {:x}",
-            block.number,
-            block.state_root,
-            post_state_root
-        );
-
-        let dump_dir = env::temp_dir()
-            .join("dumps")
-            .join(format!("{}-{}", witness.chain_id, block.number));
-        dump_bundle_state(&output.state, &dump_dir)
-            .inspect(|_| {
-                dev_info!("Dumped bundle state to: {}", dump_dir.display());
-            })
-            .inspect_err(|_e| {
-                dev_error!(
-                    "Failed to dump bundle state to {}: {_e}",
-                    dump_dir.display(),
-                );
-            })
-            .ok();
-
-        return Err(VerificationError::root_mismatch(
-            block.state_root,
-            post_state_root,
-        ));
-    }
-    dev_info!("Block #{} verified successfully", block.number);
-
-    Ok(output.gas_used)
 }

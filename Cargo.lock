@@ -5397,7 +5397,6 @@ dependencies = [
  "sbv",
  "serde",
  "serde_json",
- "serde_path_to_error",
  "tokio",
  "tower",
  "tracing",
@@ -5410,6 +5409,7 @@ name = "sbv-core"
 version = "2.0.0"
 dependencies = [
  "ctor",
+ "rstest",
  "sbv-helpers",
  "sbv-kv",
  "sbv-precompile",
@@ -5796,16 +5796,6 @@ dependencies = [
  "itoa",
  "memchr",
  "ryu",
- "serde",
-]
-
-[[package]]
-name = "serde_path_to_error"
-version = "0.1.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59fab13f937fa393d08645bf3a84bdfe86e296747b506ada67bb15f10f218b2a"
-dependencies = [
- "itoa",
  "serde",
 ]
 

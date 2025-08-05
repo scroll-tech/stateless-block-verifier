@@ -32,6 +32,8 @@ sbv-trie.workspace = true
 ctor.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+rstest.workspace = true
+sbv-primitives = { workspace = true, features = ["serde"] }
 
 [features]
 serde = ["sbv-primitives/serde"]
@@ -42,6 +44,12 @@ scroll = [
   "sbv-primitives/scroll-reth-evm-types",
   "sbv-primitives/scroll-reth-primitives-types",
   "sbv-precompile/scroll",
+]
+scroll-hardforks = [
+  "sbv-primitives/scroll-hardforks",
+]
+scroll-compress-ratio = [
+  "sbv-primitives/scroll-compress-ratio",
 ]
 dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
 
