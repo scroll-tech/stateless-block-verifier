@@ -67,10 +67,11 @@ impl TryFrom<&Transaction> for TransactionSigned {
 
                 tx.into_signed(sig).into()
             }
-            #[cfg(not(feature = "consensus-types"))]
+            #[cfg(not(feature = "scroll"))]
             0x03 => {
+                use crate::consensus::TxEip4844;
                 let sig = tx.signature.expect("missing signature");
-                let tx = super::consensus::TxEip4844 {
+                let tx = TxEip4844 {
                     chain_id: tx.chain_id.expect("missing chain_id"),
                     nonce: tx.nonce,
                     max_fee_per_gas: tx.max_fee_per_gas,

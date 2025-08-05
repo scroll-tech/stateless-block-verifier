@@ -160,3 +160,22 @@ mod tests {
         verify(&witness, chain_spec).unwrap();
     }
 }
+
+#[cfg(test)]
+#[cfg(not(feature = "scroll"))]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+    use sbv_primitives::chainspec::{Chain, get_chain_spec};
+
+    #[rstest]
+    fn test_mainnet(
+        #[files("../../testdata/holesky_witness/**/*.json")]
+        #[mode = str]
+        witness_json: &str,
+    ) {
+        let witness: BlockWitness = BlockWitness::from_json_str(witness_json).unwrap();
+        let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id)).unwrap();
+        verify(&witness, chain_spec).unwrap();
+    }
+}

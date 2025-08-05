@@ -510,7 +510,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let block = serde_json::from_str::<BlockWitness>(BLOCK).unwrap();
+        let block = BlockWitness::from_json_str(BLOCK).unwrap();
 
         let mut store = NoHashMap::default();
         block.import_nodes(&mut store).unwrap();

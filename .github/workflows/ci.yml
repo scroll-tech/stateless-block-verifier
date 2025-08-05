@@ -62,13 +62,13 @@ jobs:
       - name: clippy dev
         run: cargo clippy --workspace --features dev -- -D warnings
       - name: clippy scroll
-        run: cargo clippy --workspace --features scroll -- -D warnings
+        run: cargo clippy --workspace --features scroll,scroll-all -- -D warnings
       - name: clippy all
         run: cargo clippy --workspace --all-features -- -D warnings
       - name: clippy test
         run: cargo clippy --workspace --tests -- -D warnings
       - name: clippy test scroll
-        run: cargo clippy --workspace --tests --features scroll -- -D warnings
+        run: cargo clippy --workspace --tests --features scroll,scroll-all -- -D warnings
       - name: clippy test all
         run: cargo clippy --workspace --tests --all-features -- -D warnings
 
@@ -87,5 +87,7 @@ jobs:
           toolchain: "1.87"
       - name: cargo cache
         uses: Swatinem/rust-cache@v2
-      - name: run tests
-        run: cargo test --workspace --all-features -- --nocapture
+      - name: test scroll
+        run: cargo test --workspace --features scroll,scroll-all,scroll-compress-ratio -- --nocapture
+      - name: test mainnet
+        run: cargo test --workspace -- --nocapture
