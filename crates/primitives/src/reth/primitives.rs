@@ -82,7 +82,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                     to: tx.to.expect("missing to"),
                     value: tx.value,
                     input: tx.input.clone(),
-                    access_list: tx.access_list.clone().expect("missing access_list").into(),
+                    access_list: tx.access_list.clone().expect("missing access_list"),
                     blob_versioned_hashes: tx
                         .blob_versioned_hashes
                         .clone()
@@ -110,7 +110,7 @@ impl TryFrom<&Transaction> for TransactionSigned {
                         .authorization_list
                         .as_ref()
                         .expect("missing authorization_list")
-                        .into_iter()
+                        .iter()
                         .map(Into::into)
                         .collect(),
                     input: tx.input.clone(),

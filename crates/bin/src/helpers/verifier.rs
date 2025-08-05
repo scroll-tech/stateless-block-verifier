@@ -46,7 +46,7 @@ pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.header.number), err))]
 fn verify(witness: &BlockWitness) -> Result<u64, VerificationError> {
     let chain_spec = get_chain_spec(witness.chain_id);
-    match sbv::core::verifier::verify(&witness, chain_spec) {
+    match sbv::core::verifier::verify(witness, chain_spec) {
         Ok(gas_used) => Ok(gas_used),
         Err(VerificationError::RootMismatch {
             expected,

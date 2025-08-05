@@ -54,7 +54,7 @@ impl crate::Transaction {
             transaction_type: tx.ty(),
             authorization_list: tx
                 .authorization_list()
-                .map(|list| list.into_iter().map(Into::into).collect()),
+                .map(|list| list.iter().map(Into::into).collect()),
             #[cfg(feature = "scroll")]
             queue_index: tx.inner.as_l1_message().map(|tx| tx.queue_index),
         }

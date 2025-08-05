@@ -26,18 +26,18 @@ pub enum VerificationError {
         /// Root after in revm
         actual: B256,
         /// Output state
-        state: BundleState,
+        state: Box<BundleState>,
     },
 }
 
 impl VerificationError {
     /// Create a new [`VerificationError::RootMismatch`] variant.
     #[inline]
-    pub fn root_mismatch(expected: B256, actual: B256, state: BundleState) -> Self {
+    pub fn root_mismatch(expected: B256, actual: B256, state: impl Into<Box<BundleState>>) -> Self {
         VerificationError::RootMismatch {
             expected,
             actual,
-            state,
+            state: state.into(),
         }
     }
 }
