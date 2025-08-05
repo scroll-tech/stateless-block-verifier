@@ -1,20 +1,20 @@
 [package]
-name = "sbv"
 homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/sbv"
+name = "sbv"
 
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
 authors.workspace = true
+edition.workspace = true
 license.workspace = true
 repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [dependencies]
 sbv-core.workspace = true
+sbv-helpers.workspace = true
 sbv-kv.workspace = true
 sbv-primitives.workspace = true
 sbv-trie.workspace = true
-sbv-helpers.workspace = true
 sbv-utils.workspace = true
 
 [features]
@@ -23,12 +23,12 @@ serde = ["sbv-primitives/serde"]
 c-kzg = ["sbv-primitives/c-kzg"]
 kzg-rs = ["sbv-primitives/kzg-rs"]
 
-scroll = ["sbv-core/scroll", "sbv-primitives/scroll-all", "sbv-utils/scroll"]
 dev = ["sbv-core/dev", "sbv-primitives/dev", "sbv-trie/dev"]
+scroll = ["sbv-core/scroll", "sbv-primitives/scroll-all", "sbv-utils/scroll"]
 
 # sp1 related
-sp1 = ["sbv-core/sp1", "sbv-primitives/sp1"]
 cycle-tracker = ["sbv-core/cycle-tracker", "sbv-primitives/cycle-tracker"]
+sp1 = ["sbv-core/sp1", "sbv-primitives/sp1"]
 
-scroll-openvm = ["sbv-core/scroll-openvm"]
 ethereum-openvm = ["sbv-core/ethereum-openvm"]
+scroll-openvm = ["sbv-core/scroll-openvm"]

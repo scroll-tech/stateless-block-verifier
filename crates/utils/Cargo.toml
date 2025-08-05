@@ -1,13 +1,13 @@
 [package]
-name = "sbv-utils"
-description = "Utilities for Stateless Block Verifier"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
 authors.workspace = true
-license.workspace = true
+description = "Utilities for Stateless Block Verifier"
+edition.workspace = true
 homepage.workspace = true
+license.workspace = true
+name = "sbv-utils"
 repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [lints]
 workspace = true

@@ -1,13 +1,13 @@
 [package]
-name = "sbv-primitives"
 homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/primitives"
+name = "sbv-primitives"
 
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
 authors.workspace = true
+edition.workspace = true
 license.workspace = true
 repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [lints]
 workspace = true
@@ -17,9 +17,9 @@ auto_impl.workspace = true
 itertools.workspace = true
 tiny-keccak.workspace = true
 
+convert_case = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
-convert_case = { workspace = true, optional = true }
 tracing = { workspace = true, optional = true }
 
 alloy-consensus = { workspace = true, optional = true }
@@ -31,12 +31,10 @@ alloy-serde = { workspace = true, optional = true }
 
 alloy-primitives.workspace = true
 
-revm = { workspace = true, optional = true }
-revm-scroll = { workspace = true, optional = true }
 reth-chainspec = { workspace = true, optional = true }
+reth-ethereum-forks = { workspace = true, optional = true }
 reth-evm = { workspace = true, optional = true }
 reth-evm-ethereum = { workspace = true, optional = true }
-reth-ethereum-forks = { workspace = true, optional = true }
 reth-execution-types = { workspace = true, optional = true }
 reth-primitives = { workspace = true, optional = true }
 reth-primitives-traits = { workspace = true, optional = true }
@@ -44,19 +42,21 @@ reth-scroll-chainspec = { workspace = true, optional = true }
 reth-scroll-evm = { workspace = true, optional = true }
 reth-scroll-forks = { workspace = true, optional = true }
 reth-scroll-primitives = { workspace = true, optional = true }
+revm = { workspace = true, optional = true }
+revm-scroll = { workspace = true, optional = true }
 
 scroll-alloy-consensus = { workspace = true, optional = true }
 scroll-alloy-evm = { workspace = true, optional = true }
-scroll-alloy-rpc-types = { workspace = true, optional = true }
 scroll-alloy-network = { workspace = true, optional = true }
+scroll-alloy-rpc-types = { workspace = true, optional = true }
 
 sbv-helpers.workspace = true
 sbv-kv.workspace = true
 
 [dev-dependencies]
 bincode.workspace = true
-serde_json.workspace = true
 rstest.workspace = true
+serde_json.workspace = true
 
 [features]
 # serialization
@@ -66,7 +66,7 @@ serde = [
   "dep:serde_json",
   "dep:convert_case",
   "alloy-eips/serde",
-  "reth-scroll-primitives?/serde"
+  "reth-scroll-primitives?/serde",
 ]
 
 # features proxy
@@ -76,19 +76,6 @@ kzg-rs = ["revm/kzg-rs"]
 # core features switch
 chainspec = ["dep:reth-chainspec"]
 consensus-types = ["dep:alloy-consensus"]
-evm-types = ["dep:alloy-evm"]
-network-types = ["dep:alloy-network"]
-hardforks = ["dep:reth-ethereum-forks"]
-reth-types = []
-reth-primitives-types = [
-  "consensus-types",
-  "dep:reth-primitives",
-  "dep:reth-primitives-traits",
-]
-reth-evm-types = ["reth-types", "dep:reth-evm", "dep:reth-evm-ethereum"]
-reth-execution-types = ["reth-types", "dep:reth-execution-types"]
-revm-types = ["dep:revm"]
-rpc-types = ["dep:alloy-rpc-types-eth"]
 ethereum-all = [
   "chainspec",
   "consensus-types",
@@ -102,16 +89,44 @@ ethereum-all = [
   "revm-types",
   "rpc-types",
 ]
+evm-types = ["dep:alloy-evm"]
+hardforks = ["dep:reth-ethereum-forks"]
+network-types = ["dep:alloy-network"]
+reth-evm-types = ["reth-types", "dep:reth-evm", "dep:reth-evm-ethereum"]
+reth-execution-types = ["reth-types", "dep:reth-execution-types"]
+reth-primitives-types = [
+  "consensus-types",
+  "dep:reth-primitives",
+  "dep:reth-primitives-traits",
+]
+reth-types = []
+revm-types = ["dep:revm"]
+rpc-types = ["dep:alloy-rpc-types-eth"]
 
 scroll = []
+scroll-all = [
+  "ethereum-all",
+  "scroll",
+  "scroll-chainspec",
+  "scroll-consensus-types",
+  "scroll-evm-types",
+  "scroll-hardforks",
+  "scroll-pre-deployed",
+  "scroll-network-types",
+  "scroll-reth-evm-types",
+  "scroll-reth-types",
+  "scroll-reth-primitives-types",
+  "scroll-revm-types",
+  "scroll-rpc-types",
+]
+scroll-chainspec = ["scroll", "chainspec", "dep:reth-scroll-chainspec"]
 scroll-compress-ratio = [
   "scroll",
   "scroll-evm-types",
   "dep:scroll-alloy-evm",
   "scroll-alloy-evm/std",
-  "scroll-alloy-evm/zstd_compression"
+  "scroll-alloy-evm/zstd_compression",
 ]
-scroll-chainspec = ["scroll", "chainspec", "dep:reth-scroll-chainspec"]
 scroll-consensus-types = [
   "scroll",
   "consensus-types",
@@ -133,11 +148,11 @@ scroll-reth-evm-types = [
   "scroll-reth-types",
   "dep:reth-scroll-evm",
 ]
-scroll-reth-types = ["scroll", "reth-types"]
 scroll-reth-primitives-types = [
   "scroll-consensus-types",
   "dep:reth-scroll-primitives",
 ]
+scroll-reth-types = ["scroll", "reth-types"]
 scroll-revm-types = [
   "scroll",
   "revm-types",
@@ -145,23 +160,8 @@ scroll-revm-types = [
   "revm/optional_no_base_fee",
 ]
 scroll-rpc-types = ["scroll", "rpc-types", "dep:scroll-alloy-rpc-types"]
-scroll-all = [
-  "ethereum-all",
-  "scroll",
-  "scroll-chainspec",
-  "scroll-consensus-types",
-  "scroll-evm-types",
-  "scroll-hardforks",
-  "scroll-pre-deployed",
-  "scroll-network-types",
-  "scroll-reth-evm-types",
-  "scroll-reth-types",
-  "scroll-reth-primitives-types",
-  "scroll-revm-types",
-  "scroll-rpc-types",
-]
 
 dev = ["dep:tracing"]
 
-sp1 = []
 cycle-tracker = []
+sp1 = []

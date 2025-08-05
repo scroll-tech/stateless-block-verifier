@@ -1,25 +1,25 @@
 [workspace]
 members = [
-    "crates/bin",
-    "crates/core",
-    "crates/helpers",
-    "crates/kv",
-    "crates/precompile",
-    "crates/primitives",
-    "crates/sbv",
-    "crates/trie",
-    "crates/utils",
+  "crates/bin",
+  "crates/core",
+  "crates/helpers",
+  "crates/kv",
+  "crates/precompile",
+  "crates/primitives",
+  "crates/sbv",
+  "crates/trie",
+  "crates/utils",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "2.0.0"
-edition = "2021"
-rust-version = "1.81"
 authors = ["Scroll developers"]
-license = "MIT OR Apache-2.0"
+edition = "2021"
 homepage = "https://github.com/scroll-tech/stateless-block-verifier"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/scroll-tech/stateless-block-verifier"
+rust-version = "1.81"
+version = "2.0.0"
 
 [workspace.dependencies]
 # https://github.com/alloy-rs/alloy
@@ -43,9 +43,9 @@ alloy-evm = { version = "0.16", default-features = false }
 revm-scroll = { git = "https://github.com/scroll-tech/scroll-revm", default-features = false }
 
 reth-chainspec = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
+reth-ethereum-forks = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 reth-evm = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
-reth-ethereum-forks = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 reth-execution-types = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 reth-primitives = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
@@ -57,35 +57,35 @@ reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", rev = "f451fe85
 reth-scroll-forks = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 
-scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
-scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
+scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
+scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", rev = "f451fe852900aa68b6f9d8df1a838da5adf23401", default-features = false }
 
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
 openvm-k256 = { package = "k256", git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-p256 = { package = "p256", git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
+openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
 openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", rev = "56751b25b4f18ba9988355faa288918db0ab3fde", default-features = false }
+openvm-p256 = { package = "p256", git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
 
 async-trait = "0.1"
 auto_impl = "1.2"
+bincode = { version = "2.0", features = ["serde"] }
 console = "0.15"
+convert_case = "0.8.0"
 futures = "0.3"
 hashbrown = { version = "0.15", default-features = false }
 indicatif = "0.17"
 itertools = "0.14"
 once_cell = "1.19"
+rstest = "0.26"
 rustc-hash = "2.1"
 thiserror = "1.0"
 tiny-keccak = "2.0"
 tower = "0.5"
 url = ">=2.5.3"
-bincode = { version = "2.0", features = ["serde"] }
-rstest = "0.26"
-convert_case = "0.8.0"
 
 # binary dependencies
 anyhow = "1.0"
@@ -97,11 +97,11 @@ tokio = { version = "1", default-features = false }
 # optional dependencies
 csv = "1.3"
 ctor = "0.2"
+http-body-util = "0.1"
 hyper = { version = "1.4", features = ["server", "http1"] }
 hyper-util = { version = "0.1", features = ["tokio"] }
-http-body-util = "0.1"
-prometheus-client = "0.22"
 pprof = { version = "0.13", features = ["flamegraph"] }
+prometheus-client = "0.22"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
@@ -112,21 +112,21 @@ reqwest = "0.12"
 # workspace
 sbv = { path = "crates/sbv" }
 sbv-core = { path = "crates/core" }
-sbv-kv = { path = "crates/kv" }
-sbv-primitives = { path = "crates/primitives" }
-sbv-precompile = { path = "crates/precompile" }
-sbv-trie = { path = "crates/trie" }
 sbv-helpers = { path = "crates/helpers" }
+sbv-kv = { path = "crates/kv" }
+sbv-precompile = { path = "crates/precompile" }
+sbv-primitives = { path = "crates/primitives" }
+sbv-trie = { path = "crates/trie" }
 sbv-utils = { path = "crates/utils" }
 
 [workspace.dependencies.revm]
-git = "https://github.com/scroll-tech/revm"
 default-features = false
 features = ["std"]
+git = "https://github.com/scroll-tech/revm"
 
 [workspace.lints.rust]
-missing-docs = "deny"
 missing-debug-implementations = "deny"
+missing-docs = "deny"
 
 [patch.crates-io]
 revm = { git = "https://github.com/scroll-tech/revm" }
@@ -208,5 +208,5 @@ revm-state = { git = "https://github.com/scroll-tech/revm" }
 
 
 [profile.release]
-lto = true
 codegen-units = 1
+lto = true

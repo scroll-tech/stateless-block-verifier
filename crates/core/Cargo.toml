@@ -1,13 +1,13 @@
 [package]
-name = "sbv-core"
 homepage = "https://github.com/scroll-tech/stateless-block-verifier/tree/master/crates/core"
+name = "sbv-core"
 
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
 authors.workspace = true
+edition.workspace = true
 license.workspace = true
 repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [lints]
 workspace = true
@@ -16,6 +16,9 @@ workspace = true
 thiserror.workspace = true
 tracing = { workspace = true, optional = true }
 
+sbv-helpers.workspace = true
+sbv-kv.workspace = true
+sbv-precompile.workspace = true
 sbv-primitives = { workspace = true, features = [
   "chainspec",
   "consensus-types",
@@ -24,21 +27,19 @@ sbv-primitives = { workspace = true, features = [
   "reth-evm-types",
   "reth-execution-types",
 ] }
-sbv-precompile.workspace = true
-sbv-helpers.workspace = true
-sbv-kv.workspace = true
 sbv-trie.workspace = true
 
 [dev-dependencies]
 ctor.workspace = true
-tracing.workspace = true
-tracing-subscriber.workspace = true
 rstest.workspace = true
 sbv-primitives = { workspace = true, features = ["serde"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
 
 [features]
 serde = ["sbv-primitives/serde"]
 
+dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
 scroll = [
   "sbv-primitives/scroll-chainspec",
   "sbv-primitives/scroll-pre-deployed",
@@ -46,17 +47,16 @@ scroll = [
   "sbv-primitives/scroll-reth-primitives-types",
   "sbv-precompile/scroll",
 ]
-scroll-hardforks = [
-  "sbv-primitives/scroll-hardforks",
-]
 scroll-compress-ratio = [
   "sbv-primitives/scroll-compress-ratio",
 ]
-dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
+scroll-hardforks = [
+  "sbv-primitives/scroll-hardforks",
+]
 
 # sp1 related
-sp1 = ["sbv-trie/sp1"]
 cycle-tracker = ["sbv-trie/cycle-tracker"]
+sp1 = ["sbv-trie/sp1"]
 
-scroll-openvm = ["sbv-precompile/scroll-openvm"]
 ethereum-openvm = ["sbv-precompile/ethereum-openvm"]
+scroll-openvm = ["sbv-precompile/scroll-openvm"]

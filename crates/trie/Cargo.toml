@@ -1,12 +1,12 @@
 [package]
-name = "sbv-trie"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
 authors.workspace = true
-license.workspace = true
+edition.workspace = true
 homepage.workspace = true
+license.workspace = true
+name = "sbv-trie"
 repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [lints]
 workspace = true
@@ -17,20 +17,20 @@ alloy-trie.workspace = true
 reth-trie.workspace = true
 reth-trie-sparse.workspace = true
 
-sbv-primitives = { workspace = true, features = ["revm-types"] }
-sbv-kv.workspace = true
 sbv-helpers.workspace = true
+sbv-kv.workspace = true
+sbv-primitives = { workspace = true, features = ["revm-types"] }
 
 auto_impl.workspace = true
 thiserror.workspace = true
 tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
-serde_json.workspace = true
 sbv-primitives = { workspace = true, features = ["serde"] }
+serde_json.workspace = true
 
 [features]
 dev = ["dep:tracing", "sbv-primitives/dev"]
 
-sp1 = []
 cycle-tracker = []
+sp1 = []
