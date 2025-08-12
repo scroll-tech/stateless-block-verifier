@@ -73,3 +73,62 @@ pub fn run<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
 
     Ok(output.gas_used)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sbv_primitives::{
+        chainspec::build_chain_spec_force_hardfork, hardforks::Hardfork, types::BlockWitness,
+    };
+
+    #[rstest::rstest]
+    fn test_euclid_v1(
+        #[files("../../testdata/scroll_witness/euclidv1/**/*.json")]
+        #[mode = str]
+        witness_json: &str,
+    ) {
+        let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
+        let chain_spec = build_chain_spec_force_hardfork(witness.chain_id, Hardfork::Euclid);
+        run(&witness, chain_spec).unwrap();
+    }
+
+    #[rstest::rstest]
+    fn test_euclid_v2(
+        #[files("../../testdata/scroll_witness/euclidv2/**/*.json")]
+        #[mode = str]
+        witness_json: &str,
+    ) {
+        let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
+        let chain_spec = build_chain_spec_force_hardfork(witness.chain_id, Hardfork::EuclidV2);
+        run(&witness, chain_spec).unwrap();
+    }
+
+    #[rstest::rstest]
+    fn test_feynman(
+        #[files("../../testdata/scroll_witness/feynman/**/*.json")]
+        #[mode = str]
+        witness_json: &str,
+    ) {
+        let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
+        let chain_spec = build_chain_spec_force_hardfork(witness.chain_id, Hardfork::Feynman);
+        run(&witness, chain_spec).unwrap();
+    }
+}
+
+#[cfg(test)]
+#[cfg(not(feature = "scroll"))]
+mod tests {
+    use super::*;
+    use sbv_primitives::chainspec::{Chain, get_chain_spec};
+
+    #[rstest::rstest]
+    fn test_mainnet(
+        #[files("../../testdata/holesky_witness/**/*.json")]
+        #[mode = str]
+        witness_json: &str,
+    ) {
+        let witness: BlockWitness = BlockWitness::from_json_str(witness_json).unwrap();
+        let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id)).unwrap();
+        run(&witness, chain_spec).unwrap();
+    }
+}

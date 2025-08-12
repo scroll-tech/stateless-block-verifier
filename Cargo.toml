@@ -82,6 +82,7 @@ rustc-hash = "2.1"
 thiserror = "2.0"
 tiny-keccak = "2.0"
 url = ">=2.5.3"
+rstest = "0.26"
 
 # binary dependencies
 eyre = "0.6"

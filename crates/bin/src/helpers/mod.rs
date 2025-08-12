@@ -1,8 +1,7 @@
-use alloy::transports::layers::ThrottleLayer;
 use alloy::{
     providers::{ProviderBuilder, RootProvider},
     rpc::client::ClientBuilder,
-    transports::layers::RetryBackoffLayer,
+    transports::layers::{RetryBackoffLayer, ThrottleLayer},
 };
 use clap::Args;
 use sbv::primitives::types::Network;

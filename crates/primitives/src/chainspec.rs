@@ -83,8 +83,7 @@ pub fn build_chain_spec_force_hardfork(
     chain_id: u64,
     hardfork: crate::hardforks::Hardfork,
 ) -> Arc<ChainSpec> {
-    use crate::chainspec::Chain;
-    use crate::hardforks::Hardfork;
+    use crate::{chainspec::Chain, hardforks::Hardfork};
     use reth_scroll_chainspec::{ScrollChainConfig, ScrollChainSpec};
     use std::sync::{Arc, LazyLock};
 
@@ -161,8 +160,7 @@ pub fn build_chain_spec_force_hardfork(
     chain_id: u64,
     hardfork: crate::hardforks::Hardfork,
 ) -> Arc<ChainSpec> {
-    use crate::U256;
-    use crate::{chainspec::Chain, hardforks::Hardfork};
+    use crate::{U256, chainspec::Chain, hardforks::Hardfork};
     use std::sync::{Arc, LazyLock};
 
     static BASE_HARDFORKS: LazyLock<ChainHardforks> = LazyLock::new(|| {
