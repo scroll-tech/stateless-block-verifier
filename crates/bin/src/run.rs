@@ -1,6 +1,12 @@
 use crate::helpers::verifier::*;
 use clap::Args;
-use sbv::primitives::types::BlockWitness;
+use eyre::ContextCompat;
+use sbv::primitives::{
+    BlockWitness as _,
+    chainspec::{Chain, build_chain_spec_force_hardfork, get_chain_spec},
+    hardforks::Hardfork,
+    types::BlockWitness,
+};
 use std::path::PathBuf;
 
 #[derive(Args, Debug)]
@@ -8,6 +14,9 @@ pub struct RunFileCommand {
     /// Path to the witness file
     #[arg(default_value = "witness.json")]
     path: Vec<PathBuf>,
+    /// Hardfork
+    #[arg(long, value_parser = clap::value_parser!(Hardfork))]
+    hardfork: Option<Hardfork>,
     /// Chunk mode
     #[cfg(feature = "scroll")]
     #[arg(short, long)]
@@ -35,7 +44,7 @@ impl RunFileCommand {
     fn run_witnesses(self) -> eyre::Result<()> {
         let mut gas_used = 0;
         for path in self.path.into_iter() {
-            gas_used += run_witness(path)?
+            gas_used += run_witness(path, self.hardfork)?
         }
         dev_info!("Gas used: {}", gas_used);
 
@@ -74,7 +83,11 @@ impl RunFileCommand {
             .map(|w| w.build_reth_block())
             .collect::<Result<Vec<_>, _>>()?;
 
-        let chain_spec = get_chain_spec(witnesses.chain_id());
+        let chain_spec = if let Some(hardfork) = self.hardfork {
+            build_chain_spec_force_hardfork(witnesses.chain_id(), hardfork)
+        } else {
+            get_chain_spec(Chain::from_id(witnesses.chain_id())).context("chain not support")?
+        };
 
         let mut chunk_info_builder =
             ChunkInfoBuilder::new(&chain_spec, witnesses.prev_state_root(), &blocks);
@@ -124,7 +137,12 @@ fn read_witness(path: &PathBuf) -> eyre::Result<BlockWitness> {
 }
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(path = %path.display()), err))]
-fn run_witness(path: PathBuf) -> eyre::Result<u64> {
+fn run_witness(path: PathBuf, hardfork: Option<Hardfork>) -> eyre::Result<u64> {
     let witness = read_witness(&path)?;
-    verify_catch_panics(&witness).inspect(|_| dev_info!("verified"))
+    let chain_spec = if let Some(hardfork) = hardfork {
+        build_chain_spec_force_hardfork(witness.chain_id(), hardfork)
+    } else {
+        get_chain_spec(Chain::from_id(witness.chain_id())).context("chain not support")?
+    };
+    verify_catch_panics(&witness, chain_spec).inspect(|_| dev_info!("verified"))
 }

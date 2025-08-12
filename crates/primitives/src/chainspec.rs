@@ -77,22 +77,202 @@ where
     })
 }
 
+/// Build a chain spec with a hardfork, enabling all hardforks up to the specified one.
+#[cfg(feature = "scroll")]
+pub fn build_chain_spec_force_hardfork(
+    chain_id: u64,
+    hardfork: crate::hardforks::Hardfork,
+) -> Arc<ChainSpec> {
+    use crate::chainspec::Chain;
+    use alloy_primitives::U256;
+    use reth_scroll_chainspec::{ScrollChainConfig, ScrollChainSpec};
+    use std::sync::{Arc, LazyLock};
+
+    static BASE_HARDFORKS: LazyLock<ChainHardforks> = LazyLock::new(|| {
+        ChainHardforks::new(vec![
+            (EthereumHardfork::Frontier.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Homestead.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Dao.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Tangerine.boxed(), ForkCondition::Block(0)),
+            (
+                EthereumHardfork::SpuriousDragon.boxed(),
+                ForkCondition::Block(0),
+            ),
+            (EthereumHardfork::Byzantium.boxed(), ForkCondition::Block(0)),
+            (
+                EthereumHardfork::Constantinople.boxed(),
+                ForkCondition::Block(0),
+            ),
+            (
+                EthereumHardfork::Petersburg.boxed(),
+                ForkCondition::Block(0),
+            ),
+            (EthereumHardfork::Istanbul.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::Berlin.boxed(), ForkCondition::Block(0)),
+            (EthereumHardfork::London.boxed(), ForkCondition::Block(0)),
+            (
+                EthereumHardfork::Paris.boxed(),
+                ForkCondition::TTD {
+                    activation_block_number: 0,
+                    fork_block: None,
+                    total_difficulty: U256::ZERO,
+                },
+            ),
+            (
+                EthereumHardfork::Shanghai.boxed(),
+                ForkCondition::Timestamp(0),
+            ),
+        ])
+    });
+
+    let chain = Chain::from_id(chain_id);
+    let mut hardforks = BASE_HARDFORKS.clone();
+
+    if hardfork >= crate::hardforks::Hardfork::Bernoulli {
+        hardforks.insert(hardfork, ForkCondition::Timestamp(0));
+    }
+
+    if hardfork >= crate::hardforks::Hardfork::Curie {
+        hardforks.insert(crate::hardforks::Hardfork::Curie, ForkCondition::Block(0));
+    }
+
+    if hardfork >= crate::hardforks::Hardfork::Darwin {
+        hardforks.insert(crate::hardforks::Hardfork::Darwin, ForkCondition::Block(0));
+    }
+
+    if hardfork >= crate::hardforks::Hardfork::DarwinV2 {
+        hardforks.insert(
+            crate::hardforks::Hardfork::DarwinV2,
+            ForkCondition::Block(0),
+        );
+    }
+
+    if hardfork >= crate::hardforks::Hardfork::Euclid {
+        hardforks.insert(crate::hardforks::Hardfork::Euclid, ForkCondition::Block(0));
+    }
+
+    if hardfork >= crate::hardforks::Hardfork::EuclidV2 {
+        hardforks.insert(
+            crate::hardforks::Hardfork::EuclidV2,
+            ForkCondition::Block(0),
+        );
+    }
+
+    if hardfork >= crate::hardforks::Hardfork::Feynman {
+        hardforks.insert(crate::hardforks::Hardfork::Feynman, ForkCondition::Block(0));
+    }
+
+    Arc::new(ScrollChainSpec {
+        inner: reth_chainspec::ChainSpec {
+            chain,
+            hardforks,
+            ..Default::default()
+        },
+        config: ScrollChainConfig::mainnet(),
+    })
+}
+
+/// Build a chain spec with a hardfork, enabling all hardforks up to the specified one.
+#[cfg(not(feature = "scroll"))]
+pub fn build_chain_spec_force_hardfork(
+    chain_id: u64,
+    hardfork: crate::hardforks::Hardfork,
+) -> Arc<ChainSpec> {
+    use crate::{chainspec::Chain, hardforks::Hardfork};
+    use std::sync::{Arc, LazyLock};
+
+    static BASE_HARDFORKS: LazyLock<ChainHardforks> = LazyLock::new(|| {
+        ChainHardforks::new(vec![(
+            EthereumHardfork::Frontier.boxed(),
+            ForkCondition::Block(0),
+        )])
+    });
+
+    let chain = Chain::from_id(chain_id);
+    let mut hardforks = BASE_HARDFORKS.clone();
+
+    if hardfork >= Hardfork::Homestead {
+        hardforks.insert(hardfork, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Dao {
+        hardforks.insert(Hardfork::Dao, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Tangerine {
+        hardforks.insert(Hardfork::Tangerine, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::SpuriousDragon {
+        hardforks.insert(Hardfork::SpuriousDragon, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Byzantium {
+        hardforks.insert(Hardfork::Byzantium, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Constantinople {
+        hardforks.insert(Hardfork::Constantinople, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Petersburg {
+        hardforks.insert(Hardfork::Petersburg, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Istanbul {
+        hardforks.insert(Hardfork::Istanbul, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Berlin {
+        hardforks.insert(Hardfork::Berlin, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::London {
+        hardforks.insert(Hardfork::London, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Paris {
+        hardforks.insert(Hardfork::Paris, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Shanghai {
+        hardforks.insert(Hardfork::Shanghai, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Cancun {
+        hardforks.insert(Hardfork::Cancun, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Prague {
+        hardforks.insert(Hardfork::Prague, ForkCondition::Block(0));
+    }
+
+    if hardfork >= Hardfork::Osaka {
+        hardforks.insert(Hardfork::Osaka, ForkCondition::Block(0));
+    }
+
+    Arc::new(ChainSpec {
+        chain,
+        hardforks,
+        ..Default::default()
+    })
+}
+
 #[cfg(test)]
 mod tests {
-
     #[cfg(feature = "scroll-chainspec")]
     #[test]
     fn test_build_chain_spec() {
         use super::*;
-        use crate::hardforks::ScrollHardfork;
+        use crate::hardforks::Hardfork;
 
         let chain_spec = get_chain_spec_or_build(Chain::from_id(42424242), |spec| {
             spec.inner
                 .hardforks
-                .insert(ScrollHardfork::DarwinV2, ForkCondition::Block(10));
+                .insert(Hardfork::DarwinV2, ForkCondition::Block(10));
         });
         assert_eq!(chain_spec.chain, Chain::from_id(42424242));
-        assert!(!chain_spec.is_fork_active_at_block(ScrollHardfork::DarwinV2, 0));
-        assert!(chain_spec.is_fork_active_at_block(ScrollHardfork::DarwinV2, 10));
+        assert!(!chain_spec.is_fork_active_at_block(Hardfork::DarwinV2, 0));
+        assert!(chain_spec.is_fork_active_at_block(Hardfork::DarwinV2, 10));
     }
 }

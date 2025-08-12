@@ -14,6 +14,8 @@ mod executor;
 pub use executor::SbvEthEvmFactory;
 pub use executor::{EvmConfig, EvmExecutor};
 
+pub mod verifier;
+
 #[cfg(test)]
 #[ctor::ctor]
 fn init() {
