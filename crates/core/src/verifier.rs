@@ -75,6 +75,7 @@ pub fn run<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
 }
 
 #[cfg(test)]
+#[cfg(feature = "scroll")]
 mod tests {
     use super::*;
     use sbv_primitives::{
@@ -119,7 +120,10 @@ mod tests {
 #[cfg(not(feature = "scroll"))]
 mod tests {
     use super::*;
-    use sbv_primitives::chainspec::{Chain, get_chain_spec};
+    use sbv_primitives::{
+        chainspec::{Chain, get_chain_spec},
+        types::BlockWitness,
+    };
 
     #[rstest::rstest]
     fn test_mainnet(
@@ -127,7 +131,7 @@ mod tests {
         #[mode = str]
         witness_json: &str,
     ) {
-        let witness: BlockWitness = BlockWitness::from_json_str(witness_json).unwrap();
+        let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
         let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id)).unwrap();
         run(&witness, chain_spec).unwrap();
     }
