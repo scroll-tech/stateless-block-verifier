@@ -37,16 +37,6 @@ pub fn verify_catch_panics<
         .and_then(|r| r.map_err(anyhow::Error::from))
 }
 
-#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
-pub fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
-    witness: T,
-) -> Result<u64, VerificationError> {
-    measure_duration_millis!(
-        total_block_verification_duration_milliseconds,
-        verify_inner(witness)
-    )
-}
-
 pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {
     get_chain_spec_or_build(Chain::from_id(chain_id), |_spec| {
         #[cfg(feature = "scroll")]
@@ -64,17 +54,11 @@ pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {
     })
 }
 
-fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
+#[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(block_number = %witness.number()), err))]
+fn verify<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
     witness: T,
 ) -> Result<u64, VerificationError> {
     dev_trace!("{witness:#?}");
-
-    #[cfg(feature = "profiling")]
-    let guard = pprof::ProfilerGuardBuilder::default()
-        .frequency(1000)
-        .blocklist(&["libc", "libgcc", "pthread", "vdso"])
-        .build()
-        .unwrap();
 
     let chain_spec = get_chain_spec(witness.chain_id());
 
@@ -109,8 +93,6 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
             "Error occurs when executing block #{}: {_e:?}",
             block.number
         );
-
-        update_metrics_counter!(verification_error);
     })?;
 
     db.update(
@@ -118,18 +100,6 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
         BTreeMap::from_iter(output.state.state.clone()).iter(),
     )?;
     let post_state_root = db.commit_changes();
-
-    #[cfg(feature = "profiling")]
-    if let Ok(report) = guard.report().build() {
-        let dir = std::env::temp_dir()
-            .join(env!("CARGO_PKG_NAME"))
-            .join("profiling");
-        std::fs::create_dir_all(&dir).unwrap();
-        let path = dir.join(format!("block-{}.svg", block.number));
-        let file = std::fs::File::create(&path).unwrap();
-        report.flamegraph(file).unwrap();
-        dev_info!("Profiling report saved to: {:?}", path);
-    }
 
     if block.state_root != post_state_root {
         dev_error!(
@@ -154,8 +124,6 @@ fn verify_inner<T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt>(
                 );
             })
             .ok();
-
-        update_metrics_counter!(verification_error);
 
         return Err(VerificationError::root_mismatch(
             block.state_root,

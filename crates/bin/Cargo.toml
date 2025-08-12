@@ -37,7 +37,6 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 url.workspace = true
 tracing = { workspace = true, optional = true }
 
-pprof = { workspace = true, optional = true }
 tracing-subscriber = { workspace = true, optional = true }
 
 sbv = { workspace = true, features = ["serde", "rkyv"] }
@@ -49,6 +48,4 @@ tracing-subscriber.workspace = true
 [features]
 default = ["dev"]
 dev = ["dep:tracing", "sbv/dev", "dep:tracing-subscriber"]
-profiling = ["dep:pprof"]
 scroll = ["sbv/scroll"]
-metrics = ["sbv/metrics"]

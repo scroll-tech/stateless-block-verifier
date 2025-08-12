@@ -45,7 +45,6 @@ scroll = [
   "sbv-precompile/scroll",
 ]
 dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
-metrics = ["sbv-helpers/metrics"]
 
 # sp1 related
 sp1 = ["sbv-trie/sp1"]
