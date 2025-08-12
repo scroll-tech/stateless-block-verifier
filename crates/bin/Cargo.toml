@@ -21,14 +21,11 @@ alloy = { workspace = true, features = [
   "json-rpc",
 ] }
 
-anyhow.workspace = true
+eyre.workspace = true
 clap = { workspace = true, features = ["derive"] }
 console.workspace = true
 csv.workspace = true
 indicatif.workspace = true
-num_cpus = "1.16"
-pumps = "0.0.4"
-rkyv.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 serde_path_to_error.workspace = true

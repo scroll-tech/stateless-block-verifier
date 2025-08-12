@@ -1,7 +1,5 @@
 use crate::helpers::verifier::*;
 use clap::Args;
-#[cfg(feature = "dev")]
-use sbv::helpers::tracing;
 use sbv::primitives::types::BlockWitness;
 use std::path::PathBuf;
 
@@ -21,12 +19,12 @@ pub struct RunFileCommand {
 
 impl RunFileCommand {
     #[cfg(not(feature = "scroll"))]
-    pub fn run(self) -> anyhow::Result<()> {
+    pub fn run(self) -> eyre::Result<()> {
         self.run_witnesses()
     }
 
     #[cfg(feature = "scroll")]
-    pub fn run(self) -> anyhow::Result<()> {
+    pub fn run(self) -> eyre::Result<()> {
         if self.chunk_mode {
             self.run_chunk()
         } else {
@@ -34,7 +32,7 @@ impl RunFileCommand {
         }
     }
 
-    fn run_witnesses(self) -> anyhow::Result<()> {
+    fn run_witnesses(self) -> eyre::Result<()> {
         let mut gas_used = 0;
         for path in self.path.into_iter() {
             gas_used += run_witness(path)?
@@ -45,8 +43,8 @@ impl RunFileCommand {
     }
 
     #[cfg(feature = "scroll")]
-    fn run_chunk(self) -> anyhow::Result<()> {
-        use anyhow::bail;
+    fn run_chunk(self) -> eyre::Result<()> {
+        use eyre::bail;
         use sbv::{
             core::{EvmDatabase, EvmExecutor},
             kv::{nohash::NoHashMap, null::NullProvider},
@@ -118,7 +116,7 @@ impl RunFileCommand {
     }
 }
 
-fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
+fn read_witness(path: &PathBuf) -> eyre::Result<BlockWitness> {
     let witness = std::fs::File::open(path)?;
     let jd = &mut serde_json::Deserializer::from_reader(&witness);
     let witness = serde_path_to_error::deserialize::<_, BlockWitness>(jd)?;
@@ -126,7 +124,7 @@ fn read_witness(path: &PathBuf) -> anyhow::Result<BlockWitness> {
 }
 
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(path = %path.display()), err))]
-fn run_witness(path: PathBuf) -> anyhow::Result<u64> {
+fn run_witness(path: PathBuf) -> eyre::Result<u64> {
     let witness = read_witness(&path)?;
     verify_catch_panics(&witness).inspect(|_| dev_info!("verified"))
 }

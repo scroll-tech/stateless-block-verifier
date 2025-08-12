@@ -1,7 +1,5 @@
 use crate::helpers::dump::dump_bundle_state;
-use anyhow::anyhow;
-#[cfg(feature = "dev")]
-use sbv::helpers::tracing;
+use eyre::eyre;
 use sbv::{
     core::{EvmDatabase, EvmExecutor, VerificationError},
     kv::nohash::NoHashMap,
@@ -23,18 +21,18 @@ pub fn verify_catch_panics<
     T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt + UnwindSafe,
 >(
     witness: T,
-) -> anyhow::Result<u64> {
+) -> eyre::Result<u64> {
     catch_unwind(|| verify(witness))
         .map_err(|e| {
             e.downcast_ref::<&str>()
-                .map(|s| anyhow!("task panics with: {s}"))
+                .map(|s| eyre!("task panics with: {s}"))
                 .or_else(|| {
                     e.downcast_ref::<String>()
-                        .map(|s| anyhow!("task panics with: {s}"))
+                        .map(|s| eyre!("task panics with: {s}"))
                 })
-                .unwrap_or_else(|| anyhow!("task panics"))
+                .unwrap_or_else(|| eyre!("task panics"))
         })
-        .and_then(|r| r.map_err(anyhow::Error::from))
+        .and_then(|r| r.map_err(eyre::Error::from))
 }
 
 pub fn get_chain_spec(chain_id: u64) -> Arc<ChainSpec> {

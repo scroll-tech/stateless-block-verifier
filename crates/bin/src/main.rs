@@ -18,7 +18,7 @@ enum Cli {
     Dump(dump::DumpWitnessCommand),
 }
 
-fn main() -> anyhow::Result<()> {
+fn main() -> eyre::Result<()> {
     // Install the tracing subscriber that will listen for events and filters. We try to use the
     // `RUST_LOG` environment variable and default to RUST_LOG=info if unset.
     #[cfg(feature = "dev")]
