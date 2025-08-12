@@ -9,8 +9,9 @@ use alloy_trie::{
 };
 pub use alloy_trie::{TrieAccount, nodes::TrieNode};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
-use reth_trie_sparse::provider::DefaultTrieNodeProvider;
-use reth_trie_sparse::{SerialSparseTrie, SparseTrieInterface, TrieMasks};
+use reth_trie_sparse::{
+    SerialSparseTrie, SparseTrieInterface, TrieMasks, provider::DefaultTrieNodeProvider,
+};
 use sbv_kv::{HashMap, nohash::NoHashMap};
 use sbv_primitives::{
     Address, B256, BlockWitness, U256, keccak256, types::revm::database::BundleAccount,
