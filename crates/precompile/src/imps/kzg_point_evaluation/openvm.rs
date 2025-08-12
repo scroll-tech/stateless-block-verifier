@@ -48,18 +48,25 @@ pub fn run(input: &[u8], gas_limit: u64) -> PrecompileResult {
     Ok(PrecompileOutput::new(GAS_COST, RETURN_VALUE.into()))
 }
 
+/// Convert a slice to an array of a specific size.
+#[inline]
+#[track_caller]
+fn as_array<const N: usize>(bytes: &[u8]) -> &[u8; N] {
+    bytes.try_into().expect("slice with incorrect length")
+}
+
 /// Convert a slice to a 32 byte big endian array.
 #[inline]
 #[track_caller]
-pub fn as_bytes32(bytes: &[u8]) -> &openvm_kzg::Bytes32 {
+fn as_bytes32(bytes: &[u8]) -> &openvm_kzg::Bytes32 {
     // SAFETY: `#[repr(C)] Bytes32([u8; 32])`
-    unsafe { &*kzg_point_evaluation::as_array::<32>(bytes).as_ptr().cast() }
+    unsafe { &*as_array::<32>(bytes).as_ptr().cast() }
 }
 
 /// Convert a slice to a 48 byte big endian array.
 #[inline]
 #[track_caller]
-pub fn as_bytes48(bytes: &[u8]) -> &openvm_kzg::Bytes48 {
-    // SAFETY: `#[repr(C)] Bytes32([u8; 32])`
-    unsafe { &*kzg_point_evaluation::as_array::<48>(bytes).as_ptr().cast() }
+fn as_bytes48(bytes: &[u8]) -> &openvm_kzg::Bytes48 {
+    // SAFETY: `#[repr(C)] Bytes48([u8; 48])`
+    unsafe { &*as_array::<48>(bytes).as_ptr().cast() }
 }
