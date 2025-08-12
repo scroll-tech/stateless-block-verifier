@@ -140,6 +140,7 @@ fn read_witness(path: &PathBuf) -> eyre::Result<BlockWitness> {
 fn run_witness(path: PathBuf, hardfork: Option<Hardfork>) -> eyre::Result<u64> {
     let witness = read_witness(&path)?;
     let chain_spec = if let Some(hardfork) = hardfork {
+        dev_info!("Overriding hardfork to: {hardfork:?}");
         build_chain_spec_force_hardfork(witness.chain_id(), hardfork)
     } else {
         get_chain_spec(Chain::from_id(witness.chain_id())).context("chain not support")?

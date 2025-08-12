@@ -81,7 +81,6 @@ rkyv = "0.8"
 rustc-hash = "2.1"
 thiserror = "2.0"
 tiny-keccak = "2.0"
-tower = "0.5"
 url = ">=2.5.3"
 
 # binary dependencies

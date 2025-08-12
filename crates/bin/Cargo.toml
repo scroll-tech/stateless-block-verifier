@@ -20,6 +20,7 @@ alloy = { workspace = true, features = [
   "reqwest-rustls-tls",
   "json-rpc",
 ] }
+alloy-transport = { workspace = true, features = ["throttle"] }
 
 eyre.workspace = true
 clap = { workspace = true, features = ["derive"] }
@@ -29,7 +30,6 @@ indicatif.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 serde_path_to_error.workspace = true
-tower = { workspace = true, features = ["limit"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 url.workspace = true
 tracing = { workspace = true, optional = true }
