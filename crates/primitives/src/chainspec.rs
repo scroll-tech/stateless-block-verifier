@@ -84,15 +84,13 @@ pub fn build_chain_spec_force_hardfork(
     hardfork: crate::hardforks::Hardfork,
 ) -> Arc<ChainSpec> {
     use crate::chainspec::Chain;
-    use alloy_primitives::U256;
+    use crate::hardforks::Hardfork;
     use reth_scroll_chainspec::{ScrollChainConfig, ScrollChainSpec};
     use std::sync::{Arc, LazyLock};
 
     static BASE_HARDFORKS: LazyLock<ChainHardforks> = LazyLock::new(|| {
         ChainHardforks::new(vec![
-            (EthereumHardfork::Frontier.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Homestead.boxed(), ForkCondition::Block(0)),
-            (EthereumHardfork::Dao.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Tangerine.boxed(), ForkCondition::Block(0)),
             (
                 EthereumHardfork::SpuriousDragon.boxed(),
@@ -110,57 +108,42 @@ pub fn build_chain_spec_force_hardfork(
             (EthereumHardfork::Istanbul.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::Berlin.boxed(), ForkCondition::Block(0)),
             (EthereumHardfork::London.boxed(), ForkCondition::Block(0)),
-            (
-                EthereumHardfork::Paris.boxed(),
-                ForkCondition::TTD {
-                    activation_block_number: 0,
-                    fork_block: None,
-                    total_difficulty: U256::ZERO,
-                },
-            ),
-            (
-                EthereumHardfork::Shanghai.boxed(),
-                ForkCondition::Timestamp(0),
-            ),
         ])
     });
 
     let chain = Chain::from_id(chain_id);
     let mut hardforks = BASE_HARDFORKS.clone();
 
-    if hardfork >= crate::hardforks::Hardfork::Bernoulli {
-        hardforks.insert(hardfork, ForkCondition::Timestamp(0));
+    if hardfork >= Hardfork::Archimedes {
+        hardforks.insert(Hardfork::Archimedes, ForkCondition::Timestamp(0));
     }
-
-    if hardfork >= crate::hardforks::Hardfork::Curie {
-        hardforks.insert(crate::hardforks::Hardfork::Curie, ForkCondition::Block(0));
+    if hardfork >= Hardfork::Bernoulli {
+        hardforks.insert(EthereumHardfork::Shanghai, ForkCondition::Timestamp(0));
+        hardforks.insert(Hardfork::Bernoulli, ForkCondition::Block(0));
     }
-
-    if hardfork >= crate::hardforks::Hardfork::Darwin {
-        hardforks.insert(crate::hardforks::Hardfork::Darwin, ForkCondition::Block(0));
+    if hardfork >= Hardfork::Curie {
+        hardforks.insert(Hardfork::Curie, ForkCondition::Block(0));
     }
-
-    if hardfork >= crate::hardforks::Hardfork::DarwinV2 {
-        hardforks.insert(
-            crate::hardforks::Hardfork::DarwinV2,
-            ForkCondition::Block(0),
-        );
+    if hardfork >= Hardfork::Darwin {
+        hardforks.insert(Hardfork::Darwin, ForkCondition::Timestamp(0));
     }
-
-    if hardfork >= crate::hardforks::Hardfork::Euclid {
-        hardforks.insert(crate::hardforks::Hardfork::Euclid, ForkCondition::Block(0));
+    if hardfork >= Hardfork::DarwinV2 {
+        hardforks.insert(Hardfork::DarwinV2, ForkCondition::Timestamp(0));
     }
-
-    if hardfork >= crate::hardforks::Hardfork::EuclidV2 {
-        hardforks.insert(
-            crate::hardforks::Hardfork::EuclidV2,
-            ForkCondition::Block(0),
-        );
+    if hardfork >= Hardfork::Euclid {
+        hardforks.insert(Hardfork::Euclid, ForkCondition::Timestamp(0));
     }
-
-    if hardfork >= crate::hardforks::Hardfork::Feynman {
-        hardforks.insert(crate::hardforks::Hardfork::Feynman, ForkCondition::Block(0));
+    if hardfork >= Hardfork::EuclidV2 {
+        hardforks.insert(Hardfork::EuclidV2, ForkCondition::Timestamp(0));
     }
+    if hardfork >= Hardfork::Feynman {
+        hardforks.insert(Hardfork::Feynman, ForkCondition::Timestamp(0));
+    }
+    sbv_helpers::dev_info!(
+        "Building chain spec for chain ID {} with hardfork {:?}",
+        chain_id,
+        hardforks
+    );
 
     Arc::new(ScrollChainSpec {
         inner: reth_chainspec::ChainSpec {
@@ -178,6 +161,7 @@ pub fn build_chain_spec_force_hardfork(
     chain_id: u64,
     hardfork: crate::hardforks::Hardfork,
 ) -> Arc<ChainSpec> {
+    use crate::U256;
     use crate::{chainspec::Chain, hardforks::Hardfork};
     use std::sync::{Arc, LazyLock};
 
@@ -232,23 +216,30 @@ pub fn build_chain_spec_force_hardfork(
     }
 
     if hardfork >= Hardfork::Paris {
-        hardforks.insert(Hardfork::Paris, ForkCondition::Block(0));
+        hardforks.insert(
+            Hardfork::Paris,
+            ForkCondition::TTD {
+                activation_block_number: 0,
+                fork_block: Some(0),
+                total_difficulty: U256::ZERO,
+            },
+        );
     }
 
     if hardfork >= Hardfork::Shanghai {
-        hardforks.insert(Hardfork::Shanghai, ForkCondition::Block(0));
+        hardforks.insert(Hardfork::Shanghai, ForkCondition::Timestamp(0));
     }
 
     if hardfork >= Hardfork::Cancun {
-        hardforks.insert(Hardfork::Cancun, ForkCondition::Block(0));
+        hardforks.insert(Hardfork::Cancun, ForkCondition::Timestamp(0));
     }
 
     if hardfork >= Hardfork::Prague {
-        hardforks.insert(Hardfork::Prague, ForkCondition::Block(0));
+        hardforks.insert(Hardfork::Prague, ForkCondition::Timestamp(0));
     }
 
     if hardfork >= Hardfork::Osaka {
-        hardforks.insert(Hardfork::Osaka, ForkCondition::Block(0));
+        hardforks.insert(Hardfork::Osaka, ForkCondition::Timestamp(0));
     }
 
     Arc::new(ChainSpec {
