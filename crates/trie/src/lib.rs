@@ -9,7 +9,8 @@ use alloy_trie::{
 };
 pub use alloy_trie::{TrieAccount, nodes::TrieNode};
 pub use reth_trie::{KeccakKeyHasher, KeyHasher};
-use reth_trie_sparse::{RevealedSparseTrie, TrieMasks};
+use reth_trie_sparse::provider::DefaultTrieNodeProvider;
+use reth_trie_sparse::{SerialSparseTrie, SparseTrieInterface, TrieMasks};
 use sbv_kv::{HashMap, nohash::NoHashMap};
 use sbv_primitives::{
     Address, B256, BlockWitness, U256, keccak256, types::revm::database::BundleAccount,
@@ -307,7 +308,7 @@ impl PartialStateTrie {
 /// A partial trie that can be updated
 #[derive(Debug, Default)]
 struct PartialTrie<T> {
-    trie: RevealedSparseTrie,
+    trie: SerialSparseTrie,
     /// FIXME: `RevealedSparseTrie` did not expose API to get the leafs
     leafs: HashMap<Nibbles, T>,
 }
@@ -330,7 +331,7 @@ impl<T: Default> PartialTrie<T> {
             .ok_or(PartialStateTrieError::MissingWitness(root))?
             .clone();
         let mut state = cycle_track!(
-            RevealedSparseTrie::from_root(root.clone(), TrieMasks::none(), true),
+            SerialSparseTrie::from_root(root.clone(), TrieMasks::none(), true),
             "RevealedSparseTrie::from_root"
         )
         .map_err(|e| {
@@ -382,19 +383,23 @@ impl<T: Default> PartialTrie<T> {
         value: T,
         mut encode: F,
     ) -> Result<()> {
-        self.trie.update_leaf(path, encode(&value)).map_err(|e| {
-            dev_error!("failed to update leaf: {e}");
-            PartialStateTrieError::Impl(format!("{e:?}"))
-        })?;
+        self.trie
+            .update_leaf(path, encode(&value), DefaultTrieNodeProvider)
+            .map_err(|e| {
+                dev_error!("failed to update leaf: {e}");
+                PartialStateTrieError::Impl(format!("{e:?}"))
+            })?;
         self.leafs.insert(path, value);
         Ok(())
     }
 
     fn remove_leaf_inner(&mut self, path: &Nibbles) -> Result<()> {
-        self.trie.remove_leaf(path).map_err(|e| {
-            dev_error!("failed to remove leaf: {e}");
-            PartialStateTrieError::Impl(format!("{e:?}"))
-        })?;
+        self.trie
+            .remove_leaf(path, DefaultTrieNodeProvider)
+            .map_err(|e| {
+                dev_error!("failed to remove leaf: {e}");
+                PartialStateTrieError::Impl(format!("{e:?}"))
+            })?;
         self.leafs.remove(path);
         Ok(())
     }
@@ -407,7 +412,7 @@ fn traverse_import_partial_trie<
     path: Nibbles,
     node: TrieNode,
     nodes: P,
-    trie: &mut RevealedSparseTrie,
+    trie: &mut SerialSparseTrie,
     store_leaf: &mut F,
 ) -> Result<()> {
     match node {
