@@ -88,6 +88,6 @@ jobs:
       - name: cargo cache
         uses: Swatinem/rust-cache@v2
       - name: cargo test scroll
-        run: cargo test --workspace --features scroll,scroll-all -- -D warnings
+        run: cargo test --workspace --features scroll,scroll-all
       - name: cargo test ethereum
-        run: cargo test --workspace --features ethereum-all -- -D warnings
+        run: cargo test --workspace --features ethereum-all
