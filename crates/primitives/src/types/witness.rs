@@ -3,8 +3,6 @@ use crate::{
     types::{BlockHeader, Transaction, Withdrawal},
 };
 
-pub use alloy_rpc_types_debug::ExecutionWitness;
-
 /// Witness for a block.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 #[cfg_attr(

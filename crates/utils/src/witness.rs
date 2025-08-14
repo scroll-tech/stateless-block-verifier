@@ -2,7 +2,10 @@
 
 use sbv_primitives::{
     B256, ChainId,
-    types::{BlockWitness, ExecutionWitness, Transaction, rpc::Block as RpcBlock},
+    types::{
+        BlockWitness, Transaction,
+        rpc::{Block as RpcBlock, ExecutionWitness},
+    },
 };
 
 /// Block witness builder.

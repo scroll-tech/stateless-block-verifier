@@ -1,7 +1,10 @@
 use crate::helpers::dump::dump_bundle_state;
 use eyre::eyre;
 use sbv::{
-    core::VerificationError,
+    core::{
+        VerificationError,
+        verifier::{StateCommitMode, VerifyResult},
+    },
     primitives::{
         chainspec::ChainSpec,
         ext::{BlockWitnessExt, BlockWitnessRethExt},
@@ -19,13 +22,20 @@ pub fn verify_catch_panics<
 >(
     witness: T,
     chain_spec: Arc<ChainSpec>,
-) -> eyre::Result<u64> {
+) -> eyre::Result<VerifyResult> {
     let chain_id = witness.chain_id();
     let block_number = witness.number();
 
     catch_unwind(AssertUnwindSafe(|| {
-        sbv::core::verifier::run(witness, chain_spec).inspect_err(|e| {
-            if let VerificationError::RootMismatch { bundle_state, .. } = e {
+        sbv::core::verifier::run(
+            &[witness],
+            chain_spec,
+            StateCommitMode::Block,
+            #[cfg(feature = "scroll")]
+            None::<Vec<Vec<sbv::primitives::U256>>>,
+        )
+        .inspect_err(|e| {
+            if let VerificationError::BlockRootMismatch { bundle_state, .. } = e {
                 let dump_dir = env::temp_dir()
                     .join("dumps")
                     .join(format!("{}-{}", chain_id, block_number));
