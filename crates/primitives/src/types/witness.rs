@@ -1,24 +1,9 @@
 use crate::{
     B256, BlockNumber, Bytes, ChainId, U256,
-    alloy_primitives::map::B256HashMap,
     types::{BlockHeader, Transaction, Withdrawal},
 };
 
-/// Represents the execution witness of a block. Contains an optional map of state preimages.
-#[derive(Debug, Clone, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ExecutionWitness {
-    /// Map of all hashed trie nodes to their preimages that were required during the execution of
-    /// the block, including during state root recomputation.
-    ///
-    /// `keccak(rlp(node)) => rlp(node)`
-    pub state: B256HashMap<Bytes>,
-    /// Map of all contract codes (created / accessed) to their preimages that were required during
-    /// the execution of the block, including during state root recomputation.
-    ///
-    /// `keccak(bytecodes) => bytecodes`
-    pub codes: B256HashMap<Bytes>,
-}
+pub use alloy_rpc_types_debug::ExecutionWitness;
 
 /// Witness for a block.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]

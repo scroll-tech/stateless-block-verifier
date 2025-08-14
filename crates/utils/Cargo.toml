@@ -19,6 +19,7 @@ alloy-transport.workspace = true
 async-trait.workspace = true
 futures.workspace = true
 thiserror.workspace = true
+serde = { workspace = true, features = ["derive"] }
 
 sbv-primitives = { workspace = true, features = [
   "serde",

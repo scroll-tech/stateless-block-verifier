@@ -428,6 +428,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "alloy-rpc-types-debug"
+version = "1.0.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9b6f0482c82310366ec3dcf4e5212242f256a69fcf1a26e5017e6704091ee95"
+dependencies = [
+ "alloy-primitives",
+ "derive_more",
+ "serde",
+]
+
+[[package]]
 name = "alloy-rpc-types-engine"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5440,6 +5451,7 @@ dependencies = [
  "alloy-evm",
  "alloy-network",
  "alloy-primitives",
+ "alloy-rpc-types-debug",
  "alloy-rpc-types-eth",
  "alloy-serde",
  "auto_impl",
@@ -5494,6 +5506,7 @@ dependencies = [
  "async-trait",
  "futures",
  "sbv-primitives",
+ "serde",
  "thiserror",
 ]
 
