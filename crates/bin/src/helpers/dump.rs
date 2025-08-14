@@ -1,3 +1,4 @@
+use eyre::Context;
 use sbv::primitives::{Address, B256, Bytes, U256, types::revm::database::BundleState};
 use serde::Serialize;
 use serde_json::json;
@@ -32,9 +33,8 @@ struct ContractCreated {
     code: Bytes,
 }
 
-pub fn dump_bundle_state(bundle_state: &BundleState, out_dir: &Path) -> anyhow::Result<()> {
-    fs::create_dir_all(out_dir)
-        .inspect_err(|_e| dev_error!("Failed to create output directory: {_e}"))?;
+pub fn dump_bundle_state(bundle_state: &BundleState, out_dir: &Path) -> eyre::Result<()> {
+    fs::create_dir_all(out_dir).context("create output directory")?;
 
     serde_json::to_writer_pretty(
         File::create(out_dir.join("bundle-state.json"))?,
@@ -45,17 +45,13 @@ pub fn dump_bundle_state(bundle_state: &BundleState, out_dir: &Path) -> anyhow::
             "reverts_size": bundle_state.reverts_size,
         }),
     )
-    .inspect_err(|_e| {
-        dev_error!("Failed to write bundle state summary: {_e}");
-    })?;
+    .context("write bundle state summary")?;
 
     let mut states_changed = csv::Writer::from_writer(
-        File::create(out_dir.join("states-changed.csv"))
-            .inspect_err(|_e| dev_error!("Failed to create states-changed.csv: {_e}"))?,
+        File::create(out_dir.join("states-changed.csv")).context("create states-changed.csv")?,
     );
     let mut storages_changed = csv::Writer::from_writer(
-        File::create(out_dir.join("storage-changed.csv"))
-            .inspect_err(|_e| dev_error!("Failed to create storage-changed.csv: {_e}"))?,
+        File::create(out_dir.join("storage-changed.csv")).context("create storage-changed.csv")?,
     );
 
     for (address, account) in BTreeMap::from_iter(bundle_state.state.clone()).into_iter() {
@@ -71,8 +67,8 @@ pub fn dump_bundle_state(bundle_state: &BundleState, out_dir: &Path) -> anyhow::
                     code_hash: original.code_hash,
                     code: original.code.unwrap_or_default().original_bytes(),
                 })
-                .inspect_err(|_e| {
-                    dev_error!("Failed to serialize before state for address {address:?}: {_e}");
+                .with_context(|| {
+                    format!("Failed to serialize before state for address {address:?}")
                 })?;
             states_changed
                 .serialize(AccountChanged {
@@ -83,27 +79,25 @@ pub fn dump_bundle_state(bundle_state: &BundleState, out_dir: &Path) -> anyhow::
                     code_hash: after.code_hash,
                     code: after.code.unwrap_or_default().original_bytes(),
                 })
-                .inspect_err(|_e| {
-                    dev_error!("Failed to serialize after state for address {address:?}: {_e}");
-                })?;
+                .with_context(|| format!("serialize after state for address {address:?}"))?;
         }
 
         for (key, slot) in BTreeMap::from_iter(account.storage).into_iter() {
-            storages_changed.serialize(StorageChanged {
-                address,
-                key,
-                previous_or_original_value: slot.previous_or_original_value,
-                present_value: slot.present_value,
-            })
-                .inspect_err(|_e| {
-                    dev_error!("Failed to serialize storage change for address {address:?}, key {key:?}: {_e}");
+            storages_changed
+                .serialize(StorageChanged {
+                    address,
+                    key,
+                    previous_or_original_value: slot.previous_or_original_value,
+                    present_value: slot.present_value,
+                })
+                .with_context(|| {
+                    format!("serialize storage change for address {address:?}, key {key:?}")
                 })?;
         }
     }
 
     let mut contracts = csv::Writer::from_writer(
-        File::create(out_dir.join("contracts.csv"))
-            .inspect_err(|_e| dev_error!("Failed to create contracts.csv: {_e}"))?,
+        File::create(out_dir.join("contracts.csv")).context("create contracts.csv")?,
     );
 
     for (hash, code) in BTreeMap::from_iter(bundle_state.contracts.clone()).into_iter() {

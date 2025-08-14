@@ -67,16 +67,10 @@ impl<
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
         let provider = EvmConfig::new_with_evm_factory(self.chain_spec.clone(), SbvEthEvmFactory);
 
-        let output = measure_duration_millis!(
-            handle_block_duration_milliseconds,
-            cycle_track!(
-                provider.executor(CacheDB::new(self.db)).execute(self.block),
-                "handle_block"
-            )
+        let output = cycle_track!(
+            provider.executor(CacheDB::new(self.db)).execute(self.block),
+            "handle_block"
         )?;
-
-        #[cfg(feature = "metrics")]
-        sbv_helpers::metrics::REGISTRY.block_counter.inc();
 
         Ok(output)
     }

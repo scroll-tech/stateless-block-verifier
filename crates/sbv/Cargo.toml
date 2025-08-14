@@ -26,7 +26,6 @@ kzg-rs = ["sbv-primitives/kzg-rs"]
 
 scroll = ["sbv-core/scroll", "sbv-primitives/scroll-all", "sbv-utils/scroll"]
 dev = ["sbv-core/dev", "sbv-primitives/dev", "sbv-trie/dev"]
-metrics = ["sbv-core/metrics", "sbv-helpers/metrics"]
 
 # sp1 related
 sp1 = ["sbv-core/sp1", "sbv-primitives/sp1"]

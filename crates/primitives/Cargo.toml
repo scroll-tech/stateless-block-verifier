@@ -64,7 +64,7 @@ c-kzg = ["revm/c-kzg"]
 kzg-rs = ["revm/kzg-rs"]
 
 # core features switch
-chainspec = ["dep:reth-chainspec"]
+chainspec = ["dep:reth-chainspec", "hardforks"]
 consensus-types = ["dep:alloy-consensus"]
 eips = ["dep:alloy-eips"]
 evm-types = ["dep:alloy-evm"]
@@ -104,7 +104,7 @@ scroll-compress-ratio = [
   "scroll-alloy-evm/std",
   "scroll-alloy-evm/zstd_compression"
 ]
-scroll-chainspec = ["scroll", "chainspec", "dep:reth-scroll-chainspec"]
+scroll-chainspec = ["scroll", "chainspec", "dep:reth-scroll-chainspec", "scroll-hardforks"]
 scroll-consensus-types = [
   "scroll",
   "consensus-types",

@@ -61,8 +61,6 @@ jobs:
         run: cargo clippy --workspace -- -D warnings
       - name: clippy dev
         run: cargo clippy --workspace --features dev -- -D warnings
-      - name: clippy metrics
-        run: cargo clippy --workspace --features metrics -- -D warnings
       - name: clippy scroll
         run: cargo clippy --workspace --features scroll -- -D warnings
       - name: clippy all
@@ -73,3 +71,23 @@ jobs:
         run: cargo clippy --workspace --tests --features scroll -- -D warnings
       - name: clippy test all
         run: cargo clippy --workspace --tests --all-features -- -D warnings
+
+  test:
+    needs: [ clippy ]
+    if: |
+      github.event.pull_request.draft == false &&
+      (github.event.action == 'ready_for_review' || needs.skip_check.outputs.should_skip != 'true')
+    name: Test
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.87"
+      - name: cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: cargo test scroll
+        run: cargo test --workspace --features scroll,scroll-all
+      - name: cargo test ethereum
+        run: cargo test --workspace --features ethereum-all

@@ -1,6 +1,8 @@
 use crate::database::DatabaseError;
 use sbv_primitives::{
-    B256, alloy_primitives::SignatureError, types::reth::evm::execute::BlockExecutionError,
+    B256,
+    alloy_primitives::SignatureError,
+    types::{reth::evm::execute::BlockExecutionError, revm::database::BundleState},
 };
 
 /// Error variants encountered during verification of transactions in a L2 block.
@@ -24,13 +26,23 @@ pub enum VerificationError {
         expected: B256,
         /// Root after in revm
         actual: B256,
+        /// The bundle state at the time of the mismatch.
+        bundle_state: Box<BundleState>,
     },
 }
 
 impl VerificationError {
     /// Create a new [`VerificationError::RootMismatch`] variant.
     #[inline]
-    pub fn root_mismatch(expected: B256, actual: B256) -> Self {
-        VerificationError::RootMismatch { expected, actual }
+    pub fn root_mismatch(
+        expected: B256,
+        actual: B256,
+        bundle_state: impl Into<Box<BundleState>>,
+    ) -> Self {
+        VerificationError::RootMismatch {
+            expected,
+            actual,
+            bundle_state: bundle_state.into(),
+        }
     }
 }

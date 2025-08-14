@@ -76,25 +76,19 @@ impl<
         let executor =
             ScrollBlockExecutor::new(evm, ctx, factory.spec(), factory.receipt_builder());
 
-        let result = measure_duration_millis!(
-            handle_block_duration_milliseconds,
-            cycle_track!(
-                match self.compression_ratios {
-                    None => {
-                        executor.execute_block(self.block.transactions_recovered())
-                    }
-                    Some(compression_ratios) => executor.execute_block_with_compression_cache(
-                        self.block.transactions_recovered(),
-                        compression_ratios,
-                    ),
-                },
-                "handle_block"
-            )
+        let result = cycle_track!(
+            match self.compression_ratios {
+                None => {
+                    executor.execute_block(self.block.transactions_recovered())
+                }
+                Some(compression_ratios) => executor.execute_block_with_compression_cache(
+                    self.block.transactions_recovered(),
+                    compression_ratios,
+                ),
+            },
+            "handle_block"
         )?;
         db.merge_transitions(BundleRetention::Reverts);
-
-        #[cfg(feature = "metrics")]
-        sbv_helpers::metrics::REGISTRY.block_counter.inc();
 
         Ok(BlockExecutionOutput {
             result,
