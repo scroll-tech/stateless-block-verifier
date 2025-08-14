@@ -2,7 +2,12 @@
 
 use alloy_provider::Provider;
 use alloy_transport::TransportResult;
-use sbv_primitives::types::{BlockWitness, ExecutionWitness, Network, eips::BlockNumberOrTag};
+use sbv_primitives::{
+    Bytes,
+    alloy_primitives::map::B256HashMap,
+    types::{BlockWitness, ExecutionWitness, Network, eips::BlockNumberOrTag},
+};
+use serde::Deserialize;
 
 /// Extension trait for [`Provider`](Provider).
 #[async_trait::async_trait]
@@ -12,9 +17,31 @@ pub trait ProviderExt: Provider<Network> {
         &self,
         number: BlockNumberOrTag,
     ) -> TransportResult<ExecutionWitness> {
+        /// Represents the execution witness of a block. Contains an optional map of state preimages.
+        #[derive(Debug, Deserialize)]
+        struct GethExecutionWitness {
+            pub state: B256HashMap<Bytes>,
+            pub codes: B256HashMap<Bytes>,
+        }
+
+        #[derive(Debug, Deserialize)]
+        #[serde(untagged)]
+        enum ExecutionWitnessDeHelper {
+            Standard(ExecutionWitness),
+            Geth(GethExecutionWitness),
+        }
+
         self.client()
-            .request::<_, ExecutionWitness>("debug_executionWitness", (number,))
+            .request::<_, ExecutionWitnessDeHelper>("debug_executionWitness", (number,))
             .await
+            .map(|response| match response {
+                ExecutionWitnessDeHelper::Standard(witness) => witness,
+                ExecutionWitnessDeHelper::Geth(witness) => ExecutionWitness {
+                    state: witness.state.into_values().collect(),
+                    codes: witness.codes.into_values().collect(),
+                    ..Default::default()
+                },
+            })
     }
 
     /// Dump the block witness for a block.

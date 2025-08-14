@@ -97,8 +97,8 @@ impl WitnessBuilder {
             withdrawals: block
                 .withdrawals
                 .map(|w| w.iter().map(From::from).collect()),
-            states: execution_witness.state.into_values().collect(),
-            codes: execution_witness.codes.into_values().collect(),
+            states: execution_witness.state,
+            codes: execution_witness.codes,
         })
     }
 }

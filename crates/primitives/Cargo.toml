@@ -26,6 +26,7 @@ alloy-eips = { workspace = true, optional = true }
 alloy-evm = { workspace = true, optional = true }
 alloy-network = { workspace = true, optional = true }
 alloy-rpc-types-eth = { workspace = true, optional = true }
+alloy-rpc-types-debug = { workspace = true, optional = true }
 alloy-serde = { workspace = true, optional = true }
 
 alloy-primitives.workspace = true
@@ -80,7 +81,7 @@ reth-primitives-types = [
 reth-evm-types = ["reth-types", "dep:reth-evm", "dep:reth-evm-ethereum"]
 reth-execution-types = ["reth-types", "dep:reth-execution-types"]
 revm-types = ["dep:revm"]
-rpc-types = ["dep:alloy-rpc-types-eth", "eips"]
+rpc-types = ["dep:alloy-rpc-types-eth", "dep:alloy-rpc-types-debug", "eips"]
 ethereum-all = [
   "chainspec",
   "consensus-types",
