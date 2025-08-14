@@ -86,7 +86,3 @@ pub mod reth;
 /// re-export types from alloy_rpc_types_eth
 #[cfg(feature = "rpc-types")]
 pub mod rpc;
-
-/// Scroll types
-#[cfg(feature = "scroll")]
-pub mod scroll;
