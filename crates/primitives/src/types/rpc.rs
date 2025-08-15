@@ -1,5 +1,6 @@
 pub use alloy_rpc_types_eth::{Header, Transaction as AlloyRpcTransaction};
 
+pub use alloy_rpc_types_debug::ExecutionWitness;
 #[cfg(not(feature = "scroll"))]
 pub use alloy_rpc_types_eth::{Transaction, TransactionReceipt, TransactionRequest};
 #[cfg(feature = "scroll")]

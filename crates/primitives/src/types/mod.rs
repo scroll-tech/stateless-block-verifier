@@ -11,7 +11,7 @@ pub use block_header::BlockHeader;
 pub use signature::Signature;
 pub use transaction::Transaction;
 pub use withdrawal::Withdrawal;
-pub use witness::{BlockWitness, ExecutionWitness};
+pub use witness::BlockWitness;
 
 #[cfg(feature = "rkyv")]
 mod rkyv_types {

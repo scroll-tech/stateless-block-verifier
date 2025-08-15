@@ -16,6 +16,8 @@ pub use reth_scroll_primitives::{
     ScrollReceipt as Receipt, ScrollTransactionSigned as TransactionSigned,
 };
 
+pub use reth_primitives_traits::transaction::signed::SignedTransaction;
+
 impl TryFrom<&Transaction> for TransactionSigned {
     type Error = SignatureError;
 

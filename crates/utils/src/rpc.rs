@@ -5,7 +5,7 @@ use alloy_transport::TransportResult;
 use sbv_primitives::{
     Bytes,
     alloy_primitives::map::B256HashMap,
-    types::{BlockWitness, ExecutionWitness, Network, eips::BlockNumberOrTag},
+    types::{BlockWitness, Network, eips::BlockNumberOrTag, rpc::ExecutionWitness},
 };
 use serde::Deserialize;
 

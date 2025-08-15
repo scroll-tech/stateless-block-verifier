@@ -9,5 +9,5 @@ pub use sbv_utils as utils;
 
 pub use sbv_helpers::{
     cycle_track, cycle_tracker_end, cycle_tracker_start, dev_debug, dev_error, dev_info, dev_trace,
-    dev_warn,
+    dev_warn, manually_drop_on_zkvm,
 };
