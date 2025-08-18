@@ -198,14 +198,10 @@ where
 
         gas_used += output.gas_used;
 
-        if chain_spec.is_fork_active_at_timestamp(Hardfork::Feynman, block.timestamp) {
-            db.update(
-                nodes_provider,
-                BTreeMap::from_iter(output.state.state.clone()).iter(),
-            )?
-        } else {
-            db.update(nodes_provider, output.state.state.clone().iter())?
-        }
+        db.update(
+            nodes_provider,
+            BTreeMap::from_iter(output.state.state.clone()).iter(),
+        )?;
 
         if !defer_commit {
             let post_state_root = db.commit_changes();
