@@ -1,8 +1,8 @@
 use crate::database::DatabaseError;
+#[cfg(not(target_os = "zkvm"))]
+use sbv_primitives::types::revm::database::BundleState;
 use sbv_primitives::{
-    B256,
-    alloy_primitives::SignatureError,
-    types::{reth::evm::execute::BlockExecutionError, revm::database::BundleState},
+    B256, alloy_primitives::SignatureError, types::reth::evm::execute::BlockExecutionError,
 };
 
 /// Error variants encountered during verification of transactions in a L2 block.
@@ -36,6 +36,7 @@ pub enum VerificationError {
         /// Root after in revm
         actual: B256,
         /// The bundle state at the time of the mismatch.
+        #[cfg(not(target_os = "zkvm"))]
         bundle_state: Box<BundleState>,
     },
     /// Root mismatch error
@@ -56,11 +57,12 @@ impl VerificationError {
     pub fn block_root_mismatch(
         expected: B256,
         actual: B256,
-        bundle_state: impl Into<Box<BundleState>>,
+        #[cfg(not(target_os = "zkvm"))] bundle_state: impl Into<Box<BundleState>>,
     ) -> Self {
         VerificationError::BlockRootMismatch {
             expected,
             actual,
+            #[cfg(not(target_os = "zkvm"))]
             bundle_state: bundle_state.into(),
         }
     }

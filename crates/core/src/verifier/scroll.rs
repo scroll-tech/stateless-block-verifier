@@ -99,9 +99,7 @@ pub fn run<T: BlockWitness + BlockWitnessRethExt>(
                 );
                 #[cfg(target_os = "zkvm")]
                 {
-                    println!(format!(
-                        "failed to update db: {_e}; retrying with defer commit disabled"
-                    ));
+                    println!("failed to update db: {_e}; retrying with defer commit disabled");
                 }
                 args.defer_commit = false;
                 execute(args)?
@@ -221,6 +219,7 @@ where
                 return Err(VerificationError::block_root_mismatch(
                     block.state_root,
                     post_state_root,
+                    #[cfg(not(target_os = "zkvm"))]
                     output.state,
                 ));
             }
