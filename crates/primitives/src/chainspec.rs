@@ -80,10 +80,10 @@ where
 /// Build a chain spec with a hardfork, enabling all hardforks up to the specified one.
 #[cfg(feature = "scroll")]
 pub fn build_chain_spec_force_hardfork(
-    chain_id: u64,
+    chain: Chain,
     hardfork: crate::hardforks::Hardfork,
 ) -> Arc<ChainSpec> {
-    use crate::{chainspec::Chain, hardforks::Hardfork};
+    use crate::hardforks::Hardfork;
     use reth_scroll_chainspec::{ScrollChainConfig, ScrollChainSpec};
     use std::sync::{Arc, LazyLock};
 
@@ -110,7 +110,6 @@ pub fn build_chain_spec_force_hardfork(
         ])
     });
 
-    let chain = Chain::from_id(chain_id);
     let mut hardforks = BASE_HARDFORKS.clone();
 
     if hardfork >= Hardfork::Archimedes {
@@ -139,8 +138,8 @@ pub fn build_chain_spec_force_hardfork(
         hardforks.insert(Hardfork::Feynman, ForkCondition::Timestamp(0));
     }
     sbv_helpers::dev_info!(
-        "Building chain spec for chain ID {} with hardfork {:?}",
-        chain_id,
+        "Building chain spec for chain {} with hardfork {:?}",
+        chain,
         hardforks
     );
 
@@ -157,10 +156,10 @@ pub fn build_chain_spec_force_hardfork(
 /// Build a chain spec with a hardfork, enabling all hardforks up to the specified one.
 #[cfg(not(feature = "scroll"))]
 pub fn build_chain_spec_force_hardfork(
-    chain_id: u64,
+    chain: Chain,
     hardfork: crate::hardforks::Hardfork,
 ) -> Arc<ChainSpec> {
-    use crate::{U256, chainspec::Chain, hardforks::Hardfork};
+    use crate::{U256, hardforks::Hardfork};
     use std::sync::{Arc, LazyLock};
 
     static BASE_HARDFORKS: LazyLock<ChainHardforks> = LazyLock::new(|| {
@@ -170,7 +169,6 @@ pub fn build_chain_spec_force_hardfork(
         )])
     });
 
-    let chain = Chain::from_id(chain_id);
     let mut hardforks = BASE_HARDFORKS.clone();
 
     if hardfork >= Hardfork::Homestead {

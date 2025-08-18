@@ -1,13 +1,22 @@
 use crate::database::DatabaseError;
+#[cfg(not(target_os = "zkvm"))]
+use sbv_primitives::types::revm::database::BundleState;
 use sbv_primitives::{
-    B256,
-    alloy_primitives::SignatureError,
-    types::{reth::evm::execute::BlockExecutionError, revm::database::BundleState},
+    B256, alloy_primitives::SignatureError, types::reth::evm::execute::BlockExecutionError,
 };
 
 /// Error variants encountered during verification of transactions in a L2 block.
 #[derive(Debug, thiserror::Error)]
 pub enum VerificationError {
+    /// The witnesses are empty.
+    #[error("witnesses are empty")]
+    EmptyWitnesses,
+    /// The witnesses are not on the same chain ID.
+    #[error("witnesses are not on the same chain ID")]
+    ChainIdMismatch,
+    /// The witnesses are not sequential.
+    #[error("witnesses are not sequential")]
+    NonSequentialWitnesses,
     /// Error while recovering signer from an ECDSA signature.
     #[error("invalid signature: {0}")]
     InvalidSignature(#[from] SignatureError),
@@ -19,30 +28,48 @@ pub enum VerificationError {
     Execution(#[from] BlockExecutionError),
     /// Root mismatch error
     #[error(
-        "state root in trace doesn't match with state root executed: expected {expected}, actual {actual}"
+        "state root in witness doesn't match with state root executed: expected {expected}, actual {actual}"
     )]
-    RootMismatch {
+    BlockRootMismatch {
         /// Root after in trace
         expected: B256,
         /// Root after in revm
         actual: B256,
         /// The bundle state at the time of the mismatch.
+        #[cfg(not(target_os = "zkvm"))]
         bundle_state: Box<BundleState>,
+    },
+    /// Root mismatch error
+    #[error(
+        "state root in last witness doesn't match with state root executed: expected {expected}, actual {actual}"
+    )]
+    ChunkRootMismatch {
+        /// Root after in trace
+        expected: B256,
+        /// Root after in revm
+        actual: B256,
     },
 }
 
 impl VerificationError {
-    /// Create a new [`VerificationError::RootMismatch`] variant.
+    /// Create a new [`VerificationError::BlockRootMismatch`] variant.
     #[inline]
-    pub fn root_mismatch(
+    pub fn block_root_mismatch(
         expected: B256,
         actual: B256,
-        bundle_state: impl Into<Box<BundleState>>,
+        #[cfg(not(target_os = "zkvm"))] bundle_state: impl Into<Box<BundleState>>,
     ) -> Self {
-        VerificationError::RootMismatch {
+        VerificationError::BlockRootMismatch {
             expected,
             actual,
+            #[cfg(not(target_os = "zkvm"))]
             bundle_state: bundle_state.into(),
         }
+    }
+
+    /// Create a new [`VerificationError::ChunkRootMismatch`] variant.
+    #[inline]
+    pub fn chunk_root_mismatch(expected: B256, actual: B256) -> Self {
+        VerificationError::ChunkRootMismatch { expected, actual }
     }
 }

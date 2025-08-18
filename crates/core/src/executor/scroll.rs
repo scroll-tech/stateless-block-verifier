@@ -62,7 +62,7 @@ impl<
             revm::database::{State, states::bundle_state::BundleRetention},
         };
 
-        let provider = crate::executor::EvmConfig::new(self.chain_spec.clone(), Default::default());
+        let provider = EvmConfig::new(self.chain_spec.clone(), Default::default());
         let factory = provider.block_executor_factory();
 
         let mut db = State::builder()

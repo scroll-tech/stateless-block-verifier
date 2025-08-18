@@ -5400,13 +5400,17 @@ dependencies = [
 name = "sbv-core"
 version = "2.0.0"
 dependencies = [
+ "cfg-if",
  "ctor",
+ "itertools 0.14.0",
+ "rkyv",
  "rstest",
  "sbv-helpers",
  "sbv-kv",
  "sbv-precompile",
  "sbv-primitives",
  "sbv-trie",
+ "serde",
  "serde_json",
  "thiserror",
  "tracing",
