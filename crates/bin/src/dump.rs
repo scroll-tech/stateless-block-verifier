@@ -50,12 +50,15 @@ impl DumpWitnessCommand {
 
         #[cfg(not(feature = "scroll"))]
         let witness = provider
-            .dump_block_witness(self.block.into(), Some(self.ancestors))
+            .dump_block_witness(self.block)
+            .ancestors(self.ancestors)
+            .send()
             .await
             .context("dump ethereum block witness")?;
         #[cfg(feature = "scroll")]
         let witness = provider
-            .dump_block_witness(self.block.into())
+            .dump_block_witness(self.block)
+            .send()
             .await
             .context("dump scroll block witness")?;
 

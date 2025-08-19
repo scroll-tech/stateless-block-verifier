@@ -11,13 +11,13 @@ use sbv_primitives::{
 /// Block witness builder.
 #[derive(Debug, Default)]
 pub struct WitnessBuilder {
-    chain_id: Option<ChainId>,
-    block: Option<RpcBlock>,
-    execution_witness: Option<ExecutionWitness>,
-    prev_state_root: Option<B256>,
+    pub(crate) chain_id: Option<ChainId>,
+    pub(crate) block: Option<RpcBlock>,
+    pub(crate) execution_witness: Option<ExecutionWitness>,
+    pub(crate) prev_state_root: Option<B256>,
 
     #[cfg(not(feature = "scroll"))]
-    blocks_hash: Option<Vec<B256>>,
+    pub(crate) blocks_hash: Option<Vec<B256>>,
 }
 
 /// Witness build error.
@@ -56,14 +56,14 @@ impl WitnessBuilder {
         self
     }
 
-    /// Set the `blocks_hash` and `prev_state_root` from an iterator of ancestor blocks.
+    /// Set the `blocks_hash` from an iterator of ancestor blocks.
     #[cfg(not(feature = "scroll"))]
-    pub fn ancestor_blocks<I>(mut self, iter: I) -> Result<Self, WitnessBuildError>
+    pub fn ancestor_blocks<I>(mut self, iter: I) -> Self
     where
         I: IntoIterator<Item = RpcBlock>,
     {
         self.blocks_hash = Some(iter.into_iter().map(|b| b.header.hash).collect());
-        Ok(self)
+        self
     }
 
     /// Set the previous state root.
