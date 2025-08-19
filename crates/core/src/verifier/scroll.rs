@@ -5,7 +5,6 @@ use sbv_primitives::{
     B256, BlockWitness, Bytes,
     chainspec::ChainSpec,
     ext::{BlockWitnessChunkExt, BlockWitnessExt, BlockWitnessRethExt},
-    hardforks::Hardfork,
     types::reth::primitives::{Block, RecoveredBlock},
 };
 use sbv_trie::{BlockWitnessTrieExt, TrieNode};
@@ -62,7 +61,7 @@ pub fn run<T: BlockWitness + BlockWitnessRethExt>(
         return Err(VerificationError::NonSequentialWitnesses);
     }
 
-    let (code_db, nodes_provider) = make_providers(&witnesses);
+    let (code_db, nodes_provider) = make_providers(witnesses);
     let code_db = manually_drop_on_zkvm!(code_db);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
@@ -82,7 +81,6 @@ pub fn run<T: BlockWitness + BlockWitnessRethExt>(
         blocks: &blocks,
         chain_spec: chain_spec.clone(),
         defer_commit: true,
-        #[cfg(feature = "scroll")]
         compression_ratios,
     };
 
@@ -241,7 +239,6 @@ where
 }
 
 #[cfg(test)]
-#[cfg(feature = "scroll")]
 mod tests {
     use super::*;
     use sbv_primitives::{
