@@ -2,7 +2,7 @@ use crate::{DatabaseError, EvmDatabase, EvmExecutor, VerificationError};
 use itertools::Itertools;
 use sbv_kv::{nohash::NoHashMap, null::NullProvider};
 use sbv_primitives::{
-    B256, BlockWitness, Bytes,
+    B256, BlockWitness, Bytes, U256,
     chainspec::ChainSpec,
     ext::{BlockWitnessChunkExt, BlockWitnessExt, BlockWitnessRethExt},
     types::reth::primitives::{Block, RecoveredBlock},
@@ -166,7 +166,7 @@ fn execute<II, I, R>(
 where
     II: IntoIterator<Item = I>,
     I: IntoIterator<Item = R>,
-    R: Into<sbv_primitives::U256>,
+    R: Into<U256>,
 {
     let mut gas_used = 0;
 
@@ -177,19 +177,7 @@ where
         NullProvider,
     )?);
 
-    for zip in blocks
-        .iter()
-        .zip_longest(compression_ratios.into_iter().flat_map(|v| v.into_iter()))
-    {
-        let (block, compression_ratio) = match zip {
-            itertools::EitherOrBoth::Both(block, compression_ratio) => (
-                block,
-                Some(compression_ratio.into_iter().map(|ratio| ratio.into())),
-            ),
-            itertools::EitherOrBoth::Left(block) => (block, None),
-            itertools::EitherOrBoth::Right(_) => unreachable!(),
-        };
-
+    let mut execute_block = |block, compression_ratio| -> Result<(), VerificationError> {
         let output = manually_drop_on_zkvm!(
             EvmExecutor::new(chain_spec.clone(), &db, block, compression_ratio).execute()?
         );
@@ -220,6 +208,21 @@ where
             dev_info!("Block #{} verified successfully", block.number);
         } else {
             dev_info!("Block #{} executed successfully", block.number);
+        }
+
+        Ok(())
+    };
+
+    if let Some(compression_ratios) = compression_ratios {
+        for (block, compression_ratios) in blocks.iter().zip_eq(compression_ratios) {
+            execute_block(
+                block,
+                Some(compression_ratios.into_iter().map(|u| u.into())),
+            )?;
+        }
+    } else {
+        for block in blocks {
+            execute_block(block, None)?;
         }
     }
 
