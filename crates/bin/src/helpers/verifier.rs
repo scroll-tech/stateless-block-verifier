@@ -3,7 +3,7 @@ use eyre::eyre;
 use sbv::{
     core::{
         VerificationError,
-        verifier::{StateCommitMode, VerifyResult},
+        verifier::{self, VerifyResult},
     },
     primitives::{
         chainspec::ChainSpec,
@@ -27,10 +27,11 @@ pub fn verify_catch_panics<
     let block_number = witness.number();
 
     catch_unwind(AssertUnwindSafe(|| {
-        sbv::core::verifier::run(
+        verifier::run(
             &[witness],
             chain_spec,
-            StateCommitMode::Block,
+            #[cfg(feature = "scroll")]
+            verifier::StateCommitMode::Block,
             #[cfg(feature = "scroll")]
             None::<Vec<Vec<sbv::primitives::U256>>>,
         )
