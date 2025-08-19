@@ -39,7 +39,7 @@ pub fn verify_catch_panics<
             if let VerificationError::BlockRootMismatch { bundle_state, .. } = e {
                 let dump_dir = env::temp_dir()
                     .join("dumps")
-                    .join(format!("{}-{}", chain_id, block_number));
+                    .join(format!("{chain_id}-{block_number}"));
                 dump_bundle_state(bundle_state, &dump_dir)
                     .inspect(|_| {
                         dev_info!("Dumped bundle state to: {}", dump_dir.display());
