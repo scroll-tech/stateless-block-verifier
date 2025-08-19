@@ -5506,6 +5506,7 @@ name = "sbv-utils"
 version = "2.0.0"
 dependencies = [
  "alloy-provider",
+ "alloy-rpc-client",
  "alloy-transport",
  "async-trait",
  "futures",
