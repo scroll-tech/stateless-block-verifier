@@ -64,13 +64,13 @@ scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", rev = "a
 scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", rev = "a6f827a71c5523d1d32e579456dfdab2cb003c66", default-features = false }
 scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", rev = "a6f827a71c5523d1d32e579456dfdab2cb003c66", default-features = false }
 
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-k256 = { package = "k256", git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-p256 = { package = "p256", git = "https://github.com/openvm-org/openvm.git", rev = "5368d4756993fc1e51092499a816867cf4808de0" }
-openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", rev = "56751b25b4f18ba9988355faa288918db0ab3fde", default-features = false }
+openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
+openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
+openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
+openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
+openvm-k256 = { package = "k256", git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
+openvm-p256 = { package = "p256", git = "https://github.com/openvm-org/openvm.git", rev = "51d0aa69694fd33def3c433e48228a5675e4fd97" }
+openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", rev = "3a2d6bf31086cfc87b6573e9c2e96f0a2d47ff2e", default-features = false }
 
 async-trait = "0.1"
 auto_impl = "1.2"
