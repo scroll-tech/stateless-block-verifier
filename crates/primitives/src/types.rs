@@ -226,9 +226,7 @@ pub use witness::BlockWitness;
 #[cfg(feature = "scroll")]
 mod tests {
     use super::*;
-    use std::collections::BTreeSet;
-    use std::ffi::OsStr;
-    use std::path::PathBuf;
+    use std::{collections::BTreeSet, ffi::OsStr, path::PathBuf};
 
     #[rstest::rstest]
     fn serde_scroll_blocks_roundtrip(

@@ -4,8 +4,10 @@ use sbv_primitives::{
     B256, Bytes,
     chainspec::ChainSpec,
     ext::{BlockWitnessChunkExt, BlockWitnessExt},
-    types::BlockWitness,
-    types::reth::primitives::{Block, RecoveredBlock},
+    types::{
+        BlockWitness,
+        reth::primitives::{Block, RecoveredBlock},
+    },
 };
 use sbv_trie::{BlockWitnessTrieExt, TrieNode};
 use std::{collections::BTreeMap, sync::Arc};

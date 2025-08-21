@@ -1,12 +1,14 @@
 use crate::{DatabaseError, EvmDatabase, EvmExecutor, VerificationError};
 use itertools::Itertools;
 use sbv_kv::{nohash::NoHashMap, null::NullProvider};
-use sbv_primitives::types::BlockWitness;
 use sbv_primitives::{
     B256, Bytes, U256,
     chainspec::ChainSpec,
     ext::{BlockWitnessChunkExt, BlockWitnessExt},
-    types::reth::primitives::{Block, RecoveredBlock},
+    types::{
+        BlockWitness,
+        reth::primitives::{Block, RecoveredBlock},
+    },
 };
 use sbv_trie::{BlockWitnessTrieExt, TrieNode};
 use std::{collections::BTreeMap, sync::Arc};
