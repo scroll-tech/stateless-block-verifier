@@ -130,7 +130,6 @@ pub mod witness {
     /// Witness for a block.
     #[serde_with::serde_as]
     #[derive(Debug, Clone, Hash, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-    #[serde(rename_all = "camelCase")]
     pub struct BlockWitness {
         /// Chain id
         pub chain_id: ChainId,
