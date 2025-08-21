@@ -28,7 +28,6 @@ kzg-rs = ["sbv-primitives/kzg-rs"]
 scroll = [
     "sbv-primitives/scroll-evm-types",
     "sbv-primitives/scroll-revm-types",
-    "sbv-primitives/scroll-reth-types"
 ]
 scroll-openvm = [
     "scroll",

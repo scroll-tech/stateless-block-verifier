@@ -3,7 +3,7 @@
 use sbv_primitives::{
     B256, ChainId,
     types::{
-        BlockWitness, Transaction,
+        BlockWitness,
         rpc::{Block as RpcBlock, ExecutionWitness},
     },
 };
@@ -83,23 +83,26 @@ impl WitnessBuilder {
                 .chain_id
                 .ok_or(WitnessBuildError::MissingField("chain_id"))?,
             header: block.header.into(),
-            pre_state_root: self
+            prev_state_root: self
                 .prev_state_root
                 .ok_or(WitnessBuildError::MissingField("prev_state_root"))?,
-            transaction: block
+            #[cfg(feature = "scroll")]
+            transactions: block
                 .transactions
-                .as_transactions()
-                .expect("expect transactions, got hashes")
-                .iter()
-                .map(Transaction::from_rpc)
+                .into_transactions()
+                .map(|tx| tx.inner.into_inner())
+                .collect(),
+            #[cfg(not(feature = "scroll"))]
+            transactions: block
+                .transactions
+                .into_transactions()
+                .map(|tx| tx.inner.into_inner().into())
                 .collect(),
             #[cfg(not(feature = "scroll"))]
             block_hashes: self
                 .blocks_hash
                 .ok_or(WitnessBuildError::MissingField("ancestor_blocks"))?,
-            withdrawals: block
-                .withdrawals
-                .map(|w| w.iter().map(From::from).collect()),
+            withdrawals: block.withdrawals,
             states: execution_witness.state,
             codes: execution_witness.codes,
         })

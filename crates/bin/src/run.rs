@@ -4,7 +4,6 @@ use eyre::ContextCompat;
 use sbv::{
     core::verifier::VerifyResult,
     primitives::{
-        BlockWitness as _,
         chainspec::{Chain, build_chain_spec_force_hardfork, get_chain_spec},
         hardforks::Hardfork,
         types::BlockWitness,
@@ -44,12 +43,12 @@ fn read_witness(path: &PathBuf) -> eyre::Result<BlockWitness> {
 #[cfg_attr(feature = "dev", tracing::instrument(skip_all, fields(path = %path.display()), err))]
 fn run_witness(path: PathBuf, hardfork: Option<Hardfork>) -> eyre::Result<VerifyResult> {
     let witness = read_witness(&path)?;
-    let chain = Chain::from_id(witness.chain_id());
+    let chain = Chain::from_id(witness.chain_id);
     let chain_spec = if let Some(hardfork) = hardfork {
         dev_info!("Overriding hardfork to: {hardfork:?}");
         build_chain_spec_force_hardfork(chain, hardfork)
     } else {
         get_chain_spec(chain).context("chain not support")?
     };
-    verify_catch_panics(&witness, chain_spec).inspect(|_| dev_info!("verified"))
+    verify_catch_panics(witness, chain_spec).inspect(|_| dev_info!("verified"))
 }

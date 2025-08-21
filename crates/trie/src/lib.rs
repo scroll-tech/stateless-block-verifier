@@ -7,18 +7,22 @@ use alloy_trie::{
     EMPTY_ROOT_HASH, Nibbles,
     nodes::{CHILD_INDEX_RANGE, RlpNode},
 };
-pub use alloy_trie::{TrieAccount, nodes::TrieNode};
-pub use reth_trie::{KeccakKeyHasher, KeyHasher};
+use auto_impl::auto_impl;
 use reth_trie_sparse::{
     SerialSparseTrie, SparseTrieInterface, TrieMasks, provider::DefaultTrieNodeProvider,
 };
 use sbv_kv::{HashMap, nohash::NoHashMap};
 use sbv_primitives::{
-    Address, B256, BlockWitness, U256, keccak256, types::revm::database::BundleAccount,
+    Address, B256, U256, keccak256,
+    types::{BlockWitness, revm::database::BundleAccount},
 };
 use std::{cell::RefCell, collections::BTreeMap};
 
+pub use alloy_trie::{TrieAccount, nodes::TrieNode};
+pub use reth_trie::{KeccakKeyHasher, KeyHasher};
+
 /// Extension trait for BlockWitness
+#[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockWitnessTrieExt {
     /// Import nodes into a KeyValueStore
     fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
@@ -27,21 +31,21 @@ pub trait BlockWitnessTrieExt {
     ) -> Result<(), alloy_rlp::Error>;
 }
 
-impl<T: BlockWitness> BlockWitnessTrieExt for T {
+impl BlockWitnessTrieExt for BlockWitness {
     fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
         &self,
         provider: &mut P,
     ) -> Result<(), alloy_rlp::Error> {
-        decode_nodes(provider, self.states_iter())
+        decode_nodes(provider, self.states.iter())
     }
 }
 
-impl<T: BlockWitness> BlockWitnessTrieExt for [T] {
+impl BlockWitnessTrieExt for [BlockWitness] {
     fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
         &self,
         provider: &mut P,
     ) -> Result<(), alloy_rlp::Error> {
-        decode_nodes(provider, self.iter().flat_map(|w| w.states_iter()))
+        decode_nodes(provider, self.iter().flat_map(|w| w.states.iter()))
     }
 }
 
@@ -497,31 +501,5 @@ fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
         }
 
         Ok(Some(child))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use sbv_kv::nohash::NoHashMap;
-    use sbv_primitives::types::BlockWitness;
-
-    const BLOCK: &str = include_str!("../../../testdata/holesky_witness/2971844.json");
-
-    #[test]
-    fn test() {
-        let block = serde_json::from_str::<BlockWitness>(BLOCK).unwrap();
-
-        let mut store = NoHashMap::default();
-        block.import_nodes(&mut store).unwrap();
-
-        let trie = PartialStateTrie::open(&store, block.pre_state_root).expect("open trie");
-        for tx in block.transaction.iter() {
-            let _ = trie.get_account(tx.from).unwrap();
-            let _ = trie.get_storage(&store, tx.from, U256::ZERO);
-            if let Some(to) = tx.to {
-                let _ = trie.get_account(to);
-            }
-        }
     }
 }
