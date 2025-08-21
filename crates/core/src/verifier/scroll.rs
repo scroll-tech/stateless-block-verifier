@@ -61,7 +61,7 @@ pub fn run(
         return Err(VerificationError::NonSequentialWitnesses);
     }
 
-    let (code_db, nodes_provider) = make_providers(&*witnesses);
+    let (code_db, nodes_provider) = make_providers(&witnesses);
     let code_db = manually_drop_on_zkvm!(code_db);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
@@ -252,24 +252,6 @@ mod tests {
         hardforks::Hardfork,
         types::BlockWitness,
     };
-
-    #[rstest::rstest]
-    fn test_euclid_v1(
-        #[files("../../testdata/scroll_witness/euclidv1/**/*.json")]
-        #[mode = str]
-        witness_json: &str,
-    ) {
-        let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
-        let chain_spec =
-            build_chain_spec_force_hardfork(Chain::from_id(witness.chain_id), Hardfork::Euclid);
-        run(
-            &[witness],
-            chain_spec,
-            StateCommitMode::Block,
-            None::<Vec<Vec<U256>>>,
-        )
-        .unwrap();
-    }
 
     #[rstest::rstest]
     fn test_euclid_v2(

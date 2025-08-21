@@ -1,6 +1,6 @@
 use sbv_kv::{HashMap, KeyValueStoreGet};
 use sbv_primitives::{
-    Address, B256, Bytes, U256, address,
+    Address, B256, Bytes, U256,
     types::revm::{
         AccountInfo, Bytecode,
         database::{BundleAccount, DBErrorMarker},
@@ -100,7 +100,8 @@ impl<
     #[cfg(feature = "scroll")]
     pub fn withdraw_root(&self) -> Result<B256, DatabaseError> {
         /// L2MessageQueue pre-deployed address
-        pub const ADDRESS: Address = address!("5300000000000000000000000000000000000000");
+        pub const ADDRESS: Address =
+            sbv_primitives::address!("5300000000000000000000000000000000000000");
         /// the slot of withdraw root in L2MessageQueue
         pub const WITHDRAW_TRIE_ROOT_SLOT: U256 = U256::ZERO;
 

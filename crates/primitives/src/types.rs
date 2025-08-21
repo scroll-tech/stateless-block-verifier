@@ -7,7 +7,10 @@ pub mod consensus {
     };
 
     #[cfg(not(feature = "scroll"))]
-    pub use alloy_consensus::{TxEnvelope, TxType, TypedTransaction};
+    pub use alloy_consensus::{TxType, TypedTransaction};
+    #[cfg(not(feature = "scroll"))]
+    /// The Ethereum [EIP-2718] Transaction Envelope.
+    pub type TxEnvelope = alloy_consensus::EthereumTxEnvelope<TxEip4844>;
     #[cfg(feature = "scroll")]
     pub use scroll_alloy_consensus::{
         ScrollReceiptEnvelope as ReceiptEnvelope, ScrollTransaction,
@@ -41,7 +44,7 @@ pub mod network {
     #[cfg(not(feature = "scroll"))]
     pub type Network = alloy_network::Ethereum;
     /// Network definition
-    #[cfg(feature = "scroll")]
+    #[cfg(feature = "scroll-network-types")]
     pub type Network = scroll_alloy_network::Scroll;
 }
 #[cfg(feature = "network-types")]
@@ -84,7 +87,7 @@ pub mod reth {
         #[cfg(not(feature = "scroll"))]
         pub use reth_evm_ethereum::{EthEvm, EthEvmConfig, RethReceiptBuilder};
 
-        #[cfg(feature = "scroll")]
+        #[cfg(feature = "scroll-reth-evm-types")]
         pub use reth_scroll_evm::{
             ScrollEvmConfig as EthEvmConfig, ScrollRethReceiptBuilder as RethReceiptBuilder,
         };
@@ -220,6 +223,7 @@ pub mod witness {
 pub use witness::BlockWitness;
 
 #[cfg(test)]
+#[cfg(feature = "scroll")]
 mod tests {
     use super::*;
     use std::collections::BTreeSet;
@@ -227,28 +231,26 @@ mod tests {
     use std::path::PathBuf;
 
     #[rstest::rstest]
-    #[cfg(feature = "scroll")]
     fn serde_scroll_blocks_roundtrip(
         #[files("../../testdata/scroll_witness/**/*.json")]
         #[mode = path]
         path: PathBuf,
     ) {
         let file_content = std::fs::read_to_string(path).unwrap();
-        let witness: BlockWitness = serde_json::from_str(&*file_content).unwrap();
+        let witness: BlockWitness = serde_json::from_str(&file_content).unwrap();
         let serialized = serde_json::to_string(&witness).unwrap();
         let deserialized: BlockWitness = serde_json::from_str(&serialized).unwrap();
         assert_eq!(witness, deserialized);
     }
 
     #[rstest::rstest]
-    #[cfg(feature = "scroll")]
     fn serde_scroll_blocks_legacy_compatibility(
         #[files("../../testdata/scroll_witness/**/*.json")]
         #[mode = path]
         path: PathBuf,
     ) {
         let file_content = std::fs::read_to_string(&path).unwrap();
-        let witness: BlockWitness = serde_json::from_str(&*file_content).unwrap();
+        let witness: BlockWitness = serde_json::from_str(&file_content).unwrap();
 
         let base_dir = path
             .ancestors()
@@ -263,7 +265,7 @@ mod tests {
             .join(filename);
         let legacy_content = std::fs::read_to_string(legacy_path).unwrap();
         let mut legacy_witness: crate::legacy_types::BlockWitness =
-            serde_json::from_str(&*legacy_content).unwrap();
+            serde_json::from_str(&legacy_content).unwrap();
         legacy_witness.states = Vec::from_iter(BTreeSet::from_iter(legacy_witness.states));
         legacy_witness.codes = Vec::from_iter(BTreeSet::from_iter(legacy_witness.codes));
 

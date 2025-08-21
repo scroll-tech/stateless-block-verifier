@@ -5348,7 +5348,6 @@ dependencies = [
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",
- "serde_json",
  "thiserror",
  "tracing",
 ]

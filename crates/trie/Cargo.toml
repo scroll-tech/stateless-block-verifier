@@ -25,9 +25,6 @@ sbv-helpers.workspace = true
 thiserror.workspace = true
 tracing = { workspace = true, optional = true }
 
-[dev-dependencies]
-serde_json.workspace = true
-sbv-primitives.workspace = true
 
 [features]
 dev = ["dep:tracing", "sbv-primitives/dev"]

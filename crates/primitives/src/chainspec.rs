@@ -78,7 +78,7 @@ where
 }
 
 /// Build a chain spec with a hardfork, enabling all hardforks up to the specified one.
-#[cfg(feature = "scroll")]
+#[cfg(feature = "scroll-chainspec")]
 pub fn build_chain_spec_force_hardfork(
     chain: Chain,
     hardfork: crate::hardforks::Hardfork,

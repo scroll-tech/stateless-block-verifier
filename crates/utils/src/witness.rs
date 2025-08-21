@@ -86,10 +86,17 @@ impl WitnessBuilder {
             prev_state_root: self
                 .prev_state_root
                 .ok_or(WitnessBuildError::MissingField("prev_state_root"))?,
+            #[cfg(feature = "scroll")]
             transactions: block
                 .transactions
                 .into_transactions()
                 .map(|tx| tx.inner.into_inner())
+                .collect(),
+            #[cfg(not(feature = "scroll"))]
+            transactions: block
+                .transactions
+                .into_transactions()
+                .map(|tx| tx.inner.into_inner().into())
                 .collect(),
             #[cfg(not(feature = "scroll"))]
             block_hashes: self

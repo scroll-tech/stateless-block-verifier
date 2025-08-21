@@ -4,7 +4,6 @@ use crate::{
     types::{
         consensus::{SignerRecoverable, Transaction as _},
         eips::Typed2718,
-        reth::primitives::SignedTransaction,
     },
 };
 #[cfg(feature = "scroll")]
@@ -124,6 +123,9 @@ pub struct Transaction {
 
 impl From<crate::types::consensus::TxEnvelope> for Transaction {
     fn from(tx: crate::types::consensus::TxEnvelope) -> Self {
+        #[cfg(feature = "scroll")]
+        use crate::types::reth::primitives::SignedTransaction;
+
         Self {
             hash: *tx.tx_hash(),
             nonce: tx.nonce(),
@@ -136,7 +138,10 @@ impl From<crate::types::consensus::TxEnvelope> for Transaction {
             max_priority_fee_per_gas: tx.max_priority_fee_per_gas(),
             max_fee_per_blob_gas: tx.max_fee_per_blob_gas(),
             input: tx.input().clone(),
+            #[cfg(feature = "scroll")]
             signature: tx.signature().map(Into::into),
+            #[cfg(not(feature = "scroll"))]
+            signature: Some((*tx.signature()).into()),
             chain_id: tx.chain_id(),
             blob_versioned_hashes: tx.blob_versioned_hashes().map(ToOwned::to_owned),
             access_list: tx.access_list().cloned().map(Into::into),

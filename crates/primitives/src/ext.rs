@@ -45,11 +45,11 @@ impl BlockWitnessExt for BlockWitness {
         mut block_hashes: BlockHashProvider,
     ) {
         let block_number = self.header.number;
-        for (i, hash) in self.block_hashes_iter().enumerate() {
+        for (i, hash) in self.block_hashes.iter().enumerate() {
             let block_number = block_number
                 .checked_sub(i as u64 + 1)
                 .expect("block number underflow");
-            block_hashes.insert(block_number, hash)
+            block_hashes.insert(block_number, *hash)
         }
     }
 }
@@ -69,12 +69,12 @@ impl BlockWitnessExt for [BlockWitness] {
         mut block_hashes: BlockHashProvider,
     ) {
         for witness in self.iter() {
-            let block_number = witness.number();
+            let block_number = witness.header.number;
             for (i, hash) in witness.block_hashes.iter().enumerate() {
                 let block_number = block_number
                     .checked_sub(i as u64 + 1)
                     .expect("block number underflow");
-                block_hashes.insert(block_number, hash)
+                block_hashes.insert(block_number, *hash)
             }
         }
     }

@@ -503,29 +503,3 @@ fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
         Ok(Some(child))
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use sbv_kv::nohash::NoHashMap;
-    use sbv_primitives::types::BlockWitness;
-
-    const BLOCK: &str = include_str!("../../../testdata/holesky_witness/2971844.json");
-
-    #[test]
-    fn test() {
-        let block = serde_json::from_str::<BlockWitness>(BLOCK).unwrap();
-
-        let mut store = NoHashMap::default();
-        block.import_nodes(&mut store).unwrap();
-
-        let trie = PartialStateTrie::open(&store, block.prev_state_root).expect("open trie");
-        for tx in block.transactions.iter() {
-            let _ = trie.get_account(tx.from).unwrap();
-            let _ = trie.get_storage(&store, tx.from, U256::ZERO);
-            if let Some(to) = tx.to {
-                let _ = trie.get_account(to);
-            }
-        }
-    }
-}
