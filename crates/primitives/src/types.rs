@@ -218,3 +218,58 @@ pub mod witness {
     }
 }
 pub use witness::BlockWitness;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeSet;
+    use std::ffi::OsStr;
+    use std::path::PathBuf;
+
+    #[rstest::rstest]
+    #[cfg(feature = "scroll")]
+    fn serde_scroll_blocks_roundtrip(
+        #[files("../../testdata/scroll_witness/**/*.json")]
+        #[mode = path]
+        path: PathBuf,
+    ) {
+        let file_content = std::fs::read_to_string(path).unwrap();
+        let witness: BlockWitness = serde_json::from_str(&*file_content).unwrap();
+        let serialized = serde_json::to_string(&witness).unwrap();
+        let deserialized: BlockWitness = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(witness, deserialized);
+    }
+
+    #[rstest::rstest]
+    #[cfg(feature = "scroll")]
+    fn serde_scroll_blocks_legacy_compatibility(
+        #[files("../../testdata/scroll_witness/**/*.json")]
+        #[mode = path]
+        path: PathBuf,
+    ) {
+        let file_content = std::fs::read_to_string(&path).unwrap();
+        let witness: BlockWitness = serde_json::from_str(&*file_content).unwrap();
+
+        let base_dir = path
+            .ancestors()
+            .find(|p| p.file_name().unwrap() == OsStr::new("testdata"))
+            .unwrap();
+        let filename = path.file_name().unwrap();
+        let harfork = path.parent().unwrap().file_name().unwrap();
+        let legacy_path = base_dir
+            .join("legacy")
+            .join("scroll_witness")
+            .join(harfork)
+            .join(filename);
+        let legacy_content = std::fs::read_to_string(legacy_path).unwrap();
+        let mut legacy_witness: crate::legacy_types::BlockWitness =
+            serde_json::from_str(&*legacy_content).unwrap();
+        legacy_witness.states = Vec::from_iter(BTreeSet::from_iter(legacy_witness.states));
+        legacy_witness.codes = Vec::from_iter(BTreeSet::from_iter(legacy_witness.codes));
+
+        let mut legacy_converted = witness.into_legacy();
+        legacy_converted.states = Vec::from_iter(BTreeSet::from_iter(legacy_converted.states));
+        legacy_converted.codes = Vec::from_iter(BTreeSet::from_iter(legacy_converted.codes));
+        assert_eq!(legacy_converted, legacy_witness);
+    }
+}
