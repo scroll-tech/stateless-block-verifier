@@ -8,7 +8,7 @@ use crate::{Address, B256};
     derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
     rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct AccessListItem {
     /// Account addresses that would be loaded at the start of execution
     #[cfg_attr(
@@ -31,7 +31,7 @@ pub struct AccessListItem {
     derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
     rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct AccessList(pub Vec<AccessListItem>);
 
 impl From<crate::types::eips::eip2930::AccessList> for AccessList {

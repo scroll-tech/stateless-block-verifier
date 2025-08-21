@@ -10,7 +10,7 @@ use crate::{
     derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
     rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct BlockWitness {
     /// Chain id
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Chain id")))]

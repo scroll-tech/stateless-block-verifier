@@ -125,36 +125,23 @@ pub mod witness {
             reth::primitives::{Block, BlockBody, RecoveredBlock},
         },
     };
+    use reth_primitives_traits::serde_bincode_compat::BincodeReprFor;
 
     /// Witness for a block.
-    #[derive(Debug, Clone, Hash, Eq, PartialEq)]
-    #[cfg_attr(
-        feature = "serde",
-        serde_with::serde_as,
-        derive(serde::Serialize, serde::Deserialize),
-        serde(rename_all = "camelCase")
-    )]
+    #[serde_with::serde_as]
+    #[derive(Debug, Clone, Hash, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct BlockWitness {
         /// Chain id
         pub chain_id: ChainId,
         /// Block header representation.
-        #[cfg_attr(
-            feature = "serde",
-            serde_as(
-                as = "reth_primitives_traits::serde_bincode_compat::BincodeReprFor<'_, Header>"
-            )
-        )]
+        #[serde_as(as = "BincodeReprFor<'_, Header>")]
         pub header: Header,
         /// State trie root before the block.
         pub prev_state_root: B256,
         /// Transactions in the block.
-        #[cfg_attr(
-            feature = "serde",
-            serde_as(
-                as = "reth_primitives_traits::serde_bincode_compat::BincodeReprFor<'_, TxEnvelope>"
-            )
-        )]
-        pub transaction: Vec<TxEnvelope>,
+        #[serde_as(as = "Vec<BincodeReprFor<'_, TxEnvelope>>")]
+        pub transactions: Vec<TxEnvelope>,
         /// Withdrawals in the block.
         pub withdrawals: Option<Withdrawals>,
         /// Last 256 Ancestor block hashes.
@@ -178,7 +165,7 @@ pub mod witness {
             {
                 use crate::types::consensus::Transaction;
 
-                self.transaction
+                self.transactions
                     .iter()
                     .map(|tx| crate::types::evm::compute_compression_ratio(&tx.input()))
                     .collect()
@@ -195,7 +182,7 @@ pub mod witness {
                 chain_id: self.chain_id,
                 header: self.header.into(),
                 pre_state_root: self.prev_state_root,
-                transaction: self.transaction.into_iter().map(Into::into).collect(),
+                transaction: self.transactions.into_iter().map(Into::into).collect(),
                 withdrawals: self
                     .withdrawals
                     .map(|w| w.into_iter().map(Into::into).collect()),
@@ -209,14 +196,14 @@ pub mod witness {
         /// Build a reth block
         pub fn into_reth_block(self) -> Result<RecoveredBlock<Block>, SignatureError> {
             let senders = self
-                .transaction
+                .transactions
                 .iter()
                 .map(|tx| tx.recover_signer())
                 .collect::<Result<Vec<_>, _>>()
                 .expect("Failed to recover signer");
 
             let body = BlockBody {
-                transactions: self.transaction,
+                transactions: self.transactions,
                 ommers: vec![],
                 withdrawals: self.withdrawals,
             };

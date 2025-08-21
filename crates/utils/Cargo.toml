@@ -22,10 +22,7 @@ futures.workspace = true
 thiserror.workspace = true
 serde = { workspace = true, features = ["derive"] }
 
-sbv-primitives = { workspace = true, features = [
-  "serde",
-  "network-types",
-] }
+sbv-primitives = { workspace = true, features = ["network-types"] }
 
 [features]
 scroll = [

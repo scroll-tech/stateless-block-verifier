@@ -19,7 +19,6 @@ sbv-utils.workspace = true
 
 [features]
 rkyv = ["sbv-primitives/rkyv"]
-serde = ["sbv-primitives/serde"]
 
 c-kzg = ["sbv-primitives/c-kzg"]
 kzg-rs = ["sbv-primitives/kzg-rs"]

@@ -520,7 +520,7 @@ mod tests {
         block.import_nodes(&mut store).unwrap();
 
         let trie = PartialStateTrie::open(&store, block.prev_state_root).expect("open trie");
-        for tx in block.transaction.iter() {
+        for tx in block.transactions.iter() {
             let _ = trie.get_account(tx.from).unwrap();
             let _ = trie.get_storage(&store, tx.from, U256::ZERO);
             if let Some(to) = tx.to {

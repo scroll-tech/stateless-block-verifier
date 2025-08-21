@@ -16,8 +16,8 @@ workspace = true
 auto_impl.workspace = true
 itertools.workspace = true
 rkyv = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
-serde_with = { workspace = true, optional = true }
+serde.workspace = true
+serde_with.workspace = true
 tracing = { workspace = true, optional = true }
 
 alloy-consensus.workspace = true
@@ -26,7 +26,7 @@ alloy-evm = { workspace = true, optional = true }
 alloy-network = { workspace = true, optional = true }
 alloy-rpc-types-eth.workspace = true
 alloy-rpc-types-debug.workspace = true
-alloy-serde = { workspace = true, optional = true }
+alloy-serde.workspace = true
 alloy-primitives.workspace = true
 
 revm = { workspace = true, optional = true }
@@ -36,8 +36,8 @@ reth-evm = { workspace = true, optional = true }
 reth-evm-ethereum = { workspace = true, optional = true }
 reth-ethereum-forks = { workspace = true, optional = true }
 reth-execution-types = { workspace = true, optional = true }
-reth-primitives.workspace = true
-reth-primitives-traits.workspace = true
+reth-primitives = { workspace = true, features = ["serde-bincode-compat"] }
+reth-primitives-traits = { workspace = true, features = ["serde", "serde-bincode-compat"] }
 reth-scroll-chainspec = { workspace = true, optional = true }
 reth-scroll-evm = { workspace = true, optional = true }
 reth-scroll-forks = { workspace = true, optional = true }
@@ -58,14 +58,6 @@ serde_json.workspace = true
 [features]
 # serialization
 rkyv = ["dep:rkyv", "alloy-primitives/rkyv"]
-serde = [
-  "dep:alloy-serde",
-  "dep:serde",
-  "dep:serde_with",
-  "reth-primitives/serde-bincode-compat",
-  "reth-primitives-traits/serde-bincode-compat",
-  "reth-scroll-primitives?/serde"
-]
 
 # features proxy
 c-kzg = ["revm/c-kzg"]
@@ -93,6 +85,7 @@ scroll = [
   "dep:reth-scroll-primitives",
   "dep:scroll-alloy-consensus",
   "dep:scroll-alloy-rpc-types",
+  "reth-scroll-primitives/serde",
 ]
 scroll-compress-ratio = [
   "scroll",

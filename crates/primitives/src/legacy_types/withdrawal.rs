@@ -7,24 +7,21 @@ use crate::Address;
     derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
     rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Withdrawal {
     /// Monotonically increasing identifier issued by consensus layer.
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(doc = "Monotonically increasing identifier issued by consensus layer."))
     )]
-    #[cfg_attr(feature = "serde", serde(with = "alloy_serde::quantity"))]
+    #[serde(with = "alloy_serde::quantity")]
     pub index: u64,
     /// Index of validator associated with withdrawal.
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(doc = "Index of validator associated with withdrawal."))
     )]
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "alloy_serde::quantity", rename = "validatorIndex")
-    )]
+    #[serde(with = "alloy_serde::quantity", rename = "validatorIndex")]
     pub validator_index: u64,
     /// Target address for withdrawn ether.
     #[cfg_attr(
@@ -34,7 +31,7 @@ pub struct Withdrawal {
     pub address: Address,
     /// Value of the withdrawal in gwei.
     #[cfg_attr(feature = "rkyv", rkyv(attr(doc = "Value of the withdrawal in gwei.")))]
-    #[cfg_attr(feature = "serde", serde(with = "alloy_serde::quantity"))]
+    #[serde(with = "alloy_serde::quantity")]
     pub amount: u64,
 }
 

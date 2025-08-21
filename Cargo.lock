@@ -5259,7 +5259,6 @@ dependencies = [
  "sbv-precompile",
  "sbv-primitives",
  "sbv-trie",
- "serde",
  "serde_json",
  "thiserror",
  "tracing",

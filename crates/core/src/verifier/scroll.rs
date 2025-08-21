@@ -12,8 +12,7 @@ use sbv_trie::{BlockWitnessTrieExt, TrieNode};
 use std::{collections::BTreeMap, sync::Arc};
 
 /// State commit mode for the block witness verification process.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[cfg_attr(
     feature = "rkyv",
     derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize),

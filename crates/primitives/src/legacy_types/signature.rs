@@ -7,7 +7,7 @@ use crate::U256;
     derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
     rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Signature {
     /// The R field of the signature; the point on the curve.
     #[cfg_attr(

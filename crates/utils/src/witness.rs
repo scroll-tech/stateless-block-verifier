@@ -86,7 +86,7 @@ impl WitnessBuilder {
             prev_state_root: self
                 .prev_state_root
                 .ok_or(WitnessBuildError::MissingField("prev_state_root"))?,
-            transaction: block
+            transactions: block
                 .transactions
                 .into_transactions()
                 .map(|tx| tx.inner.into_inner())

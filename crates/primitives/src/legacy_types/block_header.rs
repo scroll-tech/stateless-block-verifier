@@ -10,7 +10,7 @@ use crate::{
     derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize),
     rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct BlockHeader {
     /// The Keccak 256-bit hash of the parent
     /// block’s header, in its entirety; formally Hp.
@@ -22,7 +22,7 @@ pub struct BlockHeader {
     )]
     pub parent_hash: B256,
     /// The Keccak 256-bit hash of the ommers list portion of this block; formally Ho.
-    #[cfg_attr(feature = "serde", serde(rename = "sha3Uncles", alias = "ommersHash"))]
+    #[serde(rename = "sha3Uncles", alias = "ommersHash")]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -32,7 +32,7 @@ pub struct BlockHeader {
     pub ommers_hash: B256,
     /// The 160-bit address to which all fees collected from the successful mining of this block
     /// be transferred; formally Hc.
-    #[cfg_attr(feature = "serde", serde(rename = "miner", alias = "beneficiary"))]
+    #[serde(rename = "miner", alias = "beneficiary")]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -88,7 +88,7 @@ pub struct BlockHeader {
     pub difficulty: U256,
     /// A scalar value equal to the number of ancestor blocks. The genesis block has a number of
     /// zero; formally Hi.
-    #[cfg_attr(feature = "serde", serde(with = "alloy_serde::quantity"))]
+    #[serde(with = "alloy_serde::quantity")]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -97,7 +97,7 @@ pub struct BlockHeader {
     )]
     pub number: BlockNumber,
     /// A scalar value equal to the current limit of gas expenditure per block; formally Hl.
-    #[cfg_attr(feature = "serde", serde(with = "alloy_serde::quantity"))]
+    #[serde(with = "alloy_serde::quantity")]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -106,7 +106,7 @@ pub struct BlockHeader {
     )]
     pub gas_limit: u64,
     /// A scalar value equal to the total gas used in transactions in this block; formally Hg.
-    #[cfg_attr(feature = "serde", serde(with = "alloy_serde::quantity"))]
+    #[serde(with = "alloy_serde::quantity")]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -116,7 +116,7 @@ pub struct BlockHeader {
     pub gas_used: u64,
     /// A scalar value equal to the reasonable output of Unix’s time() at this block’s inception;
     /// formally Hs.
-    #[cfg_attr(feature = "serde", serde(with = "alloy_serde::quantity"))]
+    #[serde(with = "alloy_serde::quantity")]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -158,10 +158,7 @@ pub struct BlockHeader {
     /// The algorithm results in the base fee per gas increasing when blocks are
     /// above the gas target, and decreasing when blocks are below the gas target. The base fee per
     /// gas is burned.
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, with = "alloy_serde::quantity::opt",)
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -171,7 +168,7 @@ pub struct BlockHeader {
     pub base_fee_per_gas: Option<u64>,
     /// The Keccak 256-bit hash of the withdrawals list portion of this block.
     /// <https://eips.ethereum.org/EIPS/eip-4895>
-    #[cfg_attr(feature = "serde", serde(default))]
+    #[serde(default)]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -181,10 +178,7 @@ pub struct BlockHeader {
     pub withdrawals_root: Option<B256>,
     /// The total amount of blob gas consumed by the transactions within the block, added in
     /// EIP-4844.
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, with = "alloy_serde::quantity::opt",)
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -195,10 +189,7 @@ pub struct BlockHeader {
     /// A running total of blob gas consumed in excess of the target, prior to the block. Blocks
     /// with above-target blob gas consumption increase this value, blocks with below-target blob
     /// gas consumption decrease it (bounded at 0). This was added in EIP-4844.
-    #[cfg_attr(
-        feature = "serde",
-        serde(default, with = "alloy_serde::quantity::opt",)
-    )]
+    #[serde(default, with = "alloy_serde::quantity::opt")]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -213,7 +204,7 @@ pub struct BlockHeader {
     /// and more.
     ///
     /// The beacon roots contract handles root storage, enhancing Ethereum's functionalities.
-    #[cfg_attr(feature = "serde", serde(default))]
+    #[serde(default)]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
@@ -225,7 +216,7 @@ pub struct BlockHeader {
     /// [EIP-7685] request in the block body.
     ///
     /// [EIP-7685]: https://eips.ethereum.org/EIPS/eip-7685
-    #[cfg_attr(feature = "serde", serde(default))]
+    #[serde(default)]
     #[cfg_attr(
         feature = "rkyv",
         rkyv(attr(
