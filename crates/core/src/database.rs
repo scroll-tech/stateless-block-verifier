@@ -1,6 +1,6 @@
 use sbv_kv::{HashMap, KeyValueStoreGet};
 use sbv_primitives::{
-    Address, B256, Bytes, U256,
+    Address, B256, Bytes, U256, address,
     types::revm::{
         AccountInfo, Bytecode,
         database::{BundleAccount, DBErrorMarker},
@@ -99,13 +99,14 @@ impl<
     /// Note: this should not be confused with the withdrawal of the beacon chain.
     #[cfg(feature = "scroll")]
     pub fn withdraw_root(&self) -> Result<B256, DatabaseError> {
-        use sbv_primitives::predeployed::message_queue;
-        self.basic_ref(message_queue::ADDRESS)?
+        /// L2MessageQueue pre-deployed address
+        pub const ADDRESS: Address = address!("5300000000000000000000000000000000000000");
+        /// the slot of withdraw root in L2MessageQueue
+        pub const WITHDRAW_TRIE_ROOT_SLOT: U256 = U256::ZERO;
+
+        self.basic_ref(ADDRESS)?
             .ok_or(DatabaseError::MissingL2MessageQueueWitness)?;
-        let withdraw_root = self.storage_ref(
-            message_queue::ADDRESS,
-            message_queue::WITHDRAW_TRIE_ROOT_SLOT,
-        )?;
+        let withdraw_root = self.storage_ref(ADDRESS, WITHDRAW_TRIE_ROOT_SLOT)?;
         Ok(withdraw_root.into())
     }
 

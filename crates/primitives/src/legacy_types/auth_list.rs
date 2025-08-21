@@ -37,3 +37,24 @@ pub struct SignedAuthorization {
     /// Signature `s` value.
     pub s: U256,
 }
+
+impl From<crate::types::eips::eip7702::SignedAuthorization> for SignedAuthorization {
+    fn from(auth: crate::types::eips::eip7702::SignedAuthorization) -> Self {
+        Self {
+            inner: auth.inner().clone().into(),
+            y_parity: U8::from(auth.y_parity()),
+            r: auth.r(),
+            s: auth.s(),
+        }
+    }
+}
+
+impl From<crate::types::eips::eip7702::Authorization> for Authorization {
+    fn from(auth: crate::types::eips::eip7702::Authorization) -> Self {
+        Self {
+            chain_id: auth.chain_id,
+            address: auth.address,
+            nonce: auth.nonce,
+        }
+    }
+}

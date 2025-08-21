@@ -1,7 +1,14 @@
 use crate::{
     Address, B256, Bytes, ChainId, TxHash, U256,
-    types::{access_list::AccessList, auth_list::SignedAuthorization, signature::Signature},
+    legacy_types::{access_list::AccessList, auth_list::SignedAuthorization, signature::Signature},
+    types::{
+        consensus::{SignerRecoverable, Transaction as _},
+        eips::Typed2718,
+        reth::primitives::SignedTransaction,
+    },
 };
+#[cfg(feature = "scroll")]
+use scroll_alloy_consensus::ScrollTransaction;
 
 /// Transaction object used in RPC
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
@@ -125,4 +132,32 @@ pub struct Transaction {
         serde(default, with = "alloy_serde::quantity::opt",)
     )]
     pub queue_index: Option<u64>,
+}
+
+impl From<crate::types::consensus::TxEnvelope> for Transaction {
+    fn from(tx: crate::types::consensus::TxEnvelope) -> Self {
+        Self {
+            hash: *tx.tx_hash(),
+            nonce: tx.nonce(),
+            from: tx.recover_signer().expect("invalid signature"),
+            to: tx.to(),
+            value: tx.value(),
+            gas_price: tx.gas_price(),
+            gas: tx.gas_limit(),
+            max_fee_per_gas: tx.max_fee_per_gas(),
+            max_priority_fee_per_gas: tx.max_priority_fee_per_gas(),
+            max_fee_per_blob_gas: tx.max_fee_per_blob_gas(),
+            input: tx.input().clone(),
+            signature: tx.signature().map(Into::into),
+            chain_id: tx.chain_id(),
+            blob_versioned_hashes: tx.blob_versioned_hashes().map(ToOwned::to_owned),
+            access_list: tx.access_list().cloned().map(Into::into),
+            authorization_list: tx
+                .authorization_list()
+                .map(|list| list.iter().cloned().map(Into::into).collect()),
+            transaction_type: tx.ty(),
+            #[cfg(feature = "scroll")]
+            queue_index: tx.queue_index(),
+        }
+    }
 }

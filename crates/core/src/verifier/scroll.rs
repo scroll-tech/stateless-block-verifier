@@ -1,10 +1,11 @@
 use crate::{DatabaseError, EvmDatabase, EvmExecutor, VerificationError};
 use itertools::Itertools;
 use sbv_kv::{nohash::NoHashMap, null::NullProvider};
+use sbv_primitives::types::BlockWitness;
 use sbv_primitives::{
-    B256, BlockWitness, Bytes, U256,
+    B256, Bytes, U256,
     chainspec::ChainSpec,
-    ext::{BlockWitnessChunkExt, BlockWitnessExt, BlockWitnessRethExt},
+    ext::{BlockWitnessChunkExt, BlockWitnessExt},
     types::reth::primitives::{Block, RecoveredBlock},
 };
 use sbv_trie::{BlockWitnessTrieExt, TrieNode};
@@ -43,8 +44,8 @@ pub struct VerifyResult {
 }
 
 /// Verify the block witness and return the gas used.
-pub fn run<T: BlockWitness + BlockWitnessRethExt>(
-    witnesses: &[T],
+pub fn run(
+    witnesses: Vec<BlockWitness>,
     chain_spec: Arc<ChainSpec>,
     state_commit_mode: StateCommitMode,
     compression_ratios: Option<
@@ -61,18 +62,18 @@ pub fn run<T: BlockWitness + BlockWitnessRethExt>(
         return Err(VerificationError::NonSequentialWitnesses);
     }
 
-    let (code_db, nodes_provider) = make_providers(witnesses);
+    let (code_db, nodes_provider) = make_providers(&*witnesses);
     let code_db = manually_drop_on_zkvm!(code_db);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
+    let pre_state_root = witnesses[0].pre_state_root;
     let blocks = witnesses
-        .iter()
+        .into_iter()
         .map(|w| {
             dev_trace!("{w:#?}");
-            w.build_reth_block()
+            w.into_reth_block()
         })
         .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()?;
-    let pre_state_root = witnesses[0].pre_state_root();
 
     let mut args = ExecuteInnerArgs {
         code_db: &code_db,
@@ -121,17 +122,18 @@ type CodeDb = NoHashMap<B256, Bytes>;
 type NodesProvider = NoHashMap<B256, TrieNode>;
 
 /// Create the providers needed for the EVM executor from a list of witnesses.
-fn make_providers<W: BlockWitness>(witnesses: &[W]) -> (CodeDb, NodesProvider) {
+#[inline]
+fn make_providers(witnesses: &[BlockWitness]) -> (CodeDb, NodesProvider) {
     let code_db = {
         // build code db
-        let num_codes = witnesses.iter().map(|w| w.codes_iter().len()).sum();
+        let num_codes = witnesses.iter().map(|w| w.codes.len()).sum();
         let mut code_db =
             NoHashMap::<B256, Bytes>::with_capacity_and_hasher(num_codes, Default::default());
         witnesses.import_codes(&mut code_db);
         code_db
     };
     let nodes_provider = {
-        let num_states = witnesses.iter().map(|w| w.states_iter().len()).sum();
+        let num_states = witnesses.iter().map(|w| w.states.len()).sum();
         let mut nodes_provider =
             NoHashMap::<B256, TrieNode>::with_capacity_and_hasher(num_states, Default::default());
         witnesses.import_nodes(&mut nodes_provider).unwrap();
@@ -152,6 +154,7 @@ pub(super) struct ExecuteInnerArgs<'a, I> {
     pub(super) compression_ratios: Option<I>,
 }
 
+#[inline]
 fn execute<II, I, R>(
     ExecuteInnerArgs {
         code_db,
@@ -279,7 +282,7 @@ mod tests {
         let chain_spec =
             build_chain_spec_force_hardfork(Chain::from_id(witness.chain_id), Hardfork::EuclidV2);
         run(
-            &[witness],
+            vec![witness],
             chain_spec,
             StateCommitMode::Block,
             None::<Vec<Vec<U256>>>,
@@ -297,7 +300,7 @@ mod tests {
         let chain_spec =
             build_chain_spec_force_hardfork(Chain::from_id(witness.chain_id), Hardfork::Feynman);
         run(
-            &[witness],
+            vec![witness],
             chain_spec,
             StateCommitMode::Block,
             None::<Vec<Vec<U256>>>,

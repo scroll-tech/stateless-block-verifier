@@ -5,30 +5,24 @@ use sbv::{
         VerificationError,
         verifier::{self, VerifyResult},
     },
-    primitives::{
-        chainspec::ChainSpec,
-        ext::{BlockWitnessExt, BlockWitnessRethExt},
-    },
-    trie::BlockWitnessTrieExt,
+    primitives::{chainspec::ChainSpec, types::BlockWitness},
 };
 use std::{
     env,
-    panic::{AssertUnwindSafe, UnwindSafe, catch_unwind},
+    panic::{AssertUnwindSafe, catch_unwind},
     sync::Arc,
 };
 
-pub fn verify_catch_panics<
-    T: BlockWitnessRethExt + BlockWitnessTrieExt + BlockWitnessExt + UnwindSafe,
->(
-    witness: T,
+pub fn verify_catch_panics(
+    witness: BlockWitness,
     chain_spec: Arc<ChainSpec>,
 ) -> eyre::Result<VerifyResult> {
-    let chain_id = witness.chain_id();
-    let block_number = witness.number();
+    let chain_id = witness.chain_id;
+    let block_number = witness.header.number;
 
     catch_unwind(AssertUnwindSafe(|| {
         verifier::run(
-            &[witness],
+            vec![witness],
             chain_spec,
             #[cfg(feature = "scroll")]
             verifier::StateCommitMode::Block,

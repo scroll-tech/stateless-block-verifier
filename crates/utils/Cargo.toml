@@ -1,4 +1,4 @@
-[package]
+ [package]
 name = "sbv-utils"
 description = "Utilities for Stateless Block Verifier"
 version.workspace = true
@@ -24,16 +24,11 @@ serde = { workspace = true, features = ["derive"] }
 
 sbv-primitives = { workspace = true, features = [
   "serde",
-  "eips",
-  "consensus-types",
   "network-types",
-  "rpc-types",
 ] }
 
 [features]
 scroll = [
-  "sbv-primitives/scroll-consensus-types",
   "sbv-primitives/scroll-network-types",
-  "sbv-primitives/scroll-rpc-types",
   "sbv-primitives/scroll-compress-ratio",
 ]

@@ -23,7 +23,6 @@ itertools.workspace = true
 sbv-primitives = { workspace = true, features = [
   "chainspec",
   "revm-types",
-  "reth-primitives-types",
   "reth-evm-types",
   "reth-execution-types",
 ] }
@@ -46,9 +45,7 @@ serde = ["dep:serde", "sbv-primitives/serde"]
 
 scroll = [
   "sbv-primitives/scroll-chainspec",
-  "sbv-primitives/scroll-pre-deployed",
   "sbv-primitives/scroll-reth-evm-types",
-  "sbv-primitives/scroll-reth-primitives-types",
   "sbv-precompile/scroll",
 ]
 dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]

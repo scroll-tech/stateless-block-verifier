@@ -33,3 +33,18 @@ pub struct AccessListItem {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AccessList(pub Vec<AccessListItem>);
+
+impl From<crate::types::eips::eip2930::AccessList> for AccessList {
+    fn from(list: crate::types::eips::eip2930::AccessList) -> Self {
+        Self(list.0.into_iter().map(AccessListItem::from).collect())
+    }
+}
+
+impl From<crate::types::eips::eip2930::AccessListItem> for AccessListItem {
+    fn from(item: crate::types::eips::eip2930::AccessListItem) -> Self {
+        Self {
+            address: item.address,
+            storage_keys: item.storage_keys,
+        }
+    }
+}

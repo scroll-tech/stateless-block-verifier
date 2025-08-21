@@ -5323,6 +5323,7 @@ dependencies = [
  "revm",
  "revm-scroll",
  "rkyv",
+ "rstest",
  "sbv-helpers",
  "sbv-kv",
  "scroll-alloy-consensus",
@@ -5330,7 +5331,8 @@ dependencies = [
  "scroll-alloy-network",
  "scroll-alloy-rpc-types",
  "serde",
- "tiny-keccak",
+ "serde_json",
+ "serde_with",
  "tracing",
 ]
 
@@ -5340,6 +5342,7 @@ version = "2.0.0"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
+ "auto_impl",
  "reth-trie",
  "reth-trie-sparse",
  "sbv-helpers",

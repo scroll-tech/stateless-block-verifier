@@ -38,35 +38,13 @@ pub struct Withdrawal {
     pub amount: u64,
 }
 
-impl crate::Withdrawal for Withdrawal {
-    fn index(&self) -> u64 {
-        self.index
-    }
-    fn validator_index(&self) -> u64 {
-        self.validator_index
-    }
-    fn address(&self) -> Address {
-        self.address
-    }
-
-    fn amount(&self) -> u64 {
-        self.amount
-    }
-}
-
-#[cfg(feature = "rkyv")]
-impl crate::Withdrawal for ArchivedWithdrawal {
-    fn index(&self) -> u64 {
-        self.index.to_native()
-    }
-    fn validator_index(&self) -> u64 {
-        self.validator_index.to_native()
-    }
-    fn address(&self) -> Address {
-        self.address.into()
-    }
-
-    fn amount(&self) -> u64 {
-        self.amount.to_native()
+impl From<crate::types::eips::eip4895::Withdrawal> for Withdrawal {
+    fn from(withdrawal: crate::types::eips::eip4895::Withdrawal) -> Self {
+        Self {
+            index: withdrawal.index,
+            validator_index: withdrawal.validator_index,
+            address: withdrawal.address,
+            amount: withdrawal.amount,
+        }
     }
 }

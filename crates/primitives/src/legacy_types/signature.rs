@@ -1,4 +1,4 @@
-use crate::{Signature as AlloySignature, U256};
+use crate::U256;
 
 /// An Ethereum ECDSA signature.
 #[derive(Debug, Copy, Clone, Hash, Eq, PartialEq)]
@@ -29,25 +29,12 @@ pub struct Signature {
     pub y_parity: bool,
 }
 
-impl From<&AlloySignature> for Signature {
-    fn from(sig: &AlloySignature) -> Self {
+impl From<crate::Signature> for Signature {
+    fn from(sig: crate::Signature) -> Self {
         Self {
             r: sig.r(),
             s: sig.s(),
             y_parity: sig.v(),
         }
-    }
-}
-
-impl From<Signature> for AlloySignature {
-    fn from(sig: Signature) -> Self {
-        Self::new(sig.r, sig.s, sig.y_parity)
-    }
-}
-
-#[cfg(feature = "rkyv")]
-impl From<&ArchivedSignature> for AlloySignature {
-    fn from(sig: &ArchivedSignature) -> Self {
-        Self::new(sig.r.into(), sig.s.into(), sig.y_parity)
     }
 }
