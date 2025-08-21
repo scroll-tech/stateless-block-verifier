@@ -83,7 +83,7 @@ impl WitnessBuilder {
                 .chain_id
                 .ok_or(WitnessBuildError::MissingField("chain_id"))?,
             header: block.header.into(),
-            pre_state_root: self
+            prev_state_root: self
                 .prev_state_root
                 .ok_or(WitnessBuildError::MissingField("prev_state_root"))?,
             transaction: block

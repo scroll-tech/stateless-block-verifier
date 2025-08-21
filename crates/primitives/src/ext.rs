@@ -89,7 +89,7 @@ impl BlockWitnessChunkExt for [BlockWitness] {
 
     #[inline(always)]
     fn prev_state_root(&self) -> B256 {
-        self.first().expect("empty witnesses").pre_state_root
+        self.first().expect("empty witnesses").prev_state_root
     }
 
     #[inline(always)]

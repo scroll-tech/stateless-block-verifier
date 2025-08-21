@@ -66,7 +66,7 @@ pub fn run(
     let code_db = manually_drop_on_zkvm!(code_db);
     let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
 
-    let pre_state_root = witnesses[0].pre_state_root;
+    let pre_state_root = witnesses[0].prev_state_root;
     let blocks = witnesses
         .into_iter()
         .map(|w| {

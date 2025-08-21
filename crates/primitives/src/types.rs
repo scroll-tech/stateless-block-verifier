@@ -146,7 +146,7 @@ pub mod witness {
         )]
         pub header: Header,
         /// State trie root before the block.
-        pub pre_state_root: B256,
+        pub prev_state_root: B256,
         /// Transactions in the block.
         #[cfg_attr(
             feature = "serde",
@@ -194,7 +194,7 @@ pub mod witness {
             crate::legacy_types::BlockWitness {
                 chain_id: self.chain_id,
                 header: self.header.into(),
-                pre_state_root: self.pre_state_root,
+                pre_state_root: self.prev_state_root,
                 transaction: self.transaction.into_iter().map(Into::into).collect(),
                 withdrawals: self
                     .withdrawals
