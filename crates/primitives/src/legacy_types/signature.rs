@@ -38,3 +38,9 @@ impl From<crate::Signature> for Signature {
         }
     }
 }
+
+impl From<Signature> for crate::Signature {
+    fn from(sig: Signature) -> Self {
+        crate::Signature::new(sig.r, sig.s, sig.y_parity)
+    }
+}

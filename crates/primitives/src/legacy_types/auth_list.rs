@@ -58,3 +58,24 @@ impl From<crate::types::eips::eip7702::Authorization> for Authorization {
         }
     }
 }
+
+impl From<Authorization> for crate::types::eips::eip7702::Authorization {
+    fn from(auth: Authorization) -> Self {
+        crate::types::eips::eip7702::Authorization {
+            chain_id: auth.chain_id,
+            address: auth.address,
+            nonce: auth.nonce,
+        }
+    }
+}
+
+impl From<SignedAuthorization> for crate::types::eips::eip7702::SignedAuthorization {
+    fn from(auth: SignedAuthorization) -> Self {
+        crate::types::eips::eip7702::SignedAuthorization::new_unchecked(
+            auth.inner.into(),
+            auth.y_parity.to(),
+            auth.r,
+            auth.s,
+        )
+    }
+}

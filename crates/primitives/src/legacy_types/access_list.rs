@@ -48,3 +48,20 @@ impl From<crate::types::eips::eip2930::AccessListItem> for AccessListItem {
         }
     }
 }
+
+impl From<AccessListItem> for crate::types::eips::eip2930::AccessListItem {
+    fn from(item: AccessListItem) -> Self {
+        crate::types::eips::eip2930::AccessListItem {
+            address: item.address,
+            storage_keys: item.storage_keys,
+        }
+    }
+}
+
+impl From<AccessList> for crate::types::eips::eip2930::AccessList {
+    fn from(list: AccessList) -> Self {
+        crate::types::eips::eip2930::AccessList(
+            list.0.into_iter().map(AccessListItem::into).collect(),
+        )
+    }
+}

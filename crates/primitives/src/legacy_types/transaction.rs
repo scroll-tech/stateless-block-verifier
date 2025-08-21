@@ -1,8 +1,11 @@
 use crate::{
-    Address, B256, Bytes, ChainId, TxHash, U256,
+    Address, B256, Bytes, ChainId, SignatureError, TxHash, U256,
     legacy_types::{access_list::AccessList, auth_list::SignedAuthorization, signature::Signature},
     types::{
-        consensus::{SignerRecoverable, Transaction as _},
+        consensus::{
+            SignableTransaction, SignerRecoverable, Transaction as _, TxEip1559, TxEip2930,
+            TxEip7702, TxEnvelope, TxLegacy,
+        },
         eips::Typed2718,
     },
 };
@@ -121,8 +124,8 @@ pub struct Transaction {
     pub queue_index: Option<u64>,
 }
 
-impl From<crate::types::consensus::TxEnvelope> for Transaction {
-    fn from(tx: crate::types::consensus::TxEnvelope) -> Self {
+impl From<TxEnvelope> for Transaction {
+    fn from(tx: TxEnvelope) -> Self {
         #[cfg(feature = "scroll")]
         use crate::types::reth::primitives::SignedTransaction;
 
@@ -152,5 +155,128 @@ impl From<crate::types::consensus::TxEnvelope> for Transaction {
             #[cfg(feature = "scroll")]
             queue_index: tx.queue_index(),
         }
+    }
+}
+
+impl TryFrom<Transaction> for TxEnvelope {
+    type Error = SignatureError;
+
+    fn try_from(tx: Transaction) -> Result<Self, Self::Error> {
+        let tx_type = tx.transaction_type;
+
+        let tx = match tx_type {
+            0x00 => {
+                let sig = tx.signature.expect("missing signature").into();
+                let tx = TxLegacy {
+                    chain_id: tx.chain_id,
+                    nonce: tx.nonce,
+                    gas_price: tx.gas_price.unwrap(),
+                    gas_limit: tx.gas,
+                    to: tx.to.into(),
+                    value: tx.value,
+                    input: tx.input,
+                };
+
+                tx.into_signed(sig).into()
+            }
+            0x01 => {
+                let sig = tx.signature.expect("missing signature").into();
+                let tx = TxEip2930 {
+                    chain_id: tx.chain_id.expect("missing chain_id"),
+                    nonce: tx.nonce,
+                    gas_price: tx.gas_price.unwrap(),
+                    gas_limit: tx.gas,
+                    to: tx.to.into(),
+                    value: tx.value,
+                    access_list: tx.access_list.expect("missing access_list").into(),
+                    input: tx.input,
+                };
+
+                tx.into_signed(sig).into()
+            }
+            0x02 => {
+                let sig = tx.signature.expect("missing signature").into();
+                let tx = TxEip1559 {
+                    chain_id: tx.chain_id.expect("missing chain_id"),
+                    nonce: tx.nonce,
+                    max_fee_per_gas: tx.max_fee_per_gas,
+                    max_priority_fee_per_gas: tx
+                        .max_priority_fee_per_gas
+                        .expect("missing max_priority_fee_per_gas"),
+                    gas_limit: tx.gas,
+                    to: tx.to.into(),
+                    value: tx.value,
+                    access_list: tx.access_list.expect("missing access_list").into(),
+                    input: tx.input,
+                };
+
+                tx.into_signed(sig).into()
+            }
+            #[cfg(not(feature = "scroll"))]
+            0x03 => {
+                use crate::types::consensus::TxEip4844;
+                let sig = tx.signature.expect("missing signature").into();
+                let tx = TxEip4844 {
+                    chain_id: tx.chain_id.expect("missing chain_id"),
+                    nonce: tx.nonce,
+                    max_fee_per_gas: tx.max_fee_per_gas,
+                    max_priority_fee_per_gas: tx
+                        .max_priority_fee_per_gas
+                        .expect("missing max_priority_fee_per_gas"),
+                    gas_limit: tx.gas,
+                    to: tx.to.expect("missing to"),
+                    value: tx.value,
+                    input: tx.input,
+                    access_list: tx.access_list.expect("missing access_list").into(),
+                    blob_versioned_hashes: tx
+                        .blob_versioned_hashes
+                        .expect("missing blob_versioned_hashes"),
+                    max_fee_per_blob_gas: tx
+                        .max_fee_per_blob_gas
+                        .expect("missing max_fee_per_blob_gas"),
+                };
+                tx.into_signed(sig).into()
+            }
+            0x04 => {
+                let sig = tx.signature.expect("missing signature").into();
+                let tx = TxEip7702 {
+                    chain_id: tx.chain_id.expect("missing chain_id"),
+                    nonce: tx.nonce,
+                    gas_limit: tx.gas,
+                    max_fee_per_gas: tx.max_fee_per_gas,
+                    max_priority_fee_per_gas: tx
+                        .max_priority_fee_per_gas
+                        .expect("missing max_priority_fee_per_gas"),
+                    to: tx.to.expect("missing to"),
+                    value: tx.value,
+                    access_list: tx.access_list.expect("missing access_list").into(),
+                    authorization_list: tx
+                        .authorization_list
+                        .expect("missing authorization_list")
+                        .into_iter()
+                        .map(|x| x.into())
+                        .collect(),
+                    input: tx.input,
+                };
+                tx.into_signed(sig).into()
+            }
+            #[cfg(feature = "scroll")]
+            0x7e => {
+                use crate::types::consensus::TxL1Message;
+                let tx = TxL1Message {
+                    queue_index: tx.queue_index.expect("missing queue_index"),
+                    gas_limit: tx.gas,
+                    to: tx.to.expect("missing to"),
+                    value: tx.value,
+                    sender: tx.from,
+                    input: tx.input.clone(),
+                };
+
+                TxEnvelope::from(tx)
+            }
+            _ => unimplemented!("unsupported tx type: {}", tx_type),
+        };
+
+        Ok(tx)
     }
 }

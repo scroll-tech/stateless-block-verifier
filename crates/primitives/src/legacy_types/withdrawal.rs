@@ -45,3 +45,14 @@ impl From<crate::types::eips::eip4895::Withdrawal> for Withdrawal {
         }
     }
 }
+
+impl From<Withdrawal> for crate::types::eips::eip4895::Withdrawal {
+    fn from(withdrawal: Withdrawal) -> Self {
+        crate::types::eips::eip4895::Withdrawal {
+            index: withdrawal.index,
+            validator_index: withdrawal.validator_index,
+            address: withdrawal.address,
+            amount: withdrawal.amount,
+        }
+    }
+}

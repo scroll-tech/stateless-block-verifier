@@ -41,5 +41,8 @@ mod tests {
         let serialized = serde_json::to_string(&witness).unwrap();
         let deserialized: BlockWitness = serde_json::from_str(&serialized).unwrap();
         assert_eq!(witness, deserialized);
+        let current_witness = deserialized.into_current();
+        let converted = current_witness.clone().into_legacy();
+        assert_eq!(witness, converted);
     }
 }
