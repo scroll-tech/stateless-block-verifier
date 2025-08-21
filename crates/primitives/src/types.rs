@@ -131,7 +131,8 @@ pub mod witness {
     #[cfg_attr(
         feature = "serde",
         serde_with::serde_as,
-        derive(serde::Serialize, serde::Deserialize)
+        derive(serde::Serialize, serde::Deserialize),
+        serde(rename_all = "camelCase")
     )]
     pub struct BlockWitness {
         /// Chain id
