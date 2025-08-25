@@ -26,7 +26,6 @@ use sbv_primitives::{
         revm::{SpecId, database::CacheDB, precompile::PrecompileSpecId},
     },
 };
-use sbv_trie::TrieNode;
 use std::sync::Arc;
 
 /// Ethereum-related EVM configuration with [`SbvEthEvmFactory`] as the factory.
@@ -59,7 +58,7 @@ impl<'a, CodeDb, NodesProvider, BlockHashProvider>
 
 impl<
     CodeDb: KeyValueStoreGet<B256, Bytes>,
-    NodesProvider: KeyValueStoreGet<B256, TrieNode>,
+    NodesProvider: KeyValueStoreGet<B256, Bytes>,
     BlockHashProvider: KeyValueStoreGet<u64, B256>,
 > EvmExecutor<'_, CodeDb, NodesProvider, BlockHashProvider>
 {

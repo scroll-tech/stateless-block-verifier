@@ -6,7 +6,7 @@ use sbv_primitives::{
         database::{BundleAccount, DBErrorMarker},
     },
 };
-use sbv_trie::{PartialStateTrie, TrieNode};
+use sbv_trie::PartialStateTrie;
 use std::{cell::RefCell, fmt};
 
 pub use sbv_primitives::types::revm::database::DatabaseRef;
@@ -52,7 +52,7 @@ impl<CodeDb, NodesProvider, BlockHashProvider> fmt::Debug
 
 impl<
     CodeDb: KeyValueStoreGet<B256, Bytes>,
-    NodesProvider: KeyValueStoreGet<B256, TrieNode>,
+    NodesProvider: KeyValueStoreGet<B256, Bytes>,
     BlockHashProvider: KeyValueStoreGet<u64, B256>,
 > EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
 {
@@ -80,7 +80,7 @@ impl<
     }
 
     /// Update changes to the database.
-    pub fn update<'a, P: KeyValueStoreGet<B256, TrieNode>>(
+    pub fn update<'a, P: KeyValueStoreGet<B256, Bytes>>(
         &mut self,
         nodes_provider: P,
         post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
@@ -125,7 +125,7 @@ impl<
 
 impl<
     CodeDb: KeyValueStoreGet<B256, Bytes>,
-    NodesProvider: KeyValueStoreGet<B256, TrieNode>,
+    NodesProvider: KeyValueStoreGet<B256, Bytes>,
     BlockHashProvider: KeyValueStoreGet<u64, B256>,
 > DatabaseRef for EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
 {

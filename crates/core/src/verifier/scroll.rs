@@ -10,7 +10,7 @@ use sbv_primitives::{
         reth::primitives::{Block, RecoveredBlock},
     },
 };
-use sbv_trie::{BlockWitnessTrieExt, TrieNode};
+use sbv_trie::BlockWitnessTrieExt;
 use std::{collections::BTreeMap, sync::Arc};
 
 /// State commit mode for the block witness verification process.
@@ -120,7 +120,7 @@ pub fn run(
 }
 
 type CodeDb = NoHashMap<B256, Bytes>;
-type NodesProvider = NoHashMap<B256, TrieNode>;
+type NodesProvider = NoHashMap<B256, Bytes>;
 
 /// Create the providers needed for the EVM executor from a list of witnesses.
 #[inline]
@@ -136,8 +136,8 @@ fn make_providers(witnesses: &[BlockWitness]) -> (CodeDb, NodesProvider) {
     let nodes_provider = {
         let num_states = witnesses.iter().map(|w| w.states.len()).sum();
         let mut nodes_provider =
-            NoHashMap::<B256, TrieNode>::with_capacity_and_hasher(num_states, Default::default());
-        witnesses.import_nodes(&mut nodes_provider).unwrap();
+            NoHashMap::<B256, Bytes>::with_capacity_and_hasher(num_states, Default::default());
+        witnesses.import_nodes(&mut nodes_provider);
         nodes_provider
     };
 

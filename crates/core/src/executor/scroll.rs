@@ -12,7 +12,6 @@ use sbv_primitives::{
         revm::database::CacheDB,
     },
 };
-use sbv_trie::TrieNode;
 use std::sync::Arc;
 
 /// Ethereum-related EVM configuration.
@@ -49,7 +48,7 @@ impl<'a, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
 
 impl<
     CodeDb: KeyValueStoreGet<B256, Bytes>,
-    NodesProvider: KeyValueStoreGet<B256, TrieNode>,
+    NodesProvider: KeyValueStoreGet<B256, Bytes>,
     BlockHashProvider: KeyValueStoreGet<u64, B256>,
     CompressionRatios: IntoIterator<Item = U256>,
 > EvmExecutor<'_, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
