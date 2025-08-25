@@ -30,7 +30,6 @@ sbv-precompile.workspace = true
 sbv-helpers.workspace = true
 sbv-kv.workspace = true
 sbv-trie.workspace = true
-bytes = "1.10.1"
 
 [dev-dependencies]
 ctor.workspace = true
