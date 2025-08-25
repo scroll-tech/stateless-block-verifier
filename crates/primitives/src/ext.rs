@@ -1,7 +1,6 @@
 use crate::{B256, Bytes, keccak256, types::BlockWitness};
 use auto_impl::auto_impl;
 use itertools::Itertools;
-use sbv_helpers::cycle_track;
 use sbv_kv::KeyValueStore;
 
 /// BlockWitnessExt trait
@@ -34,7 +33,7 @@ impl BlockWitnessExt for BlockWitness {
     fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
         for code in self.codes.iter() {
             let code = code.as_ref();
-            let code_hash = cycle_track!(keccak256(code), "keccak256");
+            let code_hash = keccak256(code);
             code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
         }
     }
@@ -58,7 +57,7 @@ impl BlockWitnessExt for [BlockWitness] {
     fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
         for code in self.iter().flat_map(|w| w.codes.iter()) {
             let code = code.as_ref();
-            let code_hash = cycle_track!(keccak256(code), "keccak256");
+            let code_hash = keccak256(code);
             code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
         }
     }

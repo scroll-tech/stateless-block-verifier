@@ -65,10 +65,7 @@ impl<
     ) -> Result<Self> {
         dev_trace!("open trie from root {:?}", state_root_before);
 
-        let state = cycle_track!(
-            PartialStateTrie::open(&nodes_provider, state_root_before),
-            "PartialStateTrie::open"
-        )?;
+        let state = PartialStateTrie::open(&nodes_provider, state_root_before)?;
 
         Ok(EvmDatabase {
             code_db,

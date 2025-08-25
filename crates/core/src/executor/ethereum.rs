@@ -67,10 +67,9 @@ impl<
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
         let provider = EvmConfig::new_with_evm_factory(self.chain_spec.clone(), SbvEthEvmFactory);
 
-        let output = cycle_track!(
-            provider.executor(CacheDB::new(self.db)).execute(self.block),
-            "handle_block"
-        )?;
+        let output = provider
+            .executor(CacheDB::new(self.db))
+            .execute(self.block)?;
 
         Ok(output)
     }

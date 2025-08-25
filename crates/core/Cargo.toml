@@ -50,9 +50,5 @@ scroll = [
 ]
 dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
 
-# sp1 related
-sp1 = ["sbv-trie/sp1"]
-cycle-tracker = ["sbv-trie/cycle-tracker"]
-
 scroll-openvm = ["sbv-precompile/scroll-openvm"]
 ethereum-openvm = ["sbv-precompile/ethereum-openvm"]

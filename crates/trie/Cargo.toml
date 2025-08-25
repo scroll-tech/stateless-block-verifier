@@ -28,6 +28,3 @@ tracing = { workspace = true, optional = true }
 
 [features]
 dev = ["dep:tracing", "sbv-primitives/dev"]
-
-sp1 = []
-cycle-tracker = []

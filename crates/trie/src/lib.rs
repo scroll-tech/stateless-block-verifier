@@ -61,8 +61,8 @@ pub fn decode_nodes<
 ) -> Result<(), alloy_rlp::Error> {
     for byte in iter {
         let mut buf = byte.as_ref();
-        let node_hash = cycle_track!(keccak256(buf), "keccak256");
-        let node = cycle_track!(TrieNode::decode(&mut buf), "TrieNode::decode")?;
+        let node_hash = keccak256(buf);
+        let node = TrieNode::decode(&mut buf)?;
         assert!(
             buf.is_empty(),
             "the rlp buffer should only contains the node"
@@ -114,7 +114,7 @@ impl PartialStateTrie {
         nodes_provider: &P,
         root: B256,
     ) -> Result<Self> {
-        let state = cycle_track!(open_trie(nodes_provider, root), "open_trie")?;
+        let state = open_trie(nodes_provider, root)?;
 
         Ok(PartialStateTrie {
             state,
@@ -283,7 +283,7 @@ impl PartialStateTrie {
             .address_hashes
             .borrow_mut()
             .entry(address)
-            .or_insert_with(|| cycle_track!(keccak256(address), "keccak256"))
+            .or_insert_with(|| keccak256(address))
     }
 
     /// Update the account
@@ -316,10 +316,7 @@ fn open_trie<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
             dev_error!("failed to open trie: {e}");
             PartialStateTrieError::Impl(format!("{e:?}"))
         })?;
-    cycle_track!(
-        traverse_import_partial_trie(Nibbles::default(), root, nodes_provider, &mut trie),
-        "traverse_import_partial_trie"
-    )?;
+    traverse_import_partial_trie(Nibbles::default(), root, nodes_provider, &mut trie)?;
     Ok(trie)
 }
 
@@ -371,7 +368,7 @@ fn traverse_import_partial_trie<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
 
 #[inline(always)]
 fn decode_trie_account(mut buf: &[u8]) -> Result<TrieAccount> {
-    let acc = cycle_track!(TrieAccount::decode(&mut buf), "TrieAccount::decode")?;
+    let acc = TrieAccount::decode(&mut buf)?;
     if !buf.is_empty() {
         return Err(PartialStateTrieError::ExtraData(
             "the leaf should only contains the account",
@@ -382,7 +379,7 @@ fn decode_trie_account(mut buf: &[u8]) -> Result<TrieAccount> {
 
 #[inline(always)]
 fn decode_u256_rlp(mut buf: &[u8]) -> Result<U256> {
-    let value = cycle_track!(U256::decode(&mut buf), "U256::decode")?;
+    let value = U256::decode(&mut buf)?;
     if !buf.is_empty() {
         return Err(PartialStateTrieError::ExtraData(
             "the leaf should only contains the U256 value",
@@ -402,7 +399,7 @@ fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
         Ok(nodes_provider.get(&hash).cloned())
     } else {
         let mut buf = node.as_ref();
-        let child = cycle_track!(TrieNode::decode(&mut buf), "TrieNode::decode")?;
+        let child = TrieNode::decode(&mut buf)?;
         if !buf.is_empty() {
             return Err(PartialStateTrieError::ExtraData(
                 "the extension node should only contains the child",
