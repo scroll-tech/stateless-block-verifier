@@ -2,19 +2,20 @@
 #[macro_use]
 extern crate sbv_helpers;
 
-use alloy_rlp::{Decodable, Encodable};
+use alloy_rlp::{Decodable, Encodable, encode_fixed_size};
 use alloy_trie::{
-    EMPTY_ROOT_HASH, Nibbles,
+    EMPTY_ROOT_HASH, Nibbles, TrieMask,
     nodes::{CHILD_INDEX_RANGE, RlpNode},
 };
 use auto_impl::auto_impl;
+use reth_trie::TRIE_ACCOUNT_RLP_MAX_SIZE;
 use reth_trie_sparse::{
     SerialSparseTrie, SparseTrieInterface, TrieMasks, errors::SparseTrieError,
     provider::DefaultTrieNodeProvider,
 };
 use sbv_kv::{HashMap, nohash::NoHashMap};
 use sbv_primitives::{
-    Address, B256, U256, keccak256,
+    Address, B256, Bytes, U256, keccak256,
     types::{BlockWitness, revm::database::BundleAccount},
 };
 use std::{cell::RefCell, collections::BTreeMap, fmt::Debug};
@@ -26,62 +27,61 @@ pub use reth_trie::{KeccakKeyHasher, KeyHasher};
 #[auto_impl(&, &mut, Box, Rc, Arc)]
 pub trait BlockWitnessTrieExt {
     /// Import nodes into a KeyValueStore
-    fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
-        &self,
-        provider: &mut P,
-    ) -> Result<(), alloy_rlp::Error>;
+    fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, Bytes>>(&self, provider: &mut P);
 }
 
 impl BlockWitnessTrieExt for BlockWitness {
-    fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
-        &self,
-        provider: &mut P,
-    ) -> Result<(), alloy_rlp::Error> {
-        decode_nodes(provider, self.states.iter())
+    fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, Bytes>>(&self, provider: &mut P) {
+        for state in self.states.iter() {
+            let node_hash = cycle_track!(keccak256(state.as_ref()), "keccak256");
+            provider.insert(node_hash, state.clone());
+        }
+        // decode_nodes(provider, self.states.iter())
     }
 }
 
 impl BlockWitnessTrieExt for [BlockWitness] {
-    fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>>(
-        &self,
-        provider: &mut P,
-    ) -> Result<(), alloy_rlp::Error> {
-        decode_nodes(provider, self.iter().flat_map(|w| w.states.iter()))
+    fn import_nodes<P: sbv_kv::KeyValueStoreInsert<B256, Bytes>>(&self, provider: &mut P) {
+        for w in self.iter() {
+            for state in w.states.iter() {
+                let node_hash = cycle_track!(keccak256(state.as_ref()), "keccak256");
+                provider.insert(node_hash, state.clone());
+            }
+        }
+        // decode_nodes(provider, self.iter().flat_map(|w| w.states.iter()))
     }
 }
 
-/// Fill a KeyValueStore<B256, TrieNode> from a list of nodes
-pub fn decode_nodes<
-    B: AsRef<[u8]>,
-    P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>,
-    I: Iterator<Item = B>,
->(
-    provider: &mut P,
-    iter: I,
-) -> Result<(), alloy_rlp::Error> {
-    for byte in iter {
-        let mut buf = byte.as_ref();
-        let node_hash = cycle_track!(keccak256(buf), "keccak256");
-        let node = cycle_track!(TrieNode::decode(&mut buf), "TrieNode::decode")?;
-        assert!(
-            buf.is_empty(),
-            "the rlp buffer should only contains the node"
-        );
-        provider.insert(node_hash, node);
-    }
-    Ok(())
-}
+// /// Fill a KeyValueStore<B256, TrieNode> from a list of nodes
+// pub fn decode_nodes<
+//     B: AsRef<[u8]>,
+//     P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>,
+//     I: Iterator<Item = B>,
+// >(
+//     provider: &mut P,
+//     iter: I,
+// ) -> Result<(), alloy_rlp::Error> {
+//     for byte in iter {
+//         let mut buf = byte.as_ref();
+//         let node_hash = cycle_track!(keccak256(buf), "keccak256");
+//         let node = cycle_track!(TrieNode::decode(&mut buf), "TrieNode::decode")?;
+//         assert!(
+//             buf.is_empty(),
+//             "the rlp buffer should only contains the node"
+//         );
+//         provider.insert(node_hash, node);
+//     }
+//     Ok(())
+// }
 
 /// A partial trie that can be updated
 #[derive(Debug)]
 pub struct PartialStateTrie {
     state: SerialSparseTrie,
-    /// address -> hashed address
-    address_hashes: RefCell<HashMap<Address, B256>>,
     /// hashed address -> storage root
-    storage_roots: RefCell<NoHashMap<B256, B256>>,
+    storage_roots: RefCell<NoHashMap<Address, B256>>,
     /// hashed address -> storage tire
-    storage_tries: RefCell<NoHashMap<B256, Result<SerialSparseTrie>>>,
+    storage_tries: RefCell<NoHashMap<Address, Result<SerialSparseTrie>>>,
     /// shared rlp buffer
     rlp_buffer: Vec<u8>,
 }
@@ -110,7 +110,7 @@ type Result<T, E = PartialStateTrieError> = std::result::Result<T, E>;
 
 impl PartialStateTrie {
     /// Open a partial trie from a root node
-    pub fn open<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
+    pub fn open<P: sbv_kv::KeyValueStoreGet<B256, Bytes>>(
         nodes_provider: &P,
         root: B256,
     ) -> Result<Self> {
@@ -118,13 +118,13 @@ impl PartialStateTrie {
 
         Ok(PartialStateTrie {
             state,
-            address_hashes: RefCell::new(HashMap::with_capacity_and_hasher(
-                256,
-                Default::default(),
-            )),
+            // address_hashes: RefCell::new(HashMap::with_capacity_and_hasher(
+            //     256,
+            //     Default::default(),
+            // )),
             storage_roots: RefCell::new(HashMap::with_capacity_and_hasher(256, Default::default())),
             storage_tries: RefCell::new(HashMap::with_capacity_and_hasher(256, Default::default())),
-            rlp_buffer: Vec::with_capacity(128), // pre-allocate 128 bytes
+            rlp_buffer: Vec::with_capacity(TRIE_ACCOUNT_RLP_MAX_SIZE), // pre-allocate 128 bytes
         })
     }
 
@@ -134,15 +134,14 @@ impl PartialStateTrie {
         tracing::instrument(level = tracing::Level::TRACE, skip(self), ret)
     )]
     pub fn get_account(&self, address: Address) -> Result<Option<TrieAccount>> {
-        let hashed_address = self.hashed_address(address);
-        let path = Nibbles::unpack(hashed_address);
+        let path = Nibbles::unpack(keccak256(address));
         let Some(value) = self.state.get_leaf_value(&path) else {
             return Ok(None);
         };
-        let account = decode_trie_account(value)?;
+        let account = TrieAccount::decode(&mut value.as_ref())?;
         self.storage_roots
             .borrow_mut()
-            .insert(hashed_address, account.storage_root);
+            .insert(address, account.storage_root);
         Ok(Some(account))
     }
 
@@ -151,21 +150,20 @@ impl PartialStateTrie {
         feature = "dev",
         tracing::instrument(level = tracing::Level::TRACE, skip(self, nodes_provider), ret, err)
     )]
-    pub fn get_storage<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
+    pub fn get_storage<P: sbv_kv::KeyValueStoreGet<B256, Bytes>>(
         &self,
         nodes_provider: &P,
         address: Address,
         index: U256,
     ) -> Result<Option<U256>> {
-        let hashed_address = self.hashed_address(address);
-        let Some(storage_root) = self.storage_roots.borrow().get(&hashed_address).copied() else {
+        let Some(storage_root) = self.storage_roots.borrow().get(&address).copied() else {
             return Ok(None);
         };
         let path = Nibbles::unpack(keccak256(index.to_be_bytes::<{ U256::BYTES }>()));
 
         let mut tries = self.storage_tries.borrow_mut();
         let storage_trie = tries
-            .entry(hashed_address)
+            .entry(address)
             .or_insert_with(|| {
                 dev_trace!("open storage trie of {address} at {storage_root}");
                 open_trie(nodes_provider, storage_root).inspect_err(|_e| {
@@ -179,7 +177,7 @@ impl PartialStateTrie {
         let Some(value) = storage_trie.get_leaf_value(&path) else {
             return Ok(None);
         };
-        let slot = decode_u256_rlp(value)?;
+        let slot = U256::decode(&mut value.as_ref())?;
         Ok(Some(slot))
     }
 
@@ -192,15 +190,14 @@ impl PartialStateTrie {
 
     /// Update the trie with the new state
     #[cfg_attr(feature = "dev", tracing::instrument(level = tracing::Level::TRACE, skip_all, err))]
-    pub fn update<'a, P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
+    pub fn update<'a, P: sbv_kv::KeyValueStoreGet<B256, Bytes>>(
         &mut self,
         nodes_provider: P,
         post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
     ) -> Result<()> {
         for (address, account) in post_state.into_iter() {
             dev_trace!("update account: {address} {:?}", account.info);
-            let hashed_address = self.hashed_address(*address);
-            let account_path = Nibbles::unpack(hashed_address);
+            let account_path = Nibbles::unpack(keccak256(address));
 
             if account.was_destroyed() {
                 self.state
@@ -213,12 +210,12 @@ impl PartialStateTrie {
                 let trie = self
                     .storage_tries
                     .get_mut()
-                    .entry(hashed_address)
+                    .entry(*address)
                     .or_insert_with(|| {
                         let storage_root = self
                             .storage_roots
                             .get_mut()
-                            .get(&hashed_address)
+                            .get(address)
                             .copied()
                             .unwrap_or(EMPTY_ROOT_HASH);
                         dev_trace!("open storage trie of {address} at {storage_root}");
@@ -245,10 +242,8 @@ impl PartialStateTrie {
                     if slot.present_value.is_zero() {
                         trie.remove_leaf(&path, DefaultTrieNodeProvider)?;
                     } else {
-                        slot.present_value.encode(&mut self.rlp_buffer);
-                        let value = self.rlp_buffer.clone();
-                        self.rlp_buffer.clear();
-                        trie.update_leaf(path, value, DefaultTrieNodeProvider)?;
+                        let value = encode_fixed_size(&slot.present_value);
+                        trie.update_leaf(path, value.to_vec(), DefaultTrieNodeProvider)?;
                     }
                 }
                 trie.root()
@@ -256,7 +251,7 @@ impl PartialStateTrie {
                 dev_trace!("non-empty storage, skip trie update");
                 self.storage_roots
                     .get_mut()
-                    .get(&hashed_address)
+                    .get(address)
                     .copied()
                     .unwrap_or(EMPTY_ROOT_HASH)
             };
@@ -270,52 +265,32 @@ impl PartialStateTrie {
                 code_hash: info.code_hash,
             };
             dev_trace!("update account: {address} {:?}", account);
-            self.update_account(hashed_address, account)?;
+            self.rlp_buffer.clear();
+            account.encode(&mut self.rlp_buffer);
+            self.state.update_leaf(
+                account_path,
+                self.rlp_buffer.clone(),
+                DefaultTrieNodeProvider,
+            )?;
         }
 
-        Ok(())
-    }
-
-    /// Get the hashed address with memoization
-    #[inline(always)]
-    fn hashed_address(&self, address: Address) -> B256 {
-        *self
-            .address_hashes
-            .borrow_mut()
-            .entry(address)
-            .or_insert_with(|| cycle_track!(keccak256(address), "keccak256"))
-    }
-
-    /// Update the account
-    #[inline(always)]
-    fn update_account(&mut self, hashed_address: B256, account: TrieAccount) -> Result<()> {
-        let account_path = Nibbles::unpack(hashed_address);
-        account.encode(&mut self.rlp_buffer);
-        let value = self.rlp_buffer.clone();
-        self.rlp_buffer.clear();
-        self.state
-            .update_leaf(account_path, value, DefaultTrieNodeProvider)?;
         Ok(())
     }
 }
 
 #[inline(always)]
-fn open_trie<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
+fn open_trie<P: sbv_kv::KeyValueStoreGet<B256, Bytes>>(
     nodes_provider: &P,
     root: B256,
 ) -> Result<SerialSparseTrie> {
     if root == EMPTY_ROOT_HASH {
         return Ok(SerialSparseTrie::default());
     }
-    let root = nodes_provider
+    let root_node = nodes_provider
         .get(&root)
-        .ok_or(PartialStateTrieError::MissingWitness(root))?
-        .clone();
-    let mut trie =
-        SerialSparseTrie::from_root(root.clone(), TrieMasks::none(), false).map_err(|e| {
-            dev_error!("failed to open trie: {e}");
-            PartialStateTrieError::Impl(format!("{e:?}"))
-        })?;
+        .ok_or(PartialStateTrieError::MissingWitness(root))?;
+    let root = TrieNode::decode(&mut root_node.as_ref())?;
+    let mut trie = SerialSparseTrie::from_root(root.clone(), TrieMasks::none(), false)?;
     cycle_track!(
         traverse_import_partial_trie(Nibbles::default(), root, nodes_provider, &mut trie),
         "traverse_import_partial_trie"
@@ -324,16 +299,19 @@ fn open_trie<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
 }
 
 #[inline(always)]
-fn traverse_import_partial_trie<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
+fn traverse_import_partial_trie<P: sbv_kv::KeyValueStoreGet<B256, Bytes>>(
     path: Nibbles,
     node: TrieNode,
     nodes: &P,
     trie: &mut SerialSparseTrie,
 ) -> Result<()> {
     match node {
-        TrieNode::EmptyRoot => {}
+        TrieNode::EmptyRoot => trie.reveal_node(path, node, TrieMasks::none())?,
         TrieNode::Branch(ref branch) => {
             let mut stack_ptr = branch.as_ref().first_child_index();
+            let mut hash_mask = TrieMask::default();
+            let mut tree_mask = TrieMask::default();
+
             for idx in CHILD_INDEX_RANGE {
                 if branch.state_mask.is_bit_set(idx) {
                     let mut child_path = path;
@@ -342,18 +320,21 @@ fn traverse_import_partial_trie<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
                     stack_ptr += 1;
 
                     if let Some(child_node) = child_node {
-                        traverse_import_partial_trie(
-                            child_path, child_node, nodes, trie, // store_leaf,
-                        )?;
+                        traverse_import_partial_trie(child_path, child_node, nodes, trie)?;
+                        tree_mask.set_bit(idx);
+                    } else {
+                        hash_mask.set_bit(idx);
                     }
                 }
             }
+
+            let trie_mask = TrieMasks {
+                hash_mask: Some(hash_mask),
+                tree_mask: Some(tree_mask),
+            };
+            trie.reveal_node(path, node, trie_mask)?;
         }
-        TrieNode::Leaf(ref leaf) => {
-            let mut full = path;
-            full.extend(&leaf.key);
-            // store_leaf(full, &leaf.value)?;
-        }
+        TrieNode::Leaf(_) => trie.reveal_node(path, node, TrieMasks::none())?,
         TrieNode::Extension(ref extension) => {
             let mut child_path = path;
             child_path.extend(&extension.key);
@@ -361,55 +342,27 @@ fn traverse_import_partial_trie<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
             if let Some(child_node) = decode_rlp_node(nodes, &extension.child)? {
                 traverse_import_partial_trie(child_path, child_node, nodes, trie)?;
             }
+            trie.reveal_node(path, node, TrieMasks::none())?;
         }
     };
-
-    trie.reveal_node(path, node, TrieMasks::none())?;
 
     Ok(())
 }
 
 #[inline(always)]
-fn decode_trie_account(mut buf: &[u8]) -> Result<TrieAccount> {
-    let acc = cycle_track!(TrieAccount::decode(&mut buf), "TrieAccount::decode")?;
-    if !buf.is_empty() {
-        return Err(PartialStateTrieError::ExtraData(
-            "the leaf should only contains the account",
-        ));
-    }
-    Ok(acc)
-}
-
-#[inline(always)]
-fn decode_u256_rlp(mut buf: &[u8]) -> Result<U256> {
-    let value = cycle_track!(U256::decode(&mut buf), "U256::decode")?;
-    if !buf.is_empty() {
-        return Err(PartialStateTrieError::ExtraData(
-            "the leaf should only contains the U256 value",
-        ));
-    }
-    Ok(value)
-}
-
-#[inline(always)]
-fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, TrieNode>>(
+fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, Bytes>>(
     nodes_provider: P,
     node: &RlpNode,
 ) -> Result<Option<TrieNode>> {
     if node.len() == B256::len_bytes() + 1 {
         let hash = B256::from_slice(&node[1..]);
-
-        Ok(nodes_provider.get(&hash).cloned())
+        let Some(node_bytes) = nodes_provider.get(&hash) else {
+            return Ok(None);
+        };
+        Ok(Some(TrieNode::decode(&mut node_bytes.as_ref())?))
     } else {
         let mut buf = node.as_ref();
-        let child = cycle_track!(TrieNode::decode(&mut buf), "TrieNode::decode")?;
-        if !buf.is_empty() {
-            return Err(PartialStateTrieError::ExtraData(
-                "the extension node should only contains the child",
-            ));
-        }
-
-        Ok(Some(child))
+        Ok(Some(TrieNode::decode(&mut buf)?))
     }
 }
 
