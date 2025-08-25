@@ -36,7 +36,6 @@ impl BlockWitnessTrieExt for BlockWitness {
             let node_hash = cycle_track!(keccak256(state.as_ref()), "keccak256");
             provider.insert(node_hash, state.clone());
         }
-        // decode_nodes(provider, self.states.iter())
     }
 }
 
@@ -48,31 +47,8 @@ impl BlockWitnessTrieExt for [BlockWitness] {
                 provider.insert(node_hash, state.clone());
             }
         }
-        // decode_nodes(provider, self.iter().flat_map(|w| w.states.iter()))
     }
 }
-
-// /// Fill a KeyValueStore<B256, TrieNode> from a list of nodes
-// pub fn decode_nodes<
-//     B: AsRef<[u8]>,
-//     P: sbv_kv::KeyValueStoreInsert<B256, TrieNode>,
-//     I: Iterator<Item = B>,
-// >(
-//     provider: &mut P,
-//     iter: I,
-// ) -> Result<(), alloy_rlp::Error> {
-//     for byte in iter {
-//         let mut buf = byte.as_ref();
-//         let node_hash = cycle_track!(keccak256(buf), "keccak256");
-//         let node = cycle_track!(TrieNode::decode(&mut buf), "TrieNode::decode")?;
-//         assert!(
-//             buf.is_empty(),
-//             "the rlp buffer should only contains the node"
-//         );
-//         provider.insert(node_hash, node);
-//     }
-//     Ok(())
-// }
 
 /// A partial trie that can be updated
 #[derive(Debug)]
@@ -118,10 +94,6 @@ impl PartialStateTrie {
 
         Ok(PartialStateTrie {
             state,
-            // address_hashes: RefCell::new(HashMap::with_capacity_and_hasher(
-            //     256,
-            //     Default::default(),
-            // )),
             storage_roots: RefCell::new(HashMap::with_capacity_and_hasher(256, Default::default())),
             storage_tries: RefCell::new(HashMap::with_capacity_and_hasher(256, Default::default())),
             rlp_buffer: Vec::with_capacity(TRIE_ACCOUNT_RLP_MAX_SIZE), // pre-allocate 128 bytes
@@ -248,7 +220,7 @@ impl PartialStateTrie {
                 }
                 trie.root()
             } else {
-                dev_trace!("non-empty storage, skip trie update");
+                dev_trace!("empty storage, skip trie update");
                 self.storage_roots
                     .get_mut()
                     .get(address)
