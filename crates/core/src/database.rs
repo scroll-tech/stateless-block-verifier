@@ -80,7 +80,7 @@ impl<
     }
 
     /// Update changes to the database.
-    pub fn update<'a, P: KeyValueStoreGet<B256, TrieNode> + Copy>(
+    pub fn update<'a, P: KeyValueStoreGet<B256, TrieNode>>(
         &mut self,
         nodes_provider: P,
         post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
@@ -133,7 +133,7 @@ impl<
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let Some(account) = self.state.get_account(address) else {
+        let Some(account) = self.state.get_account(address)? else {
             return Ok(None);
         };
         dev_trace!("load trie account of {address:?}: {account:?}");
