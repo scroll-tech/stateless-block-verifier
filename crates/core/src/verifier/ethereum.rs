@@ -82,7 +82,7 @@ pub fn run(
                 block.state_root,
                 post_state_root,
                 #[cfg(not(target_os = "zkvm"))]
-                output.state,
+                Some(Box::new(output.state)),
             ));
         }
         dev_info!("Block #{} verified successfully", block.number);
