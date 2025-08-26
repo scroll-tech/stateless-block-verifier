@@ -78,7 +78,7 @@ pub fn run(
                 block.state_root,
                 post_state_root
             );
-            return Err(VerificationError::block_root_mismatch(
+            return Err(VerificationError::root_mismatch(
                 block.state_root,
                 post_state_root,
                 #[cfg(not(target_os = "zkvm"))]
