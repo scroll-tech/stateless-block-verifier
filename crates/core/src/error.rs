@@ -40,7 +40,7 @@ pub enum VerificationError {
         actual: B256,
         /// The bundle state at the time of the mismatch.
         #[cfg(not(target_os = "zkvm"))]
-        bundle_state: Box<BundleState>,
+        bundle_state: Option<Box<BundleState>>,
     },
 }
 
@@ -50,13 +50,13 @@ impl VerificationError {
     pub fn root_mismatch(
         expected: B256,
         actual: B256,
-        #[cfg(not(target_os = "zkvm"))] bundle_state: impl Into<Box<BundleState>>,
+        #[cfg(not(target_os = "zkvm"))] bundle_state: Option<Box<BundleState>>,
     ) -> Self {
         VerificationError::RootMismatch {
             expected,
             actual,
             #[cfg(not(target_os = "zkvm"))]
-            bundle_state: bundle_state.into(),
+            bundle_state,
         }
     }
 }
