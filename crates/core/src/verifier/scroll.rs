@@ -76,6 +76,14 @@ pub fn run(
         })
         .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()?;
 
+    if !blocks
+        .iter()
+        .tuple_windows()
+        .all(|(a, b)| a.hash() == b.parent_hash)
+    {
+        return Err(VerificationError::ParentHashMismatch);
+    }
+
     let mut args = ExecuteInnerArgs {
         code_db: &code_db,
         nodes_provider: &nodes_provider,
