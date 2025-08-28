@@ -13,7 +13,7 @@ use reth_trie_sparse::{
     SerialSparseTrie, SparseTrieInterface, TrieMasks, errors::SparseTrieError,
     provider::DefaultTrieNodeProvider,
 };
-use sbv_kv::{HashMap, HashSet, nohash::NoHashMap};
+use sbv_kv::{HashMap, nohash::NoHashMap};
 use sbv_primitives::{
     Address, B256, Bytes, U256, keccak256,
     types::{BlockWitness, revm::database::BundleAccount},
