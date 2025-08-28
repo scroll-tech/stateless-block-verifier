@@ -1,4 +1,4 @@
-use crate::{HashMap, KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert};
+use crate::{HashMap, KeyValueStore, KeyValueStoreGet, KeyValueStoreInsert, KeyValueStoreRemove};
 use core::hash::{BuildHasher, Hash};
 use std::{borrow::Borrow, collections::BTreeMap};
 
@@ -21,6 +21,16 @@ impl<K: Ord + Hash + Eq, V, S: BuildHasher> KeyValueStoreGet<K, V> for HashMap<K
     }
 }
 
+impl<K: Ord + Hash + Eq, V, S: BuildHasher> KeyValueStoreRemove<K, V> for HashMap<K, V, S> {
+    fn remove<Q>(&mut self, k: &Q) -> Option<V>
+    where
+        K: Borrow<Q>,
+        Q: Ord + Hash + Eq + ?Sized,
+    {
+        HashMap::remove(self, k)
+    }
+}
+
 impl<K: Ord + Hash + Eq, V, S: BuildHasher> KeyValueStore<K, V> for HashMap<K, V, S> {}
 
 impl<K: Ord + Hash + Eq, V> KeyValueStoreInsert<K, V> for BTreeMap<K, V> {
@@ -39,6 +49,16 @@ impl<K: Ord + Hash + Eq, V> KeyValueStoreGet<K, V> for BTreeMap<K, V> {
         Q: Ord + Hash + Eq + ?Sized,
     {
         BTreeMap::get(self, k)
+    }
+}
+
+impl<K: Ord + Hash + Eq, V> KeyValueStoreRemove<K, V> for BTreeMap<K, V> {
+    fn remove<Q>(&mut self, k: &Q) -> Option<V>
+    where
+        K: Borrow<Q>,
+        Q: Ord + Hash + Eq + ?Sized,
+    {
+        BTreeMap::remove(self, k)
     }
 }
 
