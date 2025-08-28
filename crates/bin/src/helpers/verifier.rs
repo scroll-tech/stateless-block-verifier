@@ -25,12 +25,10 @@ pub fn verify_catch_panics(
             vec![witness],
             chain_spec,
             #[cfg(feature = "scroll")]
-            verifier::StateCommitMode::Block,
-            #[cfg(feature = "scroll")]
             None::<Vec<Vec<sbv::primitives::U256>>>,
         )
         .inspect_err(|e| {
-            if let VerificationError::BlockRootMismatch { bundle_state, .. } = e {
+            if let VerificationError::RootMismatch { bundle_state, .. } = e {
                 let dump_dir = env::temp_dir()
                     .join("dumps")
                     .join(format!("{chain_id}-{block_number}"));

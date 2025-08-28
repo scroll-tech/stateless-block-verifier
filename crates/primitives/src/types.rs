@@ -66,7 +66,7 @@ pub mod revm {
 pub mod reth {
     /// Re-export types from `reth-primitives-types`
     pub mod primitives {
-        pub use reth_primitives::RecoveredBlock;
+        pub use reth_primitives::{RecoveredBlock, SealedBlock};
 
         #[cfg(not(feature = "scroll"))]
         pub use reth_primitives::{Block, BlockBody, EthPrimitives, Receipt, TransactionSigned};
@@ -125,7 +125,7 @@ pub mod witness {
             Header,
             consensus::{SignerRecoverable, TxEnvelope},
             eips::eip4895::Withdrawals,
-            reth::primitives::{Block, BlockBody, RecoveredBlock},
+            reth::primitives::{Block, BlockBody, RecoveredBlock, SealedBlock},
         },
     };
     use reth_primitives_traits::serde_bincode_compat::BincodeReprFor;
@@ -210,11 +210,11 @@ pub mod witness {
                 withdrawals: self.withdrawals,
             };
 
-            Ok(RecoveredBlock::new_unhashed(
-                Block {
+            Ok(RecoveredBlock::new_sealed(
+                SealedBlock::seal_slow(Block {
                     header: self.header,
                     body,
-                },
+                }),
                 senders,
             ))
         }

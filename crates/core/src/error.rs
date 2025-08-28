@@ -17,6 +17,9 @@ pub enum VerificationError {
     /// The witnesses are not sequential.
     #[error("witnesses are not sequential")]
     NonSequentialWitnesses,
+    /// The parent hash of a block does not match the hash of the previous block.
+    #[error("parent hash of a block does not match the hash of the previous block")]
+    ParentHashMismatch,
     /// Error while recovering signer from an ECDSA signature.
     #[error("invalid signature: {0}")]
     InvalidSignature(#[from] SignatureError),
@@ -30,7 +33,7 @@ pub enum VerificationError {
     #[error(
         "state root in witness doesn't match with state root executed: expected {expected}, actual {actual}"
     )]
-    BlockRootMismatch {
+    RootMismatch {
         /// Root after in trace
         expected: B256,
         /// Root after in revm
@@ -39,37 +42,21 @@ pub enum VerificationError {
         #[cfg(not(target_os = "zkvm"))]
         bundle_state: Box<BundleState>,
     },
-    /// Root mismatch error
-    #[error(
-        "state root in last witness doesn't match with state root executed: expected {expected}, actual {actual}"
-    )]
-    ChunkRootMismatch {
-        /// Root after in trace
-        expected: B256,
-        /// Root after in revm
-        actual: B256,
-    },
 }
 
 impl VerificationError {
-    /// Create a new [`VerificationError::BlockRootMismatch`] variant.
+    /// Create a new [`VerificationError::RootMismatch`] variant.
     #[inline]
-    pub fn block_root_mismatch(
+    pub fn root_mismatch(
         expected: B256,
         actual: B256,
         #[cfg(not(target_os = "zkvm"))] bundle_state: impl Into<Box<BundleState>>,
     ) -> Self {
-        VerificationError::BlockRootMismatch {
+        VerificationError::RootMismatch {
             expected,
             actual,
             #[cfg(not(target_os = "zkvm"))]
             bundle_state: bundle_state.into(),
         }
-    }
-
-    /// Create a new [`VerificationError::ChunkRootMismatch`] variant.
-    #[inline]
-    pub fn chunk_root_mismatch(expected: B256, actual: B256) -> Self {
-        VerificationError::ChunkRootMismatch { expected, actual }
     }
 }
