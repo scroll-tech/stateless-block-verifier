@@ -20,7 +20,6 @@ use std::{collections::BTreeMap, sync::Arc};
     derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize),
     rkyv(derive(Debug, Hash, PartialEq, Eq))
 )]
-#[deprecated(note = "StateCommitMode is no longer used and will be removed in future versions.")]
 pub enum StateCommitMode {
     /// Commit state by chunk.
     Chunk,
