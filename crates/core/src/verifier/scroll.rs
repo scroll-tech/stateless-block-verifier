@@ -2,7 +2,7 @@ use crate::{EvmDatabase, EvmExecutor, VerificationError};
 use itertools::Itertools;
 use sbv_kv::{nohash::NoHashMap, null::NullProvider};
 use sbv_primitives::{
-    B256, Bytes,
+    Address, B256, Bytes,
     chainspec::ChainSpec,
     ext::{BlockWitnessChunkExt, BlockWitnessExt},
     types::{
@@ -10,7 +10,7 @@ use sbv_primitives::{
         reth::primitives::{Block, RecoveredBlock},
     },
 };
-use sbv_trie::BlockWitnessTrieExt;
+use sbv_trie::{BlockWitnessTrieExt, PartialStateTrie};
 use std::{collections::BTreeMap, sync::Arc};
 
 /// State commit mode for the block witness verification process.
@@ -42,6 +42,8 @@ pub struct VerifyResult {
     pub withdraw_root: B256,
     /// Gas used during the verification process.
     pub gas_used: u64,
+    /// Accounts accessed during the verification process.
+    pub access_list: Option<Vec<Address>>,
 }
 
 /// Verify the block witness and return the gas used.
@@ -51,6 +53,7 @@ pub fn run(
     compression_ratios: Option<
         impl IntoIterator<Item = impl IntoIterator<Item = impl Into<sbv_primitives::U256>>> + Clone,
     >,
+    cached_trie: Option<PartialStateTrie>,
 ) -> Result<VerifyResult, VerificationError> {
     if witnesses.is_empty() {
         return Err(VerificationError::EmptyWitnesses);
@@ -85,12 +88,12 @@ pub fn run(
         return Err(VerificationError::ParentHashMismatch);
     }
 
-    let mut db = manually_drop_on_zkvm!(EvmDatabase::new_from_root(
-        code_db,
-        pre_state_root,
-        &nodes_provider,
-        NullProvider,
-    )?);
+    let db = if let Some(cached_trie) = cached_trie {
+        EvmDatabase::new_with_cached_trie(code_db, cached_trie, &nodes_provider, NullProvider)?
+    } else {
+        EvmDatabase::new_from_root(code_db, pre_state_root, &nodes_provider, NullProvider)?
+    };
+    let mut db = manually_drop_on_zkvm!(db);
 
     let mut gas_used = 0;
 
@@ -146,6 +149,10 @@ pub fn run(
         post_state_root,
         withdraw_root,
         gas_used,
+        access_list: db
+            .access_list
+            .take()
+            .map(|list| list.into_inner().into_iter().collect()),
     })
 }
 
@@ -193,7 +200,7 @@ mod tests {
         let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
         let chain_spec =
             build_chain_spec_force_hardfork(Chain::from_id(witness.chain_id), Hardfork::EuclidV2);
-        run(vec![witness], chain_spec, None::<Vec<Vec<U256>>>).unwrap();
+        run(vec![witness], chain_spec, None::<Vec<Vec<U256>>>, None).unwrap();
     }
 
     #[rstest::rstest]
@@ -205,6 +212,6 @@ mod tests {
         let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
         let chain_spec =
             build_chain_spec_force_hardfork(Chain::from_id(witness.chain_id), Hardfork::Feynman);
-        run(vec![witness], chain_spec, None::<Vec<Vec<U256>>>).unwrap();
+        run(vec![witness], chain_spec, None::<Vec<Vec<U256>>>, None).unwrap();
     }
 }

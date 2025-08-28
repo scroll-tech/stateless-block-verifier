@@ -1,4 +1,4 @@
-use sbv_kv::{HashMap, KeyValueStoreGet};
+use sbv_kv::{HashMap, HashSet, KeyValueStoreGet};
 use sbv_primitives::{
     Address, B256, Bytes, U256,
     types::revm::{
@@ -23,6 +23,8 @@ pub struct EvmDatabase<CodeDb, NodesProvider, BlockHashProvider> {
     block_hashes: BlockHashProvider,
     /// partial merkle patricia trie
     pub(crate) state: PartialStateTrie,
+    /// Access list of addresses that have been accessed
+    pub(crate) access_list: Option<RefCell<HashSet<Address>>>,
 }
 
 /// Database error.
@@ -76,6 +78,24 @@ impl<
             nodes_provider,
             block_hashes,
             state,
+            access_list: Some(RefCell::new(Default::default())),
+        })
+    }
+
+    /// Initialize an EVM database from a zkTrie root.
+    pub fn new_with_cached_trie(
+        code_db: CodeDb,
+        state: PartialStateTrie,
+        nodes_provider: NodesProvider,
+        block_hashes: BlockHashProvider,
+    ) -> Result<Self> {
+        Ok(EvmDatabase {
+            code_db,
+            analyzed_code_cache: Default::default(),
+            nodes_provider,
+            block_hashes,
+            state,
+            access_list: None,
         })
     }
 
@@ -133,6 +153,9 @@ impl<
 
     /// Get basic account information.
     fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+        if let Some(ref access_list) = self.access_list {
+            access_list.borrow_mut().insert(address);
+        }
         let Some(account) = self.state.get_account(address)? else {
             return Ok(None);
         };
@@ -165,6 +188,9 @@ impl<
 
     /// Get storage value of address at index.
     fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
+        if let Some(ref access_list) = self.access_list {
+            access_list.borrow_mut().insert(address);
+        }
         dev_trace!("get storage of {:?} at index {:?}", address, index);
         Ok(self
             .state

@@ -16,7 +16,8 @@ auto_impl.workspace = true
 alloy-rlp.workspace = true
 alloy-trie.workspace = true
 reth-trie.workspace = true
-reth-trie-sparse.workspace = true
+reth-trie-sparse = { workspace = true, features = ["serde"]}
+serde = { workspace = true, features = ["derive"] }
 
 sbv-primitives = { workspace = true, features = ["revm-types"] }
 sbv-kv.workspace = true

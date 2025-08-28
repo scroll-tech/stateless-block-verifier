@@ -10,7 +10,7 @@ pub use imps::{nohash, null};
 /// HashMap
 pub type HashMap<K, V, S = rustc_hash::FxBuildHasher> = hashbrown::HashMap<K, V, S>;
 /// HashSet
-pub type HashSet<K, V, S = rustc_hash::FxBuildHasher> = hashbrown::HashSet<K, V, S>;
+pub type HashSet<V, S = rustc_hash::FxBuildHasher> = hashbrown::HashSet<V, S>;
 
 /// Key-Value store insert trait
 #[auto_impl(&mut, Box)]
@@ -26,6 +26,16 @@ pub trait KeyValueStoreInsert<K: Ord + Hash + Eq, V> {
 pub trait KeyValueStoreGet<K: Ord + Hash + Eq, V> {
     /// Get value by key
     fn get<Q>(&self, k: &Q) -> Option<&V>
+    where
+        K: Borrow<Q>,
+        Q: Ord + Hash + Eq + ?Sized;
+}
+
+/// Key-Value store trait
+#[auto_impl(&mut)]
+pub trait KeyValueStoreRemove<K: Ord + Hash + Eq, V> {
+    /// Get value by key
+    fn remove<Q>(&mut self, k: &Q) -> Option<V>
     where
         K: Borrow<Q>,
         Q: Ord + Hash + Eq + ?Sized;

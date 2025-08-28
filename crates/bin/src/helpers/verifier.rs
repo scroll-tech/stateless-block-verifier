@@ -26,6 +26,8 @@ pub fn verify_catch_panics(
             chain_spec,
             #[cfg(feature = "scroll")]
             None::<Vec<Vec<sbv::primitives::U256>>>,
+            #[cfg(feature = "scroll")]
+            None,
         )
         .inspect_err(|e| {
             if let VerificationError::RootMismatch { bundle_state, .. } = e {

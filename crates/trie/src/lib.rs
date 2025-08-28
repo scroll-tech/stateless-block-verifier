@@ -13,11 +13,12 @@ use reth_trie_sparse::{
     SerialSparseTrie, SparseTrieInterface, TrieMasks, errors::SparseTrieError,
     provider::DefaultTrieNodeProvider,
 };
-use sbv_kv::{HashMap, nohash::NoHashMap};
+use sbv_kv::{HashMap, HashSet, nohash::NoHashMap};
 use sbv_primitives::{
     Address, B256, Bytes, U256, keccak256,
     types::{BlockWitness, revm::database::BundleAccount},
 };
+use serde::{Deserialize, Serialize};
 use std::{cell::RefCell, collections::BTreeMap, fmt::Debug};
 
 pub use alloy_trie::{TrieAccount, nodes::TrieNode};
@@ -51,14 +52,15 @@ impl BlockWitnessTrieExt for [BlockWitness] {
 }
 
 /// A partial trie that can be updated
-#[derive(Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PartialStateTrie {
     state: SerialSparseTrie,
-    /// hashed address -> storage root
+    /// address -> storage root
     storage_roots: RefCell<NoHashMap<Address, B256>>,
-    /// hashed address -> storage tire
-    storage_tries: RefCell<NoHashMap<Address, Result<SerialSparseTrie>>>,
+    /// address -> storage tire
+    storage_tries: RefCell<NoHashMap<Address, Option<SerialSparseTrie>>>,
     /// shared rlp buffer
+    #[serde(skip, default = "default_rlp_buffer")]
     rlp_buffer: Vec<u8>,
 }
 
@@ -96,8 +98,31 @@ impl PartialStateTrie {
             state,
             storage_roots: RefCell::new(HashMap::with_capacity_and_hasher(256, Default::default())),
             storage_tries: RefCell::new(HashMap::with_capacity_and_hasher(256, Default::default())),
-            rlp_buffer: Vec::with_capacity(TRIE_ACCOUNT_RLP_MAX_SIZE), // pre-allocate 128 bytes
+            rlp_buffer: default_rlp_buffer(), // pre-allocate 128 bytes
         })
+    }
+
+    /// Open a partial trie from a root node, and preload all account storage tries
+    pub fn open_preloaded<P: sbv_kv::KeyValueStoreGet<B256, Bytes>>(
+        nodes_provider: &P,
+        root: B256,
+        access_list: Vec<Address>,
+    ) -> Result<Self> {
+        let trie = Self::open(nodes_provider, root)?;
+
+        for address in access_list.into_iter() {
+            let Some(account) = trie.get_account(address).ok().flatten() else {
+                continue;
+            };
+            let Ok(storage_trie) = open_trie(nodes_provider, account.storage_root) else {
+                continue;
+            };
+            trie.storage_tries
+                .borrow_mut()
+                .insert(address, Some(storage_trie));
+        }
+
+        Ok(trie)
     }
 
     /// Get account
@@ -139,13 +164,13 @@ impl PartialStateTrie {
             .or_insert_with(|| {
                 dev_trace!("open storage trie of {address} at {storage_root}");
                 open_trie(nodes_provider, storage_root).inspect_err(|_e| {
-                    dev_error!(
+                    println!(
                         "failed to open storage trie of {address} at {storage_root}, cause: {_e}"
                     )
-                })
+                }).ok()
             })
             .as_mut()
-            .map_err(|_| PartialStateTrieError::PreviousError)?;
+            .ok_or(PartialStateTrieError::PreviousError)?;
         let Some(value) = storage_trie.get_leaf_value(&path) else {
             return Ok(None);
         };
@@ -193,13 +218,13 @@ impl PartialStateTrie {
                         dev_trace!("open storage trie of {address} at {storage_root}");
                         open_trie(&nodes_provider, storage_root)
                             .inspect_err(|_e| {
-                                dev_error!(
+                                println!(
                                     "failed to open storage trie of {address} at {storage_root}, cause: {_e}"
                                 )
-                            })
+                            }).ok()
                     })
                     .as_mut()
-                    .map_err(|_| PartialStateTrieError::PreviousError)?;
+                    .ok_or(PartialStateTrieError::PreviousError)?;
                 dev_trace!("opened storage trie of {address} at {}", trie.root());
 
                 for (key, slot) in BTreeMap::from_iter(account.storage.clone()) {
@@ -336,6 +361,10 @@ fn decode_rlp_node<P: sbv_kv::KeyValueStoreGet<B256, Bytes>>(
         let mut buf = node.as_ref();
         Ok(Some(TrieNode::decode(&mut buf)?))
     }
+}
+
+fn default_rlp_buffer() -> Vec<u8> {
+    Vec::with_capacity(TRIE_ACCOUNT_RLP_MAX_SIZE) // pre-allocate 128 bytes
 }
 
 impl From<SparseTrieError> for PartialStateTrieError {
