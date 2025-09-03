@@ -52,7 +52,6 @@ reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "
 reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
 reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
 reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
-reth-trie-sparse = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
 
 reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
 reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", branch = "scroll", default-features = false }
@@ -72,7 +71,6 @@ scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", branch = "
 #reth-primitives = { path = "../reth/crates/primitives", default-features = false }
 #reth-primitives-traits = { path = "../reth/crates/primitives-traits", default-features = false }
 #reth-trie = { path = "../reth/crates/trie/trie", default-features = false }
-#reth-trie-sparse = { path = "../reth/crates/trie/sparse", default-features = false }
 #
 #reth-scroll-chainspec = { path = "../reth/crates/scroll/chainspec", default-features = false }
 #reth-scroll-evm = { path = "../reth/crates/scroll/evm", default-features = false }
