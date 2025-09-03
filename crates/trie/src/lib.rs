@@ -2,7 +2,6 @@
 #[macro_use]
 extern crate sbv_helpers;
 
-use alloy_rlp::{Decodable, encode_fixed_size};
 use alloy_trie::{EMPTY_ROOT_HASH, Nibbles, TrieAccount};
 
 use sbv_kv::{HashMap, nohash::NoHashMap};
@@ -24,9 +23,9 @@ mod mpt;
 
 /// A partial trie that can be updated
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct PartialStateTrie {
-    state_trie: mpt::MptNode,
-    storage_tries: NoHashMap<B256, mpt::MptNode>,
+pub struct PartialStateTrie<'a> {
+    state_trie: mpt::MptNode<'a>,
+    storage_tries: NoHashMap<B256, mpt::MptNode<'a>>,
     #[cfg(feature = "sanity-check")]
     reth_state_trie: SerialSparseTrie,
     #[cfg(feature = "sanity-check")]
@@ -41,9 +40,9 @@ pub enum PartialStateTrieError {
     Impl(#[from] mpt::Error),
 }
 
-impl PartialStateTrie {
+impl<'a> PartialStateTrie<'a> {
     /// Create a partial state trie from a previous state root and a list of RLP-encoded MPT nodes
-    pub fn new<'a, I>(prev_state_root: B256, states: I) -> Self
+    pub fn new<I>(prev_state_root: B256, states: I) -> Self
     where
         I: IntoIterator<Item = &'a Bytes>,
     {
@@ -197,7 +196,7 @@ impl PartialStateTrie {
 
         match account {
             Some(account) => {
-                if account.storage_root != mpt::EMPTY_ROOT_HASH {
+                if account.storage_root != EMPTY_ROOT_HASH {
                     todo!("Validate that storage witness is valid");
                 }
             }
