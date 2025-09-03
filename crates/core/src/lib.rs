@@ -3,6 +3,10 @@
 #[macro_use]
 extern crate sbv_helpers;
 
+/// Witness type
+pub mod witness;
+pub use witness::BlockWitness;
+
 mod database;
 pub use database::{DatabaseError, DatabaseRef, EvmDatabase};
 

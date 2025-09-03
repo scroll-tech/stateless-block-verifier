@@ -23,9 +23,11 @@ thiserror.workspace = true
 serde = { workspace = true, features = ["derive"] }
 
 sbv-primitives = { workspace = true, features = ["network-types"] }
+sbv-core.workspace = true
 
 [features]
 scroll = [
   "sbv-primitives/scroll-network-types",
   "sbv-primitives/scroll-compress-ratio",
+  "sbv-core/scroll",
 ]

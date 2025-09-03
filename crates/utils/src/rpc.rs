@@ -3,11 +3,12 @@
 use crate::witness::WitnessBuilder;
 use alloy_provider::Provider;
 use alloy_transport::TransportResult;
+use sbv_core::witness::BlockWitness;
 use sbv_primitives::{
     B256, BlockNumber, Bytes, ChainId,
     alloy_primitives::map::B256HashMap,
     types::{
-        BlockWitness, Network,
+        Network,
         eips::BlockNumberOrTag,
         rpc::{Block, ExecutionWitness},
     },

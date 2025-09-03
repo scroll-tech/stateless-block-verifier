@@ -1,11 +1,9 @@
 //! Witness builder.
 
+use sbv_core::witness::BlockWitness;
 use sbv_primitives::{
     B256, ChainId,
-    types::{
-        BlockWitness,
-        rpc::{Block as RpcBlock, ExecutionWitness},
-    },
+    types::rpc::{Block as RpcBlock, ExecutionWitness},
 };
 
 /// Block witness builder.

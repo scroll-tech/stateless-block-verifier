@@ -17,9 +17,6 @@ pub enum VerificationError {
     /// The witnesses are not sequential.
     #[error("witnesses are not sequential")]
     NonSequentialWitnesses,
-    /// The parent hash of a block does not match the hash of the previous block.
-    #[error("parent hash of a block does not match the hash of the previous block")]
-    ParentHashMismatch,
     /// Error while recovering signer from an ECDSA signature.
     #[error("invalid signature: {0}")]
     InvalidSignature(#[from] SignatureError),

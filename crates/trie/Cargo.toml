@@ -16,8 +16,9 @@ auto_impl.workspace = true
 alloy-rlp.workspace = true
 alloy-trie.workspace = true
 reth-trie.workspace = true
-reth-trie-sparse = { workspace = true, features = ["serde"]}
+reth-trie-sparse = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"] }
+rlp = "0.5"
 
 sbv-primitives = { workspace = true, features = ["revm-types"] }
 sbv-kv.workspace = true
@@ -29,6 +30,7 @@ tracing = { workspace = true, optional = true }
 
 [features]
 dev = ["dep:tracing", "sbv-primitives/dev"]
+sanity-check = ["dep:reth-trie-sparse"]
 
 sp1 = []
 cycle-tracker = []

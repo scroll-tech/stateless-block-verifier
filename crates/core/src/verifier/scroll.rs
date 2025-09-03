@@ -1,16 +1,13 @@
-use crate::{EvmDatabase, EvmExecutor, VerificationError};
+use crate::witness::{BlockWitnessChunkExt, BlockWitnessExt};
+use crate::{BlockWitness, EvmDatabase, EvmExecutor, VerificationError};
 use itertools::Itertools;
 use sbv_kv::{nohash::NoHashMap, null::NullProvider};
 use sbv_primitives::{
-    Address, B256, Bytes,
+    B256, Bytes,
     chainspec::ChainSpec,
-    ext::{BlockWitnessChunkExt, BlockWitnessExt},
-    types::{
-        BlockWitness,
-        reth::primitives::{Block, RecoveredBlock},
-    },
+    types::reth::primitives::{Block, RecoveredBlock},
 };
-use sbv_trie::{BlockWitnessTrieExt, PartialStateTrie};
+use sbv_trie::PartialStateTrie;
 use std::{collections::BTreeMap, sync::Arc};
 
 /// State commit mode for the block witness verification process.
@@ -42,8 +39,6 @@ pub struct VerifyResult {
     pub withdraw_root: B256,
     /// Gas used during the verification process.
     pub gas_used: u64,
-    /// Accounts accessed during the verification process.
-    pub access_list: Option<Vec<Address>>,
 }
 
 /// Verify the block witness and return the gas used.
@@ -64,13 +59,30 @@ pub fn run(
     if !witnesses.has_seq_block_number() {
         return Err(VerificationError::NonSequentialWitnesses);
     }
+    if !witnesses.has_seq_state_root() {
+        return Err(VerificationError::NonSequentialWitnesses);
+    }
 
-    let (code_db, nodes_provider) = make_providers(&witnesses);
-    let code_db = manually_drop_on_zkvm!(code_db);
-    let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
+    let code_db = {
+        // build code db
+        let num_codes = witnesses.iter().map(|w| w.codes.len()).sum();
+        let mut code_db =
+            NoHashMap::<B256, Bytes>::with_capacity_and_hasher(num_codes, Default::default());
+        witnesses.import_codes(&mut code_db);
+        manually_drop_on_zkvm!(code_db)
+    };
 
     let pre_state_root = witnesses[0].prev_state_root;
     let post_state_root = witnesses.last().unwrap().header.state_root;
+
+    let trie = if let Some(trie) = cached_trie {
+        trie
+    } else {
+        PartialStateTrie::new(
+            pre_state_root,
+            witnesses.iter().flat_map(|w| w.states.iter()),
+        )
+    };
 
     let blocks = witnesses
         .into_iter()
@@ -79,37 +91,26 @@ pub fn run(
             w.into_reth_block()
         })
         .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()?;
-
     if !blocks
         .iter()
         .tuple_windows()
         .all(|(a, b)| a.hash() == b.header().parent_hash)
     {
-        return Err(VerificationError::ParentHashMismatch);
+        return Err(VerificationError::NonSequentialWitnesses);
     }
 
-    let db = if let Some(cached_trie) = cached_trie {
-        EvmDatabase::new_with_cached_trie(code_db, cached_trie, &nodes_provider, NullProvider)?
-    } else {
-        EvmDatabase::new_from_root(code_db, pre_state_root, &nodes_provider, NullProvider)?
-    };
-    let mut db = manually_drop_on_zkvm!(db);
-
     let mut gas_used = 0;
+    let mut db = EvmDatabase::new(&code_db, trie, NullProvider);
 
     let mut execute_block = |block, compression_ratio| -> Result<(), VerificationError> {
-        let output = manually_drop_on_zkvm!(
-            EvmExecutor::new(chain_spec.clone(), &db, block, compression_ratio).execute()?
-        );
-
+        let output =
+            EvmExecutor::new(chain_spec.clone(), &db, block, compression_ratio).execute()?;
         gas_used += output.gas_used;
 
-        db.update(
-            &nodes_provider,
-            BTreeMap::from_iter(output.state.state.clone()).iter(),
-        )?;
+        #[cfg(not(target_os = "zkvm"))]
+        let state_for_debug = output.state.clone();
 
-        let post_state_root = db.commit_changes();
+        let post_state_root = db.commit(BTreeMap::from_iter(output.state.state))?;
         if block.state_root != post_state_root {
             dev_error!(
                 "Block #{} root mismatch: root after in trace = {:x}, root after in reth = {:x}",
@@ -121,7 +122,7 @@ pub fn run(
                 block.state_root,
                 post_state_root,
                 #[cfg(not(target_os = "zkvm"))]
-                output.state,
+                state_for_debug,
             ));
         }
 
@@ -149,36 +150,7 @@ pub fn run(
         post_state_root,
         withdraw_root,
         gas_used,
-        access_list: db
-            .access_list
-            .take()
-            .map(|list| list.into_inner().into_iter().collect()),
     })
-}
-
-type CodeDb = NoHashMap<B256, Bytes>;
-type NodesProvider = NoHashMap<B256, Bytes>;
-
-/// Create the providers needed for the EVM executor from a list of witnesses.
-#[inline]
-fn make_providers(witnesses: &[BlockWitness]) -> (CodeDb, NodesProvider) {
-    let code_db = {
-        // build code db
-        let num_codes = witnesses.iter().map(|w| w.codes.len()).sum();
-        let mut code_db =
-            NoHashMap::<B256, Bytes>::with_capacity_and_hasher(num_codes, Default::default());
-        witnesses.import_codes(&mut code_db);
-        code_db
-    };
-    let nodes_provider = {
-        let num_states = witnesses.iter().map(|w| w.states.len()).sum();
-        let mut nodes_provider =
-            NoHashMap::<B256, Bytes>::with_capacity_and_hasher(num_states, Default::default());
-        witnesses.import_nodes(&mut nodes_provider);
-        nodes_provider
-    };
-
-    (code_db, nodes_provider)
 }
 
 #[cfg(test)]
@@ -188,7 +160,6 @@ mod tests {
         U256,
         chainspec::{Chain, build_chain_spec_force_hardfork},
         hardforks::Hardfork,
-        types::BlockWitness,
     };
 
     #[rstest::rstest]

@@ -4,9 +4,6 @@
 #[cfg(feature = "chainspec")]
 pub mod chainspec;
 
-/// Extension Traits
-pub mod ext;
-
 /// Ethereum fork types
 #[cfg(feature = "hardforks")]
 pub mod hardforks {

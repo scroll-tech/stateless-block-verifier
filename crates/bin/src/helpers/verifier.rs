@@ -4,8 +4,9 @@ use sbv::{
     core::{
         VerificationError,
         verifier::{self, VerifyResult},
+        witness::BlockWitness,
     },
-    primitives::{chainspec::ChainSpec, types::BlockWitness},
+    primitives::chainspec::ChainSpec,
 };
 use std::{
     env,
