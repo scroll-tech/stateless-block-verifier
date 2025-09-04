@@ -5344,10 +5344,7 @@ version = "2.0.0"
 dependencies = [
  "alloy-rlp",
  "alloy-trie",
- "auto_impl",
  "reth-trie",
- "reth-trie-sparse",
- "rlp",
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",

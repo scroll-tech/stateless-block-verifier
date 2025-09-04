@@ -2,6 +2,8 @@
 #[macro_use]
 extern crate sbv_helpers;
 
+use crate::mpt::MptNode;
+use alloy_rlp::Decodable;
 use alloy_trie::{EMPTY_ROOT_HASH, Nibbles, TrieAccount};
 use sbv_kv::{HashMap, nohash::NoHashMap};
 use sbv_primitives::{Address, B256, Bytes, U256, keccak256, types::revm::database::BundleAccount};
@@ -12,9 +14,9 @@ mod mpt;
 
 /// A partial trie that can be updated
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-pub struct PartialStateTrie<'a> {
-    state_trie: mpt::MptNode<'a>,
-    storage_tries: NoHashMap<B256, mpt::MptNode<'a>>,
+pub struct PartialStateTrie {
+    state_trie: MptNode,
+    storage_tries: NoHashMap<B256, MptNode>,
 }
 
 /// Partial state trie error
@@ -25,19 +27,18 @@ pub enum PartialStateTrieError {
     Impl(#[from] mpt::Error),
 }
 
-impl<'a> PartialStateTrie<'a> {
+impl PartialStateTrie {
     /// Create a partial state trie from a previous state root and a list of RLP-encoded MPT nodes
-    pub fn new<I>(prev_state_root: B256, states: I) -> Self
+    pub fn new<'a, I>(prev_state_root: B256, states: I) -> PartialStateTrie
     where
         I: IntoIterator<Item = &'a Bytes>,
     {
-        let mut root_node: Option<mpt::MptNode> = None;
+        let mut root_node: Option<MptNode> = None;
         let mut node_by_hash = NoHashMap::default();
         let mut node_map = HashMap::default();
 
         for encoded in states.into_iter() {
-            let node =
-                mpt::MptNode::decode(&mut encoded.as_ref()).expect("Valid MPT node in witness");
+            let node = MptNode::decode(&mut encoded.as_ref()).expect("Valid MPT node in witness");
             let hash = keccak256(encoded);
             if hash == prev_state_root {
                 root_node = Some(node.clone());
@@ -66,7 +67,7 @@ impl<'a> PartialStateTrie<'a> {
                 // its entire storage trie when that account's storage was NOT touched during the block.
                 continue;
             };
-            let storage_trie = mpt::resolve_nodes(&root_node, &node_map);
+            let storage_trie = mpt::resolve_nodes(root_node, &node_map);
             assert_eq!(storage_trie.hash(), storage_root);
             assert!(
                 !storage_trie.is_digest(),
@@ -77,7 +78,7 @@ impl<'a> PartialStateTrie<'a> {
         }
         assert_eq!(state_trie.hash(), prev_state_root);
 
-        Self {
+        PartialStateTrie {
             state_trie,
             storage_tries,
         }
@@ -91,15 +92,6 @@ impl<'a> PartialStateTrie<'a> {
     ) -> Result<Option<TrieAccount>, PartialStateTrieError> {
         let hashed_address = keccak256(address);
         let account = self.state_trie.get_rlp::<TrieAccount>(&*hashed_address)?;
-
-        #[cfg(feature = "sanity-check")]
-        {
-            let reth_account = self
-                .reth_state_trie
-                .get_leaf_value(&Nibbles::unpack(&*hashed_address))
-                .map(|value| TrieAccount::decode(&mut &**value).unwrap());
-            assert_eq!(reth_account, account);
-        }
 
         Ok(account)
     }

@@ -22,15 +22,7 @@ pub fn verify_catch_panics(
     let block_number = witness.header.number;
 
     catch_unwind(AssertUnwindSafe(|| {
-        verifier::run(
-            vec![witness],
-            chain_spec,
-            #[cfg(feature = "scroll")]
-            None::<Vec<Vec<sbv::primitives::U256>>>,
-            #[cfg(feature = "scroll")]
-            None,
-        )
-        .inspect_err(|e| {
+        verifier::run_host(&[witness], chain_spec).inspect_err(|e| {
             if let VerificationError::RootMismatch { bundle_state, .. } = e {
                 let dump_dir = env::temp_dir()
                     .join("dumps")

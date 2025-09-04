@@ -79,7 +79,7 @@ impl BlockWitness {
     }
 
     /// Build execution context from the witness.
-    pub fn into_reth_block(self) -> Result<RecoveredBlock<Block>, SignatureError> {
+    pub fn build_reth_block(&self) -> Result<RecoveredBlock<Block>, SignatureError> {
         let senders = self
             .transactions
             .iter()
@@ -88,13 +88,13 @@ impl BlockWitness {
             .expect("Failed to recover signer");
 
         let body = BlockBody {
-            transactions: self.transactions,
+            transactions: self.transactions.clone(),
             ommers: vec![],
-            withdrawals: self.withdrawals,
+            withdrawals: self.withdrawals.clone(),
         };
         let block = RecoveredBlock::new_sealed(
             SealedBlock::seal_slow(Block {
-                header: self.header,
+                header: self.header.clone(),
                 body,
             }),
             senders,

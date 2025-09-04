@@ -3,7 +3,7 @@ use crate::{BlockWitness, EvmDatabase, EvmExecutor, VerificationError};
 use itertools::Itertools;
 use sbv_kv::{nohash::NoHashMap, null::NullProvider};
 use sbv_primitives::{
-    B256, Bytes,
+    B256, Bytes, U256,
     chainspec::ChainSpec,
     types::reth::primitives::{Block, RecoveredBlock},
 };
@@ -42,13 +42,27 @@ pub struct VerifyResult {
 }
 
 /// Verify the block witness and return the gas used.
-pub fn run(
-    witnesses: Vec<BlockWitness>,
+pub fn run_host(
+    witnesses: &[BlockWitness],
     chain_spec: Arc<ChainSpec>,
-    compression_ratios: Option<
-        impl IntoIterator<Item = impl IntoIterator<Item = impl Into<sbv_primitives::U256>>> + Clone,
-    >,
-    cached_trie: Option<PartialStateTrie>,
+) -> Result<VerifyResult, VerificationError> {
+    let compression_ratios = witnesses
+        .iter()
+        .map(|block| block.compression_ratios())
+        .collect::<Vec<_>>();
+    let cached_trie = PartialStateTrie::new(
+        witnesses[0].prev_state_root,
+        witnesses.iter().flat_map(|w| w.states.iter()),
+    );
+    run(witnesses, chain_spec, compression_ratios, cached_trie)
+}
+
+/// Verify the block witness and return the gas used.
+pub fn run(
+    witnesses: &[BlockWitness],
+    chain_spec: Arc<ChainSpec>,
+    compression_ratios: Vec<Vec<U256>>,
+    cached_trie: PartialStateTrie,
 ) -> Result<VerifyResult, VerificationError> {
     if witnesses.is_empty() {
         return Err(VerificationError::EmptyWitnesses);
@@ -75,20 +89,11 @@ pub fn run(
     let pre_state_root = witnesses[0].prev_state_root;
     let post_state_root = witnesses.last().unwrap().header.state_root;
 
-    let trie = if let Some(trie) = cached_trie {
-        trie
-    } else {
-        PartialStateTrie::new(
-            pre_state_root,
-            witnesses.iter().flat_map(|w| w.states.iter()),
-        )
-    };
-
     let blocks = witnesses
-        .into_iter()
+        .iter()
         .map(|w| {
             dev_trace!("{w:#?}");
-            w.into_reth_block()
+            w.build_reth_block()
         })
         .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()?;
     if !blocks
@@ -100,11 +105,11 @@ pub fn run(
     }
 
     let mut gas_used = 0;
-    let mut db = EvmDatabase::new(&code_db, trie, NullProvider);
+    let mut db = EvmDatabase::new(code_db, cached_trie, NullProvider);
 
     let mut execute_block = |block, compression_ratio| -> Result<(), VerificationError> {
-        let output =
-            EvmExecutor::new(chain_spec.clone(), &db, block, compression_ratio).execute()?;
+        let executor = EvmExecutor::new(chain_spec.clone(), &db, block, compression_ratio);
+        let output = executor.execute()?;
         gas_used += output.gas_used;
 
         #[cfg(not(target_os = "zkvm"))]
@@ -129,17 +134,11 @@ pub fn run(
         Ok(())
     };
 
-    if let Some(compression_ratios) = compression_ratios {
-        for (block, compression_ratios) in blocks.iter().zip_eq(compression_ratios) {
-            execute_block(
-                block,
-                Some(compression_ratios.into_iter().map(|u| u.into())),
-            )?;
-        }
-    } else {
-        for block in blocks.iter() {
-            execute_block(block, None)?;
-        }
+    for (block, compression_ratios) in blocks.iter().zip_eq(compression_ratios) {
+        execute_block(
+            block,
+            Some(compression_ratios.into_iter().map(|u| u.into())),
+        )?;
     }
 
     let withdraw_root = db.withdraw_root()?;
@@ -171,7 +170,7 @@ mod tests {
         let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
         let chain_spec =
             build_chain_spec_force_hardfork(Chain::from_id(witness.chain_id), Hardfork::EuclidV2);
-        run(vec![witness], chain_spec, None::<Vec<Vec<U256>>>, None).unwrap();
+        run_host(&[witness], chain_spec).unwrap();
     }
 
     #[rstest::rstest]
@@ -183,6 +182,6 @@ mod tests {
         let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
         let chain_spec =
             build_chain_spec_force_hardfork(Chain::from_id(witness.chain_id), Hardfork::Feynman);
-        run(vec![witness], chain_spec, None::<Vec<Vec<U256>>>, None).unwrap();
+        run_host(&[witness], chain_spec).unwrap();
     }
 }
