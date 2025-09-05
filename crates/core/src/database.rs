@@ -8,8 +8,7 @@ use sbv_primitives::{
     },
 };
 use sbv_trie::PartialStateTrie;
-use std::collections::BTreeMap;
-use std::{cell::RefCell, fmt};
+use std::{cell::RefCell, collections::BTreeMap, fmt};
 
 /// A database that consists of account and storage information.
 pub struct EvmDatabase<CodeDb, BlockHashProvider> {

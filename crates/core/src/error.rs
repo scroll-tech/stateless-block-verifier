@@ -17,6 +17,9 @@ pub enum VerificationError {
     /// The witnesses are not sequential.
     #[error("witnesses are not sequential")]
     NonSequentialWitnesses,
+    /// Error while building tries from witness states.
+    #[error(transparent)]
+    FromWitness(#[from] sbv_trie::FromWitnessError),
     /// Error while recovering signer from an ECDSA signature.
     #[error("invalid signature: {0}")]
     InvalidSignature(#[from] SignatureError),

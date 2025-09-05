@@ -3,14 +3,15 @@
 extern crate sbv_helpers;
 
 use crate::mpt::MptNode;
-use alloy_rlp::Decodable;
-use alloy_trie::{EMPTY_ROOT_HASH, Nibbles, TrieAccount};
-use sbv_kv::{HashMap, nohash::NoHashMap};
+use alloy_trie::{EMPTY_ROOT_HASH, TrieAccount};
+use sbv_kv::nohash::NoHashMap;
 use sbv_primitives::{Address, B256, Bytes, U256, keccak256, types::revm::database::BundleAccount};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
+mod execution_witness;
 mod mpt;
+pub use execution_witness::FromWitnessError;
 
 /// A partial trie that can be updated
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -29,59 +30,20 @@ pub enum PartialStateTrieError {
 
 impl PartialStateTrie {
     /// Create a partial state trie from a previous state root and a list of RLP-encoded MPT nodes
-    pub fn new<'a, I>(prev_state_root: B256, states: I) -> PartialStateTrie
+    pub fn new<'a, I>(
+        prev_state_root: B256,
+        states: I,
+    ) -> Result<PartialStateTrie, execution_witness::FromWitnessError>
     where
         I: IntoIterator<Item = &'a Bytes>,
     {
-        let mut root_node: Option<MptNode> = None;
-        let mut node_by_hash = NoHashMap::default();
-        let mut node_map = HashMap::default();
+        let (state_trie, storage_tries) =
+            execution_witness::build_validated_tries(prev_state_root, states)?;
 
-        for encoded in states.into_iter() {
-            let node = MptNode::decode(&mut encoded.as_ref()).expect("Valid MPT node in witness");
-            let hash = keccak256(encoded);
-            if hash == prev_state_root {
-                root_node = Some(node.clone());
-            }
-
-            node_by_hash.insert(hash, node.clone());
-            node_map.insert(node.reference(), node);
-        }
-
-        let root = root_node.unwrap_or_else(|| mpt::MptNodeData::Digest(prev_state_root).into());
-
-        let mut storage_roots = Vec::new();
-        let state_trie = mpt::resolve_nodes_detect_storage_roots(
-            &root,
-            &node_map,
-            Some(&mut storage_roots),
-            Nibbles::default(),
-        );
-
-        let mut storage_tries =
-            NoHashMap::with_capacity_and_hasher(storage_roots.len(), Default::default());
-
-        for (hashed_address, storage_root) in storage_roots {
-            let Some(root_node) = node_by_hash.get(&storage_root) else {
-                // An execution witness can include an account leaf (with non-empty storageRoot), but omit
-                // its entire storage trie when that account's storage was NOT touched during the block.
-                continue;
-            };
-            let storage_trie = mpt::resolve_nodes(root_node, &node_map);
-            assert_eq!(storage_trie.hash(), storage_root);
-            assert!(
-                !storage_trie.is_digest(),
-                "could not resolve storage trie for {storage_root}"
-            );
-
-            storage_tries.insert(hashed_address, storage_trie);
-        }
-        assert_eq!(state_trie.hash(), prev_state_root);
-
-        PartialStateTrie {
+        Ok(PartialStateTrie {
             state_trie,
             storage_tries,
-        }
+        })
     }
 
     /// Get account by address
@@ -112,9 +74,7 @@ impl PartialStateTrie {
         }
 
         // Storage slot value is not present in the trie, validate that the witness is complete.
-        // TODO: Implement witness checks like in reth - https://github.com/paradigmxyz/reth/blob/127595e23079de2c494048d0821ea1f1107eb624/crates/stateless/src/trie.rs#L68C9-L87.
         let account = self.state_trie.get_rlp::<TrieAccount>(&*hashed_address)?;
-
         match account {
             Some(account) => {
                 if account.storage_root != EMPTY_ROOT_HASH {

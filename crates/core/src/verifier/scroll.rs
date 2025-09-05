@@ -1,5 +1,7 @@
-use crate::witness::{BlockWitnessChunkExt, BlockWitnessExt};
-use crate::{BlockWitness, EvmDatabase, EvmExecutor, VerificationError};
+use crate::{
+    BlockWitness, EvmDatabase, EvmExecutor, VerificationError,
+    witness::{BlockWitnessChunkExt, BlockWitnessExt},
+};
 use itertools::Itertools;
 use sbv_kv::{nohash::NoHashMap, null::NullProvider};
 use sbv_primitives::{
@@ -53,7 +55,7 @@ pub fn run_host(
     let cached_trie = PartialStateTrie::new(
         witnesses[0].prev_state_root,
         witnesses.iter().flat_map(|w| w.states.iter()),
-    );
+    )?;
     run(witnesses, chain_spec, compression_ratios, cached_trie)
 }
 

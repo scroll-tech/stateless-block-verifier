@@ -5345,6 +5345,7 @@ dependencies = [
  "alloy-rlp",
  "alloy-trie",
  "reth-trie",
+ "rlp",
  "sbv-helpers",
  "sbv-kv",
  "sbv-primitives",
