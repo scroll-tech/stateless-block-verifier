@@ -1,15 +1,15 @@
-use crate::{EvmDatabase, EvmExecutor, VerificationError};
+use crate::{
+    BlockWitness, EvmDatabase, EvmExecutor, VerificationError,
+    witness::{BlockWitnessChunkExt, BlockWitnessExt},
+};
+use itertools::Itertools;
 use sbv_kv::nohash::NoHashMap;
 use sbv_primitives::{
     B256, Bytes,
     chainspec::ChainSpec,
-    ext::{BlockWitnessChunkExt, BlockWitnessExt},
-    types::{
-        BlockWitness,
-        reth::primitives::{Block, RecoveredBlock},
-    },
+    types::reth::primitives::{Block, RecoveredBlock},
 };
-use sbv_trie::BlockWitnessTrieExt;
+use sbv_trie::PartialStateTrie;
 use std::{collections::BTreeMap, sync::Arc};
 
 /// Result of the block witness verification process.
@@ -26,9 +26,22 @@ pub struct VerifyResult {
 }
 
 /// Verify the block witness and return the gas used.
-pub fn run(
-    witnesses: Vec<BlockWitness>,
+pub fn run_host(
+    witnesses: &[BlockWitness],
     chain_spec: Arc<ChainSpec>,
+) -> Result<VerifyResult, VerificationError> {
+    let cached_trie = PartialStateTrie::new(
+        witnesses[0].prev_state_root,
+        witnesses.iter().flat_map(|w| w.states.iter()),
+    )?;
+    run(witnesses, chain_spec, cached_trie)
+}
+
+/// Verify the block witness and return the gas used.
+pub fn run(
+    witnesses: &[BlockWitness],
+    chain_spec: Arc<ChainSpec>,
+    cached_trie: PartialStateTrie,
 ) -> Result<VerifyResult, VerificationError> {
     if witnesses.is_empty() {
         return Err(VerificationError::EmptyWitnesses);
@@ -39,38 +52,42 @@ pub fn run(
     if !witnesses.has_seq_block_number() {
         return Err(VerificationError::NonSequentialWitnesses);
     }
+    if !witnesses.has_seq_state_root() {
+        return Err(VerificationError::NonSequentialWitnesses);
+    }
 
-    let (code_db, nodes_provider, block_hash_provider) = make_providers(&witnesses);
-    let nodes_provider = manually_drop_on_zkvm!(nodes_provider);
+    let (code_db, block_hash_provider) = make_providers(witnesses);
 
     let pre_state_root = witnesses[0].prev_state_root;
     let blocks = witnesses
-        .into_iter()
+        .iter()
         .map(|w| {
             dev_trace!("{w:#?}");
-            w.into_reth_block()
+            w.build_reth_block()
         })
         .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()?;
+    if !blocks
+        .iter()
+        .tuple_windows()
+        .all(|(a, b)| a.hash() == b.header().parent_hash)
+    {
+        return Err(VerificationError::NonSequentialWitnesses);
+    }
 
-    let mut db = manually_drop_on_zkvm!(EvmDatabase::new_from_root(
-        code_db,
-        pre_state_root,
-        &nodes_provider,
-        block_hash_provider,
-    )?);
+    let mut db =
+        manually_drop_on_zkvm!(EvmDatabase::new(code_db, cached_trie, block_hash_provider));
 
     let mut gas_used = 0;
     let mut post_state_root = B256::ZERO;
     for block in blocks.iter() {
-        let output = EvmExecutor::new(chain_spec.clone(), &db, block).execute()?;
+        let executor = EvmExecutor::new(chain_spec.clone(), &db, block);
+        let output = executor.execute()?;
         gas_used += output.gas_used;
 
-        db.update(
-            &nodes_provider,
-            BTreeMap::from_iter(output.state.state.clone()).iter(),
-        )?;
+        #[cfg(not(target_os = "zkvm"))]
+        let state_for_debug = output.state.clone();
 
-        post_state_root = db.commit_changes();
+        post_state_root = db.commit(BTreeMap::from_iter(output.state.state.clone()))?;
         if block.state_root != post_state_root {
             dev_error!(
                 "Block #{} root mismatch: root after in trace = {:x}, root after in reth = {:x}",
@@ -78,11 +95,11 @@ pub fn run(
                 block.state_root,
                 post_state_root
             );
-            return Err(VerificationError::block_root_mismatch(
+            return Err(VerificationError::root_mismatch(
                 block.state_root,
                 post_state_root,
                 #[cfg(not(target_os = "zkvm"))]
-                output.state,
+                state_for_debug,
             ));
         }
         dev_info!("Block #{} verified successfully", block.number);
@@ -97,11 +114,10 @@ pub fn run(
 }
 
 type CodeDb = NoHashMap<B256, Bytes>;
-type NodesProvider = NoHashMap<B256, Bytes>;
 type BlockHashProvider = NoHashMap<u64, B256>;
 
 /// Create the providers needed for the EVM executor from a list of witnesses.
-fn make_providers(witnesses: &[BlockWitness]) -> (CodeDb, NodesProvider, BlockHashProvider) {
+fn make_providers(witnesses: &[BlockWitness]) -> (CodeDb, BlockHashProvider) {
     let code_db = {
         // build code db
         let num_codes = witnesses.iter().map(|w| w.codes.len()).sum();
@@ -109,13 +125,6 @@ fn make_providers(witnesses: &[BlockWitness]) -> (CodeDb, NodesProvider, BlockHa
             NoHashMap::<B256, Bytes>::with_capacity_and_hasher(num_codes, Default::default());
         witnesses.import_codes(&mut code_db);
         code_db
-    };
-    let nodes_provider = {
-        let num_states = witnesses.iter().map(|w| w.states.len()).sum();
-        let mut nodes_provider =
-            NoHashMap::<B256, Bytes>::with_capacity_and_hasher(num_states, Default::default());
-        witnesses.import_nodes(&mut nodes_provider);
-        nodes_provider
     };
     let block_hash_provider = {
         let num_blocks = witnesses.iter().map(|w| w.block_hashes.len()).sum();
@@ -125,7 +134,7 @@ fn make_providers(witnesses: &[BlockWitness]) -> (CodeDb, NodesProvider, BlockHa
         block_hash_provider
     };
 
-    (code_db, nodes_provider, block_hash_provider)
+    (code_db, block_hash_provider)
 }
 
 // FIXME: fetch new traces

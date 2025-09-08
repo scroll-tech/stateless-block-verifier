@@ -12,37 +12,3 @@ pub use signature::Signature;
 pub use transaction::Transaction;
 pub use withdrawal::Withdrawal;
 pub use witness::BlockWitness;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[rstest::rstest]
-    #[cfg(not(feature = "scroll"))]
-    fn serde_scroll_legacy_blocks_roundtrip(
-        #[files("../../testdata/legacy/holesky_witness/**/*.json")]
-        #[mode = str]
-        witness_json: &str,
-    ) {
-        let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
-        let serialized = serde_json::to_string(&witness).unwrap();
-        let deserialized: BlockWitness = serde_json::from_str(&serialized).unwrap();
-        assert_eq!(witness, deserialized);
-    }
-
-    #[rstest::rstest]
-    #[cfg(feature = "scroll")]
-    fn serde_scroll_legacy_blocks_roundtrip(
-        #[files("../../testdata/legacy/scroll_witness/**/*.json")]
-        #[mode = str]
-        witness_json: &str,
-    ) {
-        let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
-        let serialized = serde_json::to_string(&witness).unwrap();
-        let deserialized: BlockWitness = serde_json::from_str(&serialized).unwrap();
-        assert_eq!(witness, deserialized);
-        let current_witness = deserialized.into_current();
-        let converted = current_witness.clone().into_legacy();
-        assert_eq!(witness, converted);
-    }
-}

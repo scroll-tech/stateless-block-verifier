@@ -4,8 +4,9 @@ use sbv::{
     core::{
         VerificationError,
         verifier::{self, VerifyResult},
+        witness::BlockWitness,
     },
-    primitives::{chainspec::ChainSpec, types::BlockWitness},
+    primitives::chainspec::ChainSpec,
 };
 use std::{
     env,
@@ -21,16 +22,8 @@ pub fn verify_catch_panics(
     let block_number = witness.header.number;
 
     catch_unwind(AssertUnwindSafe(|| {
-        verifier::run(
-            vec![witness],
-            chain_spec,
-            #[cfg(feature = "scroll")]
-            verifier::StateCommitMode::Block,
-            #[cfg(feature = "scroll")]
-            None::<Vec<Vec<sbv::primitives::U256>>>,
-        )
-        .inspect_err(|e| {
-            if let VerificationError::BlockRootMismatch { bundle_state, .. } = e {
+        verifier::run_host(&[witness], chain_spec).inspect_err(|e| {
+            if let VerificationError::RootMismatch { bundle_state, .. } = e {
                 let dump_dir = env::temp_dir()
                     .join("dumps")
                     .join(format!("{chain_id}-{block_number}"));

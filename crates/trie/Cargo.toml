@@ -12,11 +12,11 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-auto_impl.workspace = true
 alloy-rlp.workspace = true
 alloy-trie.workspace = true
 reth-trie.workspace = true
-reth-trie-sparse.workspace = true
+serde = { workspace = true, features = ["derive"] }
+rlp = "0.5"
 
 sbv-primitives = { workspace = true, features = ["revm-types"] }
 sbv-kv.workspace = true

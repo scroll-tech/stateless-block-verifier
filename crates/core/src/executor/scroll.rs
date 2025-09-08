@@ -20,20 +20,20 @@ pub type EvmConfig =
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
-pub struct EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios> {
+pub struct EvmExecutor<'a, CodeDb, BlockHashProvider, CompressionRatios> {
     chain_spec: Arc<ChainSpec>,
-    db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
+    db: &'a EvmDatabase<CodeDb, BlockHashProvider>,
     block: &'a RecoveredBlock<Block>,
     compression_ratios: Option<CompressionRatios>,
 }
 
-impl<'a, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
-    EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
+impl<'a, CodeDb, BlockHashProvider, CompressionRatios>
+    EvmExecutor<'a, CodeDb, BlockHashProvider, CompressionRatios>
 {
     /// Create a new EVM executor
     pub fn new(
         chain_spec: Arc<ChainSpec>,
-        db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
+        db: &'a EvmDatabase<CodeDb, BlockHashProvider>,
         block: &'a RecoveredBlock<Block>,
         compression_ratios: Option<CompressionRatios>,
     ) -> Self {
@@ -48,10 +48,9 @@ impl<'a, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
 
 impl<
     CodeDb: KeyValueStoreGet<B256, Bytes>,
-    NodesProvider: KeyValueStoreGet<B256, Bytes>,
     BlockHashProvider: KeyValueStoreGet<u64, B256>,
     CompressionRatios: IntoIterator<Item = U256>,
-> EvmExecutor<'_, CodeDb, NodesProvider, BlockHashProvider, CompressionRatios>
+> EvmExecutor<'_, CodeDb, BlockHashProvider, CompressionRatios>
 {
     /// Handle the block with the given witness
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {

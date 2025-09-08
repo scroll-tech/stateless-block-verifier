@@ -33,19 +33,17 @@ pub type EvmConfig = EthEvmConfig<ChainSpec, SbvEthEvmFactory>;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
-pub struct EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider> {
+pub struct EvmExecutor<'a, CodeDb, BlockHashProvider> {
     chain_spec: Arc<ChainSpec>,
-    db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
+    db: &'a EvmDatabase<CodeDb, BlockHashProvider>,
     block: &'a RecoveredBlock<Block>,
 }
 
-impl<'a, CodeDb, NodesProvider, BlockHashProvider>
-    EvmExecutor<'a, CodeDb, NodesProvider, BlockHashProvider>
-{
+impl<'a, CodeDb, BlockHashProvider> EvmExecutor<'a, CodeDb, BlockHashProvider> {
     /// Create a new EVM executor
     pub fn new(
         chain_spec: Arc<ChainSpec>,
-        db: &'a EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>,
+        db: &'a EvmDatabase<CodeDb, BlockHashProvider>,
         block: &'a RecoveredBlock<Block>,
     ) -> Self {
         Self {
@@ -56,11 +54,8 @@ impl<'a, CodeDb, NodesProvider, BlockHashProvider>
     }
 }
 
-impl<
-    CodeDb: KeyValueStoreGet<B256, Bytes>,
-    NodesProvider: KeyValueStoreGet<B256, Bytes>,
-    BlockHashProvider: KeyValueStoreGet<u64, B256>,
-> EvmExecutor<'_, CodeDb, NodesProvider, BlockHashProvider>
+impl<CodeDb: KeyValueStoreGet<B256, Bytes>, BlockHashProvider: KeyValueStoreGet<u64, B256>>
+    EvmExecutor<'_, CodeDb, BlockHashProvider>
 {
     /// Handle the block with the given witness
     pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {

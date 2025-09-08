@@ -24,6 +24,7 @@ c-kzg = ["sbv-primitives/c-kzg"]
 kzg-rs = ["sbv-primitives/kzg-rs"]
 
 scroll = ["sbv-core/scroll", "sbv-primitives/scroll-all", "sbv-utils/scroll"]
+scroll-compress-ratio = ["sbv-core/scroll-compress-ratio"]
 dev = ["sbv-core/dev", "sbv-primitives/dev", "sbv-trie/dev"]
 
 # sp1 related

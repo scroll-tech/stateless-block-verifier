@@ -2,11 +2,10 @@ use crate::helpers::verifier::*;
 use clap::Args;
 use eyre::ContextCompat;
 use sbv::{
-    core::verifier::VerifyResult,
+    core::{verifier::VerifyResult, witness::BlockWitness},
     primitives::{
         chainspec::{Chain, build_chain_spec_force_hardfork, get_chain_spec},
         hardforks::Hardfork,
-        types::BlockWitness,
     },
 };
 use std::path::PathBuf;

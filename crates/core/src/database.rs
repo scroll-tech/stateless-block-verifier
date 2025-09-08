@@ -1,4 +1,5 @@
 use sbv_kv::{HashMap, KeyValueStoreGet};
+pub use sbv_primitives::types::revm::database::DatabaseRef;
 use sbv_primitives::{
     Address, B256, Bytes, U256,
     types::revm::{
@@ -7,22 +8,18 @@ use sbv_primitives::{
     },
 };
 use sbv_trie::PartialStateTrie;
-use std::{cell::RefCell, fmt};
-
-pub use sbv_primitives::types::revm::database::DatabaseRef;
+use std::{cell::RefCell, collections::BTreeMap, fmt};
 
 /// A database that consists of account and storage information.
-pub struct EvmDatabase<CodeDb, NodesProvider, BlockHashProvider> {
+pub struct EvmDatabase<CodeDb, BlockHashProvider> {
     /// Map of code hash to bytecode.
     pub(crate) code_db: CodeDb,
     /// Cache of analyzed code
     analyzed_code_cache: RefCell<HashMap<B256, Option<Bytecode>>>,
-    /// Provider of trie nodes
-    pub(crate) nodes_provider: NodesProvider,
-    /// Provider of block hashes
-    block_hashes: BlockHashProvider,
     /// partial merkle patricia trie
     pub(crate) state: PartialStateTrie,
+    /// Provider of block hashes
+    block_hashes: BlockHashProvider,
 }
 
 /// Database error.
@@ -42,56 +39,28 @@ pub enum DatabaseError {
 
 type Result<T, E = DatabaseError> = std::result::Result<T, E>;
 
-impl<CodeDb, NodesProvider, BlockHashProvider> fmt::Debug
-    for EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
-{
+impl<CodeDb, BlockHashProvider> fmt::Debug for EvmDatabase<CodeDb, BlockHashProvider> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("EvmDatabase").finish()
     }
 }
 
-impl<
-    CodeDb: KeyValueStoreGet<B256, Bytes>,
-    NodesProvider: KeyValueStoreGet<B256, Bytes>,
-    BlockHashProvider: KeyValueStoreGet<u64, B256>,
-> EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
+impl<CodeDb: KeyValueStoreGet<B256, Bytes>, BlockHashProvider: KeyValueStoreGet<u64, B256>>
+    EvmDatabase<CodeDb, BlockHashProvider>
 {
     /// Initialize an EVM database from a zkTrie root.
-    pub fn new_from_root(
-        code_db: CodeDb,
-        state_root_before: B256,
-        nodes_provider: NodesProvider,
-        block_hashes: BlockHashProvider,
-    ) -> Result<Self> {
-        dev_trace!("open trie from root {:?}", state_root_before);
-
-        let state = cycle_track!(
-            PartialStateTrie::open(&nodes_provider, state_root_before),
-            "PartialStateTrie::open"
-        )?;
-
-        Ok(EvmDatabase {
+    pub fn new(code_db: CodeDb, state: PartialStateTrie, block_hashes: BlockHashProvider) -> Self {
+        EvmDatabase {
             code_db,
             analyzed_code_cache: Default::default(),
-            nodes_provider,
             block_hashes,
             state,
-        })
+        }
     }
 
     /// Update changes to the database.
-    pub fn update<'a, P: KeyValueStoreGet<B256, Bytes>>(
-        &mut self,
-        nodes_provider: P,
-        post_state: impl IntoIterator<Item = (&'a Address, &'a BundleAccount)>,
-    ) -> Result<()> {
-        self.state.update(nodes_provider, post_state)?;
-        Ok(())
-    }
-
-    /// Commit changes and return the new state root.
-    pub fn commit_changes(&mut self) -> B256 {
-        self.state.commit_state()
+    pub fn commit(&mut self, post_state: BTreeMap<Address, BundleAccount>) -> Result<B256> {
+        Ok(self.state.update(post_state)?)
     }
 
     /// Get the withdrawal trie root of scroll.
@@ -123,11 +92,8 @@ impl<
     }
 }
 
-impl<
-    CodeDb: KeyValueStoreGet<B256, Bytes>,
-    NodesProvider: KeyValueStoreGet<B256, Bytes>,
-    BlockHashProvider: KeyValueStoreGet<u64, B256>,
-> DatabaseRef for EvmDatabase<CodeDb, NodesProvider, BlockHashProvider>
+impl<CodeDb: KeyValueStoreGet<B256, Bytes>, BlockHashProvider: KeyValueStoreGet<u64, B256>>
+    DatabaseRef for EvmDatabase<CodeDb, BlockHashProvider>
 {
     type Error = DatabaseError;
 
@@ -166,10 +132,7 @@ impl<
     /// Get storage value of address at index.
     fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
         dev_trace!("get storage of {:?} at index {:?}", address, index);
-        Ok(self
-            .state
-            .get_storage(&self.nodes_provider, address, index)?
-            .unwrap_or(U256::ZERO))
+        Ok(self.state.get_storage(address, index)?)
     }
 
     /// Get block hash by block number.
