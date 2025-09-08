@@ -16,7 +16,7 @@ workspace = true
 auto_impl.workspace = true
 thiserror.workspace = true
 tracing = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
+serde.workspace = true
 rkyv = { workspace = true, optional = true }
 cfg-if.workspace = true
 itertools.workspace = true
@@ -46,7 +46,6 @@ sbv-primitives.workspace = true
 rkyv = ["dep:rkyv", "sbv-primitives/rkyv"]
 
 scroll = [
-  "dep:serde",
   "sbv-primitives/scroll-chainspec",
   "sbv-primitives/scroll-reth-evm-types",
   "sbv-precompile/scroll",

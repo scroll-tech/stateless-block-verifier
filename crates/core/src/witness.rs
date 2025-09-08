@@ -119,7 +119,7 @@ impl From<sbv_primitives::legacy_types::BlockWitness> for BlockWitness {
                 .withdrawals
                 .map(|w| Withdrawals::new(w.into_iter().map(Into::into).collect())),
             #[cfg(not(feature = "scroll"))]
-            block_hashes: self.block_hashes,
+            block_hashes: legacy.block_hashes,
             states: legacy.states,
             codes: legacy.codes,
         }

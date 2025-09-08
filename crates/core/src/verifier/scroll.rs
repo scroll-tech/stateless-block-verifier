@@ -137,10 +137,7 @@ pub fn run(
     };
 
     for (block, compression_ratios) in blocks.iter().zip_eq(compression_ratios) {
-        execute_block(
-            block,
-            Some(compression_ratios.into_iter().map(|u| u.into())),
-        )?;
+        execute_block(block, Some(compression_ratios))?;
     }
 
     let withdraw_root = db.withdraw_root()?;
@@ -158,7 +155,6 @@ pub fn run(
 mod tests {
     use super::*;
     use sbv_primitives::{
-        U256,
         chainspec::{Chain, build_chain_spec_force_hardfork},
         hardforks::Hardfork,
     };

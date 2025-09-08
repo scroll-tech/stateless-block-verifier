@@ -74,14 +74,16 @@ impl PartialStateTrie {
         }
 
         // Storage slot value is not present in the trie, validate that the witness is complete.
+        println!("[TRIGGERED] EMPTY NODE PROOF");
         let account = self.state_trie.get_rlp::<TrieAccount>(&*hashed_address)?;
         match account {
             Some(account) => {
                 if account.storage_root != EMPTY_ROOT_HASH {
-                    todo!("Validate that storage witness is valid");
+                    unreachable!("pre-built storage trie shall be present");
                 }
             }
             None => {
+                println!("[TRIGGERED] CASE 2. STATE TRIE EMPTY NODE PROOF");
                 todo!("Validate that account witness is valid");
             }
         }
