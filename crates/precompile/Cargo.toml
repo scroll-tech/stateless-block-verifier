@@ -30,17 +30,17 @@ scroll = [
 ]
 scroll-openvm = [
     "scroll",
-    "openvm-bn128",
+    "openvm-bn254",
     "openvm-sha256"
 ]
 ethereum-openvm = [
-    "openvm-bn128",
+    "openvm-bn254",
     "openvm-kzg",
     "openvm-secp256k1",
     "openvm-sha256",
 ]
 
-openvm-bn128 = [
+openvm-bn254 = [
     "dep:openvm-ecc-guest",
     "dep:openvm-pairing",
     "openvm-pairing/bn254",

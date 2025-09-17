@@ -83,7 +83,6 @@ scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", branch = "
 #scroll-alloy-network = { path = "../reth/crates/scroll/alloy/network", default-features = false }
 
 openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
-openvm-keccak256 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
 openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
 openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
 openvm-k256 = { package = "k256", git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
