@@ -33,7 +33,7 @@ impl PartialStateTrie {
     pub fn new<'a, I>(
         prev_state_root: B256,
         states: I,
-    ) -> Result<PartialStateTrie, execution_witness::FromWitnessError>
+    ) -> Result<PartialStateTrie, FromWitnessError>
     where
         I: IntoIterator<Item = &'a Bytes>,
     {
@@ -74,7 +74,6 @@ impl PartialStateTrie {
         }
 
         // Storage slot value is not present in the trie, validate that the witness is complete.
-        println!("[TRIGGERED] EMPTY NODE PROOF");
         let account = self.state_trie.get_rlp::<TrieAccount>(&*hashed_address)?;
         match account {
             Some(account) => {
