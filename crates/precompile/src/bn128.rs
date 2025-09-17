@@ -37,9 +37,9 @@ const G1_LEN: usize = 2 * FQ_LEN;
 #[inline]
 fn read_fq(input: &[u8]) -> Result<Fp, PrecompileError> {
     if input.len() < FQ_LEN {
-        Err(PrecompileError::Bn128FieldPointNotAMember)
+        Err(PrecompileError::Bn254FieldPointNotAMember)
     } else {
-        Fp::from_be_bytes(&input[..32]).ok_or(PrecompileError::Bn128FieldPointNotAMember)
+        Fp::from_be_bytes(&input[..32]).ok_or(PrecompileError::Bn254FieldPointNotAMember)
     }
 }
 
@@ -62,7 +62,7 @@ fn read_fq2(input: &[u8]) -> Result<Fp2, PrecompileError> {
 
 #[inline]
 fn new_g1_affine_point(px: Fp, py: Fp) -> Result<G1Affine, PrecompileError> {
-    G1Affine::from_xy(px, py).ok_or(PrecompileError::Bn128AffineGFailedToCreate)
+    G1Affine::from_xy(px, py).ok_or(PrecompileError::Bn254AffineGFailedToCreate)
 }
 
 /// Reads a G1 point from the input slice.
@@ -114,7 +114,7 @@ pub(super) fn read_g2_point(input: &[u8]) -> Result<G2Affine, PrecompileError> {
     let ba = read_fq2(&input[0..FQ2_LEN])?;
     let bb = read_fq2(&input[FQ2_LEN..2 * FQ2_LEN])?;
 
-    G2Affine::from_xy(ba, bb).ok_or(PrecompileError::Bn128AffineGFailedToCreate)
+    G2Affine::from_xy(ba, bb).ok_or(PrecompileError::Bn254AffineGFailedToCreate)
 }
 
 /// Reads a scalar from the input slice
@@ -153,22 +153,31 @@ pub(super) fn g1_point_mul(p: G1Affine, fr: Scalar) -> G1Affine {
 /// Note: If the input is empty, this function returns true.
 /// This is different to EIP2537 which disallows the empty input.
 #[inline]
-pub(super) fn pairing_check(pairs: &[(G1Affine, G2Affine)]) -> bool {
-    if pairs.is_empty() {
-        return true;
+pub(super) fn pairing_check(pairs: &[(&[u8], &[u8])]) -> Result<bool, PrecompileError> {
+    let mut g1_points = Vec::with_capacity(pairs.len());
+    let mut g2_points = Vec::with_capacity(pairs.len());
+
+    for (g1_bytes, g2_bytes) in pairs {
+        let g1_is_zero = g1_bytes.iter().all(|i| *i == 0);
+        let g2_is_zero = g2_bytes.iter().all(|i| *i == 0);
+
+        let g1 = read_g1_point(g1_bytes)?;
+        let g2 = read_g2_point(g2_bytes)?;
+
+        let (g1x, g1y) = g1.into_coords();
+        let (g2x, g2y) = g2.into_coords();
+
+        // Skip pairs where either point is at infinity
+        if !g1_is_zero && !g2_is_zero {
+            let g1 = AffinePoint::new(g1x, g1y);
+            let g2 = AffinePoint::new(g2x, g2y);
+            g1_points.push(g1);
+            g2_points.push(g2);
+        }
     }
-    let (g1_points, g2_points): (Vec<_>, Vec<_>) = pairs
-        .iter()
-        .cloned()
-        .map(|(g1, g2)| {
-            let (g1_x, g1_y) = g1.into_coords();
-            let g1 = AffinePoint::new(g1_x, g1_y);
+    if g1_points.is_empty() {
+        return Ok(true);
+    }
 
-            let (g2_x, g2_y) = g2.into_coords();
-            let g2 = AffinePoint::new(g2_x, g2_y);
-            (g1, g2)
-        })
-        .unzip();
-
-    Bn254::pairing_check(&g1_points, &g2_points).is_ok()
+    Ok(Bn254::pairing_check(&g1_points, &g2_points).is_ok())
 }

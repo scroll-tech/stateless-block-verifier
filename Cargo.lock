@@ -3352,23 +3352,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "openvm-keccak256"
-version = "1.4.0"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v1.4.0#39ee587f0f73646e3753cb2aa5f34885d4efffe0"
-dependencies = [
- "openvm-keccak256-guest",
- "tiny-keccak",
-]
-
-[[package]]
-name = "openvm-keccak256-guest"
-version = "1.4.0"
-source = "git+https://github.com/openvm-org/openvm.git?tag=v1.4.0#39ee587f0f73646e3753cb2aa5f34885d4efffe0"
-dependencies = [
- "openvm-platform",
-]
-
-[[package]]
 name = "openvm-kzg"
 version = "0.2.0-alpha"
 source = "git+https://github.com/axiom-crypto/openvm-kzg.git?rev=1a01e08#1a01e080656a638643f563a461f96498052ffb2c"
@@ -5216,7 +5199,6 @@ version = "2.0.0"
 dependencies = [
  "k256 0.13.4 (git+https://github.com/openvm-org/openvm.git?tag=v1.4.0)",
  "openvm-ecc-guest",
- "openvm-keccak256",
  "openvm-kzg",
  "openvm-pairing",
  "openvm-sha2",

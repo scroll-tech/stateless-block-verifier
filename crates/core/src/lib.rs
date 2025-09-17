@@ -14,9 +14,7 @@ mod error;
 pub use error::VerificationError;
 
 mod executor;
-#[cfg(not(feature = "scroll"))]
-pub use executor::SbvEthEvmFactory;
-pub use executor::{EvmConfig, EvmExecutor};
+pub use executor::EvmExecutor;
 
 pub mod verifier;
 
