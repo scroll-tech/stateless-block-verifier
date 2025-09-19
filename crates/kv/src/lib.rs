@@ -4,13 +4,12 @@ use auto_impl::auto_impl;
 use std::{borrow::Borrow, hash::Hash};
 
 mod imps;
-pub use hashbrown;
 pub use imps::{nohash, null};
 
 /// HashMap
-pub type HashMap<K, V, S = rustc_hash::FxBuildHasher> = hashbrown::HashMap<K, V, S>;
+pub type HashMap<K, V, S = rustc_hash::FxBuildHasher> = alloy_primitives::map::HashMap<K, V, S>;
 /// HashSet
-pub type HashSet<V, S = rustc_hash::FxBuildHasher> = hashbrown::HashSet<V, S>;
+pub type HashSet<V, S = rustc_hash::FxBuildHasher> = alloy_primitives::map::HashSet<V, S>;
 
 /// Key-Value store insert trait
 #[auto_impl(&mut, Box)]

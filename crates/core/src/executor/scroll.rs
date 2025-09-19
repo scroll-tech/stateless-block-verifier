@@ -5,18 +5,14 @@ use sbv_primitives::{
     chainspec::ChainSpec,
     types::{
         reth::{
-            evm::{ConfigureEvm, EthEvmConfig, RethReceiptBuilder},
+            evm::{ConfigureEvm, EthEvmConfig},
             execution_types::BlockExecutionOutput,
-            primitives::{Block, EthPrimitives, Receipt, RecoveredBlock},
+            primitives::{Block, Receipt, RecoveredBlock},
         },
         revm::database::CacheDB,
     },
 };
 use std::sync::Arc;
-
-/// Ethereum-related EVM configuration.
-pub type EvmConfig =
-    EthEvmConfig<ChainSpec, EthPrimitives, RethReceiptBuilder, sbv_precompile::PrecompileProvider>;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
@@ -60,7 +56,7 @@ impl<
             revm::database::{State, states::bundle_state::BundleRetention},
         };
 
-        let provider = EvmConfig::new(self.chain_spec.clone(), Default::default());
+        let provider = EthEvmConfig::scroll(self.chain_spec.clone());
         let factory = provider.block_executor_factory();
 
         let mut db = State::builder()

@@ -12,7 +12,6 @@ repository.workspace = true
 sbv-primitives = { workspace = true, features = ["evm-types", "revm-types"] }
 
 openvm-ecc-guest = { workspace = true, optional = true }
-openvm-keccak256 = { workspace = true, optional = true }
 openvm-k256 = { workspace = true, optional = true }
 openvm-sha2 = { workspace = true, optional = true }
 openvm-pairing = { workspace = true, optional = true }
@@ -31,41 +30,32 @@ scroll = [
 ]
 scroll-openvm = [
     "scroll",
-    "openvm-bn128",
+    "openvm-bn254",
     "openvm-sha256"
 ]
 ethereum-openvm = [
-    "openvm-bn128",
+    "openvm-bn254",
     "openvm-kzg",
     "openvm-secp256k1",
     "openvm-sha256",
 ]
 
-bn128 = [] # marker, won't be used in dependencies
-openvm-bn128 = [
-    "bn128",
+openvm-bn254 = [
     "dep:openvm-ecc-guest",
     "dep:openvm-pairing",
     "openvm-pairing/bn254",
 ]
 
-kzg = [] # marker, won't be used in dependencies
 openvm-kzg = [
-    "kzg",
     "dep:openvm-kzg",
 ]
 
-secp256k1 = [] # marker, won't be used in dependencies
 openvm-secp256k1 = [
-    "secp256k1",
     "dep:openvm-ecc-guest",
-    "dep:openvm-keccak256",
     "dep:openvm-k256",
 ]
 
-sha256 = []
 openvm-sha256 = [
-    "sha256",
     "dep:openvm-sha2"
 ]
 
