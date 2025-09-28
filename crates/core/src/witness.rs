@@ -1,9 +1,10 @@
 use auto_impl::auto_impl;
 use itertools::Itertools;
-use reth_primitives_traits::crypto::{InvalidSignatureS, RecoveryError, SECP256K1N_HALF};
-use reth_primitives_traits::serde_bincode_compat::BincodeReprFor;
+use reth_primitives_traits::{
+    crypto::{InvalidSignatureS, RecoveryError, SECP256K1N_HALF},
+    serde_bincode_compat::BincodeReprFor,
+};
 use sbv_kv::KeyValueStore;
-use sbv_primitives::types::revm;
 use sbv_primitives::{
     Address, B256, Bytes, ChainId, SignatureError, U256, keccak256,
     types::{
@@ -11,6 +12,7 @@ use sbv_primitives::{
         consensus::{SignerRecoverable, TxEnvelope},
         eips::eip4895::Withdrawals,
         reth::primitives::{Block, BlockBody, RecoveredBlock, SealedBlock},
+        revm,
     },
 };
 
