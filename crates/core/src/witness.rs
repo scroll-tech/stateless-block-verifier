@@ -1,9 +1,11 @@
 use auto_impl::auto_impl;
 use itertools::Itertools;
+use reth_primitives_traits::crypto::{InvalidSignatureS, RecoveryError, SECP256K1N_HALF};
 use reth_primitives_traits::serde_bincode_compat::BincodeReprFor;
 use sbv_kv::KeyValueStore;
+use sbv_primitives::types::revm;
 use sbv_primitives::{
-    B256, Bytes, ChainId, SignatureError, U256, keccak256,
+    Address, B256, Bytes, ChainId, SignatureError, U256, keccak256,
     types::{
         Header,
         consensus::{SignerRecoverable, TxEnvelope},
@@ -80,10 +82,38 @@ impl BlockWitness {
 
     /// Build execution context from the witness.
     pub fn build_reth_block(&self) -> Result<RecoveredBlock<Block>, SignatureError> {
+        let crypto = revm::precompile::crypto();
+
         let senders = self
             .transactions
             .iter()
-            .map(|tx| tx.recover_signer())
+            .map(|tx| {
+                let (signature, signature_hash) = match tx {
+                    TxEnvelope::Legacy(tx) => (tx.signature(), tx.signature_hash()),
+                    TxEnvelope::Eip2930(tx) => (tx.signature(), tx.signature_hash()),
+                    TxEnvelope::Eip1559(tx) => (tx.signature(), tx.signature_hash()),
+                    TxEnvelope::Eip7702(tx) => (tx.signature(), tx.signature_hash()),
+                    #[cfg(feature = "scroll")]
+                    TxEnvelope::L1Message(tx) => return Ok(tx.sender),
+                };
+
+                if signature.s() > SECP256K1N_HALF {
+                    return Err(RecoveryError::from_source(InvalidSignatureS));
+                }
+
+                let mut sig = [0u8; 64];
+                sig[0..32].copy_from_slice(&signature.r().to_be_bytes::<32>());
+                sig[32..64].copy_from_slice(&signature.s().to_be_bytes::<32>());
+
+                let result = crypto
+                    .secp256k1_ecrecover(&sig, signature.v() as u8, &signature_hash.0)
+                    .map_err(RecoveryError::from_source)?;
+                let signer = Address::from_slice(&result[12..]);
+
+                debug_assert_eq!(signer, tx.recover_signer()?, "should match");
+
+                Ok(signer.into())
+            })
             .collect::<Result<Vec<_>, _>>()
             .expect("Failed to recover signer");
 
