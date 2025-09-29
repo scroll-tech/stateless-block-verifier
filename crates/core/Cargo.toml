@@ -29,7 +29,6 @@ sbv-primitives = { workspace = true, features = [
   "reth-evm-types",
   "reth-execution-types",
 ] }
-sbv-precompile.workspace = true
 sbv-helpers.workspace = true
 sbv-kv.workspace = true
 sbv-trie.workspace = true
@@ -48,7 +47,6 @@ rkyv = ["dep:rkyv", "sbv-primitives/rkyv"]
 scroll = [
   "sbv-primitives/scroll-chainspec",
   "sbv-primitives/scroll-reth-evm-types",
-  "sbv-precompile/scroll",
 ]
 scroll-compress-ratio = ["sbv-primitives/scroll-compress-ratio"]
 dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
@@ -56,6 +54,3 @@ dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
 # sp1 related
 sp1 = ["sbv-trie/sp1"]
 cycle-tracker = ["sbv-trie/cycle-tracker"]
-
-scroll-openvm = ["sbv-precompile/scroll-openvm"]
-ethereum-openvm = ["sbv-precompile/ethereum-openvm"]

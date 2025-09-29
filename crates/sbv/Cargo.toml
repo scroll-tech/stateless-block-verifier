@@ -30,6 +30,3 @@ dev = ["sbv-core/dev", "sbv-primitives/dev", "sbv-trie/dev"]
 # sp1 related
 sp1 = ["sbv-core/sp1", "sbv-primitives/sp1"]
 cycle-tracker = ["sbv-core/cycle-tracker", "sbv-primitives/cycle-tracker"]
-
-scroll-openvm = ["sbv-core/scroll-openvm"]
-ethereum-openvm = ["sbv-core/ethereum-openvm"]
