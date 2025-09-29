@@ -4,7 +4,6 @@ members = [
     "crates/core",
     "crates/helpers",
     "crates/kv",
-    "crates/precompile",
     "crates/primitives",
     "crates/sbv",
     "crates/trie",
@@ -81,13 +80,6 @@ scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", branch = "
 #scroll-alloy-consensus = { path = "../reth/crates/scroll/alloy/consensus", default-features = false }
 #scroll-alloy-rpc-types = { path = "../reth/crates/scroll/alloy/rpc-types", default-features = false }
 #scroll-alloy-network = { path = "../reth/crates/scroll/alloy/network", default-features = false }
-
-openvm-ecc-guest = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
-openvm-sha2 = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
-openvm-pairing = { git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
-openvm-k256 = { package = "k256", git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
-openvm-p256 = { package = "p256", git = "https://github.com/openvm-org/openvm.git", tag = "v1.4.0" }
-openvm-kzg = { git = "https://github.com/axiom-crypto/openvm-kzg.git", rev = "1a01e08", default-features = false }
 
 async-trait = "0.1"
 auto_impl = "1.2"
