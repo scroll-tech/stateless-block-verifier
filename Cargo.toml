@@ -110,7 +110,6 @@ sbv = { path = "crates/sbv" }
 sbv-core = { path = "crates/core" }
 sbv-kv = { path = "crates/kv" }
 sbv-primitives = { path = "crates/primitives" }
-sbv-precompile = { path = "crates/precompile" }
 sbv-trie = { path = "crates/trie" }
 sbv-helpers = { path = "crates/helpers" }
 sbv-utils = { path = "crates/utils" }
