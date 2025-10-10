@@ -65,8 +65,10 @@ impl<
             .without_state_clear()
             .build();
 
-        let evm = provider.evm_for_block(&mut db, self.block.header());
-        let ctx = provider.context_for_block(self.block);
+        let evm = provider
+            .evm_for_block(&mut db, self.block.header())
+            .expect("infallible");
+        let ctx = provider.context_for_block(self.block).expect("infallible");
         let executor =
             ScrollBlockExecutor::new(evm, ctx, factory.spec(), factory.receipt_builder());
 

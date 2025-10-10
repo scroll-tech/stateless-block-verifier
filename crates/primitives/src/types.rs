@@ -3,7 +3,7 @@ pub mod consensus {
     pub use alloy_consensus::{
         Block, BlockHeader, Header, SignableTransaction, Transaction, TxEip1559, TxEip2930,
         TxEip4844, TxEip4844Variant, TxEip4844WithSidecar, TxEip7702, TxLegacy, Typed2718,
-        transaction::SignerRecoverable,
+        transaction::{SignerRecoverable, TxHashRef},
     };
 
     #[cfg(not(feature = "scroll"))]
