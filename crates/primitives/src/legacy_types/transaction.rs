@@ -127,7 +127,7 @@ pub struct Transaction {
 impl From<TxEnvelope> for Transaction {
     fn from(tx: TxEnvelope) -> Self {
         #[cfg(feature = "scroll")]
-        use crate::types::reth::primitives::SignedTransaction;
+        use crate::types::consensus::TxHashRef;
 
         Self {
             hash: *tx.tx_hash(),
