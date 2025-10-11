@@ -4,8 +4,11 @@
 use crate::mpt::{MptNode, MptNodeData, MptNodeReference, resolve_nodes};
 use alloy_rlp::Decodable;
 use reth_trie::TrieAccount;
-use sbv_kv::{HashMap, nohash::NoHashMap};
-use sbv_primitives::{B256, Bytes, keccak256};
+use sbv_primitives::{
+    B256, Bytes,
+    alloy_primitives::map::{B256Map, HashMap},
+    keccak256,
+};
 
 /// Partial state trie error
 #[derive(thiserror::Error, Debug)]
@@ -58,14 +61,14 @@ pub enum FromWitnessError {
 pub(crate) fn build_validated_tries<'a, I>(
     prev_state_root: B256,
     states: I,
-) -> Result<(MptNode, NoHashMap<B256, MptNode>), FromWitnessError>
+) -> Result<(MptNode, B256Map<MptNode>), FromWitnessError>
 where
     I: IntoIterator<Item = &'a Bytes>,
 {
     // Step 1: Decode all RLP-encoded trie nodes and index by hash
     // IMPORTANT: Witness state contains both *state trie* nodes and *storage tries* nodes!
     let mut node_map = HashMap::<MptNodeReference, MptNode>::default();
-    let mut node_by_hash = NoHashMap::<B256, MptNode>::default();
+    let mut node_by_hash = B256Map::<MptNode>::default();
     let mut root_node: Option<MptNode> = None;
 
     for encoded in states.into_iter() {
@@ -92,10 +95,8 @@ where
     });
 
     // Step 3: Build storage tries per account efficiently
-    let mut storage_tries = NoHashMap::<B256, MptNode>::with_capacity_and_hasher(
-        raw_storage_tries.len(),
-        Default::default(),
-    );
+    let mut storage_tries =
+        B256Map::<MptNode>::with_capacity_and_hasher(raw_storage_tries.len(), Default::default());
 
     for (hashed_address, storage_root) in raw_storage_tries {
         let root_node = match node_by_hash.get(&storage_root).cloned() {
@@ -143,7 +144,7 @@ fn validate_state_trie(state_trie: &MptNode, pre_state_root: B256) -> Result<(),
 // Validates that each storage trie matches the declared storage_root in the state trie.
 fn validate_storage_tries(
     state_trie: &MptNode,
-    storage_tries: &NoHashMap<B256, MptNode>,
+    storage_tries: &B256Map<MptNode>,
 ) -> Result<(), FromWitnessError> {
     for (hashed_address, storage_trie) in storage_tries.iter() {
         let account = state_trie

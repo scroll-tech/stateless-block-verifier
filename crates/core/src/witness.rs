@@ -1,9 +1,8 @@
 use auto_impl::auto_impl;
 use itertools::Itertools;
 use reth_primitives_traits::serde_bincode_compat::BincodeReprFor;
-use sbv_kv::KeyValueStore;
 use sbv_primitives::{
-    B256, Bytes, ChainId, SignatureError, U256, keccak256,
+    B256, Bytes, ChainId, SignatureError, U256,
     types::{
         Header,
         consensus::{SignerRecoverable, TxEnvelope},
@@ -122,69 +121,6 @@ impl From<sbv_primitives::legacy_types::BlockWitness> for BlockWitness {
             block_hashes: legacy.block_hashes,
             states: legacy.states,
             codes: legacy.codes,
-        }
-    }
-}
-
-/// BlockWitnessExt trait
-#[auto_impl(&, &mut, Box, Rc, Arc)]
-pub trait BlockWitnessExt {
-    /// Import codes into code db
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, code_db: CodeDb);
-    /// Import block hashes into block hash provider
-    #[cfg(not(feature = "scroll"))]
-    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
-        &self,
-        block_hashes: BlockHashProvider,
-    );
-}
-
-impl BlockWitnessExt for BlockWitness {
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
-        for code in self.codes.iter() {
-            let code = code.as_ref();
-            let code_hash = cycle_track!(keccak256(code), "keccak256");
-            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
-        }
-    }
-
-    #[cfg(not(feature = "scroll"))]
-    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
-        &self,
-        mut block_hashes: BlockHashProvider,
-    ) {
-        let block_number = self.header.number;
-        for (i, hash) in self.block_hashes.iter().enumerate() {
-            let block_number = block_number
-                .checked_sub(i as u64 + 1)
-                .expect("block number underflow");
-            block_hashes.insert(block_number, *hash)
-        }
-    }
-}
-
-impl BlockWitnessExt for [BlockWitness] {
-    fn import_codes<CodeDb: KeyValueStore<B256, Bytes>>(&self, mut code_db: CodeDb) {
-        for code in self.iter().flat_map(|w| w.codes.iter()) {
-            let code = code.as_ref();
-            let code_hash = cycle_track!(keccak256(code), "keccak256");
-            code_db.or_insert_with(code_hash, || Bytes::copy_from_slice(code))
-        }
-    }
-
-    #[cfg(not(feature = "scroll"))]
-    fn import_block_hashes<BlockHashProvider: KeyValueStore<u64, B256>>(
-        &self,
-        mut block_hashes: BlockHashProvider,
-    ) {
-        for witness in self.iter() {
-            let block_number = witness.header.number;
-            for (i, hash) in witness.block_hashes.iter().enumerate() {
-                let block_number = block_number
-                    .checked_sub(i as u64 + 1)
-                    .expect("block number underflow");
-                block_hashes.insert(block_number, *hash)
-            }
         }
     }
 }

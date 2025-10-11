@@ -1,147 +1,102 @@
-use sbv_kv::{HashMap, KeyValueStoreGet};
-pub use sbv_primitives::types::revm::database::DatabaseRef;
+//! Most copied from <https://github.com/paradigmxyz/reth/blob/5c18df9889941837e61929be4b51abb75f07f152/crates/stateless/src/witness_db.rs>
+//! Under MIT license
+
+use reth_stateless::StatelessTrie;
+pub use sbv_primitives::types::revm::database::Database;
 use sbv_primitives::{
-    Address, B256, Bytes, U256,
-    types::revm::{
-        AccountInfo, Bytecode,
-        database::{BundleAccount, DBErrorMarker},
+    Address, B256, U256,
+    alloy_primitives::map::B256Map,
+    types::{
+        reth::evm::execute::ProviderError,
+        revm::{AccountInfo, Bytecode},
     },
 };
-use sbv_trie::PartialStateTrie;
-use std::{cell::RefCell, collections::BTreeMap, fmt};
+use sbv_trie::r0::SparseState;
+use std::collections::BTreeMap;
 
 /// A database that consists of account and storage information.
-pub struct EvmDatabase<CodeDb, BlockHashProvider> {
-    /// Map of code hash to bytecode.
-    pub(crate) code_db: CodeDb,
-    /// Cache of analyzed code
-    analyzed_code_cache: RefCell<HashMap<B256, Option<Bytecode>>>,
-    /// partial merkle patricia trie
-    pub(crate) state: PartialStateTrie,
-    /// Provider of block hashes
-    block_hashes: BlockHashProvider,
+#[derive(Debug)]
+pub struct WitnessDatabase<'a> {
+    /// Map of block numbers to block hashes.
+    /// This is used to service the `BLOCKHASH` opcode.
+    block_hashes_by_block_number: &'a BTreeMap<u64, B256>,
+    /// Map of code hashes to bytecode.
+    /// Used to fetch contract code needed during execution.
+    bytecode: &'a B256Map<Bytecode>,
+    /// The sparse Merkle Patricia Trie containing account and storage state.
+    /// This is used to provide account/storage values during EVM execution.
+    pub(crate) trie: &'a SparseState,
 }
 
-/// Database error.
-#[derive(Debug, thiserror::Error)]
-pub enum DatabaseError {
-    /// Missing L2 message queue witness
-    #[cfg(feature = "scroll")]
-    #[error("missing L2 message queue witness")]
-    MissingL2MessageQueueWitness,
-    /// Partial state trie error
-    #[error(transparent)]
-    PartialStateTrie(#[from] sbv_trie::PartialStateTrieError),
-    /// Requested code not loaded
-    #[error("requested code({0}) not loaded")]
-    CodeNotLoaded(B256),
-}
-
-type Result<T, E = DatabaseError> = std::result::Result<T, E>;
-
-impl<CodeDb, BlockHashProvider> fmt::Debug for EvmDatabase<CodeDb, BlockHashProvider> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("EvmDatabase").finish()
-    }
-}
-
-impl<CodeDb: KeyValueStoreGet<B256, Bytes>, BlockHashProvider: KeyValueStoreGet<u64, B256>>
-    EvmDatabase<CodeDb, BlockHashProvider>
-{
-    /// Initialize an EVM database from a zkTrie root.
-    pub fn new(code_db: CodeDb, state: PartialStateTrie, block_hashes: BlockHashProvider) -> Self {
-        EvmDatabase {
-            code_db,
-            analyzed_code_cache: Default::default(),
-            block_hashes,
-            state,
-        }
-    }
-
-    /// Update changes to the database.
-    pub fn commit(&mut self, post_state: BTreeMap<Address, BundleAccount>) -> Result<B256> {
-        Ok(self.state.update(post_state)?)
-    }
-
-    /// Get the withdrawal trie root of scroll.
+impl<'a> WitnessDatabase<'a> {
+    /// Creates a new [`WitnessDatabase`] instance.
     ///
-    /// Note: this should not be confused with the withdrawal of the beacon chain.
-    #[cfg(feature = "scroll")]
-    pub fn withdraw_root(&self) -> Result<B256, DatabaseError> {
-        /// L2MessageQueue pre-deployed address
-        pub const ADDRESS: Address =
-            sbv_primitives::address!("5300000000000000000000000000000000000000");
-        /// the slot of withdraw root in L2MessageQueue
-        pub const WITHDRAW_TRIE_ROOT_SLOT: U256 = U256::ZERO;
-
-        self.basic_ref(ADDRESS)?
-            .ok_or(DatabaseError::MissingL2MessageQueueWitness)?;
-        let withdraw_root = self.storage_ref(ADDRESS, WITHDRAW_TRIE_ROOT_SLOT)?;
-        Ok(withdraw_root.into())
-    }
-
-    fn load_code(&self, hash: B256) -> Option<Bytecode> {
-        let mut code_cache = self.analyzed_code_cache.borrow_mut();
-        if let Some(code) = code_cache.get(&hash) {
-            code.clone()
-        } else {
-            let code = self.code_db.get(&hash).cloned().map(Bytecode::new_raw);
-            code_cache.insert(hash, code.clone());
-            code
+    /// # Assumptions
+    ///
+    /// This function assumes:
+    /// 1. The provided `trie` has been populated with state data consistent with a known state root
+    ///    (e.g., using witness data and verifying against a parent block's state root).
+    /// 2. The `bytecode` map contains all bytecode corresponding to code hashes present in the
+    ///    account data within the `trie`.
+    /// 3. The `ancestor_hashes` map contains the block hashes for the relevant ancestor blocks (up
+    ///    to 256 including the current block number). It assumes these hashes correspond to a
+    ///    contiguous chain of blocks. The caller is responsible for verifying the contiguity and
+    ///    the block limit.
+    pub(crate) const fn new(
+        trie: &'a SparseState,
+        bytecode: &'a B256Map<Bytecode>,
+        ancestor_hashes: &'a BTreeMap<u64, B256>,
+    ) -> Self {
+        Self {
+            trie,
+            block_hashes_by_block_number: ancestor_hashes,
+            bytecode,
         }
     }
 }
 
-impl<CodeDb: KeyValueStoreGet<B256, Bytes>, BlockHashProvider: KeyValueStoreGet<u64, B256>>
-    DatabaseRef for EvmDatabase<CodeDb, BlockHashProvider>
-{
-    type Error = DatabaseError;
+impl Database for WitnessDatabase<'_> {
+    /// The database error type.
+    type Error = ProviderError;
 
-    /// Get basic account information.
-    fn basic_ref(&self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
-        let Some(account) = self.state.get_account(address)? else {
-            return Ok(None);
-        };
-        dev_trace!("load trie account of {address:?}: {account:?}");
-        let code = self.load_code(account.code_hash);
-        let info = AccountInfo {
-            balance: account.balance,
-            nonce: account.nonce,
-            code_hash: account.code_hash,
-            code,
-        };
-
-        #[cfg(debug_assertions)]
-        if let Some(ref code) = info.code {
-            assert_eq!(
-                info.code_hash,
-                code.hash_slow(),
-                "code hash mismatch for account {address:?}",
-            );
-        }
-
-        Ok(Some(info))
+    /// Get basic account information by hashing the address and looking up the account RLP
+    /// in the underlying [`StatelessTrie`] implementation.
+    ///
+    /// Returns `Ok(None)` if the account is not found in the trie.
+    fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+        self.trie.account(address).map(|opt| {
+            opt.map(|account| AccountInfo {
+                balance: account.balance,
+                nonce: account.nonce,
+                code_hash: account.code_hash,
+                code: None,
+            })
+        })
     }
 
-    /// Get account code by its code hash.
-    fn code_by_hash_ref(&self, hash: B256) -> Result<Bytecode, Self::Error> {
-        self.load_code(hash)
-            .ok_or(DatabaseError::CodeNotLoaded(hash))
+    /// Get account code by its hash from the provided bytecode map.
+    ///
+    /// Returns an error if the bytecode for the given hash is not found in the map.
+    fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
+        self.bytecode.get(&code_hash).cloned().ok_or_else(|| {
+            ProviderError::TrieWitnessError(format!("bytecode for {code_hash} not found"))
+        })
     }
 
-    /// Get storage value of address at index.
-    fn storage_ref(&self, address: Address, index: U256) -> Result<U256, Self::Error> {
-        dev_trace!("get storage of {:?} at index {:?}", address, index);
-        Ok(self.state.get_storage(address, index)?)
+    /// Get storage value of an account at a specific slot.
+    ///
+    /// Returns `U256::ZERO` if the slot is not found in the trie.
+    fn storage(&mut self, address: Address, slot: U256) -> Result<U256, Self::Error> {
+        self.trie.storage(address, slot)
     }
 
-    /// Get block hash by block number.
-    fn block_hash_ref(&self, number: u64) -> Result<B256, Self::Error> {
-        Ok(*self
-            .block_hashes
-            .get(&number)
-            .unwrap_or_else(|| panic!("block hash of number {number} not found")))
+    /// Get block hash by block number from the provided ancestor hashes map.
+    ///
+    /// Returns an error if the hash for the given block number is not found in the map.
+    fn block_hash(&mut self, block_number: u64) -> Result<B256, Self::Error> {
+        self.block_hashes_by_block_number
+            .get(&block_number)
+            .copied()
+            .ok_or(ProviderError::StateForNumberNotFound(block_number))
     }
 }
-
-impl DBErrorMarker for DatabaseError {}

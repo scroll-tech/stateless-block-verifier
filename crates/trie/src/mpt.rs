@@ -22,8 +22,7 @@
 use alloy_rlp::{Decodable, EMPTY_STRING_CODE, Encodable, Header};
 use alloy_trie::EMPTY_ROOT_HASH;
 use reth_trie::Nibbles;
-use sbv_kv::HashMap;
-use sbv_primitives::{B256, keccak256};
+use sbv_primitives::{B256, alloy_primitives::map::HashMap, keccak256};
 use serde::{Deserialize, Serialize};
 use std::{cmp, fmt::Debug, iter, mem, sync::Mutex};
 

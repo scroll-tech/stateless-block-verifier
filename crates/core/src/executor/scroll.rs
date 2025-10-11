@@ -1,37 +1,31 @@
-use crate::{EvmDatabase, VerificationError};
-use sbv_kv::KeyValueStoreGet;
+use crate::database::WitnessDatabase;
 use sbv_primitives::{
-    B256, Bytes, U256,
+    U256,
     chainspec::ChainSpec,
-    types::{
-        reth::{
-            evm::{ConfigureEvm, EthEvmConfig},
-            execution_types::BlockExecutionOutput,
-            primitives::{Block, Receipt, RecoveredBlock},
-        },
-        revm::database::CacheDB,
+    types::reth::{
+        evm::{ConfigureEvm, EthEvmConfig, block::BlockExecutionError},
+        execution_types::BlockExecutionOutput,
+        primitives::{Block, Receipt, RecoveredBlock},
     },
 };
 use std::sync::Arc;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
-pub struct EvmExecutor<'a, CodeDb, BlockHashProvider, CompressionRatios> {
+pub struct EvmExecutor<'a> {
     chain_spec: Arc<ChainSpec>,
-    db: &'a EvmDatabase<CodeDb, BlockHashProvider>,
+    db: WitnessDatabase<'a>,
     block: &'a RecoveredBlock<Block>,
-    compression_ratios: Option<CompressionRatios>,
+    compression_ratios: Option<Vec<U256>>,
 }
 
-impl<'a, CodeDb, BlockHashProvider, CompressionRatios>
-    EvmExecutor<'a, CodeDb, BlockHashProvider, CompressionRatios>
-{
+impl<'a> EvmExecutor<'a> {
     /// Create a new EVM executor
     pub fn new(
         chain_spec: Arc<ChainSpec>,
-        db: &'a EvmDatabase<CodeDb, BlockHashProvider>,
+        db: WitnessDatabase<'a>,
         block: &'a RecoveredBlock<Block>,
-        compression_ratios: Option<CompressionRatios>,
+        compression_ratios: Option<Vec<U256>>,
     ) -> Self {
         Self {
             chain_spec,
@@ -42,14 +36,9 @@ impl<'a, CodeDb, BlockHashProvider, CompressionRatios>
     }
 }
 
-impl<
-    CodeDb: KeyValueStoreGet<B256, Bytes>,
-    BlockHashProvider: KeyValueStoreGet<u64, B256>,
-    CompressionRatios: IntoIterator<Item = U256>,
-> EvmExecutor<'_, CodeDb, BlockHashProvider, CompressionRatios>
-{
+impl EvmExecutor<'_> {
     /// Handle the block with the given witness
-    pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
+    pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, BlockExecutionError> {
         use sbv_primitives::types::{
             evm::ScrollBlockExecutor,
             reth::evm::execute::BlockExecutor,
@@ -60,7 +49,7 @@ impl<
         let factory = provider.block_executor_factory();
 
         let mut db = State::builder()
-            .with_database(CacheDB::new(self.db))
+            .with_database(self.db)
             .with_bundle_update()
             .without_state_clear()
             .build();

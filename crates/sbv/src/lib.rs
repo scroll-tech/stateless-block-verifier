@@ -2,7 +2,6 @@
 
 pub use sbv_core as core;
 pub use sbv_helpers as helpers;
-pub use sbv_kv as kv;
 pub use sbv_primitives as primitives;
 pub use sbv_trie as trie;
 pub use sbv_utils as utils;

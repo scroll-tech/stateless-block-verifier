@@ -55,7 +55,7 @@ pub trait ProviderExt: Provider<Network> {
     /// # Panics
     ///
     /// This function will panic if the block number is 0.
-    fn dump_block_witness(&self, number: BlockNumber) -> DumpBlockWitness<Self>
+    fn dump_block_witness(&self, number: BlockNumber) -> DumpBlockWitness<'_, Self>
     where
         Self: Sized,
     {

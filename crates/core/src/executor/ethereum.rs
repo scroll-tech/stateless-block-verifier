@@ -1,32 +1,27 @@
-use crate::{EvmDatabase, VerificationError};
-use sbv_kv::KeyValueStoreGet;
+use crate::database::WitnessDatabase;
 use sbv_primitives::{
-    B256, Bytes,
     chainspec::ChainSpec,
-    types::{
-        reth::{
-            evm::{ConfigureEvm, EthEvmConfig, execute::Executor},
-            execution_types::BlockExecutionOutput,
-            primitives::{Block, Receipt, RecoveredBlock},
-        },
-        revm::database::CacheDB,
+    types::reth::{
+        evm::{ConfigureEvm, EthEvmConfig, block::BlockExecutionError, execute::Executor},
+        execution_types::BlockExecutionOutput,
+        primitives::{Block, Receipt, RecoveredBlock},
     },
 };
 use std::sync::Arc;
 
 /// EVM executor that handles the block.
 #[derive(Debug)]
-pub struct EvmExecutor<'a, CodeDb, BlockHashProvider> {
+pub struct EvmExecutor<'a> {
     chain_spec: Arc<ChainSpec>,
-    db: &'a EvmDatabase<CodeDb, BlockHashProvider>,
+    db: WitnessDatabase<'a>,
     block: &'a RecoveredBlock<Block>,
 }
 
-impl<'a, CodeDb, BlockHashProvider> EvmExecutor<'a, CodeDb, BlockHashProvider> {
+impl<'a> crate::EvmExecutor<'a> {
     /// Create a new EVM executor
     pub fn new(
         chain_spec: Arc<ChainSpec>,
-        db: &'a EvmDatabase<CodeDb, BlockHashProvider>,
+        db: WitnessDatabase<'a>,
         block: &'a RecoveredBlock<Block>,
     ) -> Self {
         Self {
@@ -37,15 +32,13 @@ impl<'a, CodeDb, BlockHashProvider> EvmExecutor<'a, CodeDb, BlockHashProvider> {
     }
 }
 
-impl<CodeDb: KeyValueStoreGet<B256, Bytes>, BlockHashProvider: KeyValueStoreGet<u64, B256>>
-    EvmExecutor<'_, CodeDb, BlockHashProvider>
-{
+impl EvmExecutor<'_> {
     /// Handle the block with the given witness
-    pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, VerificationError> {
+    pub fn execute(self) -> Result<BlockExecutionOutput<Receipt>, BlockExecutionError> {
         let provider = EthEvmConfig::new(self.chain_spec.clone());
 
         let output = cycle_track!(
-            provider.executor(CacheDB::new(self.db)).execute(self.block),
+            provider.executor(self.db).execute(self.block),
             "handle_block"
         )?;
 

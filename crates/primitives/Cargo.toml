@@ -48,7 +48,6 @@ scroll-alloy-rpc-types = { workspace = true, optional = true }
 scroll-alloy-network = { workspace = true, optional = true }
 
 sbv-helpers.workspace = true
-sbv-kv.workspace = true
 
 [dev-dependencies]
 rstest.workspace = true
