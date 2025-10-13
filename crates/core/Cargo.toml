@@ -14,14 +14,13 @@ workspace = true
 
 [dependencies]
 auto_impl.workspace = true
-thiserror.workspace = true
 tracing = { workspace = true, optional = true }
 serde.workspace = true
 rkyv = { workspace = true, optional = true }
-cfg-if.workspace = true
 itertools.workspace = true
 serde_with.workspace = true
 reth-primitives-traits = { workspace = true, features = ["serde", "serde-bincode-compat"] }
+reth-stateless.workspace = true
 
 sbv-primitives = { workspace = true, features = [
   "chainspec",
@@ -30,7 +29,6 @@ sbv-primitives = { workspace = true, features = [
   "reth-execution-types",
 ] }
 sbv-helpers.workspace = true
-sbv-kv.workspace = true
 sbv-trie.workspace = true
 
 [dev-dependencies]

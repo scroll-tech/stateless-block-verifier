@@ -8,7 +8,6 @@ use sbv::primitives::types::Network;
 use std::future::Future;
 use url::Url;
 
-mod dump;
 pub mod verifier;
 
 #[derive(Debug, Args)]

@@ -1,15 +1,12 @@
-use crate::helpers::dump::dump_bundle_state;
 use eyre::eyre;
 use sbv::{
     core::{
-        VerificationError,
         verifier::{self, VerifyResult},
         witness::BlockWitness,
     },
     primitives::chainspec::ChainSpec,
 };
 use std::{
-    env,
     panic::{AssertUnwindSafe, catch_unwind},
     sync::Arc,
 };
@@ -18,28 +15,8 @@ pub fn verify_catch_panics(
     witness: BlockWitness,
     chain_spec: Arc<ChainSpec>,
 ) -> eyre::Result<VerifyResult> {
-    let chain_id = witness.chain_id;
-    let block_number = witness.header.number;
-
     catch_unwind(AssertUnwindSafe(|| {
-        verifier::run_host(&[witness], chain_spec).inspect_err(|e| {
-            if let VerificationError::RootMismatch { bundle_state, .. } = e {
-                let dump_dir = env::temp_dir()
-                    .join("dumps")
-                    .join(format!("{chain_id}-{block_number}"));
-                dump_bundle_state(bundle_state, &dump_dir)
-                    .inspect(|_| {
-                        dev_info!("Dumped bundle state to: {}", dump_dir.display());
-                    })
-                    .inspect_err(|_e| {
-                        dev_error!(
-                            "Failed to dump bundle state to {}: {_e}",
-                            dump_dir.display(),
-                        );
-                    })
-                    .ok();
-            }
-        })
+        verifier::run_host(&[witness], chain_spec)
     }))
     .map_err(|e| {
         e.downcast_ref::<&str>()

@@ -8,10 +8,6 @@ pub mod witness;
 pub use witness::BlockWitness;
 
 mod database;
-pub use database::{DatabaseError, DatabaseRef, EvmDatabase};
-
-mod error;
-pub use error::VerificationError;
 
 mod executor;
 pub use executor::EvmExecutor;

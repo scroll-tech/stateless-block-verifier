@@ -4,20 +4,23 @@ extern crate sbv_helpers;
 
 use crate::mpt::MptNode;
 use alloy_trie::{EMPTY_ROOT_HASH, TrieAccount};
-use sbv_kv::nohash::NoHashMap;
 use sbv_primitives::{Address, B256, Bytes, U256, keccak256, types::revm::database::BundleAccount};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 mod execution_witness;
 mod mpt;
+pub mod r0;
+
 pub use execution_witness::FromWitnessError;
+pub use reth_trie::{HashedPostState, KeccakKeyHasher};
+use sbv_primitives::alloy_primitives::map::B256Map;
 
 /// A partial trie that can be updated
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PartialStateTrie {
     state_trie: MptNode,
-    storage_tries: NoHashMap<B256, MptNode>,
+    storage_tries: B256Map<MptNode>,
 }
 
 /// Partial state trie error

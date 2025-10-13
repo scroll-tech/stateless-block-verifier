@@ -1,16 +1,13 @@
 use crate::{
-    BlockWitness, EvmDatabase, EvmExecutor, VerificationError,
-    witness::{BlockWitnessChunkExt, BlockWitnessExt},
+    BlockWitness,
+    verifier::{VerifyResult, run},
 };
-use itertools::Itertools;
-use sbv_kv::{nohash::NoHashMap, null::NullProvider};
+use reth_stateless::{StatelessTrie, validation::StatelessValidationError};
 use sbv_primitives::{
-    B256, Bytes, U256,
-    chainspec::ChainSpec,
-    types::reth::primitives::{Block, RecoveredBlock},
+    Address, B256, U256, chainspec::ChainSpec, types::reth::evm::execute::ProviderError,
 };
-use sbv_trie::PartialStateTrie;
-use std::{collections::BTreeMap, sync::Arc};
+use sbv_trie::r0::SparseState;
+use std::sync::Arc;
 
 /// State commit mode for the block witness verification process.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -28,127 +25,33 @@ pub enum StateCommitMode {
     Auto,
 }
 
-/// Result of the block witness verification process.
-#[derive(Debug)]
-pub struct VerifyResult {
-    /// Recovered blocks from the witnesses.
-    pub blocks: Vec<RecoveredBlock<Block>>,
-    /// Pre-state root of the first block.
-    pub pre_state_root: B256,
-    /// Post-state root after executing the witnesses.
-    pub post_state_root: B256,
-    /// Withdrawal root after executing the witnesses.
-    pub withdraw_root: B256,
-    /// Gas used during the verification process.
-    pub gas_used: u64,
-}
-
 /// Verify the block witness and return the gas used.
 pub fn run_host(
     witnesses: &[BlockWitness],
     chain_spec: Arc<ChainSpec>,
-) -> Result<VerifyResult, VerificationError> {
+) -> Result<VerifyResult, StatelessValidationError> {
     let compression_ratios = witnesses
         .iter()
         .map(|block| block.compression_ratios())
         .collect::<Vec<_>>();
-    let cached_trie = PartialStateTrie::new(
-        witnesses[0].prev_state_root,
-        witnesses.iter().flat_map(|w| w.states.iter()),
-    )?;
-    run(witnesses, chain_spec, compression_ratios, cached_trie)
+    run(witnesses, chain_spec, compression_ratios)
 }
 
-/// Verify the block witness and return the gas used.
-pub fn run(
-    witnesses: &[BlockWitness],
-    chain_spec: Arc<ChainSpec>,
-    compression_ratios: Vec<Vec<U256>>,
-    cached_trie: PartialStateTrie,
-) -> Result<VerifyResult, VerificationError> {
-    if witnesses.is_empty() {
-        return Err(VerificationError::EmptyWitnesses);
-    }
-    if !witnesses.has_same_chain_id() {
-        return Err(VerificationError::ChainIdMismatch);
-    }
-    if !witnesses.has_seq_block_number() {
-        return Err(VerificationError::NonSequentialWitnesses);
-    }
-    if !witnesses.has_seq_state_root() {
-        return Err(VerificationError::NonSequentialWitnesses);
-    }
+/// Get the withdrawal trie root of scroll.
+///
+/// Note: this should not be confused with the withdrawal of the beacon chain.
+pub(super) fn withdraw_root(state: &SparseState) -> Result<B256, ProviderError> {
+    /// L2MessageQueue pre-deployed address
+    pub const ADDRESS: Address =
+        sbv_primitives::address!("5300000000000000000000000000000000000000");
+    /// the slot of withdraw root in L2MessageQueue
+    pub const WITHDRAW_TRIE_ROOT_SLOT: U256 = U256::ZERO;
 
-    let code_db = {
-        // build code db
-        let num_codes = witnesses.iter().map(|w| w.codes.len()).sum();
-        let mut code_db =
-            NoHashMap::<B256, Bytes>::with_capacity_and_hasher(num_codes, Default::default());
-        witnesses.import_codes(&mut code_db);
-        manually_drop_on_zkvm!(code_db)
-    };
-
-    let pre_state_root = witnesses[0].prev_state_root;
-    let post_state_root = witnesses.last().unwrap().header.state_root;
-
-    let blocks = witnesses
-        .iter()
-        .map(|w| {
-            dev_trace!("{w:#?}");
-            w.build_reth_block()
-        })
-        .collect::<Result<Vec<RecoveredBlock<Block>>, _>>()?;
-    if !blocks
-        .iter()
-        .tuple_windows()
-        .all(|(a, b)| a.hash() == b.header().parent_hash)
-    {
-        return Err(VerificationError::NonSequentialWitnesses);
-    }
-
-    let mut gas_used = 0;
-    let mut db = EvmDatabase::new(code_db, cached_trie, NullProvider);
-
-    let mut execute_block = |block, compression_ratio| -> Result<(), VerificationError> {
-        let executor = EvmExecutor::new(chain_spec.clone(), &db, block, compression_ratio);
-        let output = executor.execute()?;
-        gas_used += output.gas_used;
-
-        #[cfg(not(target_os = "zkvm"))]
-        let state_for_debug = output.state.clone();
-
-        let post_state_root = db.commit(BTreeMap::from_iter(output.state.state))?;
-        if block.state_root != post_state_root {
-            dev_error!(
-                "Block #{} root mismatch: root after in trace = {:x}, root after in reth = {:x}",
-                block.number,
-                block.state_root,
-                post_state_root
-            );
-            return Err(VerificationError::root_mismatch(
-                block.state_root,
-                post_state_root,
-                #[cfg(not(target_os = "zkvm"))]
-                state_for_debug,
-            ));
-        }
-
-        Ok(())
-    };
-
-    for (block, compression_ratios) in blocks.iter().zip_eq(compression_ratios) {
-        execute_block(block, Some(compression_ratios))?;
-    }
-
-    let withdraw_root = db.withdraw_root()?;
-
-    Ok(VerifyResult {
-        blocks,
-        pre_state_root,
-        post_state_root,
-        withdraw_root,
-        gas_used,
-    })
+    state
+        .account(ADDRESS)?
+        .expect("L2MessageQueue contract not found");
+    let withdraw_root = state.storage(ADDRESS, WITHDRAW_TRIE_ROOT_SLOT)?;
+    Ok(withdraw_root.into())
 }
 
 #[cfg(test)]
