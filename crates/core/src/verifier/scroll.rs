@@ -64,7 +64,7 @@ mod tests {
 
     #[rstest::rstest]
     fn test_euclid_v2(
-        #[files("../../testdata/scroll_witness/euclidv2/**/*.json")]
+        #[files("../../testdata/scroll/euclidv2/*.json")]
         #[mode = str]
         witness_json: &str,
     ) {
@@ -76,7 +76,7 @@ mod tests {
 
     #[rstest::rstest]
     fn test_feynman(
-        #[files("../../testdata/scroll_witness/feynman/**/*.json")]
+        #[files("../../testdata/scroll/feynman/*.json")]
         #[mode = str]
         witness_json: &str,
     ) {
