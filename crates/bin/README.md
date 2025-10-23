@@ -45,17 +45,17 @@ Options:
   -h, --help                                       Print help
 ```
 
-e.g. verify `./testdata/scroll_witness/euclid_v2/*.json` files.
+e.g. verify `./testdata/scroll/euclid_v2/*.json` files.
 ```
-> $ ./target/release/sbv-cli run file ./testdata/scroll_witness/euclid_v2/*.json
-2025-03-31T05:15:50.357835Z  INFO run_witness{path=./testdata/scroll_witness/euclid_v2/1.json}: sbv_cli::commands::run::file: verified
-2025-03-31T05:15:50.369316Z  INFO run_witness{path=./testdata/scroll_witness/euclid_v2/2.json}: sbv_cli::commands::run::file: verified
-2025-03-31T05:15:50.372989Z  INFO run_witness{path=./testdata/scroll_witness/euclid_v2/3.json}: sbv_cli::commands::run::file: verified
-2025-03-31T05:15:50.376463Z  INFO run_witness{path=./testdata/scroll_witness/euclid_v2/4.json}: sbv_cli::commands::run::file: verified
-2025-03-31T05:15:50.379678Z  INFO run_witness{path=./testdata/scroll_witness/euclid_v2/5.json}: sbv_cli::commands::run::file: verified
-2025-03-31T05:15:50.382717Z  INFO run_witness{path=./testdata/scroll_witness/euclid_v2/6.json}: sbv_cli::commands::run::file: verified
-2025-03-31T05:15:50.386070Z  INFO run_witness{path=./testdata/scroll_witness/euclid_v2/7.json}: sbv_cli::commands::run::file: verified
-2025-03-31T05:15:50.388808Z  INFO run_witness{path=./testdata/scroll_witness/euclid_v2/8.json}: sbv_cli::commands::run::file: verified
+> $ ./target/release/sbv-cli run file ./testdata/scroll/euclid_v2/*.json
+2025-03-31T05:15:50.357835Z  INFO run_witness{path=./testdata/scroll/euclid_v2/1.json}: sbv_cli::commands::run::file: verified
+2025-03-31T05:15:50.369316Z  INFO run_witness{path=./testdata/scroll/euclid_v2/2.json}: sbv_cli::commands::run::file: verified
+2025-03-31T05:15:50.372989Z  INFO run_witness{path=./testdata/scroll/euclid_v2/3.json}: sbv_cli::commands::run::file: verified
+2025-03-31T05:15:50.376463Z  INFO run_witness{path=./testdata/scroll/euclid_v2/4.json}: sbv_cli::commands::run::file: verified
+2025-03-31T05:15:50.379678Z  INFO run_witness{path=./testdata/scroll/euclid_v2/5.json}: sbv_cli::commands::run::file: verified
+2025-03-31T05:15:50.382717Z  INFO run_witness{path=./testdata/scroll/euclid_v2/6.json}: sbv_cli::commands::run::file: verified
+2025-03-31T05:15:50.386070Z  INFO run_witness{path=./testdata/scroll/euclid_v2/7.json}: sbv_cli::commands::run::file: verified
+2025-03-31T05:15:50.388808Z  INFO run_witness{path=./testdata/scroll/euclid_v2/8.json}: sbv_cli::commands::run::file: verified
 ```
 
 #### Continuous verify blocks from a rpc server
