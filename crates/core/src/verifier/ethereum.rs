@@ -28,22 +28,19 @@ pub(super) fn import_block_hashes(witnesses: &[BlockWitness]) -> BTreeMap<u64, B
     block_hashes
 }
 
-// FIXME: fetch new traces
-// #[cfg(test)]
-// mod tests {
-//     use sbv_primitives::{
-//         chainspec::{Chain, get_chain_spec},
-//         types::BlockWitness,
-//     };
-//
-//     #[rstest::rstest]
-//     fn test_mainnet(
-//         #[files("../../../testdata/holesky_witness/**/*.json")]
-//         #[mode = str]
-//         witness_json: &str,
-//     ) {
-//         let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
-//         let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id)).unwrap();
-//         crate::verifier::run(&[witness], chain_spec).unwrap();
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sbv_primitives::chainspec::{Chain, get_chain_spec};
+
+    #[rstest::rstest]
+    fn test_mainnet(
+        #[files("../../testdata/ethereum/*.json")]
+        #[mode = str]
+        witness_json: &str,
+    ) {
+        let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
+        let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id)).unwrap();
+        crate::verifier::run(&[witness], chain_spec).unwrap();
+    }
+}
