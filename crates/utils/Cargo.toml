@@ -28,6 +28,6 @@ sbv-core.workspace = true
 [features]
 scroll = [
   "sbv-primitives/scroll-network-types",
-  "sbv-primitives/scroll-compress-ratio",
+  "sbv-primitives/scroll-compress-info",
   "sbv-core/scroll",
 ]

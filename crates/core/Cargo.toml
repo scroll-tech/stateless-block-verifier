@@ -46,7 +46,7 @@ scroll = [
   "sbv-primitives/scroll-chainspec",
   "sbv-primitives/scroll-reth-evm-types",
 ]
-scroll-compress-ratio = ["sbv-primitives/scroll-compress-ratio"]
+scroll-compress-info = ["sbv-primitives/scroll-compress-info"]
 dev = ["dep:tracing", "sbv-primitives/dev", "sbv-trie/dev"]
 
 # sp1 related

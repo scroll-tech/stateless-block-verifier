@@ -30,11 +30,11 @@ pub fn run_host(
     witnesses: &[BlockWitness],
     chain_spec: Arc<ChainSpec>,
 ) -> Result<VerifyResult, StatelessValidationError> {
-    let compression_ratios = witnesses
+    let compression_infos = witnesses
         .iter()
-        .map(|block| block.compression_ratios())
+        .map(|block| block.compression_infos())
         .collect::<Vec<_>>();
-    run(witnesses, chain_spec, compression_ratios)
+    run(witnesses, chain_spec, compression_infos)
 }
 
 /// Get the withdrawal trie root of scroll.
