@@ -29,12 +29,13 @@ pub mod evm {
     pub use alloy_evm::precompiles;
 
     #[cfg(feature = "scroll-evm-types")]
-    pub use scroll_alloy_evm::{
-        ScrollBlockExecutor, ScrollPrecompilesFactory, ScrollTxCompressionRatios,
-    };
+    pub use scroll_alloy_evm::{ScrollBlockExecutor, ScrollPrecompilesFactory};
 
-    #[cfg(feature = "scroll-compress-ratio")]
-    pub use scroll_alloy_evm::compute_compression_ratio;
+    #[cfg(feature = "scroll-compress-info")]
+    pub use scroll_alloy_evm::{compute_compressed_size, compute_compression_ratio};
+
+    #[cfg(any(feature = "scroll-evm-types", feature = "scroll-compress-info"))]
+    pub use scroll_alloy_evm::{ScrollTxCompressionInfo, ScrollTxCompressionInfos};
 }
 
 /// re-export types from alloy_network

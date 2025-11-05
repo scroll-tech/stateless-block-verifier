@@ -16,7 +16,7 @@ pub struct EvmExecutor<'a> {
     chain_spec: Arc<ChainSpec>,
     db: WitnessDatabase<'a>,
     block: &'a RecoveredBlock<Block>,
-    compression_ratios: Option<Vec<U256>>,
+    compression_infos: Option<Vec<(U256, usize)>>,
 }
 
 impl<'a> EvmExecutor<'a> {
@@ -25,13 +25,13 @@ impl<'a> EvmExecutor<'a> {
         chain_spec: Arc<ChainSpec>,
         db: WitnessDatabase<'a>,
         block: &'a RecoveredBlock<Block>,
-        compression_ratios: Option<Vec<U256>>,
+        compression_infos: Option<Vec<(U256, usize)>>,
     ) -> Self {
         Self {
             chain_spec,
             db,
             block,
-            compression_ratios,
+            compression_infos,
         }
     }
 }
@@ -62,13 +62,13 @@ impl EvmExecutor<'_> {
             ScrollBlockExecutor::new(evm, ctx, factory.spec(), factory.receipt_builder());
 
         let result = cycle_track!(
-            match self.compression_ratios {
+            match self.compression_infos {
                 None => {
                     executor.execute_block(self.block.transactions_recovered())
                 }
-                Some(compression_ratios) => executor.execute_block_with_compression_cache(
+                Some(compression_infos) => executor.execute_block_with_compression_cache(
                     self.block.transactions_recovered(),
-                    compression_ratios,
+                    compression_infos,
                 ),
             },
             "handle_block"

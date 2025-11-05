@@ -44,7 +44,7 @@ pub struct VerifyResult {
 pub fn run(
     witnesses: &[BlockWitness],
     chain_spec: Arc<ChainSpec>,
-    #[cfg(feature = "scroll")] compression_ratios: Vec<Vec<U256>>,
+    #[cfg(feature = "scroll")] compression_infos: Vec<Vec<(U256, usize)>>,
 ) -> Result<VerifyResult, StatelessValidationError> {
     if witnesses.is_empty() {
         return Err(StatelessValidationError::Custom("empty witnesses"));
@@ -95,21 +95,21 @@ pub fn run(
     let mut gas_used = 0;
 
     #[cfg(not(feature = "scroll"))]
-    let compression_ratios = std::iter::repeat::<Vec<U256>>(vec![]).take(blocks.len());
+    let compression_infos = std::iter::repeat::<Vec<(U256, usize)>>(vec![]).take(blocks.len());
 
     #[cfg(not(feature = "scroll"))]
     let block_hashes = import_block_hashes(witnesses);
     #[cfg(feature = "scroll")]
     let block_hashes = Default::default();
 
-    for (block, _compression_ratios) in blocks.iter().zip_eq(compression_ratios) {
+    for (block, _compression_infos) in blocks.iter().zip_eq(compression_infos) {
         let db = WitnessDatabase::new(&trie, &bytecode, &block_hashes);
 
         #[cfg(not(feature = "scroll"))]
         let executor = EvmExecutor::new(chain_spec.clone(), db, block);
 
         #[cfg(feature = "scroll")]
-        let executor = EvmExecutor::new(chain_spec.clone(), db, block, Some(_compression_ratios));
+        let executor = EvmExecutor::new(chain_spec.clone(), db, block, Some(_compression_infos));
 
         let output = executor
             .execute()

@@ -85,7 +85,7 @@ scroll = [
   "dep:scroll-alloy-rpc-types",
   "reth-scroll-primitives/serde",
 ]
-scroll-compress-ratio = [
+scroll-compress-info = [
   "scroll",
   "scroll-evm-types",
   "dep:scroll-alloy-evm",
