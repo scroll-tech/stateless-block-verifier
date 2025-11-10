@@ -44,29 +44,14 @@ impl DumpWitnessCommand {
 
         let provider = self.rpc_args.into_provider();
 
-        match self.block {
-            NumberOrRange::Range { start, end } => {
-                dump_range(
-                    provider,
-                    start,
-                    end,
-                    self.out_dir,
-                    #[cfg(not(feature = "scroll"))]
-                    self.ancestors,
-                )
-                .await?
-            }
-            NumberOrRange::Number(block) => {
-                dump(
-                    provider,
-                    block,
-                    self.out_dir.as_path(),
-                    #[cfg(not(feature = "scroll"))]
-                    self.ancestors,
-                )
-                .await?
-            }
-        }
+        dump_range(
+            provider,
+            self.block.into(),
+            self.out_dir,
+            #[cfg(not(feature = "scroll"))]
+            self.ancestors,
+        )
+        .await?;
 
         println!(
             "{} Done in {}",
@@ -80,14 +65,13 @@ impl DumpWitnessCommand {
 
 async fn dump_range(
     provider: RootProvider<Network>,
-    start: u64,
-    end: u64,
+    range: std::ops::Range<u64>,
     out_dir: PathBuf,
     #[cfg(not(feature = "scroll"))] ancestors: usize,
 ) -> eyre::Result<()> {
     let mut set = tokio::task::JoinSet::new();
 
-    for block in start..=end {
+    for block in range {
         let provider = provider.clone();
         let out_dir = out_dir.clone();
         set.spawn(async move {

@@ -64,7 +64,19 @@ pub enum NumberOrRange {
     /// Block number.
     Number(u64),
     /// Range of blocks from start to end.
-    Range { start: u64, end: u64 },
+    Range(std::ops::Range<u64>),
+}
+
+impl From<NumberOrRange> for std::ops::Range<u64> {
+    fn from(value: NumberOrRange) -> Self {
+        match value {
+            NumberOrRange::Range(range) => range,
+            NumberOrRange::Number(block) => std::ops::Range {
+                start: block,
+                end: block + 1,
+            },
+        }
+    }
 }
 
 /// Error variants encountered while parsing [`NumberOrRange`] from CLI args.
@@ -91,9 +103,9 @@ impl std::fmt::Display for NumberOrRangeParseError {
                 f,
                 "Invalid syntax for block number or range. Example for expected syntax: `1234` or `1234..1243`"
             ),
-            Self::ParseInt(e) => write!(f, "Failed to parse integer: {}", e),
+            Self::ParseInt(e) => write!(f, "Failed to parse integer: {e}"),
             Self::InvalidRange { start, end } => {
-                write!(f, "Invalid block range: end={} < start={}", end, start)
+                write!(f, "Invalid block range: end={end} <= start={start}")
             }
         }
     }
@@ -110,8 +122,8 @@ impl FromStr for NumberOrRange {
                 let start = start_str.parse()?;
                 let end = end_str.parse()?;
 
-                (end >= start)
-                    .then_some(Self::Range { start, end })
+                (end > start)
+                    .then_some(Self::Range(std::ops::Range { start, end }))
                     .ok_or(NumberOrRangeParseError::InvalidRange { start, end })
             }
             None => s
