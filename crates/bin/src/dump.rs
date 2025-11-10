@@ -1,18 +1,24 @@
-use crate::helpers::RpcArgs;
+use alloy::providers::RootProvider;
 use clap::Args;
 use console::{Emoji, style};
 use eyre::Context;
 use indicatif::{HumanBytes, HumanDuration, ProgressBar, ProgressStyle};
-use sbv::utils::rpc::ProviderExt;
+use sbv::{primitives::types::Network, utils::rpc::ProviderExt};
 use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
 
+use crate::helpers::{NumberOrRange, RpcArgs};
+
 #[derive(Debug, Args)]
 pub struct DumpWitnessCommand {
-    #[arg(long, help = "Block number")]
-    pub block: u64,
+    #[arg(
+        long,
+        help = "Block number or block range [start..end]",
+        value_parser = clap::value_parser!(NumberOrRange),
+    )]
+    pub block: NumberOrRange,
     #[arg(long, help = "Ancestor blocks", default_value_t = 256)]
     #[cfg(not(feature = "scroll"))]
     pub ancestors: usize,
@@ -38,50 +44,120 @@ impl DumpWitnessCommand {
 
         let provider = self.rpc_args.into_provider();
 
-        let pb = ProgressBar::new_spinner();
-        pb.set_style(ProgressStyle::with_template("{prefix}{msg} {spinner}")?);
-        pb.set_prefix(format!(
-            "{} {}",
-            style("[1/2]").bold().dim(),
-            Emoji("🔗  ", "")
-        ));
-        pb.enable_steady_tick(Duration::from_millis(100));
-        pb.set_message(format!("Dumping witness for block {}", self.block));
-
-        #[cfg(not(feature = "scroll"))]
-        let witness = provider
-            .dump_block_witness(self.block)
-            .ancestors(self.ancestors)
-            .send()
-            .await
-            .context("dump ethereum block witness")?;
-        #[cfg(feature = "scroll")]
-        let witness = provider
-            .dump_block_witness(self.block)
-            .send()
-            .await
-            .context("dump scroll block witness")?;
-
-        pb.finish_with_message(format!("Dumped witness for block {}", self.block));
-        println!();
-
-        let json = serde_json::to_string_pretty(&witness).context("serialize witness")?;
-        let path = self.out_dir.join(format!("{}.json", self.block));
-        std::fs::write(&path, json).context("write json file")?;
-        let size = HumanBytes(std::fs::metadata(&path)?.len());
-        println!(
-            "{} {}JSON witness({}) saved to {}",
-            style("[2/2]").bold().dim(),
-            Emoji("📃  ", ""),
-            size,
-            path.display()
-        );
+        match self.block {
+            NumberOrRange::Range { start, end } => {
+                dump_range(
+                    provider,
+                    start,
+                    end,
+                    self.out_dir,
+                    #[cfg(not(feature = "scroll"))]
+                    self.ancestors,
+                )
+                .await?
+            }
+            NumberOrRange::Number(block) => {
+                dump(
+                    provider,
+                    block,
+                    self.out_dir.as_path(),
+                    #[cfg(not(feature = "scroll"))]
+                    self.ancestors,
+                )
+                .await?
+            }
+        }
 
         println!(
             "{} Done in {}",
             Emoji("✨ ", ":-)"),
             HumanDuration(started.elapsed())
         );
+
         Ok(())
     }
+}
+
+async fn dump_range(
+    provider: RootProvider<Network>,
+    start: u64,
+    end: u64,
+    out_dir: PathBuf,
+    #[cfg(not(feature = "scroll"))] ancestors: usize,
+) -> eyre::Result<()> {
+    let mut set = tokio::task::JoinSet::new();
+
+    for block in start..=end {
+        let provider = provider.clone();
+        let out_dir = out_dir.clone();
+        set.spawn(async move {
+            if let Err(e) = dump(
+                provider,
+                block,
+                out_dir.as_path(),
+                #[cfg(not(feature = "scroll"))]
+                ancestors,
+            )
+            .await
+            {
+                eprintln!("Error dumping witness for block {block}: {e}");
+            }
+        });
+    }
+
+    while let Some(result) = set.join_next().await {
+        if let Err(e) = result {
+            eprintln!("Dump task panicked: {e}");
+        }
+    }
+
+    Ok(())
+}
+
+async fn dump(
+    provider: RootProvider<Network>,
+    block: u64,
+    out_dir: &std::path::Path,
+    #[cfg(not(feature = "scroll"))] ancestors: usize,
+) -> eyre::Result<()> {
+    let pb = ProgressBar::new_spinner();
+    pb.set_style(ProgressStyle::with_template("{prefix}{msg} {spinner}")?);
+    pb.set_prefix(format!(
+        "{} {}",
+        style("[1/2]").bold().dim(),
+        Emoji("🔗  ", "")
+    ));
+    pb.enable_steady_tick(Duration::from_millis(100));
+    pb.set_message(format!("Dumping witness for block {block}"));
+
+    #[cfg(not(feature = "scroll"))]
+    let witness = provider
+        .dump_block_witness(block)
+        .ancestors(ancestors)
+        .send()
+        .await
+        .context("dump ethereum block witness")?;
+    #[cfg(feature = "scroll")]
+    let witness = provider
+        .dump_block_witness(block)
+        .send()
+        .await
+        .context("dump scroll block witness")?;
+
+    pb.finish_with_message(format!("Dumped witness for block {block}"));
+    println!();
+
+    let json = serde_json::to_string_pretty(&witness).context("serialize witness")?;
+    let path = out_dir.join(format!("{block}.json"));
+    std::fs::write(&path, json).context("write json file")?;
+    let size = HumanBytes(std::fs::metadata(&path)?.len());
+    println!(
+        "{} {}JSON witness({}) saved to {}",
+        style("[2/2]").bold().dim(),
+        Emoji("📃  ", ""),
+        size,
+        path.display()
+    );
+
+    Ok(())
 }
