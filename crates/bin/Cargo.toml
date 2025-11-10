@@ -45,4 +45,4 @@ tracing-subscriber.workspace = true
 [features]
 default = ["dev"]
 dev = ["dep:tracing", "sbv/dev", "dep:tracing-subscriber"]
-scroll = ["sbv/scroll", "sbv/scroll-compress-ratio"]
+scroll = ["sbv/scroll", "sbv/scroll-compress-info"]

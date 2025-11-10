@@ -42,19 +42,24 @@ impl BlockWitness {
     ///
     /// # Panics
     ///
-    /// Panics if called without the "scroll-compress-ratio" feature enabled, as this
+    /// Panics if called without the "scroll-compress-info" feature enabled, as this
     /// functionality is not intended to be used in guest environments.
-    pub fn compression_ratios(&self) -> Vec<U256> {
-        #[cfg(feature = "scroll-compress-ratio")]
+    pub fn compression_infos(&self) -> Vec<(U256, usize)> {
+        #[cfg(feature = "scroll-compress-info")]
         {
-            use sbv_primitives::types::consensus::Transaction;
+            use sbv_primitives::types::{consensus::Transaction, eips::Encodable2718};
 
             self.transactions
                 .iter()
-                .map(|tx| sbv_primitives::types::evm::compute_compression_ratio(&tx.input()))
+                .map(|tx| {
+                    (
+                        sbv_primitives::types::evm::compute_compression_ratio(&tx.input()),
+                        sbv_primitives::types::evm::compute_compressed_size(&tx.encoded_2718()),
+                    )
+                })
                 .collect()
         }
-        #[cfg(not(feature = "scroll-compress-ratio"))]
+        #[cfg(not(feature = "scroll-compress-info"))]
         {
             unimplemented!("you should not build ChunkWitness in guest?");
         }
