@@ -20,7 +20,6 @@ sbv-utils.workspace = true
 rkyv = ["sbv-primitives/rkyv"]
 
 c-kzg = ["sbv-primitives/c-kzg"]
-kzg-rs = ["sbv-primitives/kzg-rs"]
 
 scroll = ["sbv-core/scroll", "sbv-primitives/scroll-all", "sbv-utils/scroll"]
 scroll-compress-info = ["sbv-core/scroll-compress-info"]

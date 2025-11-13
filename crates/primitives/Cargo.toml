@@ -59,7 +59,6 @@ rkyv = ["dep:rkyv", "alloy-primitives/rkyv"]
 
 # features proxy
 c-kzg = ["revm/c-kzg"]
-kzg-rs = ["revm/kzg-rs"]
 
 # core features switch
 chainspec = ["dep:reth-chainspec", "hardforks"]
