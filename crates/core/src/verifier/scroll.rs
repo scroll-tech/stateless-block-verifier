@@ -6,7 +6,7 @@ use reth_stateless::{StatelessTrie, validation::StatelessValidationError};
 use sbv_primitives::{
     Address, B256, U256, chainspec::ChainSpec, types::reth::evm::execute::ProviderError,
 };
-use sbv_trie::r0::SparseState;
+use sbv_trie::SparseState;
 use std::sync::Arc;
 
 /// State commit mode for the block witness verification process.

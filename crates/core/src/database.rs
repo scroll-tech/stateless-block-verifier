@@ -11,7 +11,7 @@ use sbv_primitives::{
         revm::{AccountInfo, Bytecode},
     },
 };
-use sbv_trie::r0::SparseState;
+use sbv_trie::SparseState;
 use std::collections::BTreeMap;
 
 /// A database that consists of account and storage information.
