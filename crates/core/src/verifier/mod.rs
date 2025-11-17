@@ -9,7 +9,7 @@ use sbv_primitives::{
     chainspec::ChainSpec,
     types::{reth::primitives::Block, rpc::ExecutionWitness},
 };
-use sbv_trie::{HashedPostState, KeccakKeyHasher, r0::SparseState};
+use sbv_trie::{HashedPostState, KeccakKeyHasher, SparseState};
 use std::sync::Arc;
 
 #[cfg(feature = "scroll")]

@@ -4916,11 +4916,7 @@ dependencies = [
  "reth-stateless",
  "reth-trie",
  "risc0-ethereum-trie",
- "rlp",
- "sbv-helpers",
  "sbv-primitives",
- "serde",
- "thiserror",
  "tracing",
 ]
 

@@ -16,16 +16,9 @@ alloy-rlp.workspace = true
 alloy-trie.workspace = true
 reth-trie.workspace = true
 reth-stateless.workspace = true
-serde = { workspace = true, features = ["derive"] }
-rlp = "0.5"
 risc0-ethereum-trie = { workspace = true, features = ["serde"] }
-
 sbv-primitives = { workspace = true, features = ["revm-types", "reth-evm-types"] }
-sbv-helpers.workspace = true
-
-thiserror.workspace = true
 tracing = { workspace = true, optional = true }
-
 
 [features]
 dev = ["dep:tracing", "sbv-primitives/dev"]
