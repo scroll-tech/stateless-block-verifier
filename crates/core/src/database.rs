@@ -63,7 +63,12 @@ impl Database for WitnessDatabase<'_> {
     /// in the underlying [`StatelessTrie`] implementation.
     ///
     /// Returns `Ok(None)` if the account is not found in the trie.
+    #[cfg_attr(
+        feature = "dev",
+        tracing::instrument(level = "trace", skip(self), ret, err)
+    )]
     fn basic(&mut self, address: Address) -> Result<Option<AccountInfo>, Self::Error> {
+        dev_trace!("loading account info");
         self.trie.account(address).map(|opt| {
             opt.map(|account| AccountInfo {
                 balance: account.balance,
@@ -77,7 +82,12 @@ impl Database for WitnessDatabase<'_> {
     /// Get account code by its hash from the provided bytecode map.
     ///
     /// Returns an error if the bytecode for the given hash is not found in the map.
+    #[cfg_attr(
+        feature = "dev",
+        tracing::instrument(level = "trace", skip(self), ret, err)
+    )]
     fn code_by_hash(&mut self, code_hash: B256) -> Result<Bytecode, Self::Error> {
+        dev_trace!("loading bytecode");
         self.bytecode.get(&code_hash).cloned().ok_or_else(|| {
             ProviderError::TrieWitnessError(format!("bytecode for {code_hash} not found"))
         })
@@ -86,14 +96,24 @@ impl Database for WitnessDatabase<'_> {
     /// Get storage value of an account at a specific slot.
     ///
     /// Returns `U256::ZERO` if the slot is not found in the trie.
+    #[cfg_attr(
+        feature = "dev",
+        tracing::instrument(level = "trace", skip(self), ret, err)
+    )]
     fn storage(&mut self, address: Address, slot: U256) -> Result<U256, Self::Error> {
+        dev_trace!("loading storage value");
         self.trie.storage(address, slot)
     }
 
     /// Get block hash by block number from the provided ancestor hashes map.
     ///
     /// Returns an error if the hash for the given block number is not found in the map.
+    #[cfg_attr(
+        feature = "dev",
+        tracing::instrument(level = "trace", skip(self), ret, err)
+    )]
     fn block_hash(&mut self, block_number: u64) -> Result<B256, Self::Error> {
+        dev_trace!("loading block hash");
         self.block_hashes_by_block_number
             .get(&block_number)
             .copied()

@@ -71,6 +71,7 @@ risc0-ethereum-trie = { git = "https://github.com/risc0/risc0-ethereum" }
 #reth-execution-types = { path = "../reth/crates/evm/execution-types", default-features = false }
 #reth-primitives = { path = "../reth/crates/primitives", default-features = false }
 #reth-primitives-traits = { path = "../reth/crates/primitives-traits", default-features = false }
+#reth-stateless = { path = "../reth/crates/stateless", default-features = false }
 #reth-trie = { path = "../reth/crates/trie/trie", default-features = false }
 #
 #reth-scroll-chainspec = { path = "../reth/crates/scroll/chainspec", default-features = false }
@@ -82,6 +83,8 @@ risc0-ethereum-trie = { git = "https://github.com/risc0/risc0-ethereum" }
 #scroll-alloy-consensus = { path = "../reth/crates/scroll/alloy/consensus", default-features = false }
 #scroll-alloy-rpc-types = { path = "../reth/crates/scroll/alloy/rpc-types", default-features = false }
 #scroll-alloy-network = { path = "../reth/crates/scroll/alloy/network", default-features = false }
+#
+#revm-scroll = { path = "../scroll-revm", default-features = false }
 
 async-trait = "0.1"
 auto_impl = "1.2"
@@ -117,6 +120,7 @@ sbv-utils = { path = "crates/utils" }
 [workspace.dependencies.revm]
 git = "https://github.com/scroll-tech/revm"
 tag = "scroll-v91"
+#path = "../revm/crates/revm"
 default-features = false
 features = ["std"]
 
@@ -146,6 +150,7 @@ revm-state = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
 #reth-execution-types = { path = "../reth/crates/evm/execution-types" }
 #reth-primitives = { path = "../reth/crates/primitives" }
 #reth-primitives-traits = { path = "../reth/crates/primitives-traits" }
+#reth-stateless = { path = "../reth/crates/stateless" }
 #reth-storage-errors = { path = "../reth/crates/storage/errors" }
 #reth-trie = { path = "../reth/crates/trie/trie" }
 #reth-trie-sparse = { path = "../reth/crates/trie/sparse" }
@@ -188,6 +193,7 @@ revm-state = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
 #reth-execution-types = { path = "../reth/crates/evm/execution-types" }
 #reth-primitives = { path = "../reth/crates/primitives" }
 #reth-primitives-traits = { path = "../reth/crates/primitives-traits" }
+#reth-stateless = { path = "../reth/crates/stateless" }
 #reth-storage-errors = { path = "../reth/crates/storage/errors" }
 #reth-trie = { path = "../reth/crates/trie/trie" }
 #reth-trie-sparse = { path = "../reth/crates/trie/sparse" }

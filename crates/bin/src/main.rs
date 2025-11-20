@@ -29,6 +29,15 @@ fn main() -> eyre::Result<()> {
         )
         .init();
 
+    #[cfg(feature = "dev")]
+    std::panic::set_hook(Box::new(|info| {
+        if std::env::var_os("RUST_BACKTRACE").is_some() {
+            dev_error!("panic happens: {info}");
+            let bt = std::backtrace::Backtrace::force_capture();
+            dev_error!("backtrace:\n{bt}");
+        }
+    }));
+
     match Cli::parse() {
         Cli::Run(cmd) => cmd.run(),
         Cli::Dump(cmd) => helpers::run_async(cmd.run()),
