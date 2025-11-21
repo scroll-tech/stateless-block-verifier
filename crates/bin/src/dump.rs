@@ -1,8 +1,8 @@
 use alloy::providers::RootProvider;
 use clap::Args;
-use console::{Emoji, style};
+use console::Emoji;
 use eyre::Context;
-use indicatif::{HumanBytes, HumanDuration, ProgressBar, ProgressStyle};
+use indicatif::{HumanBytes, HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use sbv::{primitives::types::Network, utils::rpc::ProviderExt};
 use std::{
     path::PathBuf,
@@ -71,9 +71,12 @@ async fn dump_range(
 ) -> eyre::Result<()> {
     let mut set = tokio::task::JoinSet::new();
 
+    let multi_progress_bar = MultiProgress::new();
+
     for block in range {
         let provider = provider.clone();
         let out_dir = out_dir.clone();
+        let progress_bar = multi_progress_bar.add(ProgressBar::new_spinner());
         set.spawn(async move {
             if let Err(e) = dump(
                 provider,
@@ -81,6 +84,7 @@ async fn dump_range(
                 out_dir.as_path(),
                 #[cfg(not(feature = "scroll"))]
                 ancestors,
+                progress_bar,
             )
             .await
             {
@@ -103,16 +107,12 @@ async fn dump(
     block: u64,
     out_dir: &std::path::Path,
     #[cfg(not(feature = "scroll"))] ancestors: usize,
+    pb: ProgressBar,
 ) -> eyre::Result<()> {
-    let pb = ProgressBar::new_spinner();
     pb.set_style(ProgressStyle::with_template("{prefix}{msg} {spinner}")?);
-    pb.set_prefix(format!(
-        "{} {}",
-        style("[1/2]").bold().dim(),
-        Emoji("🔗  ", "")
-    ));
-    pb.enable_steady_tick(Duration::from_millis(100));
+    pb.set_prefix(format!("{}", Emoji("🔗  ", "")));
     pb.set_message(format!("Dumping witness for block {block}"));
+    pb.enable_steady_tick(Duration::from_millis(100));
 
     #[cfg(not(feature = "scroll"))]
     let witness = provider
@@ -128,20 +128,17 @@ async fn dump(
         .await
         .context("dump scroll block witness")?;
 
-    pb.finish_with_message(format!("Dumped witness for block {block}"));
-    println!();
-
     let json = serde_json::to_string_pretty(&witness).context("serialize witness")?;
     let path = out_dir.join(format!("{block}.json"));
-    std::fs::write(&path, json).context("write json file")?;
-    let size = HumanBytes(std::fs::metadata(&path)?.len());
-    println!(
-        "{} {}JSON witness({}) saved to {}",
-        style("[2/2]").bold().dim(),
-        Emoji("📃  ", ""),
-        size,
-        path.display()
-    );
+    tokio::fs::write(&path, json)
+        .await
+        .context("write json file")?;
+    let size = HumanBytes(tokio::fs::metadata(&path).await?.len());
+
+    pb.finish_with_message(format!(
+        "JSON witness: {size} saved to {p}",
+        p = path.display(),
+    ));
 
     Ok(())
 }
