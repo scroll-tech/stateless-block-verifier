@@ -95,7 +95,7 @@ pub fn run(
     let mut gas_used = 0;
 
     #[cfg(not(feature = "scroll"))]
-    let compression_infos = std::iter::repeat::<Vec<(U256, usize)>>(vec![]).take(blocks.len());
+    let compression_infos = std::iter::repeat_n::<Vec<(U256, usize)>>(vec![], blocks.len());
 
     #[cfg(not(feature = "scroll"))]
     let block_hashes = import_block_hashes(witnesses);
