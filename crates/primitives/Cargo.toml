@@ -13,8 +13,6 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-auto_impl.workspace = true
-itertools.workspace = true
 rkyv = { workspace = true, optional = true }
 serde.workspace = true
 tracing = { workspace = true, optional = true }
@@ -50,8 +48,6 @@ scroll-alloy-network = { workspace = true, optional = true }
 sbv-helpers.workspace = true
 
 [dev-dependencies]
-rstest.workspace = true
-serde_json.workspace = true
 
 [features]
 # serialization
