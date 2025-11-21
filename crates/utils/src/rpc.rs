@@ -68,9 +68,9 @@ pub trait ProviderExt: Provider<Network> {
     #[cfg(not(feature = "scroll"))]
     async fn dump_block_ancestors(
         &self,
-        number: sbv_primitives::BlockNumber,
+        number: BlockNumber,
         ancestors: Option<usize>,
-    ) -> TransportResult<Option<Vec<sbv_primitives::types::rpc::Block>>> {
+    ) -> TransportResult<Option<Vec<Block>>> {
         use std::future::IntoFuture;
 
         let ancestors = ancestors
@@ -78,7 +78,7 @@ pub trait ProviderExt: Provider<Network> {
             .clamp(1, (number as usize).min(256));
 
         let ancestors = futures::future::try_join_all((1..=ancestors).map(|offset| {
-            let block_number = number - offset as sbv_primitives::BlockNumber;
+            let block_number = number - offset as BlockNumber;
             self.get_block_by_number(block_number.into()).into_future()
         }))
         .await?;
@@ -188,7 +188,7 @@ impl<'a, P: ProviderExt> DumpBlockWitness<'a, P> {
     #[cfg(not(feature = "scroll"))]
     pub fn with_cached_ancestor_blocks<I>(mut self, iter: I) -> Self
     where
-        I: IntoIterator<Item = sbv_primitives::types::rpc::Block>,
+        I: IntoIterator<Item = Block>,
     {
         self.builder = self.builder.ancestor_blocks(iter);
         self

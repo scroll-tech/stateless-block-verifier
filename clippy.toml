@@ -1,0 +1,39 @@
+# Please re-check this list when updating dependencies, keep it minimal.
+allowed-duplicate-crates = [
+    "ark-ff",
+    "ark-ff-asm",
+    "ark-ff-macros",
+    "ark-serialize",
+    "ark-std",
+    "nybbles",
+    "digest",
+    "fastrlp",
+    "getrandom",
+    "itertools",
+    "rand",
+    "rand_chacha",
+    "rand_core",
+    "schemars",
+    "secp256k1",
+    "secp256k1-sys",
+    "syn",
+    "tracing-subscriber",
+    "windows-sys",
+    "windows-targets",
+    "windows_aarch64_gnullvm",
+    "windows_aarch64_msvc",
+    "windows_i686_gnu",
+    "windows_i686_gnullvm",
+    "windows_i686_msvc",
+    "windows_x86_64_gnu",
+    "windows_x86_64_gnullvm",
+    "windows_x86_64_msvc",
+
+    # revisit these when fully remove rkyv
+    "foldhash",
+    "hashbrown",
+    "indexmap",
+
+    # FIXME: remove after upgrade risc0-ethereum-trie
+    "alloy-trie",
+]

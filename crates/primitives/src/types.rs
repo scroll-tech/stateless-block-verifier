@@ -112,6 +112,7 @@ pub mod rpc {
     };
 
     /// Transaction object used in RPC.
+    #[allow(unused_qualifications)]
     pub type RpcTransaction<T = super::consensus::TxEnvelope> = alloy_rpc_types_eth::Transaction<T>;
 
     /// Block representation for RPC.
