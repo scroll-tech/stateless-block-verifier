@@ -25,9 +25,7 @@ alloy-transport = { workspace = true, features = ["throttle"] }
 eyre.workspace = true
 clap = { workspace = true, features = ["derive"] }
 console.workspace = true
-csv.workspace = true
 indicatif.workspace = true
-serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 serde_path_to_error.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
