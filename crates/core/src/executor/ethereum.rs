@@ -17,7 +17,7 @@ pub struct EvmExecutor<'a> {
     block: &'a RecoveredBlock<Block>,
 }
 
-impl<'a> crate::EvmExecutor<'a> {
+impl<'a> EvmExecutor<'a> {
     /// Create a new EVM executor
     pub fn new(
         chain_spec: Arc<ChainSpec>,
