@@ -5,11 +5,10 @@ use console::Emoji;
 use eyre::{Context, ContextCompat};
 use indicatif::{HumanBytes, HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use sbv::{primitives::types::Network, utils::rpc::ProviderExt};
-use std::collections::HashMap;
-use std::path::Path;
-use std::sync::LazyLock;
 use std::{
-    path::PathBuf,
+    collections::HashMap,
+    path::{Path, PathBuf},
+    sync::LazyLock,
     time::{Duration, Instant},
 };
 
