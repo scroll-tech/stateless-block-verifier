@@ -41,6 +41,6 @@ mod tests {
     ) {
         let witness: BlockWitness = serde_json::from_str(witness_json).unwrap();
         let chain_spec = get_chain_spec(Chain::from_id(witness.chain_id)).unwrap();
-        crate::verifier::run(&[witness], chain_spec).unwrap();
+        run(&[witness], chain_spec).unwrap();
     }
 }

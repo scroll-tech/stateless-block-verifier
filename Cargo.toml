@@ -13,11 +13,29 @@ resolver = "2"
 [workspace.package]
 version = "2.0.0"
 edition = "2021"
-rust-version = "1.88"
+rust-version = "1.90"
 authors = ["Scroll developers"]
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/scroll-tech/stateless-block-verifier"
 repository = "https://github.com/scroll-tech/stateless-block-verifier"
+
+[workspace.lints.rust]
+missing-docs = "warn"
+missing-debug-implementations = "warn"
+unused-qualifications = "warn"
+
+[workspace.lints.clippy]
+# some useful lints from pedantic group
+assigning-clones = "warn"
+cast-lossless = "warn"
+redundant-else = "warn"
+single-match-else = "warn"
+elidable-lifetime-names = "warn"
+uninlined-format-args = "warn"
+unnecessary-box-returns = "warn"
+unnecessary-debug-formatting = "warn"
+# this is useful if we forget to align versions of alloy/revm when upgrading reth
+multiple-crate-versions = "warn"
 
 [workspace.dependencies]
 # https://github.com/alloy-rs/alloy
@@ -122,10 +140,6 @@ tag = "scroll-v91"
 #path = "../revm/crates/revm"
 default-features = false
 features = ["std"]
-
-[workspace.lints.rust]
-missing-docs = "deny"
-missing-debug-implementations = "deny"
 
 [patch.crates-io]
 revm = { git = "https://github.com/scroll-tech/revm", tag = "scroll-v91" }
