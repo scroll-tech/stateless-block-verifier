@@ -1,15 +1,23 @@
+use crate::helpers::{NumberOrRange, RpcArgs};
 use alloy::providers::RootProvider;
 use clap::Args;
 use console::Emoji;
-use eyre::Context;
+use eyre::{Context, ContextCompat};
 use indicatif::{HumanBytes, HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use sbv::{primitives::types::Network, utils::rpc::ProviderExt};
+use std::collections::HashMap;
+use std::path::Path;
+use std::sync::LazyLock;
 use std::{
     path::PathBuf,
     time::{Duration, Instant},
 };
 
-use crate::helpers::{NumberOrRange, RpcArgs};
+const INFO_ICON: Emoji = Emoji(" 🔗 ", " [+] ");
+const ERR_ICON: Emoji = Emoji(" ❌ ", " [x] ");
+const COMPLETED_ICON: Emoji = Emoji(" ✅ ", " [v] ");
+const SAD_ICON: Emoji = Emoji(" ⚠️ ", " :( ");
+const SPARKLE_ICON: Emoji = Emoji(" ✨ ", " :) ");
 
 #[derive(Debug, Args)]
 pub struct DumpWitnessCommand {
@@ -44,101 +52,137 @@ impl DumpWitnessCommand {
 
         let provider = self.rpc_args.into_provider();
 
-        dump_range(
+        let ok = dump_range(
             provider,
             self.block.into(),
             self.out_dir,
             #[cfg(not(feature = "scroll"))]
             self.ancestors,
         )
-        .await?;
+        .await;
 
-        println!(
-            "{} Done in {}",
-            Emoji("✨ ", ":-)"),
-            HumanDuration(started.elapsed())
-        );
+        let elapsed = HumanDuration(started.elapsed());
+        if ok {
+            println!("{SPARKLE_ICON} Done in {elapsed}");
+        } else {
+            println!("{SAD_ICON} Completed with errors in {elapsed}",);
+        }
 
         Ok(())
     }
 }
+
+static PB_STYLE: LazyLock<ProgressStyle> =
+    LazyLock::new(|| ProgressStyle::with_template("{prefix}{msg} {spinner}").expect("infallible"));
 
 async fn dump_range(
     provider: RootProvider<Network>,
     range: std::ops::Range<u64>,
     out_dir: PathBuf,
     #[cfg(not(feature = "scroll"))] ancestors: usize,
-) -> eyre::Result<()> {
+) -> bool {
     let mut set = tokio::task::JoinSet::new();
 
     let multi_progress_bar = MultiProgress::new();
+
+    let mut ok = true;
+    let mut pb_map = HashMap::new();
 
     for block in range {
         let provider = provider.clone();
         let out_dir = out_dir.clone();
         let progress_bar = multi_progress_bar.add(ProgressBar::new_spinner());
-        set.spawn(async move {
-            if let Err(e) = dump(
-                provider,
-                block,
-                out_dir.as_path(),
-                #[cfg(not(feature = "scroll"))]
-                ancestors,
-                progress_bar,
-            )
-            .await
-            {
-                eprintln!("Error dumping witness for block {block}: {e}");
-            }
-        });
+        let handle = {
+            let progress_bar = progress_bar.clone();
+            set.spawn(async move {
+                dump(
+                    provider,
+                    block,
+                    out_dir.as_path(),
+                    #[cfg(not(feature = "scroll"))]
+                    ancestors,
+                    progress_bar,
+                )
+                .await
+            })
+        };
+        pb_map.insert(handle.id(), progress_bar);
     }
 
-    while let Some(result) = set.join_next().await {
-        if let Err(e) = result {
-            eprintln!("Dump task panicked: {e}");
+    while let Some(result) = set.join_next_with_id().await {
+        match result {
+            Err(e) => {
+                let pb = pb_map.remove(&e.id()).expect("progress bar exists");
+                pb.set_prefix(format!("{ERR_ICON}"));
+                pb.finish_with_message(format!("Dump task failed: {e}"));
+                ok = false;
+            }
+            Ok((_, false)) => {
+                ok = false;
+            }
+            _ => { /* ok */ }
         }
     }
-
-    Ok(())
+    ok
 }
 
 async fn dump(
     provider: RootProvider<Network>,
     block: u64,
-    out_dir: &std::path::Path,
+    out_dir: &Path,
     #[cfg(not(feature = "scroll"))] ancestors: usize,
     pb: ProgressBar,
-) -> eyre::Result<()> {
-    pb.set_style(ProgressStyle::with_template("{prefix}{msg} {spinner}")?);
-    pb.set_prefix(format!("{}", Emoji("🔗  ", "")));
+) -> bool {
+    pb.set_style(PB_STYLE.clone());
+    pb.set_prefix(format!("{INFO_ICON}"));
     pb.set_message(format!("Dumping witness for block {block}"));
     pb.enable_steady_tick(Duration::from_millis(100));
 
+    match dump_inner(
+        provider,
+        block,
+        out_dir,
+        #[cfg(not(feature = "scroll"))]
+        ancestors,
+    )
+    .await
+    {
+        Ok((path, size)) => {
+            pb.set_prefix(format!("{COMPLETED_ICON}"));
+            pb.finish_with_message(format!("Witness: {size} saved to {p}", p = path.display()));
+            true
+        }
+        Err(e) => {
+            pb.set_prefix(format!("{ERR_ICON}"));
+            pb.finish_with_message(format!("Failed to dump witness for block {block}: {e}"));
+            false
+        }
+    }
+}
+
+async fn dump_inner(
+    provider: RootProvider<Network>,
+    block: u64,
+    out_dir: &Path,
+    #[cfg(not(feature = "scroll"))] ancestors: usize,
+) -> eyre::Result<(PathBuf, HumanBytes)> {
     #[cfg(not(feature = "scroll"))]
     let witness = provider
         .dump_block_witness(block)
         .ancestors(ancestors)
         .send()
-        .await
-        .context("dump ethereum block witness")?;
+        .await?
+        .context("block not found")?;
     #[cfg(feature = "scroll")]
     let witness = provider
         .dump_block_witness(block)
         .send()
-        .await
-        .context("dump scroll block witness")?;
+        .await?
+        .context("block not found")?;
 
-    let json = serde_json::to_string_pretty(&witness).context("serialize witness")?;
+    let json = serde_json::to_string_pretty(&witness)?;
     let path = out_dir.join(format!("{block}.json"));
-    tokio::fs::write(&path, json)
-        .await
-        .context("write json file")?;
+    tokio::fs::write(&path, json).await?;
     let size = HumanBytes(tokio::fs::metadata(&path).await?.len());
-
-    pb.finish_with_message(format!(
-        "JSON witness: {size} saved to {p}",
-        p = path.display(),
-    ));
-
-    Ok(())
+    Ok((path, size))
 }
