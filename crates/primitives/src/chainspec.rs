@@ -140,6 +140,9 @@ pub fn build_chain_spec_force_hardfork(
     if hardfork >= Hardfork::Galileo {
         hardforks.insert(Hardfork::Galileo, ForkCondition::Timestamp(0));
     }
+    if hardfork >= Hardfork::GalileoV2 {
+        hardforks.insert(Hardfork::GalileoV2, ForkCondition::Timestamp(0));
+    }
     sbv_helpers::dev_info!(
         "Building chain spec for chain {} with hardfork {:?}",
         chain,
