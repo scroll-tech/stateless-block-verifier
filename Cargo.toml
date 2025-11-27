@@ -60,25 +60,25 @@ alloy-evm = { version = "0.22.2", default-features = false }
 
 revm-scroll = { git = "https://github.com/scroll-tech/scroll-revm", tag = "scroll-v91", default-features = false }
 
-reth-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-evm = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-ethereum-forks = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-execution-types = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-primitives = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-stateless = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-trie = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
+reth-chainspec = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-evm = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-evm-ethereum = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-ethereum-forks = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-execution-types = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-primitives = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-primitives-traits = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-stateless = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-trie = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
 
-reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-scroll-forks = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
+reth-scroll-chainspec = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-scroll-evm = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-scroll-forks = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+reth-scroll-primitives = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
 
-scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
-scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", branch = "feat-galileo-v2", default-features = false }
+scroll-alloy-evm = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+scroll-alloy-consensus = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+scroll-alloy-rpc-types = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
+scroll-alloy-network = { git = "https://github.com/scroll-tech/reth", tag = "scroll-v91.2", default-features = false }
 
 risc0-ethereum-trie = { git = "https://github.com/risc0/risc0-ethereum" }
 
