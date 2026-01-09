@@ -1,0 +1,17 @@
+{
+  "name": "Rust",
+  "image": "mcr.microsoft.com/devcontainers/rust:2-1-trixie",
+  "mounts": [
+    {
+      "source": "devcontainer-cargo-cache-${devcontainerId}",
+      "target": "/usr/local/cargo",
+      "type": "volume"
+    },
+    "source=${localEnv:HOME}/.cargo/config.toml,target=/usr/local/cargo/config.toml,type=bind,consistency=cached,readonly"
+  ],
+  "customizations" : {
+    "jetbrains" : {
+      "backend" : "RustRover"
+    }
+  }
+}
